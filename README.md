@@ -129,7 +129,47 @@ Being explicit, because "it's written" and "it's known to work" are different th
 | Stability logger | **Tested** on an RTX 5060 Ti (driver 610.88). Two 8–12 s idle runs, CSV + JSON output confirmed well-formed. Two bugs found and fixed this way: an `[ordered]`-dictionary positional-lookup bug that mislabelled every throttle reason, and a `Select-Object` pipeline-stop that killed `nvidia-smi` and produced spurious exit 255. |
 | Logger under real load | **Not tested.** Only idle. Verdict logic for thermal throttling and driver crashes has never fired against a real event. |
 | Dataset loading + validation | **Schema verified** against the real downloaded files. The efficiency identity (`performance / power`, normalised to 1530 MHz) was confirmed by hand on one row before the check was written into code. |
-| Python analysis scripts | **Not executed.** Python is not installed on the machine they were written on. They are unrun code — treat every number they might print as unverified until someone runs them. |
+| Python analysis scripts | **Run** on Python 3.12.10 / pandas 3.0.5 / numpy 2.5.2 / scikit-learn 1.9.0. Both scripts execute clean. Results below. |
+
+---
+
+## First results (public dataset only)
+
+Two findings, one of which is a null. Both are from `analysis/`, on the V100 dataset — one chip, so
+neither transfers to consumer hardware without being retested there.
+
+### 1. The gap is large — 44.4% mean efficiency
+
+Running each of the 33 workloads at stock (1530 MHz) rather than at its own efficiency optimum gives
+up a mean of **44.4% efficiency** (median 45.7%, range 15.1%–62.8%). Those optima cost a mean of
+**13.7% performance** and save a mean of **40.1% power**.
+
+Measured directly from the published data. No model involved.
+
+### 2. Per-workload prediction does not beat a fixed frequency — reporting this as a null
+
+| Strategy | Mean regret | Exact-match rate |
+|---|---|---|
+| Stock — do nothing | 44.396% | 0.0% |
+| **Best fixed frequency (952 MHz)** | **0.837%** | **72.7%** |
+| Probe model (Ridge, 4 probes) | 0.883% | 69.7% |
+
+*Regret = efficiency given up versus that workload's true optimum. Leave-one-workload-out.*
+
+Simply running everything at **952 MHz** recovers 43.56 of the 44.4 available percentage points. The
+probe model does not improve on that — it is marginally worse, and its deviations from 952 MHz hurt
+more often than they help.
+
+The mechanism is visible in the data: 952 MHz is optimal for **24 of 33 workloads (73%)**, so there
+is very little per-workload variation left for a model to exploit. Workload sensitivity is real and
+behaves as the literature predicts — the correlation between performance retained at the lowest
+frequency and the optimal frequency is **−0.666**, meaning memory-bound workloads prefer lower
+clocks — but that signal is not strong enough to beat the constant.
+
+**This makes the collected consumer-GPU data more important, not less.** The open question becomes
+whether one frequency is similarly dominant on consumer silicon, or whether chip-to-chip variance
+makes per-chip tuning worth it there. That is the silicon-lottery question, and this dataset — one
+V100 — structurally cannot answer it.
 
 ---
 
