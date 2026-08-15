@@ -66,6 +66,22 @@ consumer hardware, openly and reproducibly, and release the dataset.
 - The dataset is a **33×13 matrix with no workload feature columns** and **no voltage column**.
   "Predict from workload characteristics" is structurally impossible on it.
 
+### External datasets — verified downloadable 2026-08-15, fetch with `scripts/Get-Dataset.ps1`
+
+| Dataset | What it is | Why it matters |
+|---|---|---|
+| `data/raw/` V100 set | 33 workloads × 13 core frequencies, one V100 | The original basis. Core clock only, no voltage. |
+| `data/external/gtx1080ti-*.csv` | **Consumer** GTX 1080 Ti, 600 rows, 30 apps, **core 1600–2000 × mem 4000–5500 MHz** | A **2D sweep** — core crossed with memory clock, an axis the V100 set lacks entirely. Plus GTX 2070 Super, 400 rows. |
+| `data/external/all-gpus.json` | 2,824 GPUs, numeric specs (sms, tdp, memoryBandwidth, memoryBus, processSize, clocks). Apache-2.0 | Activates the specs-conditioning extension point in `curve_model.py`. **Contains the RTX 5060 Ti.** |
+| `data/external/benchmarks.csv` | ~500 consumer cards, 422 with wattage (mining hashrate/W) | External sanity check on perf-per-watt *ordering* across cards. Not training data. |
+
+⚠️ **HKBU-HPML repos use the `master` branch, not `main`.** Raw URLs 404 silently otherwise.
+
+⚠️ **Spec sheets describe REFERENCE cards, not his.** The table lists the 5060 Ti 16GB at boost
+2572 MHz / TDP 180 W; his card reports max SM 3090 MHz and a 200 W limit (180 W default). TDP
+matches the default limit exactly, which validates the source — but his is a factory-OC board
+running above reference. Never treat a spec-sheet clock as the measured clock.
+
 ### The hardware (RTX 5060 Ti, driver 610.88) — verified by direct probing
 
 | Fact | Value |

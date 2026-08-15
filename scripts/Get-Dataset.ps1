@@ -1,45 +1,79 @@
 <#
 .SYNOPSIS
-    Downloads the public GPU-DVFS-Dataset CSVs into data/raw/.
+    Downloads the external datasets this project builds on.
 
 .DESCRIPTION
-    The dataset is not redistributed in this repository - its license has not been checked,
-    and re-hosting someone else's data without that check is not a thing to do casually.
-    This script fetches it from the source instead.
+    None of these are redistributed in this repository. Their licenses are either unchecked
+    or do not clearly permit re-hosting, and re-hosting someone else's data without that
+    check is not a thing to do casually. This fetches them from source instead.
 
-    Source: https://github.com/zyjopensource/GPU-DVFS-Dataset
-    Contents: a single NVIDIA V100, 33 workloads, 13 core frequencies (757-1530 MHz).
+    Everything lands under data/ and is gitignored.
+
+.PARAMETER Only
+    Fetch a single dataset by key instead of all of them. See the table in the script.
 #>
 
 [CmdletBinding()]
 param(
-    [string]$OutputDirectory = ""
+    [string]$Only = ""
 )
 
 $ErrorActionPreference = "Stop"
+$repoRoot = Split-Path $PSScriptRoot -Parent
 
-if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
-    $OutputDirectory = Join-Path $PSScriptRoot "..\data\raw"
-}
-if (-not (Test-Path $OutputDirectory)) {
-    New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
-}
-$OutputDirectory = (Resolve-Path $OutputDirectory).Path
+$datasets = @(
+    @{
+        Key     = "v100"
+        Dir     = "data\raw"
+        Files   = @("dataset_performance.csv", "dataset_power.csv", "dataset_efficiency.csv")
+        BaseUrl = "https://raw.githubusercontent.com/zyjopensource/GPU-DVFS-Dataset/main/"
+        Note    = "Single NVIDIA V100, 33 workloads, 13 core frequencies (757-1530 MHz). Core clock only, no voltage."
+    },
+    @{
+        Key     = "gtx1080ti"
+        Dir     = "data\external"
+        Files   = @("gtx1080ti-dvfs-real-Performance-Power.csv", "gtx2070s-dvfs-real-Performance-Power.csv")
+        BaseUrl = "https://raw.githubusercontent.com/HKBU-HPML/GPU-DVFS-Job-Schedule/master/csvs/"
+        Note    = "CONSUMER cards. 1080 Ti: 600 rows, 30 apps, core 1600-2000 x mem 4000-5500 MHz - a 2D sweep, which the V100 set does not have. 2070 Super: 400 rows."
+    },
+    @{
+        Key     = "gpuspecs"
+        Dir     = "data\external"
+        Files   = @("all-gpus.json")
+        BaseUrl = "https://raw.githubusercontent.com/RightNow-AI/RightNow-GPU-Database/main/data/"
+        Note    = "2,824 GPUs, already-numeric fields (sms, tdp, memoryBandwidth, memoryBus, processSize, clocks). Apache-2.0. Includes RTX 5060 Ti."
+    },
+    @{
+        Key     = "mining"
+        Dir     = "data\external"
+        Files   = @("benchmarks.csv")
+        BaseUrl = "https://raw.githubusercontent.com/kylemcdonald/ethereum-emissions/main/input/"
+        Note    = "~500 rows, 422 with wattage. Consumer-card hashrate and power, aggregated from mining sources. External sanity check on perf-per-watt ordering, not training data."
+    }
+)
 
-$baseUrl = "https://raw.githubusercontent.com/zyjopensource/GPU-DVFS-Dataset/main/"
-$files = @("dataset_performance.csv", "dataset_power.csv", "dataset_efficiency.csv")
+foreach ($dataset in $datasets) {
+    if ($Only -ne "" -and $dataset.Key -ne $Only) { continue }
 
-Write-Host "[DATASET] Downloading GPU-DVFS-Dataset into $OutputDirectory"
+    $targetDir = Join-Path $repoRoot $dataset.Dir
+    if (-not (Test-Path $targetDir)) { New-Item -ItemType Directory -Force -Path $targetDir | Out-Null }
 
-foreach ($file in $files) {
-    $destination = Join-Path $OutputDirectory $file
-    try {
-        Invoke-WebRequest -Uri ($baseUrl + $file) -OutFile $destination -UseBasicParsing
-        $size = (Get-Item $destination).Length
-        Write-Host "[DATASET]   OK   $file ($size bytes)"
-    } catch {
-        Write-Host "[DATASET]   FAIL $file - $($_.Exception.Message)"
+    Write-Host ""
+    Write-Host "[DATASET] $($dataset.Key) -> $($dataset.Dir)"
+    Write-Host "[DATASET]   $($dataset.Note)"
+
+    foreach ($file in $dataset.Files) {
+        $destination = Join-Path $targetDir $file
+        try {
+            Invoke-WebRequest -Uri ($dataset.BaseUrl + $file) -OutFile $destination -UseBasicParsing -TimeoutSec 60
+            $size = (Get-Item $destination).Length
+            Write-Host ("[DATASET]   OK   {0} ({1:N0} bytes)" -f $file, $size)
+        } catch {
+            Write-Host ("[DATASET]   FAIL {0} - {1}" -f $file, $_.Exception.Message)
+        }
     }
 }
 
-Write-Host "[DATASET] Done. Check the dataset's license before quoting its numbers in a write-up."
+Write-Host ""
+Write-Host "[DATASET] Done. Check each dataset's license before quoting its numbers in a write-up."
+Write-Host "[DATASET] NOTE: the HKBU-HPML repos use the 'master' branch, not 'main' - raw URLs break silently otherwise."

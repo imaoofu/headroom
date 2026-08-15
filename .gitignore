@@ -1,5 +1,7 @@
-# The public dataset is downloaded, not redistributed - see scripts/Get-Dataset.ps1
+# Public datasets are downloaded, not redistributed - see scripts/Get-Dataset.ps1
 data/raw/*.csv
+data/external/*.csv
+data/external/*.json
 
 # Smoke-test output. Real stability runs SHOULD be committed - they are the contribution.
 data/stability-runs/*smoketest*
