@@ -1,0 +1,18 @@
+# The public dataset is downloaded, not redistributed - see scripts/Get-Dataset.ps1
+data/raw/*.csv
+
+# Smoke-test output. Real stability runs SHOULD be committed - they are the contribution.
+data/stability-runs/*smoketest*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
