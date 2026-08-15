@@ -188,6 +188,46 @@ Carried over from a previous research project, because they were learned the exp
 
 ---
 
+## Related work
+
+Checked directly, not just found by search title, before being trusted enough to list here.
+
+**Prior art — read this one first.** ["Predictable GPUs Frequency Scaling for Energy and
+Performance"](https://dl.acm.org/doi/10.1145/3337821.3337833) (ICPP 2019) predicts optimal core
+*and* memory frequency from static code features across three architectures (Kepler, Maxwell,
+Volta), trained on 106 micro-benchmarks. The [follow-up](https://www.mdpi.com/2079-3197/8/2/37)
+reports XGBoost at R²=0.9646 on Volta. This is the closest existing work to what this project does
+— read it before claiming anything here is new, and cite it regardless.
+
+**Independent corroboration of the headroom-gap magnitude.**
+[arXiv:2501.08219](https://arxiv.org/abs/2501.08219), LLM inference under DVFS, frequency swept
+180–2842 MHz on modern hardware, found **42% energy savings for a 1–6% latency increase**. Different
+hardware, different workload class, same order of magnitude as this repo's measured 44.4% figure.
+Worth a line in the results section as a cross-check, not as data to build on.
+
+**Methods citation this project actually needs.**
+[JimZeyuYang/GPU_Power_Benchmark](https://github.com/JimZeyuYang/GPU_Power_Benchmark) — companion
+to *"Accurate and Convenient Energy Measurements for GPUs: A Detailed Study of NVIDIA GPU's
+Built-in Power Sensor"* (2024). Documents that `nvidia-smi` power readings carry a boxcar averaging
+window, a specific update rate, and transient response lag. `Log-GpuStability.ps1` samples power
+from `nvidia-smi` at 1 Hz — this paper is the honest account of what those numbers do and don't
+mean, and belongs in the methods section of any write-up.
+
+**Independent sanity-check numbers for this exact card.**
+[hholtmann/llm-consumer-gpu-benchmark](https://github.com/hholtmann/llm-consumer-gpu-benchmark)
+covers RTX 5060 Ti/5070 Ti/5090 with committed power, temperature, and throttle results. It is
+**fixed-clock, no DVFS** — not usable as training data — but its published power draw and thermal
+numbers for the 5060 Ti are worth comparing collected data against.
+
+**Broader context, not per-chip data.**
+[MLPerf Power](https://mlcommons.org/2025/03/ml-commons-power-hpca/) has 1,841 public submissions
+with measured energy, but it's system wall-plug energy — MLCommons explicitly says a per-chip
+figure isn't a metric they define. Useful for framing, not for training.
+
+**Checked and ruled out.** `shashikantilager/gpu-ddvfs` — code only, no dataset committed.
+
+---
+
 ## License and attribution
 
 The GPU-DVFS-Dataset belongs to its authors and is not redistributed here. Check its license before
