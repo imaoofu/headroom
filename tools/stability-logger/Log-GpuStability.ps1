@@ -188,10 +188,40 @@ $queryFailureCount = 0
 $concerningSampleCount = 0
 $samples = New-Object System.Collections.ArrayList
 $completedFullDuration = $false
+$stoppedByUser = $false
+
+# Ctrl+C in PowerShell's default handling unwinds through try/finally (so the CSV writer
+# below still closes safely) but then terminates the WHOLE script - which would skip the
+# verdict and session.json entirely, despite this script's own banner promising "Ctrl+C
+# stops early" as a clean way to stop. TreatControlCAsInput turns Ctrl+C into an ordinary
+# keypress instead of a termination signal, so it can be detected inside the loop and
+# handled as a normal early exit that still reaches the verdict section below.
+#
+# This throws "the handle is invalid" with no real console attached (a scheduled task, a
+# redirected/non-interactive session). MUST degrade gracefully rather than crash - a stress
+# test that dies before it starts because of a keyboard-handling nicety would be worse than
+# not having the nicety at all. Caught during testing, in a non-interactive shell.
+$consoleControlAvailable = $true
+try {
+    [Console]::TreatControlCAsInput = $true
+} catch {
+    $consoleControlAvailable = $false
+    Write-Host "[LOGGER] No interactive console detected - early Ctrl+C detection is unavailable this run. Duration will run to completion; the script still works, it just cannot be told to stop early."
+}
 
 try {
     $deadline = $startTime.AddSeconds($DurationSeconds)
     while ((Get-Date) -lt $deadline) {
+        if ($consoleControlAvailable -and [Console]::KeyAvailable) {
+            $key = [Console]::ReadKey($true)
+            if ($key.Key -eq "C" -and ($key.Modifiers -band [ConsoleModifiers]::Control)) {
+                Write-Host ""
+                Write-Host "[LOGGER] Ctrl+C received - stopping now and writing a verdict for what was collected so far."
+                $stoppedByUser = $true
+                break
+            }
+        }
+
         $now = Get-Date
         $elapsed = [math]::Round(($now - $startTime).TotalSeconds, 1)
 
@@ -240,10 +270,13 @@ try {
 
         Start-Sleep -Seconds $IntervalSeconds
     }
-    $completedFullDuration = $true
+    if (-not $stoppedByUser) { $completedFullDuration = $true }
 } finally {
     $writer.Close()
     $writer.Dispose()
+    if ($consoleControlAvailable) {
+        try { [Console]::TreatControlCAsInput = $false } catch { }
+    }
 }
 
 # --- Verdict --------------------------------------------------------------------------
@@ -262,7 +295,11 @@ if ($concerningSampleCount -gt 0) {
     [void]$flags.Add("$concerningSampleCount sample(s) showed hardware slowdown or thermal throttling")
 }
 if (-not $completedFullDuration) {
-    [void]$flags.Add("run did not reach its full duration - stopped early or interrupted")
+    if ($stoppedByUser) {
+        [void]$flags.Add("stopped early by the user (Ctrl+C) - shorter sample window, weaker evidence than a full run")
+    } else {
+        [void]$flags.Add("run did not reach its full duration for an unknown reason - stopped early or interrupted")
+    }
 }
 if ($sampleCount -eq 0) {
     [void]$flags.Add("no samples were collected at all")
