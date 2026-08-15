@@ -82,6 +82,31 @@ consumer hardware, openly and reproducibly, and release the dataset.
 matches the default limit exactly, which validates the source — but his is a factory-OC board
 running above reference. Never treat a spec-sheet clock as the measured clock.
 
+### 🔑 The published consumer DVFS datasets sweep the WRONG RANGE (2026-08-15)
+
+Reproduce with `python analysis/compare_consumer.py`. Every dataset placed on a common axis —
+swept range as a percentage of the card's **rated boost clock**, taken from the specs database:
+
+| Dataset | Swept range | Mean gap | At ceiling |
+|---|---|---|---|
+| GTX 1080 Ti (consumer) | **101–126%** of boost | 1.00% | 60% of apps |
+| RTX 2070 Super (consumer) | **95–118%** of boost | 3.34% | 20% of apps |
+| Tesla V100 (datacenter) | **55–111%** of boost | **44.40%** | 0% |
+
+**Both published consumer datasets are OVERCLOCKING sweeps.** They start at or above stock and go
+up. They structurally cannot locate an efficiency optimum, because the optimum lives *below* stock
+(the V100's sat at 62% of its max).
+
+🛑 **Their small measured gaps are NOT evidence that consumer GPUs lack headroom.** They are
+evidence that nobody swept the range where headroom lives. Never cite the 1.0% figure as a null,
+and never conclude "the V100 finding does not transfer to consumer silicon" from it — that
+conclusion is unsupported and backwards.
+
+✅ **This validates this project's own sweep design.** `-MinFrequencyPercent 40` covers the region
+every published consumer dataset misses entirely. The justification is therefore stronger than
+"no open consumer data exists" — it is **"the consumer data that exists sweeps the wrong range."**
+That is a sharper, more defensible contribution claim, and it is checkable by anyone.
+
 ### The hardware (RTX 5060 Ti, driver 610.88) — verified by direct probing
 
 | Fact | Value |
