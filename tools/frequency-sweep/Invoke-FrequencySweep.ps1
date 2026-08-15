@@ -57,6 +57,14 @@
 .PARAMETER MeasureSeconds
     How long to sample telemetry at each frequency. Default 20.
 
+.PARAMETER MaxBaselineUtilization
+    Refuse to start if the GPU is already busier than this percentage before our workload
+    runs. Default 10.
+
+    This guard protects the whole dataset. A sweep run while a game, a video, a local LLM
+    server or an animated wallpaper is on the card measures that load mixed with ours at
+    every frequency, inseparably. The output looks like ordinary data and is worthless.
+
 .PARAMETER DryRun
     Plan the sweep and print the frequencies WITHOUT touching GPU state. Always do this first.
 
@@ -80,6 +88,7 @@ param(
     [int]$SettleSeconds = 8,
     [int]$MeasureSeconds = 20,
     [int]$SampleIntervalSeconds = 1,
+    [double]$MaxBaselineUtilization = 10,
     [string]$OutputDirectory = "",
     [switch]$DryRun
 )
@@ -144,6 +153,46 @@ function Read-Telemetry {
         Utilization  = [double]$parts[3]
         ThrottleMask = $parts[4]
     }
+}
+
+function Get-BaselineUtilization {
+    param([string]$Smi, [int]$Samples = 5)
+    # Measures what the GPU is doing BEFORE our workload starts. Anything materially above
+    # zero means something else is competing for the card.
+    $values = @()
+    for ($i = 0; $i -lt $Samples; $i++) {
+        $reading = Read-Telemetry -Smi $Smi
+        if ($null -ne $reading) { $values += $reading.Utilization }
+        Start-Sleep -Milliseconds 600
+    }
+    if ($values.Count -eq 0) { return $null }
+    return [math]::Round((($values | Measure-Object -Average).Average), 1)
+}
+
+function Get-HeavyGpuProcesses {
+    param([string]$Smi)
+    # Windows always has a dozen shell/compositor processes touching the GPU; those are
+    # unavoidable and near-free. These are the ones that render CONTINUOUSLY and will
+    # contaminate a measurement.
+    $known = @(
+        "wallpaper64", "wallpaper32", "wallpaperservice32",   # Wallpaper Engine - animated wallpapers render nonstop
+        "opera", "chrome", "msedge", "firefox", "brave",      # browsers composite and play video
+        "Discord", "Spotify", "steamwebhelper",
+        "obs64", "obs32",
+        "ollama", "ollama_llama_server",                      # local LLM inference will saturate the card
+        "python", "pythonw"                                   # another sweep or training run already going
+    )
+    $found = @()
+    try {
+        $lines = @(& $Smi --query-compute-apps=process_name --format=csv,noheader 2>$null)
+        foreach ($line in $lines) {
+            $name = [System.IO.Path]::GetFileNameWithoutExtension(("$line").Trim())
+            foreach ($candidate in $known) {
+                if ($name -like "*$candidate*" -and ($found -notcontains $name)) { $found += $name }
+            }
+        }
+    } catch { }
+    return $found
 }
 
 function Reset-GpuClocks {
@@ -217,7 +266,37 @@ if (-not $elevated) {
     exit 3
 }
 
-if ($WorkloadCommand -eq "") {
+# --- Is anything else using the GPU? -------------------------------------------------
+#
+# This is the guard that protects the entire dataset. A sweep run while a game, a browser
+# playing video, a local LLM, or an animated wallpaper is on the card measures THAT load
+# mixed with ours, at every frequency, with no way to separate them afterwards. The result
+# looks like perfectly ordinary data and is silently worthless.
+#
+# Utilisation is the robust signal - it catches anything, including processes not on any
+# known-offenders list. Process names are only a hint for what to go close.
+
+if ($WorkloadCommand -ne "") {
+    Write-Host "[SWEEP] Checking the GPU is quiet before starting..."
+    $baseline = Get-BaselineUtilization -Smi $nvidiaSmi
+    $heavy = Get-HeavyGpuProcesses -Smi $nvidiaSmi
+
+    if ($null -ne $baseline -and $baseline -gt $MaxBaselineUtilization) {
+        Write-Host ""
+        Write-Host ("[SWEEP] REFUSING TO START: GPU is already {0}% busy before any workload of ours." -f $baseline)
+        if ($heavy.Count -gt 0) {
+            Write-Host ("[SWEEP] Likely culprits on the GPU right now: {0}" -f ($heavy -join ", "))
+        }
+        Write-Host "[SWEEP] Close games, browsers playing video, animated wallpapers, and local LLM"
+        Write-Host "[SWEEP] servers, then re-run. Competing load contaminates EVERY frequency point"
+        Write-Host "[SWEEP] and cannot be separated out afterwards - the data would look fine and be wrong."
+        Write-Host ("[SWEEP] Override with -MaxBaselineUtilization <pct> if you know what you are doing.")
+        exit 4
+    }
+
+    Write-Host ("[SWEEP] Baseline utilisation {0}% - clear to start." -f $baseline)
+
+} else {
     $idleCheck = Read-Telemetry -Smi $nvidiaSmi
     if ($null -ne $idleCheck -and $idleCheck.Utilization -lt 20) {
         Write-Host ("[SWEEP] WARNING: GPU utilisation is {0}% and no -WorkloadCommand was given." -f $idleCheck.Utilization)
@@ -282,27 +361,68 @@ try {
 
         Start-Sleep -Seconds $SettleSeconds
 
-        $workloadSeconds = $null
-        if ($WorkloadCommand -ne "") {
-            $workloadStart = Get-Date
-            try {
-                cmd.exe /c $WorkloadCommand 2>&1 | Out-Null
-            } catch {
-                Write-Host "[SWEEP] Workload command errored at $target MHz: $($_.Exception.Message)"
-            }
-            $workloadSeconds = [math]::Round(((Get-Date) - $workloadStart).TotalSeconds, 3)
-        }
-
         $samples = New-Object System.Collections.ArrayList
         $throttleSeen = @{}
-        $deadline = (Get-Date).AddSeconds($MeasureSeconds)
-        while ((Get-Date) -lt $deadline) {
-            $reading = Read-Telemetry -Smi $nvidiaSmi
-            if ($null -ne $reading) {
-                [void]$samples.Add($reading)
-                $throttleSeen[$reading.ThrottleMask] = $true
+        $workloadSeconds = $null
+        $workloadJson = $null
+
+        if ($WorkloadCommand -ne "") {
+            # Telemetry MUST be sampled while the workload is running. Running the workload
+            # first and sampling afterwards measures the card at IDLE, which would produce a
+            # power curve that says nothing about power under load - a silently worthless
+            # dataset. So: launch the workload as a separate process, sample power for as
+            # long as it runs, then collect its output.
+            $stdoutPath = [System.IO.Path]::GetTempFileName()
+            $stderrPath = [System.IO.Path]::GetTempFileName()
+            $workloadStart = Get-Date
+
+            $process = Start-Process -FilePath "cmd.exe" `
+                -ArgumentList "/c", $WorkloadCommand `
+                -PassThru -NoNewWindow `
+                -RedirectStandardOutput $stdoutPath `
+                -RedirectStandardError $stderrPath
+
+            while (-not $process.HasExited) {
+                $reading = Read-Telemetry -Smi $nvidiaSmi
+                if ($null -ne $reading) {
+                    [void]$samples.Add($reading)
+                    $throttleSeen[$reading.ThrottleMask] = $true
+                }
+                Start-Sleep -Seconds $SampleIntervalSeconds
             }
-            Start-Sleep -Seconds $SampleIntervalSeconds
+            $process.WaitForExit()
+            $workloadSeconds = [math]::Round(((Get-Date) - $workloadStart).TotalSeconds, 3)
+
+            $stdoutText = ""
+            if (Test-Path $stdoutPath) { $stdoutText = (Get-Content $stdoutPath -Raw) }
+            if ($process.ExitCode -ne 0) {
+                $errText = ""
+                if (Test-Path $stderrPath) { $errText = (Get-Content $stderrPath -Raw) }
+                Write-Host "[SWEEP] Workload exited $($process.ExitCode) at $target MHz. stderr: $(($errText -split "`n" | Select-Object -First 2) -join ' ')"
+            }
+
+            # The benchmark's own --json output carries its internal timing, which is more
+            # precise than our wall-clock wrapper (it excludes process startup and CUDA init).
+            foreach ($line in ($stdoutText -split "`r?`n")) {
+                $trimmed = $line.Trim()
+                if ($trimmed.StartsWith("{") -and $trimmed.EndsWith("}")) {
+                    try { $workloadJson = $trimmed | ConvertFrom-Json } catch { }
+                }
+            }
+
+            Remove-Item $stdoutPath, $stderrPath -ErrorAction SilentlyContinue
+        } else {
+            # No workload supplied: assume an external load is already running and just
+            # sample for the configured window.
+            $deadline = (Get-Date).AddSeconds($MeasureSeconds)
+            while ((Get-Date) -lt $deadline) {
+                $reading = Read-Telemetry -Smi $nvidiaSmi
+                if ($null -ne $reading) {
+                    [void]$samples.Add($reading)
+                    $throttleSeen[$reading.ThrottleMask] = $true
+                }
+                Start-Sleep -Seconds $SampleIntervalSeconds
+            }
         }
 
         if ($samples.Count -eq 0) {
@@ -328,6 +448,10 @@ try {
             temperature_max_c      = $tempStats.Maximum
             utilization_avg_pct    = [math]::Round($utilStats.Average, 1)
             workload_seconds       = $workloadSeconds
+            bench_seconds          = if ($null -ne $workloadJson) { $workloadJson.duration_seconds } else { $null }
+            bench_throughput       = if ($null -ne $workloadJson) { $workloadJson.throughput } else { $null }
+            bench_throughput_unit  = if ($null -ne $workloadJson) { $workloadJson.throughput_unit } else { $null }
+            bench_ok               = if ($null -ne $workloadJson) { $workloadJson.ok } else { $null }
             samples                = $samples.Count
             throttle_masks_seen    = ($throttleSeen.Keys -join ";")
         }
