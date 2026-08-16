@@ -533,7 +533,7 @@ In the 13-point coarse run `gemm`'s peak stood 1.8% above the points ±218 MHz o
 the same run contained an unexplained 0.6% non-monotonicity between 1987 and 2205 MHz. On synthetic
 curves with a known peak, this grid and realistic noise, the raw argmax moved **53–60 MHz between
 identical passes**. Comparing two argmaxes would have compared two coin flips. The measured
-repeatability here was worse than assumed at design time — median 2.6% for `gemm` and 1.7% for
+repeatability here was worse than assumed at design time — median 2.4% for `gemm` and 1.7% for
 `membw` between passes, driven by power rather than by throughput, whose pass-to-pass agreement was
 0.2–1%.
 
@@ -566,10 +566,14 @@ answers are known by construction, and not by inspection of the code.
 
 | | vertex | 95% CI |
 |---|---|---|
-| `gemm` pass 1 | 1508 MHz | 1452–1580 |
+| `gemm` pass 1 † | 1508 MHz | 1452–1580 |
 | `gemm` pass 2 | 1480 MHz | 1446–1524 |
 | `membw` pass 1 | 1636 MHz | 1590–1668 |
 | `membw` pass 2 | 1632 MHz | 1576–1667 |
+
+† excluding the two contaminated points identified below. The two `gemm` fits agree within 28 MHz
+and the two `membw` fits within 4 MHz, while the gap between workloads is ~150 MHz — so the effect
+is larger than the disagreement between repeats of the same measurement.
 
 Pooled: `gemm` **1488 MHz**, `membw` **1634 MHz**, difference **−146 MHz (95% CI −187 to −93)**.
 All 52 points held their locked clock exactly, none overshot, and all 52 had power windowed to the
@@ -610,7 +614,7 @@ clock before power overtakes throughput — which is exactly a *higher* optimum.
 bandwidth-saturated kernel would not behave this way, and building one is the correct next test.
 
 Second, **the effect is statistically clear and practically small.** Running `gemm` at `membw`'s
-optimum costs 1.6% efficiency; running `membw` at `gemm`'s costs 1.9%. The optima differ, but the
+optimum costs 1.6% efficiency; running `membw` at `gemm`'s costs 1.8%. The optima differ, but the
 penalty for using one frequency for both is under 2% — which is itself a useful result for a
 recommender, and a caution against over-reading the 150 MHz gap.
 
