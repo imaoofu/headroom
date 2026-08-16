@@ -142,12 +142,19 @@ gap. The bug would have understated the consumer headroom gap by more than half.
 `membw` is *insensitive* — the contrast the whole compute-vs-memory-bound comparison rests on —
 has not been swept yet.
 
+**The 40% floor is too high on this card.** In the stock-curve sweep, efficiency was still rising at
+the lowest frequency measured (128.5 GFLOP/J at 1236 MHz against 92.2 at sustained max boost). An
+optimum sitting on the lowest point tested is the exact signature this project uses to disqualify
+other consumer datasets. Lower `-MinFrequencyPercent` before claiming an optimum.
+
 ### ⚠️ A manual OC silently destroys a sweep
 
 In that run `-lgc 2167` produced **2942 MHz** — the cap was not applied at all, overshooting by
-775 MHz. nvidia-smi cannot exceed its own cap, so something outside it owned the V/F curve;
-an MSI Afterburner profile with a flattened curve (pinning ~2950 MHz above ~925 mV) fits both the
-overshoot and the fact that 1237 MHz locked normally, being below the flattened region.
+775 MHz. Re-running the identical grid with the Afterburner curve reset to stock produced
+**2143.8 MHz, held** (`20260815-234947_verify-3pt-stock`). Same script, same targets, one variable:
+the flattened V/F curve (≈3010 MHz above 925 mV) is the cause, not merely consistent with it.
+1237 MHz locked normally in both runs, being below the curve's ~1900 MHz floor where the override
+does not reach.
 
 The damage is not the one bad row. **Overshooting points collapse onto the same achieved clock**,
 so a grid that reports N points delivers fewer, with duplicates quietly overweighting one

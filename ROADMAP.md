@@ -25,6 +25,20 @@ Nothing here is research. It is the difference between "code exists" and "code i
 - **[CORE] Deliberately trigger a failure and check it gets caught.** Push an undervolt until
   something actually crashes, and confirm the logger records it. A detector that has never seen a
   positive case is not known to work. This is the single highest-value hour in Phase 0.
+- ✅ **[BLOCKER] Verify the fixed-work benchmark actually measures anything.** Done — and it did not,
+  at first. Two instrumentation bugs made every number wrong (`nvidia-smi` inside the timed region
+  cost `membw` 50.5% of its duration; power was averaged over a wider window than performance,
+  understating load power 16%). Both fixed and verified against rated hardware limits: `gemm` 74% of
+  peak FP32, `membw` 92% of peak bandwidth. Frequency response confirmed end-to-end — 2.38× the
+  clock gave 2.57× the throughput. Commit `33ffe56`.
+- **[CORE] Sweep `membw`.** Only `gemm` has ever been swept. That `membw` is clock-*insensitive* is
+  the contrast the entire two-workload design exists to demonstrate, and it is still an assumption.
+  One sweep closes it.
+- **[CORE] Lower the sweep floor and find the actual optimum.** The stock-curve sweep found
+  efficiency still *rising* at 1236 MHz, the bottom of the 40% grid — the same "optimum lands on the
+  lowest frequency tested" signature this project uses in commit `14b4c46` to disqualify the
+  published consumer datasets. The 40% floor was reasoned, not measured, and the measurement does not
+  support it. Re-sweep at a lower floor before claiming any optimum.
 - **[CORE] Add a `LICENSE` file** and check the GPU-DVFS-Dataset's license before quoting its data
   in any write-up. Still open.
 
@@ -49,6 +63,16 @@ The part nobody else can replicate, and the reason the project is worth doing at
   - *Repeated units of one popular GPU model* → answers "how much does headroom vary between
     supposedly identical chips?" This is the silicon-lottery question and it needs same-SKU repeats.
   - These need different builds tested. **Pick one before collecting, not after.**
+- **[CORE] Run a controlled stock-versus-tuned sweep on the same unit.** Two validation sweeps
+  incidentally straddled this: the tuned configuration sustained 2942 MHz at 162.91 W / 17.42 TFLOP/s
+  against stock's 2617.6 MHz at 167.03 W / 15.40 TFLOP/s — **+13.1% throughput for −2.5% power**.
+  That is the project's whole thesis in one comparison, and it is currently worth nothing, because
+  the runs were separate, background load differed (6.2% vs 3.6%), and thermal state was not matched.
+  Interleaved on one chip under matched conditions, it becomes the headline result. This is now the
+  highest-value single measurement available.
+- **[CORE] Reset any overclocking utility to stock before collecting.** Not hygiene — an active V/F
+  curve override silently defeats `nvidia-smi -lgc`, collapsing grid points onto one achieved clock
+  while every CSV row still looks well-formed. Verified both ways; see `data/frequency-sweeps/`.
 - **[CORE] Record what was applied, every single time.** `-AppliedSettings` is the one field nothing
   can reconstruct later. A run without it is close to worthless.
 - **[STRETCH] Commit real runs to the repo as they accumulate.** The dataset is the contribution.

@@ -223,6 +223,27 @@ entry points, which were deliberately excluded as unstable across driver revisio
 
 Measurements therefore fix the core clock and observe the power the card draws to sustain it.
 
+**Third-party V/F curve overrides silently defeat clock locking.** `nvidia-smi -lgc` is not
+authoritative when another utility owns the voltage-frequency curve. On the target device with an
+MSI Afterburner profile applied — the curve flattened to ≈3010 MHz for every voltage above 925 mV —
+a request for 2167 MHz produced a sustained **2942 MHz**, overshooting the cap by 775 MHz, while
+1237 MHz locked normally. Repeating the identical sweep with the curve reset to stock, 2167 MHz
+produced 2143.8 MHz and held. The flattened curve is therefore the cause rather than merely
+consistent with the observation.
+
+The failure is not benign, because it is not a random error. Requests falling inside the overridden
+region collapse onto the **same** achieved clock, so a grid reports more distinct frequencies than
+it measured and silently overweights one, while every row still looks well-formed. In the affected
+sweep, 2 of 3 targets landed on one clock. Sweeps therefore record the direction of any lock miss:
+*below* target indicates the device could not sustain the request (power or thermal limits, expected
+at the top of the range where maximum boost is a bin no device holds — 3090 MHz sustains 2617.6 MHz
+here), whereas *above* target indicates the cap was never applied, which `nvidia-smi` cannot do
+unaided. Distinct achieved clocks are counted against planned points and reported per session.
+
+This generalises beyond the present setup: any measurement or auto-tuning tool that assumes
+`-lgc` is authoritative will silently mis-sample on the many consumer systems that run a persistent
+overclocking profile.
+
 ### 3.3 Workload design
 
 Performance measurement requires **fixed work**, not fixed time. Standard stress tools (OCCT,
@@ -240,29 +261,60 @@ compute/memory-bound axis identified in §2.1:
 Both perform identical arithmetic on every invocation, so wall-clock duration is a valid performance
 metric and efficiency follows as work ÷ (duration × power).
 
-Iteration counts are fixed per workload (120 for `gemm`, 600 for `membw`), sized for approximately
-15 s at full boost, and **held constant across every frequency in a sweep**. Preliminary runs at 30
-iterations completed in 0.7–4.1 s, which proved too short for the device to reach steady clock and
-thermal state and left kernel-launch overhead visible in throughput.
+Iteration counts are fixed per workload (120 for `gemm`, 1200 for `membw`), sized for approximately
+8–9 s of device work at full boost, and **held constant across every frequency in a sweep**.
+Preliminary runs at 30 iterations completed in 0.7–4.1 s, which proved too short for the device to
+reach steady clock and thermal state and left kernel-launch overhead visible in throughput.
+
+`membw`'s count was originally 600, which appeared to yield a 9.4 s run. Once instrumentation
+overhead was excluded from the timer (§3.4) only 4.7 s of that proved to be memory traffic, and the
+count was doubled to restore the intended duration.
 
 ### 3.4 Measurement protocol
 
 For each target frequency:
 
-1. Lock the core clock (`nvidia-smi -lgc`) and verify the lock held; readings drifting more than
-   30 MHz from target are flagged.
+1. Lock the core clock (`nvidia-smi -lgc`) and verify the lock held; readings deviating more than
+   30 MHz from target are flagged, **with the direction recorded** (§3.2).
 2. Wait 8 s for the device to settle.
-3. Launch the benchmark as a separate process and **sample telemetry concurrently at 1 Hz while it
-   runs**, recording SM clock, memory clock, power, temperature, utilisation, and the decoded
-   throttle-reason bitmask.
-4. On completion, record the benchmark's internally-timed duration, which excludes process startup
-   and CUDA initialisation.
+3. Launch the benchmark as a separate process and **sample telemetry concurrently at 2 Hz while it
+   runs**, recording SM clock, memory clock, power, temperature, utilisation, the decoded
+   throttle-reason bitmask, and a timestamp per sample.
+4. On completion, record the benchmark's internally-timed duration and **restrict the power average
+   to the samples falling inside that same timed interval**, which the benchmark reports in epoch
+   time.
 5. Reset clocks (`nvidia-smi -rgc`) in a `finally` block that executes on every exit path, including
    interrupt, and verify the reset took effect.
 
-Concurrent sampling is essential rather than incidental: an earlier implementation sampled after the
-workload completed and therefore recorded **idle** power at every frequency — a defect that produces
-a plausible-looking but meaningless dataset.
+**Measurement-instrumentation defects.** Three separate defects in this protocol produced
+plausible-looking but wrong data, and are recorded because each was invisible on inspection and
+detectable only by checking measurements against known device limits.
+
+*Post-hoc sampling.* An early implementation sampled after the workload completed and therefore
+recorded **idle** power at every frequency. Concurrent sampling is essential rather than incidental.
+
+*Instrumentation inside the timed region.* The benchmark's temperature check invoked `nvidia-smi`
+every 5 iterations between the start and stop of its performance timer. Each invocation is a process
+spawn costing ≈42 ms, so `membw` at 600 iterations spent **50.5%** of its measured duration waiting
+on a subprocess, and `gemm` 10.0%. Corrected throughput moved from 204.83 to 414.23 GB/s and from
+15.60 to 17.62 TFLOP/s — respectively 92% and 74% of the device's rated 448 GB/s and ≈23.7 TFLOPS
+FP32, whereas the uncorrected `membw` figure of 46% of peak bandwidth was the signal that something
+was wrong. Polling is now time-based (an iteration-based cadence samples a fast device more often
+than a slow one) and its cost is measured and subtracted; `duration_seconds` is work-only, with
+`wall_seconds` and `monitoring_overhead_seconds` reported alongside for audit.
+
+*Mismatched averaging windows.* Power was averaged over the workload **process** while performance
+was taken from the benchmark's internal timer, so the power average included ≈2.3 s of interpreter
+startup and CUDA initialisation at idle: 124.77 W recorded against 148.52 W actually drawn. Since
+efficiency is throughput ÷ power, this divided a load measurement by a partly-idle one.
+
+Neither of the latter two was a constant offset. Both were fixed wall-clock costs, so each shrank as
+a proportion of the run as the clock was locked lower, and they biased the efficiency curve in
+**opposite** directions — instrumentation-in-timer penalising high frequencies, power dilution
+flattering them. A frequency-dependent bias in either duration or power is a bias in the *location*
+of the efficiency optimum, which is the quantity of interest. Measured on a validation sweep, the
+power correction alone recovered 8.6% at 1236 MHz against 22.8% at 2942 MHz, and changed the
+apparent efficiency gap between those points from 7.9% to 21.1%.
 
 The sweep grid spans **40–100% of the device maximum** (1237–3090 MHz here, 13 points). The floor is
 deliberate: consumer devices report supported clocks as low as 180 MHz, which are never
@@ -369,7 +421,43 @@ because when one frequency is optimal for most units a constant is already near-
 
 ### 5.4 Consumer hardware measurements
 
-`[PENDING — no original data collected]`
+`[PRELIMINARY — 3 points, one unit, one workload. Tool-validation runs, not a designed dataset.]`
+
+The first frequency-locked measurements on an RTX 5060 Ti (`gemm`, FP32, stock V/F curve,
+`20260815-234947_verify-3pt-stock`):
+
+| Target | Achieved | Throughput | Power | Efficiency |
+|---|---|---|---|---|
+| 1237 MHz | 1235.9 MHz | 6.68 TFLOP/s | 51.97 W | **128.5 GFLOP/J** |
+| 2167 MHz | 2143.8 MHz | 12.21 TFLOP/s | 107.44 W | **113.6 GFLOP/J** |
+| 3090 MHz | 2617.6 MHz | 15.40 TFLOP/s | 167.03 W | **92.2 GFLOP/J** |
+
+Two observations, both provisional at three points on a single unit.
+
+**Efficiency decreases monotonically across the swept range**, and the most efficient point measured
+is **39.4%** more efficient than the device's own sustained maximum boost. This is the same direction
+and a comparable magnitude to the 44.4% found on the V100 reference (§5.1), and it is the first
+indication that the headroom result is not an artefact of datacentre silicon. It is a **lower bound**
+on the gap, not an estimate of it: the optimum was not located, only bracketed from above.
+
+**The sweep floor is too high to find the optimum.** Efficiency is still rising at the lowest point
+measured, which is precisely the signature this work identifies in §2.7 as disqualifying the
+published consumer datasets — an optimum landing on the lowest frequency tested indicates a range
+that stops short. The 40% floor was chosen (§3.4) on the reasoning that lower clocks are never
+efficiency-optimal for real work; **on this device that reasoning is not supported by measurement,**
+and the floor must be lowered before any efficiency optimum is claimed. Applying the paper's own
+criterion to the paper's own default is the reason this is stated here rather than quietly fixed.
+
+**Incidental comparison: a manual tune beat stock at the top of the range.** The earlier validation
+sweep ran with an Afterburner profile applied (flattened V/F curve, ≈3010 MHz above 925 mV). At the
+maximum-boost request, that configuration sustained 2942 MHz at 162.91 W and 17.42 TFLOP/s, against
+stock's 2617.6 MHz at 167.03 W and 15.40 TFLOP/s — **+13.1% throughput for −2.5% power, ≈15.9%
+better efficiency.** This is the paper's central thesis in miniature: conservative stock behaviour
+leaves measurable headroom that an empirically-found configuration recovers. It is reported as an
+observation, not a result. The two sweeps were run separately rather than interleaved, background
+utilisation differed (6.2% against 3.6%), thermal state was not matched, and n = 1 chip, 1 workload,
+1 configuration. A controlled stock-versus-tuned comparison on the same unit is required before this
+is more than suggestive, and is the obvious next measurement.
 
 ### 5.5 Cross-chip variation
 

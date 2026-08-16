@@ -26,6 +26,33 @@ Reset any overclocking utility to stock before collecting data intended for the 
 
 ## Runs
 
+### `20260815-234947_verify-3pt-stock` — first usable sweep
+
+Same 3-point grid, Afterburner reset to stock. All three targets locked or undershot honestly, so
+this measured **3 distinct frequencies**. Baseline utilisation 3.6%, no throttle flags at any point.
+
+| Target | Achieved | Throughput | Power | Efficiency |
+|---|---|---|---|---|
+| 1237 MHz | 1235.9 MHz | 6.68 TFLOP/s | 51.97 W | 128.5 GFLOP/J |
+| 2167 MHz | 2143.8 MHz | 12.21 TFLOP/s | 107.44 W | 113.6 GFLOP/J |
+| 3090 MHz | 2617.6 MHz | 15.40 TFLOP/s | 167.03 W | 92.2 GFLOP/J |
+
+It also settled the cause of the previous run's lock failure. `-lgc 2167` gave 2942 MHz with the
+flattened curve applied and 2143.8 MHz with it reset — same script, same grid, one variable. The
+V/F override is the cause, not merely consistent with the symptom.
+
+**Two findings, both provisional at three points on one unit:**
+
+1. Efficiency falls monotonically with frequency; the lowest point measured is **39.4% more
+   efficient** than sustained max boost. Same direction and comparable magnitude to the V100's
+   44.4%, and a lower bound rather than an estimate — the optimum was bracketed, not located.
+2. **The 40% sweep floor is too high.** Efficiency is still climbing at 1236 MHz, which is exactly
+   the signature this project uses in commit `14b4c46` to disqualify other consumer datasets. The
+   floor needs lowering before any optimum is claimed here.
+
+Still only `gemm`. `membw` has never been swept, so the compute-vs-memory-bound contrast that the
+two-workload design exists to test remains untested.
+
 ### `20260815-233703_verify-3pt` — TOOL VERIFICATION, NOT DATASET
 
 Three-point sweep run to verify the benchmark measures anything real. It does, and the run is
