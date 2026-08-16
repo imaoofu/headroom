@@ -64,7 +64,8 @@ python gpu_workload.py --workload gemm
 | `-FrequencyCount` | 13 | Matches the V100 dataset's grid size. |
 | `-MinFrequencyPercent` | 40 | Floor as a % of max clock. See below. |
 | `-SettleSeconds` | 8 | Wait after locking before measuring. |
-| `-MeasureSeconds` | 20 | Telemetry sampling window per point. |
+| `-MeasureSeconds` | 20 | Telemetry window per point — **only** when no `-WorkloadCommand` is given. With a workload, sampling runs as long as the workload does. |
+| `-SampleIntervalSeconds` | 0.5 | Telemetry period. Power is averaged over the benchmark's timed region only (~8–10 s), so this needs to be fast enough to leave a usable number of samples inside it. |
 | `-DryRun` | off | Plan only, touch nothing. |
 
 **On `-MinFrequencyPercent`:** consumer cards report absurdly low clocks as supported — an
@@ -72,6 +73,92 @@ RTX 5060 Ti offers 180 MHz against a 3090 MHz max, under 6%. Sweeping evenly fro
 third of the run on frequencies that will never be efficiency-optimal and makes a fixed-work
 benchmark crawl. The V100 dataset only swept 49–100% of its max and found its optimum at 62%. The
 default of 40% keeps the grid where the answer lives.
+
+---
+
+## Measurement integrity
+
+Two bugs were found by benchmarking the benchmark against known hardware limits, on an
+RTX 5060 Ti. Both are fixed; both are recorded here because both produced data that looked
+entirely ordinary and was wrong.
+
+**1. Monitoring was inside the timed region.** The temperature check ran every 5 iterations
+between the start and stop of the performance timer. An `nvidia-smi` call is a process spawn —
+**42 ms** on this machine — so at `membw`'s 600 iterations that was 120 spawns, and *over half*
+the measured duration was the GPU sitting idle waiting on a subprocess.
+
+| | before | after | sanity check |
+|---|---|---|---|
+| `gemm` | 15.60 TFLOP/s | **17.62 TFLOP/s** | 74% of this card's ~23.7 TFLOPS FP32 ✅ |
+| `membw` | 204.83 GB/s | **414.23 GB/s** | 92% of its 448 GB/s ✅ |
+
+The corrected figures land where a well-formed SGEMM and a stream benchmark should; the
+originals did not, and `membw` at 46% of peak bandwidth was the tell.
+
+The check is now **time-based** rather than iteration-based (an iteration cadence polls more
+often on a fast card than a slow one) and its subprocess time is measured and subtracted.
+`duration_seconds` is work-only; `wall_seconds` and `monitoring_overhead_seconds` are reported
+alongside it so the correction is auditable.
+
+**2. Power was averaged over a wider window than performance.** The sweep sampled power for the
+whole workload *process* while taking performance from the benchmark's internal timer — so the
+average included **~2.3 s of Python import and CUDA init at idle**. Replicating the sweep's exact
+sampling loop: `power_avg_w` recorded **124.77 W** against **148.52 W** actually drawn under
+load, a **16%** understatement of a number that efficiency divides by.
+
+The benchmark now stamps its timed region in epoch time (`timed_region_start_unix` /
+`_end_unix`) and the sweep windows its samples to that interval, recording `power_window_applied`
+and keeping the whole-process figure as `power_avg_process_w` for comparison. If stamps are
+missing or fewer than two samples land in the window, it falls back to the process-wide average
+and says so loudly rather than reporting a diluted number silently.
+
+**Why this mattered more than the absolute error:** both were fixed wall-clock offsets, so each
+shrank as a fraction of the run when the sweep locked the clock lower — and they tilted the
+efficiency curve in *opposite* directions. Overhead-in-timer penalised high frequencies (pushing
+the apparent optimum down); power dilution flattered them (pushing it up). Frequency-dependent
+bias in duration or power is bias in the location of the efficiency optimum, which is the single
+number this project exists to measure.
+
+### Verified end-to-end (3-point sweep, RTX 5060 Ti, `20260815-233703_verify-3pt`)
+
+| target | achieved | duration | throughput | power (windowed) | power (process-wide) |
+|---|---|---|---|---|---|
+| 1237 MHz | 1236 ✅ | 19.47 s | 6.78 TFLOP/s | 52.34 W | 47.83 W |
+| 2167 MHz | 2942 ❌ | 7.57 s | 17.42 TFLOP/s | 162.91 W | 132.67 W |
+| 3090 MHz | 2941 | 7.69 s | 17.16 TFLOP/s | 162.62 W | 133.81 W |
+
+**Frequency response holds.** 2.38× the clock produced 2.57× the throughput, so fixed-work
+duration does track core clock and the performance metric is real. (Slightly super-linear;
+the low-clock point ran 19 s and was exposed to background desktop load for longer, which is
+the likeliest explanation and a reason to sweep on a quiet machine.)
+
+**The power-window fix is worth more than the static estimate suggested**, and in the predicted
+pattern: it recovered 8.6% at 1236 MHz but **22.8%** at 2942 MHz, because a fixed ~2.3 s of CUDA
+init is a larger share of a 7.6 s run than a 19.5 s one. Efficiency computed from the diluted
+numbers reads 141.7 vs 131.3 GFLOP/J — a 7.9% gap. Corrected: 129.5 vs 106.9 GFLOP/J — a **21.1%**
+gap. The bug would have understated the consumer headroom gap by more than half.
+
+**Still unverified:** the `membw` half. That `gemm` is clock-sensitive is now measured; that
+`membw` is *insensitive* — the contrast the whole compute-vs-memory-bound comparison rests on —
+has not been swept yet.
+
+### ⚠️ A manual OC silently destroys a sweep
+
+In that run `-lgc 2167` produced **2942 MHz** — the cap was not applied at all, overshooting by
+775 MHz. nvidia-smi cannot exceed its own cap, so something outside it owned the V/F curve;
+an MSI Afterburner profile with a flattened curve (pinning ~2950 MHz above ~925 mV) fits both the
+overshoot and the fact that 1237 MHz locked normally, being below the flattened region.
+
+The damage is not the one bad row. **Overshooting points collapse onto the same achieved clock**,
+so a grid that reports N points delivers fewer, with duplicates quietly overweighting one
+frequency. That 3-point sweep measured 2 distinct clocks. On a 13-point grid, the entire middle
+of the range can vanish into one value while the CSV still looks complete.
+
+The sweep now detects this: `lock_miss_direction` separates `above` (cap not applied — investigate)
+from `below` (power/thermal limits — ordinary, and expected at max boost, where 3090 MHz honestly
+runs at 2941). It reports distinct-clocks-measured against planned, and names the collapsed
+targets. **Reset any overclocking utility to stock before a real sweep, and check
+`distinct_clocks_measured` in the session JSON before using the data.**
 
 ---
 
@@ -93,7 +180,8 @@ the reset path matters more than the measurement.
 workload has no path to permanent hardware damage, and the card enforces its own thermal and power
 limits underneath anything software requests. Additional rails regardless:
 
-- Temperature ceiling checked between iterations (`--max-temp`, default 88 °C), aborts cleanly.
+- Temperature ceiling polled every `--temp-check-seconds` (default 2 s) against `--max-temp`
+  (default 88 °C), aborts cleanly.
 - Finite, bounded iteration count. No infinite loops.
 - VRAM freed on exit including on error, so repeated sweep points don't accumulate allocations.
 - It never touches clocks, voltage, or power limits — only the sweep script does, and only through

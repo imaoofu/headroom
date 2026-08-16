@@ -55,7 +55,16 @@
     Wait after locking a clock before measuring, so the card reaches steady state. Default 8.
 
 .PARAMETER MeasureSeconds
-    How long to sample telemetry at each frequency. Default 20.
+    How long to sample telemetry at each frequency. Default 20. Applies only when NO
+    -WorkloadCommand is given; with a workload, sampling runs for as long as it runs.
+
+.PARAMETER SampleIntervalSeconds
+    Telemetry sampling period, in seconds. Default 0.5.
+
+    When a workload is supplied, power is averaged over only the benchmark's timed region
+    (see below), which is a window of roughly 8-10 seconds. At the old 1 s period that left
+    under ten samples to average; 0.5 s doubles the resolution for a cost of ~42 ms per
+    nvidia-smi call, on a thread that is otherwise sleeping.
 
 .PARAMETER MaxBaselineUtilization
     Refuse to start if the GPU is already busier than this percentage before our workload
@@ -87,7 +96,7 @@ param(
     [int]$MinFrequencyPercent = 40,
     [int]$SettleSeconds = 8,
     [int]$MeasureSeconds = 20,
-    [int]$SampleIntervalSeconds = 1,
+    [double]$SampleIntervalSeconds = 0.5,
     [double]$MaxBaselineUtilization = 10,
     [string]$OutputDirectory = "",
     [switch]$DryRun
@@ -147,6 +156,9 @@ function Read-Telemetry {
     $parts = ("$($lines[0])") -split "\s*,\s*"
     if ($parts.Count -lt 5) { return $null }
     return [pscustomobject]@{
+        # Unix epoch seconds, same clock the benchmark stamps its timed region with, so
+        # samples can be matched to the interval that actually produced the performance number.
+        Timestamp    = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() / 1000.0
         SmClock      = [double]$parts[0]
         PowerDraw    = [double]$parts[1]
         Temperature  = [double]$parts[2]
@@ -382,23 +394,33 @@ try {
                 -RedirectStandardOutput $stdoutPath `
                 -RedirectStandardError $stderrPath
 
+            # Touching .Handle caches the process handle while the process is still alive.
+            # Without it, Start-Process -PassThru returns an object whose ExitCode reads back
+            # as $null after exit - and "$null -ne 0" is TRUE, so every successful point
+            # printed a failure message with a blank code. That made a real crash and a clean
+            # run produce identical output, i.e. no failure detection at all.
+            $processHandle = $process.Handle
+
             while (-not $process.HasExited) {
                 $reading = Read-Telemetry -Smi $nvidiaSmi
                 if ($null -ne $reading) {
                     [void]$samples.Add($reading)
                     $throttleSeen[$reading.ThrottleMask] = $true
                 }
-                Start-Sleep -Seconds $SampleIntervalSeconds
+                Start-Sleep -Milliseconds ([int]($SampleIntervalSeconds * 1000))
             }
             $process.WaitForExit()
             $workloadSeconds = [math]::Round(((Get-Date) - $workloadStart).TotalSeconds, 3)
 
             $stdoutText = ""
             if (Test-Path $stdoutPath) { $stdoutText = (Get-Content $stdoutPath -Raw) }
-            if ($process.ExitCode -ne 0) {
+            $exitCode = $process.ExitCode
+            if ($null -eq $exitCode) {
+                Write-Host "[SWEEP] WARNING: could not read the workload's exit code at $target MHz - relying on bench_ok from its JSON."
+            } elseif ($exitCode -ne 0) {
                 $errText = ""
                 if (Test-Path $stderrPath) { $errText = (Get-Content $stderrPath -Raw) }
-                Write-Host "[SWEEP] Workload exited $($process.ExitCode) at $target MHz. stderr: $(($errText -split "`n" | Select-Object -First 2) -join ' ')"
+                Write-Host "[SWEEP] Workload exited $exitCode at $target MHz. stderr: $(($errText -split "`n" | Select-Object -First 2) -join ' ')"
             }
 
             # The benchmark's own --json output carries its internal timing, which is more
@@ -421,7 +443,7 @@ try {
                     [void]$samples.Add($reading)
                     $throttleSeen[$reading.ThrottleMask] = $true
                 }
-                Start-Sleep -Seconds $SampleIntervalSeconds
+                Start-Sleep -Milliseconds ([int]($SampleIntervalSeconds * 1000))
             }
         }
 
@@ -430,10 +452,47 @@ try {
             continue
         }
 
-        $clockStats = $samples | Select-Object -ExpandProperty SmClock | Measure-Object -Average -Minimum -Maximum
-        $powerStats = $samples | Select-Object -ExpandProperty PowerDraw | Measure-Object -Average -Minimum -Maximum
-        $tempStats = $samples | Select-Object -ExpandProperty Temperature | Measure-Object -Average -Maximum
-        $utilStats = $samples | Select-Object -ExpandProperty Utilization | Measure-Object -Average
+        # Window the samples to the benchmark's timed region.
+        #
+        # Sampling necessarily spans the whole workload PROCESS, but performance is measured
+        # over a strictly smaller interval inside it. Averaging power across the difference
+        # mixes in ~2.3 s of Python import and CUDA init at idle - measured on this machine as
+        # 124.77 W recorded against 148.52 W actually drawn under load, a 16% understatement.
+        # Efficiency is throughput / power, so an efficiency curve built from the process-wide
+        # average is dividing a load number by a partly-idle one.
+        #
+        # The dilution also shrinks as the clock drops (the run lengthens while init stays
+        # ~2.3 s), so it is a frequency-dependent bias, not a constant offset that would
+        # cancel out of the comparison.
+        $statSamples = @($samples)
+        $windowApplied = $false
+        if ($null -ne $workloadJson -and
+            $null -ne $workloadJson.timed_region_start_unix -and
+            $null -ne $workloadJson.timed_region_end_unix) {
+
+            $windowStart = [double]$workloadJson.timed_region_start_unix
+            $windowEnd = [double]$workloadJson.timed_region_end_unix
+            $inWindow = @($samples | Where-Object { $_.Timestamp -ge $windowStart -and $_.Timestamp -le $windowEnd })
+
+            # Two samples is the floor for an average worth reporting. Below that, fall back to
+            # the whole process and say so - a loudly-flagged diluted number beats a silent one
+            # computed from a single reading.
+            if ($inWindow.Count -ge 2) {
+                $statSamples = $inWindow
+                $windowApplied = $true
+            } else {
+                Write-Host ("[SWEEP] WARNING: only {0} sample(s) fell inside the benchmark's timed region at {1} MHz." -f $inWindow.Count, $target)
+                Write-Host "[SWEEP] Falling back to whole-process averages for this point - its power figure is diluted by CUDA init."
+            }
+        } elseif ($WorkloadCommand -ne "") {
+            Write-Host "[SWEEP] WARNING: workload emitted no timed-region stamps at $target MHz - power averaged over the whole process."
+        }
+
+        $clockStats = $statSamples | Select-Object -ExpandProperty SmClock | Measure-Object -Average -Minimum -Maximum
+        $powerStats = $statSamples | Select-Object -ExpandProperty PowerDraw | Measure-Object -Average -Minimum -Maximum
+        $tempStats = $statSamples | Select-Object -ExpandProperty Temperature | Measure-Object -Average -Maximum
+        $utilStats = $statSamples | Select-Object -ExpandProperty Utilization | Measure-Object -Average
+        $processPowerStats = $samples | Select-Object -ExpandProperty PowerDraw | Measure-Object -Average
 
         $row = [pscustomobject]@{
             target_frequency_mhz   = $target
@@ -441,26 +500,47 @@ try {
             achieved_frequency_min = $clockStats.Minimum
             achieved_frequency_max = $clockStats.Maximum
             lock_held              = ([math]::Abs($clockStats.Average - $target) -le 30)
+            # Direction matters, and conflating the two hides the more dangerous failure.
+            # BELOW target = the card could not sustain the request (power/thermal limits) -
+            # ordinary, and expected at the top of the range where max boost is a bin the card
+            # never actually holds. ABOVE target = the cap was not applied at all, which
+            # nvidia-smi cannot do on its own. That means something outside nvidia-smi owns the
+            # V/F curve - typically an MSI Afterburner profile with a flattened curve, which
+            # pins a clock the card then refuses to drop below. That case is corrosive: several
+            # grid points collapse onto the SAME clock, and a sweep that looks like N points is
+            # really N-k, with duplicate rows that quietly overweight one frequency.
+            lock_miss_mhz          = [math]::Round($clockStats.Average - $target, 1)
+            lock_miss_direction    = if ([math]::Abs($clockStats.Average - $target) -le 30) { "none" }
+                                     elseif ($clockStats.Average -gt $target) { "above" }
+                                     else { "below" }
             power_avg_w            = [math]::Round($powerStats.Average, 2)
             power_min_w            = $powerStats.Minimum
             power_max_w            = $powerStats.Maximum
             temperature_avg_c      = [math]::Round($tempStats.Average, 1)
             temperature_max_c      = $tempStats.Maximum
             utilization_avg_pct    = [math]::Round($utilStats.Average, 1)
+            power_avg_process_w    = [math]::Round($processPowerStats.Average, 2)
+            power_window_applied   = $windowApplied
             workload_seconds       = $workloadSeconds
             bench_seconds          = if ($null -ne $workloadJson) { $workloadJson.duration_seconds } else { $null }
+            bench_wall_seconds     = if ($null -ne $workloadJson) { $workloadJson.wall_seconds } else { $null }
+            bench_monitoring_s     = if ($null -ne $workloadJson) { $workloadJson.monitoring_overhead_seconds } else { $null }
             bench_throughput       = if ($null -ne $workloadJson) { $workloadJson.throughput } else { $null }
             bench_throughput_unit  = if ($null -ne $workloadJson) { $workloadJson.throughput_unit } else { $null }
             bench_ok               = if ($null -ne $workloadJson) { $workloadJson.ok } else { $null }
-            samples                = $samples.Count
+            samples                = $statSamples.Count
+            samples_process        = $samples.Count
             throttle_masks_seen    = ($throttleSeen.Keys -join ";")
         }
         [void]$results.Add($row)
 
         $heldNote = "held"
-        if (-not $row.lock_held) { $heldNote = "DRIFTED" }
-        Write-Host ("[SWEEP]     {0,5} MHz -> achieved {1,6} MHz ({2}), {3,6} W, {4,3} C, util {5,3}%" -f `
-            $target, $row.achieved_frequency_avg, $heldNote, $row.power_avg_w, $row.temperature_avg_c, $row.utilization_avg_pct)
+        if ($row.lock_miss_direction -eq "above") { $heldNote = "OVERSHOT +$($row.lock_miss_mhz)" }
+        elseif ($row.lock_miss_direction -eq "below") { $heldNote = "UNDERSHOT $($row.lock_miss_mhz)" }
+        $powerNote = "whole process"
+        if ($windowApplied) { $powerNote = "{0} in-window of {1}" -f $statSamples.Count, $samples.Count }
+        Write-Host ("[SWEEP]     {0,5} MHz -> achieved {1,6} MHz ({2}), {3,6} W [{4}], {5,3} C, util {6,3}%" -f `
+            $target, $row.achieved_frequency_avg, $heldNote, $row.power_avg_w, $powerNote, $row.temperature_avg_c, $row.utilization_avg_pct)
     }
 } finally {
     Write-Host ""
@@ -481,6 +561,14 @@ if ($results.Count -eq 0) {
 $results | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
 
 $driftedPoints = @($results | Where-Object { -not $_.lock_held })
+$undilutedPoints = @($results | Where-Object { -not $_.power_window_applied })
+$overshotPoints = @($results | Where-Object { $_.lock_miss_direction -eq "above" })
+$undershotPoints = @($results | Where-Object { $_.lock_miss_direction -eq "below" })
+
+# Grid points that landed on the same achieved clock. Bucketed at 25 MHz because a lock that
+# holds still wanders a few MHz; two targets inside one bucket are one measurement, not two.
+$clockGroups = @($results | Group-Object { [math]::Round($_.achieved_frequency_avg / 25) })
+$collapsedGroups = @($clockGroups | Where-Object { $_.Count -gt 1 })
 
 $session = [ordered]@{
     session_label        = $SessionLabel
@@ -497,6 +585,11 @@ $session = [ordered]@{
     settle_seconds       = $SettleSeconds
     measure_seconds      = $MeasureSeconds
     drifted_points       = $driftedPoints.Count
+    overshot_points      = $overshotPoints.Count
+    undershot_points     = $undershotPoints.Count
+    distinct_clocks_measured = $clockGroups.Count
+    sample_interval_s    = $SampleIntervalSeconds
+    power_windowed_points = ($results.Count - $undilutedPoints.Count)
     supported_clock_count = $supported.Count
     samples_file         = Split-Path $csvPath -Leaf
     schema_version       = "0.1.0"
@@ -507,9 +600,31 @@ Write-Host ""
 Write-Host "[SWEEP] ===================== RESULT ====================="
 Write-Host ("[SWEEP] Measured {0} of {1} planned frequencies." -f $results.Count, $targets.Count)
 if ($abortedByUser) { Write-Host "[SWEEP] Sweep was stopped early by the user - partial curve." }
-if ($driftedPoints.Count -gt 0) {
-    Write-Host ("[SWEEP] WARNING: {0} point(s) drifted more than 30 MHz from their target." -f $driftedPoints.Count)
-    Write-Host "[SWEEP] The card overrode the lock - usually power or thermal limits. Those rows are suspect."
+if ($undershotPoints.Count -gt 0) {
+    Write-Host ("[SWEEP] NOTE: {0} point(s) ran BELOW their target by more than 30 MHz." -f $undershotPoints.Count)
+    Write-Host "[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected"
+    Write-Host "[SWEEP] at the top of the range, where max boost is a bin the card never actually holds."
+}
+
+if ($overshotPoints.Count -gt 0) {
+    Write-Host ""
+    Write-Host ("[SWEEP] *** {0} point(s) ran ABOVE their target - THE CLOCK CAP DID NOT APPLY. ***" -f $overshotPoints.Count)
+    Write-Host "[SWEEP] nvidia-smi cannot exceed its own cap, so something else owns the V/F curve -"
+    Write-Host "[SWEEP] typically an MSI Afterburner profile with a flattened curve pinning a high clock."
+    Write-Host "[SWEEP] Close it / reset to stock and re-run before trusting this data."
+    Write-Host "[SWEEP] Why this matters more than it looks: overshooting points collapse onto the SAME"
+    Write-Host "[SWEEP] achieved clock, so the run yields fewer distinct frequencies than it claims and"
+    Write-Host "[SWEEP] silently duplicates one. Check achieved_frequency_avg for repeats:"
+    foreach ($group in $collapsedGroups) {
+        Write-Host ("[SWEEP]   targets {0} MHz all ran at ~{1} MHz" -f `
+            (($group.Group | ForEach-Object { $_.target_frequency_mhz }) -join ", "), $group.Group[0].achieved_frequency_avg)
+    }
+    Write-Host ("[SWEEP] Distinct frequencies actually measured: {0} of {1} planned." -f $clockGroups.Count, $targets.Count)
+}
+if ($WorkloadCommand -ne "" -and $undilutedPoints.Count -gt 0) {
+    Write-Host ("[SWEEP] WARNING: {0} point(s) could not be windowed to the benchmark's timed region." -f $undilutedPoints.Count)
+    Write-Host "[SWEEP] Their power_avg_w is averaged over the whole workload process, so it includes"
+    Write-Host "[SWEEP] CUDA init at idle and understates load power. Check power_window_applied in the CSV."
 }
 if ($WorkloadCommand -eq "") {
     Write-Host "[SWEEP] No workload command was given, so there is NO performance metric in this data."

@@ -6,6 +6,11 @@ data/external/*.json
 # Smoke-test output. Real stability runs SHOULD be committed - they are the contribution.
 data/stability-runs/*smoketest*
 
+# Same rule for frequency sweeps: real sweeps are the contribution and belong in the repo.
+# Smoke tests do not. Anything else kept here needs an entry in the directory README saying
+# whether it is dataset-grade - see the verify-3pt run for why that matters.
+data/frequency-sweeps/*smoketest*
+
 # Python
 __pycache__/
 *.py[cod]

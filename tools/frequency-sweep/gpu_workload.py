@@ -20,13 +20,42 @@ TWO WORKLOADS, ON PURPOSE
                INSENSITIVE to core clock, which is the contrast that makes the comparison
                meaningful.
 
+MEASUREMENT INTEGRITY
+    Monitoring is not free and must not be counted as GPU work. An nvidia-smi call is a
+    process spawn: measured at 42 ms each on this machine. The temperature check used to
+    run every 5 iterations INSIDE the timed region, which cost 10% of gemm's reported
+    duration and 50.5% of membw's - at 600 iterations that was 120 spawns, so over half
+    of the "benchmark" was the GPU sitting idle waiting on a subprocess. Corrected,
+    membw measures 414 GB/s against 205 GB/s before, i.e. 92% of this card's 448 GB/s
+    rather than an implausible 46%.
+
+    Worse than the absolute error: that cost was a fixed wall-clock offset, so it shrank
+    as a fraction of the run when the sweep locked the clock lower. A frequency-dependent
+    bias in the duration is a bias in the efficiency optimum, which is the one number this
+    project exists to measure. Two rules follow, and both are load-bearing:
+
+      * The check is TIME-based (--temp-check-seconds), not iteration-based, so its
+        frequency does not depend on how fast the card happens to be running.
+      * The wall time spent inside nvidia-smi is measured and SUBTRACTED. The preceding
+        cuda.synchronize() is deliberately left inside the timed region - that is real
+        queued work draining, and excluding it would undercount.
+
+    duration_seconds is therefore work-only. wall_seconds and monitoring_overhead_seconds
+    are both reported alongside it so the correction is auditable rather than assumed.
+
+    The timed region is also stamped in Unix epoch time (timed_region_start_unix /
+    _end_unix) so Invoke-FrequencySweep.ps1 can window its power samples to exactly the
+    interval that produced the performance number. Without that, power was averaged over
+    the whole process lifetime - including ~2.3 s of Python import and CUDA init at idle,
+    which understated load power by 16% (124.77 W recorded against 148.52 W actual).
+
 SAFETY
     This is ordinary arithmetic - the same work any game or training run does. It cannot
     damage hardware: a compute workload has no path to permanent damage, and the card
     enforces its own thermal and power limits underneath anything software asks for.
     Belt and braces anyway:
 
-      * A temperature ceiling is checked between iterations; it aborts cleanly if crossed.
+      * A temperature ceiling is checked periodically; it aborts cleanly if crossed.
       * Iteration count is bounded and finite. No infinite loops, no unattended running.
       * It allocates a fixed, modest fraction of VRAM and frees it on exit, including on
         error, so a failed run does not strand memory.
@@ -51,6 +80,11 @@ import time
 
 # A single matmul of size N does roughly 2*N^3 floating point operations.
 FLOPS_PER_GEMM = lambda n: 2.0 * (n ** 3)
+
+# How often to align the CPU with the GPU inside the timed loop. Measured to cost nothing
+# (see the loop), and required for the temperature poll to see real progress rather than a
+# CPU that has already raced to the end of the queue.
+SYNC_EVERY_ITERATIONS = 5
 
 
 def readGpuTemperature():
@@ -77,14 +111,18 @@ def buildArgumentParser():
     parser.add_argument("--size", type=int, default=0,
                         help="Matrix dimension for gemm, or element count for membw. 0 picks a sensible default.")
     parser.add_argument("--iterations", type=int, default=0,
-                        help="Timed iterations. 0 picks a per-workload default sized for a ~15s run at "
-                             "full clock. MUST be held constant across every frequency in a sweep - "
+                        help="Timed iterations. 0 picks a per-workload default sized for ~8-9s of GPU "
+                             "work at full clock. MUST be held constant across every frequency in a sweep - "
                              "varying it breaks the fixed-work property that makes duration a valid "
                              "performance metric.")
     parser.add_argument("--warmup", type=int, default=5,
                         help="Untimed iterations first, so clocks and caches settle before measurement.")
     parser.add_argument("--max-temp", type=float, default=88.0,
                         help="Abort if GPU temperature reaches this (Celsius).")
+    parser.add_argument("--temp-check-seconds", type=float, default=2.0,
+                        help="How often to poll temperature during the run. Time-based on purpose: "
+                             "an iteration-based cadence polls more often on a fast card than a slow "
+                             "one, which puts a frequency-dependent bias in the measured duration.")
     parser.add_argument("--dtype", choices=["fp32", "fp16"], default="fp32",
                         help="fp32 is the conservative default and stresses the general pipeline.")
     parser.add_argument("--json", action="store_true",
@@ -133,15 +171,21 @@ def main():
     if size <= 0:
         size = 8192 if args.workload == "gemm" else 256 * 1024 * 1024
 
-    # Iteration defaults target roughly 15 seconds at full boost clock, measured on an
-    # RTX 5060 Ti. Short runs are actively misleading here: at 30 iterations gemm finished
-    # in 4.1s and membw in 0.74s, which is not long enough for the card to reach a steady
-    # clock and thermal state, and leaves launch overhead visible in the throughput figure.
-    # A sweep locks the clock LOW as well as high, so the same iteration count will take
-    # 2-3x longer at the bottom of the range - that is expected and correct.
+    # Iteration defaults target roughly 8-9 seconds of ACTUAL GPU WORK at full boost clock,
+    # measured on an RTX 5060 Ti: gemm at 120 iterations takes 7.5-8.4 s, membw at 1200
+    # takes ~9.3 s. Short runs are actively misleading here - the card needs time to reach a
+    # steady clock and thermal state, and launch overhead stays visible in the throughput
+    # figure otherwise.
+    #
+    # membw's default was 600 while monitoring overhead was still inside the timer, which
+    # made it look like a 9.4 s run when only 4.7 s of it was memory traffic. Excluding the
+    # overhead exposed that, so the count is doubled to put real work back at ~9 s.
+    #
+    # A sweep locks the clock LOW as well as high, so the same iteration count takes 2-3x
+    # longer at the bottom of the range - that is expected and correct.
     iterations = args.iterations
     if iterations <= 0:
-        iterations = 120 if args.workload == "gemm" else 600
+        iterations = 120 if args.workload == "gemm" else 1200
 
     aborted = False
     abortReason = None
@@ -173,16 +217,43 @@ def main():
         torch.cuda.synchronize()
 
         started = time.perf_counter()
+        startedUnix = time.time()
         completedIterations = 0
+        monitoringSeconds = 0.0
+        lastTempCheck = started
+        checkInterval = max(0.1, args.temp_check_seconds)
 
-        for index in range(iterations):
+        for _ in range(iterations):
             step()
+            completedIterations += 1
 
-            # Check temperature every few iterations. Synchronising first makes the reading
-            # correspond to work actually finished, not work merely queued.
-            if index % 5 == 4:
+            # Two separate cadences, and the distinction is the whole point.
+            #
+            # The SYNC is iteration-based. It has to be: CUDA launches are asynchronous, so
+            # the CPU queues every kernel in milliseconds and then blocks at the final
+            # synchronize(). A purely time-based gate on perf_counter() therefore never fires
+            # at all - the loop is over before wall time advances - which silently disables
+            # the temperature ceiling. That regression was caught only by running it and
+            # noticing monitoring_overhead_seconds come back as exactly 0.000.
+            #
+            # Syncing this often is free: measured against a no-sync control, gemm ran 7.49 s
+            # both ways and membw 4.67 s both ways. The GPU is the bottleneck, so this waits
+            # on work that had to finish anyway.
+            if completedIterations % SYNC_EVERY_ITERATIONS == 0:
                 torch.cuda.synchronize()
+
+                # The nvidia-smi POLL is time-based, because that cost is real (42 ms per
+                # spawn) and an iteration cadence would poll a fast card more often than a
+                # slow one - putting a frequency-dependent bias in the measured duration.
+                now = time.perf_counter()
+                if now - lastTempCheck < checkInterval:
+                    continue
+
+                monitorStart = time.perf_counter()
                 currentTemp = readGpuTemperature()
+                monitoringSeconds += time.perf_counter() - monitorStart
+                lastTempCheck = time.perf_counter()
+
                 if currentTemp is not None:
                     peakTemp = max(peakTemp, currentTemp)
                     if currentTemp >= args.max_temp:
@@ -190,10 +261,10 @@ def main():
                         abortReason = f"temperature {currentTemp} C reached ceiling {args.max_temp} C"
                         break
 
-            completedIterations += 1
-
         torch.cuda.synchronize()
-        elapsed = time.perf_counter() - started
+        endedUnix = time.time()
+        wallSeconds = time.perf_counter() - started
+        elapsed = wallSeconds - monitoringSeconds
 
     except RuntimeError as error:
         message = str(error)
@@ -227,10 +298,18 @@ def main():
         "size": size,
         "iterations_requested": iterations,
         "iterations_completed": completedIterations,
+        # duration_seconds is work-only: monitoring subprocess time is subtracted. The raw
+        # figures are kept alongside it so the correction can be checked, not taken on faith.
         "duration_seconds": round(elapsed, 4),
+        "wall_seconds": round(wallSeconds, 4),
+        "monitoring_overhead_seconds": round(monitoringSeconds, 4),
         "seconds_per_iteration": round(elapsed / completedIterations, 6) if completedIterations else None,
         "throughput": throughput,
         "throughput_unit": "FLOP/s" if args.workload == "gemm" else "byte/s",
+        # Epoch bounds of the timed region, so the sweep can window its power samples to
+        # exactly the interval that produced the throughput above.
+        "timed_region_start_unix": round(startedUnix, 4),
+        "timed_region_end_unix": round(endedUnix, 4),
         "temperature_start_c": startTemp,
         "temperature_peak_c": peakTemp,
         "aborted": aborted,
@@ -242,7 +321,8 @@ def main():
 
     lines = [
         f"[WORKLOAD] {args.workload} on {deviceName} ({args.dtype}, size {size})",
-        f"[WORKLOAD] {completedIterations}/{iterations} iterations in {elapsed:.3f} s",
+        f"[WORKLOAD] {completedIterations}/{iterations} iterations in {elapsed:.3f} s of GPU work "
+        f"({wallSeconds:.3f} s wall, {monitoringSeconds:.3f} s monitoring excluded)",
         f"[WORKLOAD] Throughput: {humanValue:.2f} {humanUnit}",
         f"[WORKLOAD] Temperature: start {startTemp} C, peak {peakTemp} C",
     ]
