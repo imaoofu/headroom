@@ -11,32 +11,54 @@
 
 ## 1. Introduction
 
-*(Draft after Results exist — the framing depends on what the data shows. Skeleton only.)*
+Graphics processors ship with conservative default operating points. A vendor's default
+voltage-frequency behaviour must hold across millions of individually varying dies, in unknown
+thermal environments and unknown chassis, for a warranty period measured in years. That requirement
+necessarily produces margin, and the margin is not small: Leng et al. [8] measured approximately a
+20% voltage guardband on commercial GPUs, and showed that eliminating it entirely would yield up to
+25% energy savings.
 
-The argument, in order:
+That result is a decade old, and it was obtained on cards — the GTX 480 and GTX 680 — released in
+2010 and 2012. In the intervening period consumer GPU power management has changed considerably:
+successive generations of automatic boost, finer-grained factory binning, and per-chip
+characterisation now shipped as standard. Whether comparable margin remains, and where it sits, is
+not established for current consumer parts.
 
-1. GPUs ship with conservative default voltage-frequency behaviour, because vendor defaults must
-   be stable across millions of unknown units, in unknown thermal environments, for years.
-2. That conservatism leaves measurable efficiency on the table. Prior work quantifies it as a
-   voltage guardband of roughly 20% ⚠️.
-3. This is well studied on **datacenter** hardware. It is poorly studied on **consumer** hardware,
-   and — as this work shows in §3.3 — the public consumer datasets that do exist sweep a frequency
-   range that structurally cannot locate an efficiency optimum.
-4. This work measures the frequency-efficiency relationship on consumer GPUs across a range that
-   includes the optimum, releases the data openly, and asks whether the optimum is chip-specific
-   enough to justify per-chip measurement.
+Answering that question from published data turns out not to be possible, for a reason that is
+itself worth reporting. Two public DVFS datasets covering consumer GPUs exist, and both sweep core
+frequency only **at and above** the card's rated boost clock — 101–126% for a GTX 1080 Ti, 95–118%
+for an RTX 2070 Super. An efficiency optimum lies *below* stock: in the one public dataset that
+sweeps low enough, it sits at 62% of maximum frequency. The existing consumer datasets therefore
+cannot locate an optimum, and their correspondingly small measured efficiency gaps (1.00% and 3.34%)
+invite precisely the wrong conclusion — that consumer GPUs have little headroom — when what they
+actually show is a truncated measurement range (§2.7).
 
-**Contribution claim, stated narrowly and defensibly:**
+A second constraint shapes what can be measured rather than what has been. On the hardware studied
+here, GPU voltage is neither readable nor writable through any documented interface: enumeration of
+the driver's full management API surface returns no voltage-related function among 260 device
+operations (§3.2). Direct guardband measurement in the manner of [8], which requires undervolting
+until failure, is therefore unavailable. What remains accessible — and what this work measures — is
+the relationship between core frequency, power draw, and delivered performance.
 
-- An open, reproducible dataset of consumer-GPU frequency-power-performance measurements across a
-  range that includes the efficiency optimum.
-- A demonstration that existing public consumer DVFS datasets sweep at or above stock and therefore
-  cannot answer efficiency-optimum questions.
-- An evaluation of whether per-unit prediction beats a fixed-frequency policy, reported honestly
-  including when it does not.
+This paper makes three contributions:
 
-**Explicitly NOT claimed:** that this outperforms vendor boost algorithms, which already account
-for per-chip factory binning; or that the existence of a guardband is a new discovery.
+1. **An open dataset** of consumer-GPU frequency–power–performance measurements swept across
+   40–100% of maximum core clock, a range that contains the efficiency optimum, released with the
+   collection tooling and protocol.
+2. **A characterisation of why existing public consumer DVFS data cannot answer efficiency
+   questions**, placing each dataset on a common axis of swept range relative to rated boost clock,
+   and reproducible in a single script.
+3. **An evaluation of whether per-unit measurement is worth its cost** against a fixed-frequency
+   policy — reported including the case where it is not. On the reference dataset, a probe-based
+   model ties a single constant frequency, while the same probes reconstruct the full efficiency
+   curve accurately enough to reduce measurement effort by 77%. Those are distinct results and are
+   reported as such.
+
+Two claims are explicitly **not** made. This work does not outperform vendor boost algorithms, which
+already incorporate per-chip factory binning and against which a small independent study has no
+plausible advantage. And it does not claim the discovery of guardband or of inter-chip variation;
+both are established [8, 9]. The contribution is open, current-generation, reproducible measurement
+of a relationship whose public data is either datacenter-only or swept over the wrong range.
 
 ---
 
@@ -59,21 +81,43 @@ benchmark workloads.
 
 ### 2.2 Voltage guardbands and manufacturing variation
 
-Vendors set operating points with margin for worst-case silicon, temperature, and ageing. Studies
-that characterise this margin report a voltage guardband on the order of 20% of nominal, with
-elimination yielding up to roughly 25% energy savings ⚠️. Related work on minimum-operating-voltage
-(Vmin) characterisation quantifies core-to-core and chip-to-chip variation and shows guardband is
-partly *program-dependent* rather than a single per-chip constant ⚠️.
+Vendors set operating points with margin for worst-case silicon, temperature, and ageing. Leng et
+al. [8] measured this margin directly on commercial off-the-shelf cards by progressively undervolting
+until program output became incorrect, and report:
 
-Chip-to-chip variation is itself measurable at the system level: one characterisation of a GPU
-cluster reported an overall frequency variation of about 140 MHz (~11%) between nominally identical
-units, and up to a 10% performance difference at matched temperature ⚠️. Consumer-facing exposure of
-this variation has been limited and short-lived — GPU-Z's "ASIC quality" reading surfaced
-leakage-based binning for a period before being deprecated as unreliable.
+> "there exists about **20% voltage guardband** on those GPUs spanning two architectural
+> generations, which, if 'eliminated' completely, can result in **up to 25% energy savings** on one
+> of the studied GPU cards."
 
-**Positioning.** The existence and approximate size of the guardband is therefore *established*, not
-novel. What this work adds is open measurement on current consumer parts, across a range that
-includes the optimum, with released data.
+Per-card figures are finer-grained: a 9–18% guardband between nominal voltage and Vmin on a GTX 680,
+geometric-mean energy savings of 21% (GTX 680) and 15.8% (GTX 480), with savings ranging 14–25% and
+8–22% respectively. They further establish that Vmin is **program-dependent** rather than a single
+per-chip constant, and that voltage noise affects it more than process or temperature variation.
+
+**Two points about [8] matter for positioning this work, and neither is a criticism of it.**
+
+*First, it studied consumer cards — GTX 480 (Fermi, 2010) and GTX 680 (Kepler, 2012).* The
+guardband question has therefore already been answered on consumer silicon; it has simply not been
+revisited on parts more than a decade newer, whose power management (successive GPU Boost
+generations, finer factory binning) differs substantially.
+
+*Second, and more fundamentally, [8] measures a quantity this work cannot access.* They undervolt
+directly and detect the Vmin failure point. On the hardware studied here, voltage is neither
+readable nor writable through any documented interface (§3.2). This work therefore measures the
+**frequency–power–efficiency** relationship, not the voltage guardband. These are related but
+distinct quantities and are not presented as interchangeable.
+
+Chip-to-chip variation has been characterised at cluster scale by Sinha et al. [9], who collected
+over 18,800 hours of data across more than 90% of the GPUs in five HPC systems (Summit, Vortex,
+Frontera, Longhorn, Corona) and report **8% average performance variation (max 22%) between
+nominally identical GPUs of the same SKU**, with outliers up to **1.5× slower than the median GPU**.
+Consumer-facing exposure of such variation has been limited and short-lived — GPU-Z's "ASIC quality"
+reading surfaced leakage-based binning for a period before being deprecated as unreliable.
+
+**Positioning.** The existence and approximate size of both the guardband and inter-chip variation
+is therefore *established*, not novel. What this work adds is open, released measurement of the
+frequency–efficiency relationship on current consumer parts, across a range that includes the
+optimum.
 
 ### 2.3 Prediction models for frequency scaling
 
@@ -348,7 +392,7 @@ because when one frequency is optimal for most units a constant is already near-
 
 ## References
 
-**Verified** — opened and confirmed:
+**Verified** — primary source opened, quoted figures confirmed against it:
 
 - [3] Maliakel, Ilager, Brandic. *Characterizing LLM Inference Energy-Performance Tradeoffs across
   Workloads and GPU Scaling.* arXiv:2501.08219.
@@ -357,16 +401,34 @@ because when one frequency is optimal for most units a constant is already near-
 - [6] GPU-DVFS-Dataset. `github.com/zyjopensource/GPU-DVFS-Dataset`
 - [7] HKBU-HPML DVFS datasets. `github.com/HKBU-HPML/GPU-DVFS-Job-Schedule`,
   `github.com/HKBU-HPML/NV-DVFS-Benchmark`
+- [8] Leng, Buyuktosunoglu, Bertran, Bose, Janapa Reddi. *Safe Limits on Voltage Reduction
+  Efficiency in GPUs: a Direct Measurement Approach.* MICRO-48, December 2015. IBM T.J. Watson
+  Research Center / University of Texas at Austin.
+  PDF: `cs.sjtu.edu.cn/~leng-jw/resources/Files/leng15micro-gpuvminexp.pdf`
+  *Figures confirmed by reading the paper: ~20% guardband across two generations; up to 25% energy
+  savings on one card; 9–18% guardband on GTX 680 specifically; geomean savings 21% (GTX 680) and
+  15.8% (GTX 480); ranges 14–25% and 8–22%.*
+- [9] Sinha, Guliani, Jain, Tran, Sinclair, Venkataraman. *Not All GPUs Are Created Equal:
+  Characterizing Variability in Large-Scale, Accelerator-Rich Systems.* SC '22. arXiv:2208.11035.
+  *Figures confirmed: 8% average (max 22%) performance variation within identical SKUs; outliers up
+  to 1.5× slower than median; >18,800 hours across five clusters.*
 
 **⚠️ Located but not yet read in full** — open the primary source before submission:
 
 - [1] Guerreiro et al. *Predictable GPUs Frequency Scaling for Energy and Performance.* ICPP 2019.
-  DOI 10.1145/3337821.3337833
+  DOI 10.1145/3337821.3337833 — **the closest prior art; read this before finalising any novelty
+  claim.**
 - [2] *Accurate Energy and Performance Prediction for Frequency-Scaled GPU Kernels.* MDPI
   Computation 8(2):37.
 - [4] Measurement studies of GPU DVFS energy conservation (multiple; consolidate to one citation).
-- Voltage guardband characterisation (~20% guardband, ~25% savings) — **specific citation still
-  needed.** Currently second-hand; do not cite until the primary paper is read.
-- *Not All GPUs Are Created Equal: Characterizing Variability* — 140 MHz / ~11% figure needs
-  first-hand confirmation.
 - Rodinia benchmark suite. IISWC 2009.
+
+### Corrections made during citation verification
+
+Recorded because both errors would have reached a submitted draft:
+
+- **"~140 MHz / ~11% frequency variation"** attributed to [9] was **wrong** — a garbled second-hand
+  summary. The paper reports 8% average and 22% maximum *performance* variation, and 1.5× outliers.
+- **"9–18% guardband"** as the headline figure for [8] was **wrong** — that is the GTX 680-specific
+  range. The headline is ~20% across two architectural generations. This error came from a local
+  model's extraction of the PDF and was caught by checking the raw text.

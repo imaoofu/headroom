@@ -12,13 +12,13 @@ Status key: **[BLOCKER]** must happen before anything downstream is trustworthy 
 
 Nothing here is research. It is the difference between "code exists" and "code is known to work."
 
-- **[BLOCKER] Install Python and actually run the analysis scripts.** They have never been executed.
-  Every number they print is unverified until this happens. `pip install -r requirements.txt`, run
-  both scripts, and record what they output.
-- **[BLOCKER] Check what `predict_optimal_frequency.py` actually reports.** The honest possible
-  outcomes are (a) the probe model beats the fixed-frequency baseline, (b) it ties, (c) it loses.
-  All three are publishable; (b) and (c) mean the modelling question needs reframing, not hiding.
-  Do not move to Phase 1 without knowing which one happened.
+- ✅ **[BLOCKER] Install Python and actually run the analysis scripts.** Done — Python 3.12.10
+  installed, both scripts executed (pandas 3.0.5, numpy, sklearn 1.9.0). Commit `bf17aa1`.
+- ✅ **[BLOCKER] Check what `predict_optimal_frequency.py` actually reports.** Done — outcome (c):
+  it loses. The leave-one-workload-out probe model (Ridge) gives 0.883% mean regret vs. 0.837% for
+  the best-fixed-frequency baseline. Reported as the null it is, not hidden. Separately, the
+  headroom gap itself was measured: stock vs. each workload's own optimum gives up a mean 44.4%
+  efficiency (range 15.1–62.8%).
 - **[CORE] Run the stability logger under real load.** It has only ever seen an idle GPU. Run a real
   stress test and confirm the verdict logic behaves — especially the throttling path, which has
   never fired.
@@ -26,7 +26,7 @@ Nothing here is research. It is the difference between "code exists" and "code i
   something actually crashes, and confirm the logger records it. A detector that has never seen a
   positive case is not known to work. This is the single highest-value hour in Phase 0.
 - **[CORE] Add a `LICENSE` file** and check the GPU-DVFS-Dataset's license before quoting its data
-  in any write-up.
+  in any write-up. Still open.
 
 ---
 
