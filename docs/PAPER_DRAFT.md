@@ -503,12 +503,13 @@ achieved clock — a second, benign mechanism for the collapse described in §3.
 distinguished from it. Any stock-versus-tuned gap must define stock as the clock the device selects
 *for that workload*, not as a nameplate figure.
 
-**Whether workload type shifts the optimal frequency remains open.** §2.1's compute/memory-bound
-distinction and the V100's −0.666 correlation between frequency sensitivity and optimal clock both
-predict that a bandwidth-bound workload should prefer a *lower* optimum than a compute-bound one.
-The measurement here neither supports nor contradicts that: at a 217 MHz grid step the two optima
-fall in the same bin. The prediction is testable with a finer sweep over 1300–1800 MHz, which is
-cheap and is the obvious next measurement.
+**Workload type does shift the optimal frequency — in the direction opposite to the prediction.**
+§2.1's compute/memory-bound distinction and the V100's −0.666 correlation between performance
+retained at the lowest frequency and optimal clock both predict that the *less* frequency-sensitive
+workload should prefer a *lower* optimum. A fine sweep resolves the two optima and finds the
+reverse: `gemm` optimises at **1488 MHz** and `membw` at **1634 MHz**, a difference of
+**146 MHz (95% CI 93–187 MHz)**, with the bandwidth-oriented workload preferring the *higher*
+clock. Method, evidence and the reasons for caution are in §5.4.1.
 
 **Incidental comparison: a manual tune beat stock at the top of the range.** The earlier validation
 sweep ran with an Afterburner profile applied (flattened V/F curve, ≈3010 MHz above 925 mV). At the
@@ -520,6 +521,112 @@ observation, not a result. The two sweeps were run separately rather than interl
 utilisation differed (6.2% against 3.6%), thermal state was not matched, and n = 1 chip, 1 workload,
 1 configuration. A controlled stock-versus-tuned comparison on the same unit is required before this
 is more than suggestive, and is the obvious next measurement.
+
+#### 5.4.1 Resolving the two optima
+
+The coarse sweep placed both workloads' optima in the same 217 MHz bin, which is a statement about
+grid resolution rather than about the hardware. Separating them required a design change, because
+the obvious approach does not work.
+
+**An efficiency curve is flat near its optimum by construction, so its argmax is largely noise.**
+In the 13-point coarse run `gemm`'s peak stood 1.8% above the points ±218 MHz on either side, while
+the same run contained an unexplained 0.6% non-monotonicity between 1987 and 2205 MHz. On synthetic
+curves with a known peak, this grid and realistic noise, the raw argmax moved **53–60 MHz between
+identical passes**. Comparing two argmaxes would have compared two coin flips. The measured
+repeatability here was worse than assumed at design time — median 2.6% for `gemm` and 1.7% for
+`membw` between passes, driven by power rather than by throughput, whose pass-to-pass agreement was
+0.2–1%.
+
+The design therefore: **13 points over 1200–1900 MHz, two passes per workload, run in the order
+`gemm`, `membw`, `membw`, `gemm`**, with the optimum located by fitting the curve rather than by
+selecting a point. Three choices carry weight.
+
+*The band is wider than the peak.* A fit needs curvature to constrain a vertex; across 1300–1800 MHz
+the curve falls only ~2% from peak, against 8–9% across 1200–1900 MHz. Tightening a fine sweep
+around the peak buys frequency resolution and pays for it in signal.
+
+*The order is counterbalanced.* Sweeps run ascending and the card warms over a ~30 minute session,
+so run position is confounded with temperature. The ABBA order put each workload in one early and
+one late slot. It worked: `gemm` ran at 47–53 °C then 44–51 °C, `membw` at 39–49 °C then 45–52 °C,
+so drift landed on both workloads rather than on the difference between them.
+
+*The estimator is a cubic, not a parabola.* Efficiency curves are asymmetric — steep rise, gentle
+fall — and a symmetric parabola fitted to a skewed curve places its vertex on the shallow side.
+Measured on synthetic curves peaking at 1550 MHz: the parabola returned 1550/1564/1578/1587 MHz at
+skews of 0.0/0.3/0.6/0.8 with ±2 MHz scatter, while the cubic returned 1550 MHz at every skew with
+±5 MHz scatter. **The parabola is precise and wrong.** This is not a cosmetic difference: the two
+workloads have differently-shaped curves, so the bias does not cancel in the difference. Given two
+synthetic curves with an *identical* optimum at 1550 MHz and skews of 0.8 and 0.0, the parabola
+reported "+37 MHz, 95% CI +29 to +45, the optima do differ" — a false positive of the same size and
+direction as the effect being sought. The cubic reported no difference, correctly. That failure was
+caught by `analysis/test_analyze_fine_sweep.py`, which checks the estimator against curves whose
+answers are known by construction, and not by inspection of the code.
+
+**Result.** Each of the four sweeps locates a vertex independently, and they agree:
+
+| | vertex | 95% CI |
+|---|---|---|
+| `gemm` pass 1 | 1508 MHz | 1452–1580 |
+| `gemm` pass 2 | 1480 MHz | 1446–1524 |
+| `membw` pass 1 | 1636 MHz | 1590–1668 |
+| `membw` pass 2 | 1632 MHz | 1576–1667 |
+
+Pooled: `gemm` **1488 MHz**, `membw` **1634 MHz**, difference **−146 MHz (95% CI −187 to −93)**.
+All 52 points held their locked clock exactly, none overshot, and all 52 had power windowed to the
+benchmark's timed region.
+
+**The finding is robust to the one known contamination.** A console-selection freeze (§5.4.2)
+interrupted `gemm` pass 1 at its 1725 and 1785 MHz points, which read 7.3% and 4.6% below their
+pass-2 counterparts and produced throughput *falling* as clock *rose* — physically impossible, and
+identifiable without reference to the conclusion. Because those points depress `gemm`'s
+high-frequency flank, they bias its vertex downward, i.e. *toward* the reported effect. Removing
+them does not remove it:
+
+| Handling of the contaminated points | `gemm` | `membw` | difference |
+|---|---|---|---|
+| Retained | 1467 | 1634 | −167 (−204, −118) |
+| Dropped from `gemm` pass 1 | 1488 | 1634 | −146 (−187, −93) |
+| `gemm` pass 1 dropped entirely | 1480 | 1634 | −154 (−196, −103) |
+| Dropped from both `gemm` passes | 1489 | 1634 | −146 (−191, −88) |
+
+The contamination accounts for ~20 MHz of a ~150 MHz effect. The coarse sweep from the previous
+session — a separate run on a different grid — independently gives the same sign (`gemm` 1571 MHz,
+`membw` 1601 MHz by parabola over its four in-band points).
+
+**Why this is not yet a refutation of the V100 correlation.** Two reasons, and both should survive
+into any write-up.
+
+First, **`membw` is not memory-bound by the V100's own criterion.** That correlation classifies
+workloads by performance retained at the lowest frequency swept, with memory-bound meaning ≥90%
+retained. Evaluated at the same *relative* floor the V100's 757 MHz represented (49% of sustained
+maximum), `gemm` retains 46% — properly compute-bound — but `membw` retains **78%**, which falls in
+neither the ≥90% memory-bound class nor the <70% compute-bound class. §5.4 already established that
+this kernel is issue-limited rather than bandwidth-limited below ~1990 MHz. The prediction is
+therefore being tested outside the domain where its premise holds, and the mechanism is visible in
+the data: across 1200–1890 MHz `gemm` gains 66.9% throughput for 67.1% more power, while `membw`
+gains 26.8% for 25.8% more power. `membw`'s power grows more slowly with core clock because its
+consumption is dominated by a memory subsystem running at fixed clock, so it can afford more core
+clock before power overtakes throughput — which is exactly a *higher* optimum. A genuinely
+bandwidth-saturated kernel would not behave this way, and building one is the correct next test.
+
+Second, **the effect is statistically clear and practically small.** Running `gemm` at `membw`'s
+optimum costs 1.6% efficiency; running `membw` at `gemm`'s costs 1.9%. The optima differ, but the
+penalty for using one frequency for both is under 2% — which is itself a useful result for a
+recommender, and a caution against over-reading the 150 MHz gap.
+
+#### 5.4.2 An instrumentation hazard worth recording
+
+`gemm` pass 1 froze for six minutes mid-sweep with the GPU clock-locked and idle. The cause was not
+the benchmark, the sweep script, or the driver: Windows consoles enable QuickEdit by default, so a
+single click inside the window enters selection mode, and **selection mode blocks all output to that
+console**, suspending any process that writes progress. There is no error, the process stays alive,
+and the only visible trace is the word `Select` prepended to the window title.
+
+This is recorded because it is a silent failure mode for exactly the kind of long, unattended,
+elevated run this project depends on, and because its damage was *not* obvious: the interrupted
+point itself looked normal (it reheated during the settle interval), while the two neighbouring
+points were measurably corrupted. Both sweep tooling and the stability logger now disable QuickEdit
+at startup.
 
 ### 5.5 Cross-chip variation
 

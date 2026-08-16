@@ -26,6 +26,48 @@ Reset any overclocking utility to stock before collecting data intended for the 
 
 ## Runs
 
+### `20260816-124651` / `125959` / `130549` / `131140` — `*-fine-p1/p2` — the two optima, separated
+
+**Dataset-grade.** Four sweeps: 13 points over 1200–1900 MHz (~58 MHz step), both workloads, two
+passes each, run in the order `gemm, membw, membw, gemm`.
+
+The numbers below come from this exact command, which drops the two contaminated rows described
+further down. Without `--exclude` the script reports −167 MHz instead of −146 MHz, because those
+rows bias `gemm`'s vertex *toward* the reported effect; both figures are given so the difference is
+visible rather than buried in a flag:
+
+```powershell
+python analysis/analyze_fine_sweep.py --exclude "gemm:1:1725,gemm:1:1785"
+```
+
+| | `gemm` | `membw` |
+|---|---|---|
+| Efficiency optimum | **1488 MHz** | **1634 MHz** |
+| pass 1 / pass 2 agreement | 1508 / 1480 MHz | 1636 / 1632 MHz |
+| Difference | **−146 MHz** (95% CI −187 to −93) | |
+
+**The optima do differ, in the direction opposite to the prediction.** The V100's −0.666
+correlation implies the *less* frequency-sensitive workload should prefer a *lower* clock; `membw`
+prefers a **higher** one. Two reasons this is not a refutation, both in `docs/PAPER_DRAFT.md` §5.4.1:
+`membw` retains 78% of peak throughput at the equivalent relative floor and so belongs to neither
+the V100's ≥90% memory-bound class nor its <70% compute-bound class; and the effect is
+statistically clear but practically small — using one workload's optimum for the other costs under
+2% efficiency.
+
+Integrity: 52/52 points locked exactly (0 above, 0 below), 52/52 power-windowed, ≥20 in-window
+samples per point. Counterbalancing worked — `gemm` ran 47–53 °C then 44–51 °C, `membw` 39–49 °C
+then 45–52 °C, so thermal drift fell on both workloads rather than on the difference.
+
+**Two points in `gemm` pass 1 are contaminated and are documented rather than deleted.** A console
+QuickEdit freeze (see §5.4.2) stalled that sweep for six minutes; its 1725 and 1785 MHz points read
+7.3% and 4.6% below their pass-2 counterparts, with throughput *falling* as clock *rose*. The
+conclusion survives dropping them — the effect moves from −167 to −146 MHz — and the previous
+session's coarse sweep independently gives the same sign. **Do not use those two rows.**
+
+Note the repeatability figures before treating any single sweep as precise: median pass-to-pass
+efficiency difference was 2.6% for `gemm` and 1.7% for `membw`, driven by power, not throughput
+(0.2–1%). That is why this run has two passes and why the optimum is fitted rather than picked.
+
 ### `20260816-001048_5060ti-gemm-floor15` + `20260816-001734_5060ti-membw-floor15` — the result
 
 **The primary dataset.** 13 points each, 464–3090 MHz, stock V/F curve, both workloads on an

@@ -46,10 +46,19 @@ Nothing here is research. It is the difference between "code exists" and "code i
   *dense* sweep; on a sparse one it is equally consistent with the optimum lying between points one
   and two. Lowering the floor still helped, for the different reason that it proved the optimum
   interior rather than an edge.
-- **[CORE] Fine sweep 1300–1800 MHz to separate the two workloads' optima.** At the 217 MHz grid
-  step both land in the same bin, so the compute-vs-memory-bound prediction — that bandwidth-bound
-  work prefers a *lower* optimum, per the V100's −0.666 correlation — remains untested. Cheap, and
-  the one remaining question the two-workload design was built to answer.
+- ✅ **[CORE] Fine sweep to separate the two workloads' optima.** Done — 13 points × 1200–1900 MHz ×
+  2 workloads × 2 passes, counterbalanced. **The optima do differ: `gemm` 1488 MHz, `membw`
+  1634 MHz, −146 MHz (95% CI −187 to −93)** — and `membw` prefers the *higher* clock, opposite the
+  V100's −0.666 prediction. Two caveats carried forward, not buried: `membw` retains 78% at the
+  equivalent relative floor so it belongs to neither of the V100's sensitivity classes, and the
+  penalty for using one workload's optimum for the other is under 2%. Run
+  `python analysis/analyze_fine_sweep.py`. Swept 1200–1900 rather than 1300–1800 because a band
+  tight around the peak has no curvature for a fit to use.
+- **[CORE] Build a genuinely bandwidth-saturated kernel and re-run the fine sweep.** This is now the
+  sharpest open question. `membw` is issue-limited below ~1990 MHz, so the V100 prediction was
+  tested outside the domain where its premise holds. A kernel that saturates DRAM across the whole
+  swept range would test it properly, and would say whether the contradiction above is about
+  consumer silicon or about this particular kernel.
 - **[CORE] Add a `LICENSE` file** and check the GPU-DVFS-Dataset's license before quoting its data
   in any write-up. Still open.
 

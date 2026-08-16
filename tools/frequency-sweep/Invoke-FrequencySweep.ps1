@@ -51,6 +51,21 @@
     and found its optimum at 62%. This default keeps the grid concentrated where the answer
     actually lives. Lower it if a card's optimum looks like it sits at the floor.
 
+.PARAMETER MinFrequencyMhz
+.PARAMETER MaxFrequencyMhz
+    Absolute bounds on the swept band, in MHz. Both default to 0, meaning "unset" - the grid then
+    runs from the MinFrequencyPercent floor to the card's maximum, as before.
+
+    These exist for FINE sweeps: once a coarse sweep has bracketed the efficiency optimum, the
+    useful next run concentrates all N points into the neighbourhood of the peak rather than
+    re-measuring a range whose shape is already known. MinFrequencyPercent cannot express that,
+    since it only moves the floor.
+
+    A fine sweep needs enough span to be worth fitting. Near its optimum an efficiency curve is
+    flat by construction, so a band tight around the peak buys resolution in frequency and pays
+    for it in signal: if the curve only falls a percent or two across the whole band, per-point
+    noise decides which point wins. Choose a band across which efficiency visibly falls.
+
 .PARAMETER SettleSeconds
     Wait after locking a clock before measuring, so the card reaches steady state. Default 8.
 
@@ -94,6 +109,8 @@ param(
     [string]$WorkloadCommand = "",
     [int]$FrequencyCount = 13,
     [int]$MinFrequencyPercent = 40,
+    [int]$MinFrequencyMhz = 0,
+    [int]$MaxFrequencyMhz = 0,
     [int]$SettleSeconds = 8,
     [int]$MeasureSeconds = 20,
     [double]$SampleIntervalSeconds = 0.5,
@@ -241,12 +258,33 @@ if ($supported.Count -eq 0) {
     throw "Could not read supported graphics clocks. This card may not support clock locking."
 }
 
-# Trim the pointless bottom end before picking the grid - see MinFrequencyPercent.
-$floorMhz = [int][math]::Round(($supported[0] * $MinFrequencyPercent) / 100.0)
-$inRange = @($supported | Where-Object { $_ -ge $floorMhz })
-if ($inRange.Count -lt $FrequencyCount) {
-    Write-Host "[SWEEP] NOTE: floor of $floorMhz MHz leaves only $($inRange.Count) clocks; using the full supported range instead."
-    $inRange = $supported
+# Pick the band. Explicit MHz bounds win over the percentage floor when given.
+$explicitBand = ($MinFrequencyMhz -gt 0 -or $MaxFrequencyMhz -gt 0)
+if ($explicitBand) {
+    $floorMhz = if ($MinFrequencyMhz -gt 0) { $MinFrequencyMhz } else { $supported[-1] }
+    $ceilMhz = if ($MaxFrequencyMhz -gt 0) { $MaxFrequencyMhz } else { $supported[0] }
+    if ($floorMhz -gt $ceilMhz) {
+        throw "MinFrequencyMhz ($floorMhz) is above MaxFrequencyMhz ($ceilMhz). Nothing to sweep."
+    }
+    $inRange = @($supported | Where-Object { $_ -ge $floorMhz -and $_ -le $ceilMhz })
+    if ($inRange.Count -eq 0) {
+        throw "No supported graphics clock falls in $floorMhz-$ceilMhz MHz. Supported range is $($supported[-1])-$($supported[0]) MHz."
+    }
+    # Do NOT silently widen an explicitly-requested band the way the percentage floor does.
+    # Asking for a fine sweep and receiving a coarse one over the whole range would produce a
+    # file that answers a different question than the one it was run to answer.
+    if ($inRange.Count -lt $FrequencyCount) {
+        Write-Host "[SWEEP] NOTE: $floorMhz-$ceilMhz MHz contains only $($inRange.Count) supported clocks; sweeping all of them instead of $FrequencyCount."
+    }
+} else {
+    # Trim the pointless bottom end before picking the grid - see MinFrequencyPercent.
+    $floorMhz = [int][math]::Round(($supported[0] * $MinFrequencyPercent) / 100.0)
+    $ceilMhz = $supported[0]
+    $inRange = @($supported | Where-Object { $_ -ge $floorMhz })
+    if ($inRange.Count -lt $FrequencyCount) {
+        Write-Host "[SWEEP] NOTE: floor of $floorMhz MHz leaves only $($inRange.Count) clocks; using the full supported range instead."
+        $inRange = $supported
+    }
 }
 $targets = Select-SweepFrequencies -Supported $inRange -Count $FrequencyCount
 
@@ -254,7 +292,12 @@ Write-Host ""
 Write-Host "[SWEEP] GPU:        $gpuName (driver $driverVersion)"
 Write-Host "[SWEEP] Max clock:  $maxClock MHz | power limit $powerLimit W"
 Write-Host "[SWEEP] Supported:  $($supported.Count) discrete graphics clocks, $($supported[-1])-$($supported[0]) MHz"
-Write-Host "[SWEEP] Sweep floor: $floorMhz MHz ($MinFrequencyPercent% of max) - lower clocks exist but are not swept"
+if ($explicitBand) {
+    $stepMhz = if ($targets.Count -gt 1) { [int][math]::Round(($targets[-1] - $targets[0]) / ($targets.Count - 1)) } else { 0 }
+    Write-Host "[SWEEP] Sweep band:  $floorMhz-$ceilMhz MHz (explicit) - FINE sweep, ~$stepMhz MHz apart. Not a full-range curve."
+} else {
+    Write-Host "[SWEEP] Sweep floor: $floorMhz MHz ($MinFrequencyPercent% of max) - lower clocks exist but are not swept"
+}
 Write-Host "[SWEEP] Testing:    $($targets.Count) frequencies -> $($targets -join ', ') MHz"
 if ($WorkloadCommand -ne "") {
     Write-Host "[SWEEP] Workload:   $WorkloadCommand   (timed; duration is the performance metric)"
@@ -342,6 +385,16 @@ try {
 } catch {
     $consoleControlAvailable = $false
     Write-Host "[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks."
+}
+
+# A click in the console window freezes this script mid-sweep with the clock still locked. See
+# tools/Disable-QuickEdit.ps1 - it has happened, it cost six minutes and two corrupted points.
+$quickEditGuard = Join-Path $PSScriptRoot "..\Disable-QuickEdit.ps1"
+if (Test-Path $quickEditGuard) {
+    . $quickEditGuard
+    [void](Disable-ConsoleQuickEdit -Tag "SWEEP")
+} else {
+    Write-Host "[SWEEP] NOTE: tools\Disable-QuickEdit.ps1 not found - DO NOT CLICK IN THIS WINDOW while the sweep runs."
 }
 
 $results = New-Object System.Collections.ArrayList
@@ -582,6 +635,11 @@ $session = [ordered]@{
     aborted_by_user      = $abortedByUser
     frequencies_planned  = $targets.Count
     frequencies_measured = $results.Count
+    # Band provenance. A fine sweep and a full-range sweep produce structurally identical CSVs
+    # and must never be pooled or compared as if they covered the same thing.
+    sweep_band_min_mhz   = $floorMhz
+    sweep_band_max_mhz   = $ceilMhz
+    sweep_band_explicit  = $explicitBand
     settle_seconds       = $SettleSeconds
     measure_seconds      = $MeasureSeconds
     drifted_points       = $driftedPoints.Count

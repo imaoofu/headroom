@@ -70,6 +70,7 @@ python gpu_workload.py --workload gemm
 |---|---|---|
 | `-FrequencyCount` | 13 | Matches the V100 dataset's grid size. |
 | `-MinFrequencyPercent` | 40 | Floor as a % of max clock. See below. |
+| `-MinFrequencyMhz` / `-MaxFrequencyMhz` | 0 (unset) | Absolute band in MHz, for **fine** sweeps. Overrides the percentage floor. |
 | `-SettleSeconds` | 8 | Wait after locking before measuring. |
 | `-MeasureSeconds` | 20 | Telemetry window per point — **only** when no `-WorkloadCommand` is given. With a workload, sampling runs as long as the workload does. |
 | `-SampleIntervalSeconds` | 0.5 | Telemetry period. Power is averaged over the benchmark's timed region only (~8–10 s), so this needs to be fast enough to leave a usable number of samples inside it. |
@@ -177,6 +178,35 @@ interior rather than an edge. Finding a peak and showing it is a peak are differ
 **Practical guidance:** default to 13 points. If you must run fewer, do not conclude anything about
 where the optimum is — a sparse sweep can bracket it, not locate it.
 
+### Fine sweeps, and why a tight band is the wrong instinct
+
+Once a coarse sweep has bracketed the optimum, `-MinFrequencyMhz` / `-MaxFrequencyMhz` put all 13
+points in its neighbourhood:
+
+```powershell
+.\Invoke-FrequencySweep.ps1 -SessionLabel "5060ti-gemm-fine-p1" -MinFrequencyMhz 1200 -MaxFrequencyMhz 1900 -WorkloadCommand "..."
+```
+
+The obvious move is to sweep tightly around the peak — and it is the wrong one. **An efficiency
+curve is flat near its optimum by definition**, so a tight band buys frequency resolution and pays
+for it in signal. In the 13-point coarse run `gemm`'s peak stood only 1.8% above points ±218 MHz
+away, while that same run contained an unexplained 0.6% non-monotonicity between 1987 and 2205 MHz.
+Squeeze the band and the point-to-point differences fall below that noise, at which point the
+highest point is chosen by chance.
+
+Two consequences, both of which apply to any fine sweep in this repo:
+
+- **Choose a band across which efficiency visibly falls** — 1200–1900 MHz here, where the curve
+  drops ~7% from peak, rather than 1300–1800 where it drops ~2%.
+- **Run at least two passes and analyse the shape, not the argmax.** On synthetic curves with a
+  known peak, this grid and realistic noise, the raw argmax moved **53–60 MHz between identical
+  passes**. `analysis/analyze_fine_sweep.py` fits the curve instead, and
+  `analysis/test_analyze_fine_sweep.py` is the evidence that the fit works.
+
+Order the passes so each workload appears both early and late in the run (`gemm, membw, membw,
+gemm`). The card warms over a long sweep, so run position is confounded with temperature, and the
+comparison between workloads is the whole measurement.
+
 ### ⚠️ A manual OC silently destroys a sweep
 
 In that run `-lgc 2167` produced **2942 MHz** — the cap was not applied at all, overshooting by
@@ -204,6 +234,14 @@ targets. **Reset any overclocking utility to stock before a real sweep, and chec
 This is the first tool in the repo that **changes GPU state** rather than only observing it, so
 the reset path matters more than the measurement.
 
+- **Do not click inside the console window while a sweep runs.** Windows enables QuickEdit by
+  default, so a click puts the console into selection mode, and selection mode **blocks all output**,
+  freezing the script on its next write — with no error, the process still alive, and *the clock
+  still locked*. It happened: a sweep stalled for six minutes and corrupted the two frequency points
+  either side of the stall. The script now disables QuickEdit at startup
+  (`tools/Disable-QuickEdit.ps1`), so this should not recur; if it ever does, click the window and
+  press <kbd>Esc</kbd> and the run resumes where it stopped. The tell is the word `Select` prepended
+  to the window title.
 - The sweep body is wrapped in `try/finally`; the finally **always** issues `nvidia-smi -rgc`,
   then reads the clock back and reports loudly if the reset did not take.
 - **Ctrl+C is intercepted** rather than allowed to terminate the process, so stopping early

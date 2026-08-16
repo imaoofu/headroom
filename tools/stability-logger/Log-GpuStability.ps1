@@ -209,6 +209,17 @@ try {
     Write-Host "[LOGGER] No interactive console detected - early Ctrl+C detection is unavailable this run. Duration will run to completion; the script still works, it just cannot be told to stop early."
 }
 
+# A click in the console window puts it into selection mode, which blocks all output and freezes
+# this script silently - mid-stress-test, with no error and the process still alive. See
+# tools/Disable-QuickEdit.ps1; it cost a frequency sweep six minutes and two corrupted points.
+$quickEditGuard = Join-Path $PSScriptRoot "..\Disable-QuickEdit.ps1"
+if (Test-Path $quickEditGuard) {
+    . $quickEditGuard
+    [void](Disable-ConsoleQuickEdit -Tag "LOGGER")
+} else {
+    Write-Host "[LOGGER] NOTE: tools\Disable-QuickEdit.ps1 not found - DO NOT CLICK IN THIS WINDOW while the logger runs."
+}
+
 try {
     $deadline = $startTime.AddSeconds($DurationSeconds)
     while ((Get-Date) -lt $deadline) {
