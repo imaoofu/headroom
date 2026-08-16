@@ -31,8 +31,15 @@ clock. Reproducing that contrast on consumer hardware needs both:
 - **`gemm`** — large matrix multiply via cuBLAS. Compute-bound, scales nearly linearly with core
   clock. Chosen over a homemade kernel because `GeMM` is one of the 33 workloads in the published
   V100 dataset, making the two directly comparable.
-- **`membw`** — large elementwise stream over VRAM. Bandwidth-bound and largely *insensitive* to
-  core clock. That insensitivity is the point.
+- **`membw`** — large elementwise stream over VRAM. Bandwidth-bound and much *less* sensitive to
+  core clock. That contrast is the point.
+
+  Measured, not assumed — and weaker than first claimed. Over a 2.2× clock range this card gives
+  an elasticity of throughput to core clock of **≈0.35** for `membw` against **≈1.09** for `gemm`.
+  So `membw` is strongly sub-linear but **not flat**: it gained 35% throughput for a 123% clock
+  increase. At 1236 MHz the SMs cannot issue memory requests fast enough to saturate DRAM, so the
+  workload is issue-limited there rather than bandwidth-limited. Earlier wording in this file and
+  in `gpu_workload.py` called it "largely insensitive", which the data does not support.
 
 ---
 
@@ -87,13 +94,22 @@ between the start and stop of the performance timer. An `nvidia-smi` call is a p
 **42 ms** on this machine — so at `membw`'s 600 iterations that was 120 spawns, and *over half*
 the measured duration was the GPU sitting idle waiting on a subprocess.
 
-| | before | after | sanity check |
-|---|---|---|---|
-| `gemm` | 15.60 TFLOP/s | **17.62 TFLOP/s** | 74% of this card's ~23.7 TFLOPS FP32 ✅ |
-| `membw` | 204.83 GB/s | **414.23 GB/s** | 92% of its 448 GB/s ✅ |
+| | before | after |
+|---|---|---|
+| `gemm` | 15.60 TFLOP/s | **17.62 TFLOP/s** |
+| `membw` | 204.83 GB/s | **414.23 GB/s** |
 
-The corrected figures land where a well-formed SGEMM and a stream benchmark should; the
-originals did not, and `membw` at 46% of peak bandwidth was the tell.
+Both halves were measured back-to-back on the same machine state, so the before/after
+comparison is sound and the `membw` figure roughly doubling is the real size of the bug.
+
+> **Correction.** This table originally cited "92% of its 448 GB/s" as the sanity check that
+> made the corrected `membw` number credible. That comparison was wrong: these runs were taken
+> while a **memory overclock was still applied**, and 448 GB/s is the *stock* rating
+> (14001 MHz × 128-bit). Measured later at stock memory, the same benchmark reaches
+> 343.7 GB/s — 77% of 448 GB/s, a normal stream efficiency. The bug and its magnitude are
+> unaffected; only the "92% of peak" gloss was, and it is recorded here rather than edited away
+> because it is the same class of mistake as the ones this section exists to document —
+> a plausible number that nobody checked the conditions of.
 
 The check is now **time-based** rather than iteration-based (an iteration cadence polls more
 often on a fast card than a slow one) and its subprocess time is measured and subtracted.

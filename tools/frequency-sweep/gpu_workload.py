@@ -16,9 +16,14 @@ TWO WORKLOADS, ON PURPOSE
       gemm   - large matrix multiply through cuBLAS. Compute-bound; scales nearly linearly
                with core clock. Directly comparable to the "GeMM" workload in the published
                V100 dataset, which is why matmul was chosen over a homemade kernel.
-      membw  - large elementwise stream over VRAM. Memory-bandwidth-bound; largely
-               INSENSITIVE to core clock, which is the contrast that makes the comparison
-               meaningful.
+      membw  - large elementwise stream over VRAM. Memory-bandwidth-bound; much LESS
+               sensitive to core clock, which is the contrast that makes the comparison
+               meaningful. Measured on this card: elasticity of throughput to core clock
+               is ~0.35 for membw against ~1.09 for gemm over a 2.2x range. Sub-linear,
+               but NOT flat - an earlier version of this comment claimed "largely
+               insensitive" and the data does not support it. Below ~1200 MHz the SMs
+               cannot issue requests fast enough to saturate DRAM, so the workload is
+               issue-limited rather than bandwidth-limited there.
 
 MEASUREMENT INTEGRITY
     Monitoring is not free and must not be counted as GPU work. An nvidia-smi call is a

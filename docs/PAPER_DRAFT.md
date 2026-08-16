@@ -256,7 +256,11 @@ compute/memory-bound axis identified in §2.1:
   specifically because `GeMM` appears in the reference V100 dataset [6], making the two directly
   comparable.
 - **`membw`** — a scaled elementwise add over a 256 M-element buffer (≈3 GB of traffic per
-  iteration). Bandwidth-bound; comparatively insensitive to core clock.
+  iteration). Bandwidth-bound; substantially less sensitive to core clock, though **not
+  insensitive** — measured elasticity of throughput to core clock is ≈0.35 against ≈1.09 for
+  `gemm` (§5.4). Below roughly 1200 MHz the streaming multiprocessors cannot issue memory requests
+  fast enough to saturate DRAM, so the workload becomes issue-limited rather than bandwidth-limited
+  and does retain clock sensitivity there.
 
 Both perform identical arithmetic on every invocation, so wall-clock duration is a valid performance
 metric and efficiency follows as work ÷ (duration × power).
@@ -297,9 +301,12 @@ recorded **idle** power at every frequency. Concurrent sampling is essential rat
 every 5 iterations between the start and stop of its performance timer. Each invocation is a process
 spawn costing ≈42 ms, so `membw` at 600 iterations spent **50.5%** of its measured duration waiting
 on a subprocess, and `gemm` 10.0%. Corrected throughput moved from 204.83 to 414.23 GB/s and from
-15.60 to 17.62 TFLOP/s — respectively 92% and 74% of the device's rated 448 GB/s and ≈23.7 TFLOPS
-FP32, whereas the uncorrected `membw` figure of 46% of peak bandwidth was the signal that something
-was wrong. Polling is now time-based (an iteration-based cadence samples a fast device more often
+15.60 to 17.62 TFLOP/s, both halves measured back-to-back under identical device state. (These
+particular runs were taken with a memory overclock applied; the corrected `membw` figure should
+therefore not be compared against the 448 GB/s stock rating, an error made in an earlier draft.
+Measured later at stock memory the same benchmark reaches 343.7 GB/s, or 77% of rating — an
+unremarkable stream efficiency, and the uncorrected 46% was the signal something was wrong.)
+Polling is now time-based (an iteration-based cadence samples a fast device more often
 than a slow one) and its cost is measured and subtracted; `duration_seconds` is work-only, with
 `wall_seconds` and `monitoring_overhead_seconds` reported alongside for audit.
 
@@ -432,17 +439,49 @@ The first frequency-locked measurements on an RTX 5060 Ti (`gemm`, FP32, stock V
 | 2167 MHz | 2143.8 MHz | 12.21 TFLOP/s | 107.44 W | **113.6 GFLOP/J** |
 | 3090 MHz | 2617.6 MHz | 15.40 TFLOP/s | 167.03 W | **92.2 GFLOP/J** |
 
-Two observations, both provisional at three points on a single unit.
+The same grid with `membw` (`20260816-000447_verify-3pt-membw`):
 
-**Efficiency decreases monotonically across the swept range**, and the most efficient point measured
-is **39.4%** more efficient than the device's own sustained maximum boost. This is the same direction
-and a comparable magnitude to the 44.4% found on the V100 reference (§5.1), and it is the first
-indication that the headroom result is not an artefact of datacentre silicon. It is a **lower bound**
-on the gap, not an estimate of it: the optimum was not located, only bracketed from above.
+| Target | Achieved | Throughput | Power | Efficiency |
+|---|---|---|---|---|
+| 1237 MHz | 1236.0 MHz | 254.3 GB/s | 47.80 W | **5.32 GB/J** |
+| 2167 MHz | 2152.7 MHz | 322.6 GB/s | 64.08 W | **5.03 GB/J** |
+| 3090 MHz | 2753.2 MHz | 343.7 GB/s | 90.89 W | **3.78 GB/J** |
 
-**The sweep floor is too high to find the optimum.** Efficiency is still rising at the lowest point
-measured, which is precisely the signature this work identifies in §2.7 as disqualifying the
-published consumer datasets — an optimum landing on the lowest frequency tested indicates a range
+**The compute-bound / memory-bound contrast is confirmed, and is smaller than assumed.** Over
+comparable clock ranges the elasticity of throughput to core clock is **1.09** for `gemm` and
+**0.35** for `membw` — a 3.1× difference in clock sensitivity, which is the effect the two-workload
+design exists to produce. But `membw` gained 35% throughput for a 123% clock increase, so it is
+strongly sub-linear rather than insensitive, and §3.3's original "comparatively insensitive" framing
+is corrected accordingly. The residual sensitivity is expected: at 1236 MHz the device sustains
+254.3 GB/s against 343.7 GB/s at 2753 MHz, i.e. it cannot issue memory requests fast enough to
+saturate DRAM at low core clock, and is issue-limited rather than bandwidth-limited there.
+
+**Sustained maximum boost is workload-dependent**, so "stock" is not a single frequency. Requesting
+3090 MHz yielded 2617.6 MHz under `gemm` (167.03 W) but 2753.2 MHz under `membw` (90.89 W): the
+more power-intensive workload sustains a *lower* clock. Consequently the top of any grid built from
+`clocks.max.sm` is unreachable, and grid points above roughly 2800 MHz will collapse onto one
+achieved clock — a second, benign mechanism for the collapse described in §3.2, and one that must be
+distinguished from it. Any stock-versus-tuned gap must define stock as the clock the device selects
+*for that workload*, not as a nameplate figure.
+
+Two further observations, both provisional at three points on a single unit.
+
+**Efficiency decreases monotonically across the swept range, for both workloads.** The most
+efficient point measured is **39.4%** more efficient than sustained maximum boost for `gemm` and
+**40.7%** for `membw`. This is the same direction and a comparable magnitude to the 44.4% found on
+the V100 reference (§5.1), and it is the first indication that the headroom result is not an
+artefact of datacentre silicon. Both figures are **lower bounds** on the gap rather than estimates
+of it: the optimum was not located, only bracketed from above.
+
+That the two workloads give such similar gaps is itself uninformative at present, and should not be
+read as evidence that workload type does not matter. Both optima sit at or below the sweep floor, so
+the measurement cannot yet separate them — which is exactly what §2.1's compute/memory-bound
+distinction and the V100 correlation of −0.666 between frequency sensitivity and optimal clock would
+predict differences in. Resolving it requires the lower floor described below.
+
+**The sweep floor is too high to find the optimum**, for both workloads. Efficiency is still rising
+at the lowest point measured in each case, which is precisely the signature this work identifies in
+§2.7 as disqualifying the published consumer datasets — an optimum landing on the lowest frequency tested indicates a range
 that stops short. The 40% floor was chosen (§3.4) on the reasoning that lower clocks are never
 efficiency-optimal for real work; **on this device that reasoning is not supported by measurement,**
 and the floor must be lowered before any efficiency optimum is claimed. Applying the paper's own

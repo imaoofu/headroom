@@ -31,11 +31,16 @@ Nothing here is research. It is the difference between "code exists" and "code i
   understating load power 16%). Both fixed and verified against rated hardware limits: `gemm` 74% of
   peak FP32, `membw` 92% of peak bandwidth. Frequency response confirmed end-to-end — 2.38× the
   clock gave 2.57× the throughput. Commit `33ffe56`.
-- **[CORE] Sweep `membw`.** Only `gemm` has ever been swept. That `membw` is clock-*insensitive* is
-  the contrast the entire two-workload design exists to demonstrate, and it is still an assumption.
-  One sweep closes it.
-- **[CORE] Lower the sweep floor and find the actual optimum.** The stock-curve sweep found
-  efficiency still *rising* at 1236 MHz, the bottom of the 40% grid — the same "optimum lands on the
+- ✅ **[CORE] Sweep `membw`.** Done. The contrast holds and is 3.1× — elasticity of throughput to
+  core clock 0.35 for `membw` against 1.09 for `gemm`. But the previous wording, "clock-insensitive",
+  was too strong and is corrected: `membw` gained 35% throughput over a 123% clock increase, so it is
+  sub-linear, not flat. Below ~1200 MHz it is issue-limited rather than bandwidth-limited.
+- **[CORE] Lower the sweep floor and find the actual optimum.** Now the top priority: **both**
+  workloads put their optimum at or below the floor (`gemm` 39.4% and `membw` 40.7% above sustained
+  max boost, both still climbing at the bottom point), so the sweep cannot yet distinguish a
+  compute-bound optimum from a memory-bound one — which is the whole purpose of running two
+  workloads. Both stock-curve sweeps found efficiency still *rising* at 1236 MHz, the bottom of the
+  40% grid — the same "optimum lands on the
   lowest frequency tested" signature this project uses in commit `14b4c46` to disqualify the
   published consumer datasets. The 40% floor was reasoned, not measured, and the measurement does not
   support it. Re-sweep at a lower floor before claiming any optimum.

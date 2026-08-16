@@ -26,6 +26,40 @@ Reset any overclocking utility to stock before collecting data intended for the 
 
 ## Runs
 
+### `20260816-000447_verify-3pt-membw` — the compute/memory contrast, measured
+
+Same grid, same stock curve, `membw` instead of `gemm`. Matched targets are the point: the
+comparison only means anything if the frequencies line up.
+
+| Target | Achieved | Throughput | Power | Efficiency |
+|---|---|---|---|---|
+| 1237 MHz | 1236.0 MHz | 254.3 GB/s | 47.80 W | 5.32 GB/J |
+| 2167 MHz | 2152.7 MHz | 322.6 GB/s | 64.08 W | 5.03 GB/J |
+| 3090 MHz | 2753.2 MHz | 343.7 GB/s | 90.89 W | 3.78 GB/J |
+
+**The contrast is real and it is 3.1×**: elasticity of throughput to core clock is 0.35 for `membw`
+against 1.09 for `gemm`. **But "largely insensitive" was wrong** — `membw` gained 35% throughput for
+a 123% clock increase, which is strongly sub-linear, not flat. At 1236 MHz the SMs cannot issue
+requests fast enough to saturate DRAM, so it is issue-limited there. The tool README and
+`gpu_workload.py` have been corrected.
+
+Efficiency again falls monotonically, and again the best point is the lowest measured — 40.7% above
+sustained max boost, against `gemm`'s 39.4%. **Both optima sit at or below the floor**, so this
+cannot yet distinguish the two workloads' optimal clocks, which is the thing the comparison is
+ultimately for.
+
+Also note `3090 → 2753.2 MHz` here against `3090 → 2617.6 MHz` for `gemm`. Sustained max boost is
+**workload-dependent** — the more power-hungry workload holds a lower clock — so "stock" is not one
+number, and grid points above ~2800 MHz will collapse onto one achieved clock for benign reasons
+distinct from a V/F override.
+
+**A discarded first attempt.** The initial `20260816-000221` run was contaminated: Afterburner
+settings were changed by hand while the 1237 MHz point was being measured. The overshoot detector
+added in `33ffe56` caught it independently — that row read 2713 MHz averaged over a 1747–2767 MHz
+range, while the two clean points held to a single value each. Corroborated by the operator, run
+discarded and repeated. Recorded because it is the detector's first true positive on an event it had
+never seen.
+
 ### `20260815-234947_verify-3pt-stock` — first usable sweep
 
 Same 3-point grid, Afterburner reset to stock. All three targets locked or undershot honestly, so
