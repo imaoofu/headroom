@@ -26,6 +26,33 @@ Reset any overclocking utility to stock before collecting data intended for the 
 
 ## Runs
 
+### `20260816-001048_5060ti-gemm-floor15` + `20260816-001734_5060ti-membw-floor15` — the result
+
+**The primary dataset.** 13 points each, 464–3090 MHz, stock V/F curve, both workloads on an
+identical grid. Every point locked or undershot honestly; no overshoot, no collapse below the
+power-limited top. Analyse with `python analysis/analyze_sweep.py`.
+
+| | `gemm` | `membw` |
+|---|---|---|
+| Efficiency optimum | **1552 MHz** | **1552 MHz** |
+| as % of sustained max | 60% (of 2597) | 56% (of 2755) |
+| Efficiency gain vs sustained max | +46.5% | +41.6% |
+| Performance cost at optimum | −43.2% | **−11.3%** |
+| Power saved at optimum | −61.2% | −37.4% |
+
+**The V100 headroom result reproduces on consumer silicon.** `membw`'s 41.6% / 11.3% / 37.4% against
+the V100's 44.4% / 13.7% / 40.1% at 62% of max — matching on every axis, on a 2025 consumer part
+four architectural generations later.
+
+**The compute/memory split shows up in the cost, not the location.** Both optima land on the same
+grid point, so at 217 MHz resolution they are indistinguishable — *not* the same as equal. What
+separates cleanly is price: `gemm` gives up 43.2% throughput to sit at its optimum, `membw` only
+11.3%. Downclocking to ~56% is nearly free for bandwidth-bound work and a real trade for
+compute-bound work.
+
+Both curves are single-peaked with the optimum well inside the range, so these are interior optima,
+not edge artefacts.
+
 ### `20260816-000447_verify-3pt-membw` — the compute/memory contrast, measured
 
 Same grid, same stock curve, `membw` instead of `gemm`. Matched targets are the point: the
@@ -44,9 +71,9 @@ requests fast enough to saturate DRAM, so it is issue-limited there. The tool RE
 `gpu_workload.py` have been corrected.
 
 Efficiency again falls monotonically, and again the best point is the lowest measured — 40.7% above
-sustained max boost, against `gemm`'s 39.4%. **Both optima sit at or below the floor**, so this
-cannot yet distinguish the two workloads' optimal clocks, which is the thing the comparison is
-ultimately for.
+sustained max boost, against `gemm`'s 39.4%. **This was read at the time as "the optimum sits at or
+below the floor", which the 13-point sweep above disproves:** the optimum is at 1552 MHz, between
+this run's first and second points. Three points can bracket an optimum; they cannot locate one.
 
 Also note `3090 → 2753.2 MHz` here against `3090 → 2617.6 MHz` for `gemm`. Sustained max boost is
 **workload-dependent** — the more power-hungry workload holds a lower clock — so "stock" is not one
@@ -80,12 +107,11 @@ V/F override is the cause, not merely consistent with the symptom.
 1. Efficiency falls monotonically with frequency; the lowest point measured is **39.4% more
    efficient** than sustained max boost. Same direction and comparable magnitude to the V100's
    44.4%, and a lower bound rather than an estimate — the optimum was bracketed, not located.
-2. **The 40% sweep floor is too high.** Efficiency is still climbing at 1236 MHz, which is exactly
-   the signature this project uses in commit `14b4c46` to disqualify other consumer datasets. The
-   floor needs lowering before any optimum is claimed here.
-
-Still only `gemm`. `membw` has never been swept, so the compute-vs-memory-bound contrast that the
-two-workload design exists to test remains untested.
+2. ~~**The 40% sweep floor is too high.** Efficiency is still climbing at 1236 MHz, which is exactly
+   the signature this project uses in commit `14b4c46` to disqualify other consumer datasets.~~
+   **Retracted.** The 13-point sweep puts the optimum at 1552 MHz — inside the 40% range, between
+   this run's first and second points. The floor was never the problem; three points were. The
+   `14b4c46` signature only implies a truncated range for a *dense* sweep.
 
 ### `20260815-233703_verify-3pt` — TOOL VERIFICATION, NOT DATASET
 

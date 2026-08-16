@@ -35,15 +35,21 @@ Nothing here is research. It is the difference between "code exists" and "code i
   core clock 0.35 for `membw` against 1.09 for `gemm`. But the previous wording, "clock-insensitive",
   was too strong and is corrected: `membw` gained 35% throughput over a 123% clock increase, so it is
   sub-linear, not flat. Below ~1200 MHz it is issue-limited rather than bandwidth-limited.
-- **[CORE] Lower the sweep floor and find the actual optimum.** Now the top priority: **both**
-  workloads put their optimum at or below the floor (`gemm` 39.4% and `membw` 40.7% above sustained
-  max boost, both still climbing at the bottom point), so the sweep cannot yet distinguish a
-  compute-bound optimum from a memory-bound one — which is the whole purpose of running two
-  workloads. Both stock-curve sweeps found efficiency still *rising* at 1236 MHz, the bottom of the
-  40% grid — the same "optimum lands on the
-  lowest frequency tested" signature this project uses in commit `14b4c46` to disqualify the
-  published consumer datasets. The 40% floor was reasoned, not measured, and the measurement does not
-  support it. Re-sweep at a lower floor before claiming any optimum.
+- ✅ **[CORE] Find the actual efficiency optimum.** Done — 13 points × 2 workloads, 464–3090 MHz.
+  **Optimum at 1552 MHz for both**, 60% / 56% of each workload's sustained maximum. `gemm` gains
+  46.5% efficiency there; `membw` gains 41.6% for a performance cost of only 11.3%. **The V100 result
+  reproduces on consumer silicon** — `membw`'s 41.6% / 11.3% / 37.4% against the V100's
+  44.4% / 13.7% / 40.1% at 62% of maximum. Run `python analysis/analyze_sweep.py`.
+  **Correction:** the previous version of this entry claimed the 40% floor was too high to contain
+  the optimum. It was not — 1552 MHz sits inside the old range, and the fault was three points, not
+  the floor. "Optimum lands on the lowest frequency tested" implies a truncated range only for a
+  *dense* sweep; on a sparse one it is equally consistent with the optimum lying between points one
+  and two. Lowering the floor still helped, for the different reason that it proved the optimum
+  interior rather than an edge.
+- **[CORE] Fine sweep 1300–1800 MHz to separate the two workloads' optima.** At the 217 MHz grid
+  step both land in the same bin, so the compute-vs-memory-bound prediction — that bandwidth-bound
+  work prefers a *lower* optimum, per the V100's −0.666 correlation — remains untested. Cheap, and
+  the one remaining question the two-workload design was built to answer.
 - **[CORE] Add a `LICENSE` file** and check the GPU-DVFS-Dataset's license before quoting its data
   in any write-up. Still open.
 

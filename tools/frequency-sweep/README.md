@@ -158,10 +158,24 @@ gap. The bug would have understated the consumer headroom gap by more than half.
 `membw` is *insensitive* — the contrast the whole compute-vs-memory-bound comparison rests on —
 has not been swept yet.
 
-**The 40% floor is too high on this card.** In the stock-curve sweep, efficiency was still rising at
-the lowest frequency measured (128.5 GFLOP/J at 1236 MHz against 92.2 at sustained max boost). An
-optimum sitting on the lowest point tested is the exact signature this project uses to disqualify
-other consumer datasets. Lower `-MinFrequencyPercent` before claiming an optimum.
+### Grid resolution matters more than grid floor
+
+An earlier 3-point sweep found efficiency highest at its lowest point and this file concluded
+**"the 40% floor is too high on this card."** That was wrong, and it is corrected here rather than
+deleted because the reasoning error is the useful part.
+
+A 13-point sweep puts the efficiency optimum at **1552 MHz** — inside the original 40%-floor range
+all along, just never sampled by three points. The floor was fine; three points were not. The
+mistake was over-applying the project's own criterion, where "the optimum lands on the lowest
+frequency tested" indicates a range that stops short: **that only follows for a dense sweep.** On a
+sparse one it is equally consistent with the optimum sitting between the first and second points.
+
+Lowering the floor to 15% still earned its keep, for a different reason than the one given: with
+points down to 464 MHz, efficiency is seen to *fall* below 1552 MHz, which proves the optimum is
+interior rather than an edge. Finding a peak and showing it is a peak are different claims.
+
+**Practical guidance:** default to 13 points. If you must run fewer, do not conclude anything about
+where the optimum is — a sparse sweep can bracket it, not locate it.
 
 ### ⚠️ A manual OC silently destroys a sweep
 
