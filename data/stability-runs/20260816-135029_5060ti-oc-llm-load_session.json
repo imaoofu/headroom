@@ -1,0 +1,33 @@
+﻿{
+    "session_label":  "5060ti-oc-llm-load",
+    "applied_settings":  "MSI Afterburner OC ACTIVE. Recorded from observation, not read from the tool: SM held 2970 MHz under load (stock sustained under gemm is ~2597 MHz), memory 16301 MHz against a 14001 MHz rated maximum, so both the V/F curve override and the memory offset are applied. EXACT OFFSETS NOT RECORDED - operator must confirm before this is used for anything comparative.",
+    "test_method":  "Sustained qwen3:14b inference (Ollama, 24k ctx, 100 percent GPU) driven by an OpenCode agentic coding session. NOT the locked OCCT GPU:3D Adaptive protocol - this is a TOOL-VERIFICATION run under real load and is not dataset-grade for the stability dataset.",
+    "verdict":  "CLEAN",
+    "flags":  [
+
+              ],
+    "gpu_name":  "NVIDIA GeForce RTX 5060 Ti",
+    "driver_version":  "610.88",
+    "vbios_version":  "98.06.4e.40.b4",
+    "max_sm_clock_mhz":  "3090",
+    "power_limit_w":  "200.00",
+    "started_at":  "2026-08-16T13:50:29.8378485-07:00",
+    "ended_at":  "2026-08-16T14:50:30.8065059-07:00",
+    "requested_duration_s":  3600,
+    "actual_duration_s":  3601,
+    "sample_interval_s":  2,
+    "samples_collected":  1760,
+    "telemetry_failures":  0,
+    "throttled_samples":  0,
+    "driver_crash_events":  0,
+    "sm_clock_avg_mhz":  1699.35,
+    "sm_clock_max_mhz":  3000,
+    "sm_clock_min_mhz":  1222,
+    "power_avg_w":  39.3,
+    "power_max_w":  138.89,
+    "temperature_avg_c":  45.8,
+    "temperature_max_c":  64,
+    "gpu_utilization_avg_pct":  24.94,
+    "samples_file":  "20260816-135029_5060ti-oc-llm-load_samples.csv",
+    "schema_version":  "0.1.0"
+}

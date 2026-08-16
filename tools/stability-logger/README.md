@@ -34,7 +34,9 @@ The intended workflow:
 
 ### Exit codes
 
-`0` = CLEAN · `1` = FLAGGED · `2` = UNSTABLE — so this can be driven from a batch script later.
+`0` = CLEAN · `1` = FLAGGED · `2` = UNSTABLE · `3` = INCONCLUSIVE — so this can be driven from a
+batch script later. `INCONCLUSIVE` is deliberately non-zero: a caller treating "not 0" as failure
+will correctly stop on a run whose stress test died.
 
 ---
 
@@ -49,6 +51,13 @@ throttle reasons.
 **`_session.json`** — the run's metadata and summary: GPU identity, driver and VBIOS version, what
 settings were applied, the verdict and its flags, and min/avg/max for clock, power and temperature.
 
+Since schema `0.2.0` it also carries **loaded-only statistics**, and those are the ones to read
+first: `loaded_fraction`, `loaded_samples`, `sm_clock_avg_loaded_mhz`, `power_avg_loaded_w`,
+`temperature_avg_loaded_c` and their min/max. Whole-run averages blend load with idle and describe
+neither — on a 25-second test run that was only 23% idle, whole-run power read 135.91 W against
+168.88 W actually drawn under load, a 24% understatement. Same failure the frequency sweep had
+before it windowed power to the benchmark's timed region.
+
 Every sample is flushed to disk immediately rather than buffered. If the machine hard-locks, the
 truncated log is the evidence — the last timestamp is roughly when it died.
 
@@ -58,9 +67,19 @@ truncated log is the evidence — the last timestamp is roughly when it died.
 
 | Verdict | Meaning |
 |---|---|
-| `CLEAN` | Nothing went visibly wrong during the sampling window. |
+| `CLEAN` | Nothing went visibly wrong, **and** the card was genuinely loaded for most of the run. |
+| `INCONCLUSIVE` | Nothing went wrong, but the GPU was under load for under half the samples. The run says nothing either way. |
 | `FLAGGED` | Thermal or hardware throttling seen, or the run ended early. Not necessarily instability. |
 | `UNSTABLE` | A display-driver crash/reset event, or telemetry queries started failing. |
+
+**Why `INCONCLUSIVE` exists.** A verdict computed over an idle card is worthless in a way that looks
+exactly like success. An hour-long run on 2026-08-16 finished its workload after 13 minutes and idled
+for the remaining 47; the session reported `CLEAN` with `sm_clock_avg` 1699 MHz, `power_avg` 39.3 W
+and `util_avg` 24.9% — all plausible figures, none describing the loaded period (2970 MHz, 118 W,
+98%). Nothing distinguished *"survived an hour of load"* from *"the load died after 13 minutes."*
+
+That is precisely the event this tool exists to catch: **a stress test that crashes leaves the GPU
+idle for the remainder**, so the failure mode and the success signature were identical.
 
 **A CLEAN verdict is not proof of stability.** Undervolt failures routinely take hours to appear, and
 a single clean 10-minute run is weak evidence. Report it as "no failure observed in N minutes," never
@@ -125,11 +144,27 @@ Tested on an RTX 5060 Ti (driver 610.88, VBIOS 98.06.4e.40.b4) — four short ru
 JSON output confirmed well-formed; throttle-reason decoding confirmed correct against a known idle
 state; graceful degradation in a non-interactive shell (no console handle) confirmed working.
 
-**Not yet tested under real load, and the verdict logic for throttling and driver crashes has never
-fired against a real event.** Until it has caught a deliberately-induced failure, treat the detector
-itself as unvalidated. **The interactive Ctrl+C keypress path specifically has not been empirically
-tested either** — it can't be simulated from a non-interactive shell, only reasoned through and
-tested in its degraded form. First real run is the first real test of it.
+**Now tested under real load (2026-08-16).** One hour of sustained CUDA inference on an
+overclocked card: 1760 samples, **zero telemetry failures**, clean exit, well-formed output. The
+`INCONCLUSIVE` and `CLEAN` paths were then verified directly — an idle 20-second run returns
+`INCONCLUSIVE` with exit 3, and a 77%-loaded 25-second run returns `CLEAN` with exit 0.
+
+**Still never fired against a real failure.** The throttling path has not triggered (the card never
+approached its limits — 139 W peak against a 200 W limit, 64 °C), and no driver crash has occurred,
+so crash detection remains unvalidated. Treat the detector as unproven for the cases it exists to
+catch. **The interactive Ctrl+C keypress path is also still untested** — it can't be simulated from a
+non-interactive shell, only reasoned through and tested in its degraded form.
+
+### The `GpuIdle` bit lies under compute load
+
+Throughout that hour the card reported throttle bitmask `0x1` = `GpuIdle` on **every sample**, while
+sitting at 98% utilisation and 139 W. The decoding is correct; the driver genuinely reports
+`GpuIdle` for compute-only workloads that never touch the graphics pipeline.
+
+**So the throttle mask cannot be used to tell whether the card is busy.** The loaded/idle split is
+computed from utilisation percentage instead, which works for both compute and graphics loads. This
+matters for the locked OCCT protocol too — a compute-mode stress test would look idle to anything
+keying off that bit.
 
 Three bugs were found and fixed by smoke testing, all invisible on inspection:
 

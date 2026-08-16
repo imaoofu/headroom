@@ -83,6 +83,20 @@ $ThrottleReasonBits = @{
 # Bits that indicate the card is in trouble rather than merely idle or power-limited.
 $ConcerningReasons = @("HwSlowdown", "SwThermalSlowdown", "HwThermalSlowdown", "HwPowerBrakeSlowdown")
 
+# DO NOT use the GpuIdle bit to decide whether the card is busy. Measured on an RTX 5060 Ti
+# (driver 610.88) during an hour of sustained CUDA inference: the card reported bit 0x1 = GpuIdle
+# on EVERY sample while sitting at 98% utilisation and 139 W. The decode is correct - the driver
+# genuinely reports GpuIdle for compute-only workloads that never touch the graphics pipeline.
+#
+# Utilisation percentage is the signal that works for both compute and graphics loads, which is
+# why the loaded/idle split below is computed from it and not from the throttle mask.
+$LoadedUtilisationThresholdPct = 50
+
+# Below this fraction of loaded samples, the run cannot certify anything about stability and the
+# verdict is downgraded. Half is deliberately lenient: it exists to catch a stress test that died
+# or never started, not to police a slightly bursty workload.
+$MinimumLoadedFraction = 0.5
+
 function Resolve-NvidiaSmi {
     $candidates = @(
         "C:\Windows\System32\nvidia-smi.exe",
@@ -316,18 +330,48 @@ if ($sampleCount -eq 0) {
     [void]$flags.Add("no samples were collected at all")
 }
 
+# Was the card actually under load? A verdict computed over an idle GPU is worthless, and worse,
+# it is worthless in a way that looks exactly like success.
+#
+# This was found by running an hour under a real workload that finished after 13 minutes. The rest
+# of the run was idle, and the session reported verdict CLEAN with sm_clock_avg 1699 MHz, power_avg
+# 39.3 W and util_avg 24.9% - all plausible numbers, none of them describing the loaded period
+# (2970 MHz, 118 W, 98%). Nothing in the output distinguished "survived an hour of load" from
+# "the load died after 13 minutes and the card sat idle", which is precisely the event a stability
+# tool exists to catch: a stress test that crashes leaves the GPU idle for the remainder.
+$loadedSamples = @($samples | Where-Object { $_.Utilization -gt $LoadedUtilisationThresholdPct })
+$loadedFraction = if ($sampleCount -gt 0) { $loadedSamples.Count / $sampleCount } else { 0 }
+$loadWasInadequate = ($sampleCount -gt 0 -and $loadedFraction -lt $MinimumLoadedFraction)
+
+if ($loadWasInadequate) {
+    [void]$flags.Add(("the GPU was loaded for only {0:P0} of this run ({1} of {2} samples above {3}% utilisation) - if a stress test was supposed to be running it stopped early or never started, and this run cannot certify stability" -f `
+        $loadedFraction, $loadedSamples.Count, $sampleCount, $LoadedUtilisationThresholdPct))
+}
+
 if ($flags.Count -eq 0) {
     $verdict = "CLEAN"
 } elseif ($crashEvents.Count -gt 0 -or $queryFailureCount -gt 0) {
     $verdict = "UNSTABLE"
-} else {
+} elseif ($concerningSampleCount -gt 0 -or -not $completedFullDuration -or $sampleCount -eq 0) {
+    # A real problem was observed. That outranks "we could not tell", so check it first.
     $verdict = "FLAGGED"
+} else {
+    # Nothing went wrong, but the card was not under load often enough for that to mean anything.
+    # This must not be CLEAN: absence of evidence is not evidence of stability.
+    $verdict = "INCONCLUSIVE"
 }
 
 $clockValues = @($samples | Select-Object -ExpandProperty SmClock)
 $powerValues = @($samples | Select-Object -ExpandProperty PowerDraw)
 $tempValues = @($samples | Select-Object -ExpandProperty Temperature)
 $utilValues = @($samples | Select-Object -ExpandProperty Utilization)
+
+# Loaded-only statistics, reported ALONGSIDE the whole-run ones rather than replacing them.
+# Same reasoning as the frequency sweep windowing its power to the benchmark's timed region: an
+# average taken over a window wider than the thing being measured describes neither.
+$loadedClockValues = @($loadedSamples | Select-Object -ExpandProperty SmClock)
+$loadedPowerValues = @($loadedSamples | Select-Object -ExpandProperty PowerDraw)
+$loadedTempValues = @($loadedSamples | Select-Object -ExpandProperty Temperature)
 
 function Get-Stat {
     param([double[]]$Values, [string]$Kind)
@@ -367,8 +411,20 @@ $session = [ordered]@{
     temperature_avg_c        = Get-Stat -Values $tempValues -Kind "avg"
     temperature_max_c        = Get-Stat -Values $tempValues -Kind "max"
     gpu_utilization_avg_pct  = Get-Stat -Values $utilValues -Kind "avg"
+    # How much of the run the card was actually working, and what it looked like while it was.
+    # Whole-run averages blend load with idle and describe neither; read these first.
+    loaded_samples           = $loadedSamples.Count
+    loaded_fraction          = [math]::Round($loadedFraction, 4)
+    loaded_threshold_pct     = $LoadedUtilisationThresholdPct
+    sm_clock_avg_loaded_mhz  = Get-Stat -Values $loadedClockValues -Kind "avg"
+    sm_clock_min_loaded_mhz  = Get-Stat -Values $loadedClockValues -Kind "min"
+    sm_clock_max_loaded_mhz  = Get-Stat -Values $loadedClockValues -Kind "max"
+    power_avg_loaded_w       = Get-Stat -Values $loadedPowerValues -Kind "avg"
+    power_max_loaded_w       = Get-Stat -Values $loadedPowerValues -Kind "max"
+    temperature_avg_loaded_c = Get-Stat -Values $loadedTempValues -Kind "avg"
+    temperature_max_loaded_c = Get-Stat -Values $loadedTempValues -Kind "max"
     samples_file             = Split-Path $logPath -Leaf
-    schema_version           = "0.1.0"
+    schema_version           = "0.2.0"
 }
 
 $session | ConvertTo-Json -Depth 4 | Out-File -FilePath $metaPath -Encoding utf8
@@ -383,8 +439,15 @@ if ($sampleCount -gt 0) {
     Write-Host ("[LOGGER] Power:    avg {0} W, peak {1} W (limit {2} W)." -f $session.power_avg_w, $session.power_max_w, $powerLimit)
     Write-Host ("[LOGGER] Temp:     avg {0} C, peak {1} C." -f $session.temperature_avg_c, $session.temperature_max_c)
     Write-Host ("[LOGGER] GPU util: avg {0}%." -f $session.gpu_utilization_avg_pct)
-    if ($session.gpu_utilization_avg_pct -lt 50) {
-        Write-Host "[LOGGER] NOTE: average utilisation is low. If a stress test was meant to be running, it probably was not - this run says little about stability."
+    Write-Host ("[LOGGER] Loaded:   {0:P0} of samples above {1}% utilisation ({2} of {3})." -f `
+        $loadedFraction, $LoadedUtilisationThresholdPct, $loadedSamples.Count, $sampleCount)
+    if ($loadedSamples.Count -gt 0 -and $loadedFraction -lt 0.99) {
+        # Only worth printing when the two differ; on a fully-loaded run they are the same numbers.
+        Write-Host "[LOGGER] While actually under load (the numbers that describe the test, not the idle time):"
+        Write-Host ("[LOGGER]   SM clock: avg {0} MHz, range {1}-{2} MHz." -f `
+            $session.sm_clock_avg_loaded_mhz, $session.sm_clock_min_loaded_mhz, $session.sm_clock_max_loaded_mhz)
+        Write-Host ("[LOGGER]   Power:    avg {0} W, peak {1} W." -f $session.power_avg_loaded_w, $session.power_max_loaded_w)
+        Write-Host ("[LOGGER]   Temp:     avg {0} C, peak {1} C." -f $session.temperature_avg_loaded_c, $session.temperature_max_loaded_c)
     }
 }
 Write-Host "[LOGGER] Samples: $logPath"
@@ -394,9 +457,20 @@ Write-Host ""
 Write-Host "[LOGGER] A CLEAN verdict means nothing went visibly wrong during this window. It is"
 Write-Host "[LOGGER] not proof of stability - undervolt failures often need hours to show up, and"
 Write-Host "[LOGGER] a single clean 10-minute run is weak evidence. Say so when reporting it."
+if ($verdict -eq "INCONCLUSIVE") {
+    Write-Host ""
+    Write-Host "[LOGGER] INCONCLUSIVE means nothing went wrong AND the card was barely loaded, so this"
+    Write-Host "[LOGGER] run tells you nothing either way. The usual cause is a stress test that exited"
+    Write-Host "[LOGGER] or crashed partway through, leaving the GPU idle for the rest of the window."
+    Write-Host "[LOGGER] Check the stress test was running for the whole duration, then run it again."
+}
 
 # Exit code carries the verdict so this can be driven from a batch script later:
-#   0 = CLEAN, 1 = FLAGGED, 2 = UNSTABLE
+#   0 = CLEAN, 1 = FLAGGED, 2 = UNSTABLE, 3 = INCONCLUSIVE
+#
+# INCONCLUSIVE is deliberately NOT 0. A caller that treats "not CLEAN" as failure will now stop on
+# a run where the load died, which is the correct behaviour and the whole point of the verdict.
 if ($verdict -eq "CLEAN") { exit 0 }
 if ($verdict -eq "FLAGGED") { exit 1 }
+if ($verdict -eq "INCONCLUSIVE") { exit 3 }
 exit 2

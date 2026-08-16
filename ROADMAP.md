@@ -19,9 +19,19 @@ Nothing here is research. It is the difference between "code exists" and "code i
   the best-fixed-frequency baseline. Reported as the null it is, not hidden. Separately, the
   headroom gap itself was measured: stock vs. each workload's own optimum gives up a mean 44.4%
   efficiency (range 15.1–62.8%).
-- **[CORE] Run the stability logger under real load.** It has only ever seen an idle GPU. Run a real
-  stress test and confirm the verdict logic behaves — especially the throttling path, which has
-  never fired.
+- 🟡 **[CORE] Run the stability logger under real load.** Partly done — one hour under sustained CUDA
+  inference on the overclocked card: 1760 samples, **zero telemetry failures**, clean exit. The OC
+  held (2962–3000 MHz, 64 °C peak, no throttling, no crash).
+  **It found a defect in the logger, which was the real value.** The run's workload finished after
+  13 minutes and the card idled for 47; the verdict came back `CLEAN` with whole-run averages that
+  described neither period. Nothing distinguished "survived an hour" from "the load died early" —
+  the exact event the tool exists to catch, since a crashing stress test leaves the GPU idle.
+  Fixed: `loaded_fraction` plus loaded-only statistics are now recorded, and an under-loaded run
+  returns a new `INCONCLUSIVE` verdict (exit 3) instead of `CLEAN`. Both paths verified directly.
+  Also established that the `GpuIdle` throttle bit reads `0x1` at 98% utilisation under compute
+  load, so it cannot be used to detect idleness.
+  **Still open:** the throttling path has never fired (the card never neared its limits — 139 W of
+  a 200 W budget) and no run has used the locked OCCT protocol.
 - **[CORE] Deliberately trigger a failure and check it gets caught.** Push an undervolt until
   something actually crashes, and confirm the logger records it. A detector that has never seen a
   positive case is not known to work. This is the single highest-value hour in Phase 0.
