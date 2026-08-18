@@ -632,6 +632,38 @@ point itself looked normal (it reheated during the settle interval), while the t
 points were measurably corrupted. Both sweep tooling and the stability logger now disable QuickEdit
 at startup.
 
+#### 5.4.3 The sub-100% utilisation is a telemetry artifact, not lost work
+
+Sweep points recorded GPU utilisation below 100% even after subtracting the measured `nvidia-smi`
+monitoring cost, and the residual appeared to grow with clock: 0.9% at 1200 MHz, 5.5% at 1897 MHz,
+7.5% at 2754 MHz. Read naively this is the signature of a CPU that cannot launch kernels fast enough
+as they shorten — which would suppress high-clock throughput, understate high-clock efficiency, and
+bias `membw`'s optimum downward. That would undermine §5.4.1, so it was tested.
+
+**The counterbalanced passes already answer it.** Each target frequency was measured twice in
+opposite order. At 1897 MHz the two passes recorded utilisation of **99.0% and 92.7%** — and
+throughput of **342.3 and 342.3 GB/s**. At 1605 MHz, 99.0% and 93.0% utilisation gave 320.1 and
+321.4 GB/s, the *lower*-utilisation pass being marginally faster. A six-point utilisation difference
+with no throughput difference means the two are decoupled: whatever `utilization.gpu` is varying
+over, it is not work.
+
+**A direct test confirms it.** Holding total bytes moved constant while varying bytes-per-kernel
+over a 32× range changes the launch count from 320 to 10240. Throughput across that range spans
+415.3–417.6 GB/s — a **0.5% spread**, running the wrong way for the hypothesis, with the smallest
+kernels marginally fastest. Replaying the identical sequence from a CUDA graph, which removes nearly
+all per-launch CPU work, moved throughput **−0.1%**. Clock was steady at 2992 MHz across every
+condition (measured spread 0 MHz).
+
+The instructive detail is that the CPU cost is genuinely large and still not binding. At 16 M
+elements per kernel the CPU spent **90% of wall time** submitting launches; at 512 M it spent 0.0%.
+Throughput was the same. **A high CPU cost is not a CPU bottleneck** — the submission thread stays
+ahead of the GPU until it doesn't, and 90% occupancy is not 100%. The sweep's own configuration sits
+at 0.1% submit, three orders of magnitude clear of the edge.
+
+The conclusion for methodology is narrow but worth stating: `utilization.gpu` averaged over ~25
+samples is too coarse to support an argument about lost work, and should not be used as one.
+Throughput is the measurement; utilisation is a diagnostic hint. Data in `data/probes/`.
+
 ### 5.5 Cross-chip variation
 
 `[PENDING — requires multiple units]`

@@ -64,6 +64,19 @@ Nothing here is research. It is the difference between "code exists" and "code i
   penalty for using one workload's optimum for the other is under 2%. Run
   `python analysis/analyze_fine_sweep.py`. Swept 1200–1900 rather than 1300–1800 because a band
   tight around the peak has no curvature for a fit to use.
+- ✅ **[CORE] Check whether the fine sweep was CPU-launch-limited.** Done — **it was not**, so the
+  §5.4.1 optima stand. Sweep utilisation ran below 100% even after subtracting monitoring cost, and
+  the residual looked clock-dependent (0.9% at 1200 MHz → 7.5% at 2754 MHz), which would have meant
+  suppressed high-clock throughput and a downward-biased `membw` optimum. Two independent checks say
+  no. The counterbalanced passes already contained the answer: at 1897 MHz they recorded 99.0% and
+  92.7% utilisation with throughput of 342.3 and 342.3 GB/s — utilisation and work are decoupled.
+  A direct probe then held total work constant while varying kernel size 32×, moving the launch
+  count from 320 to 10240: throughput spread **0.5%**, and CUDA graph replay changed it **−0.1%**.
+  Notably the CPU spent **90% of wall time** submitting at the smallest kernel size and still did not
+  limit anything — high CPU cost is not a CPU bottleneck. Run
+  `python tools/frequency-sweep/probe_launch_bound.py --rounds 3`; data in `data/probes/`.
+  **Methodological lesson:** `utilization.gpu` over ~25 samples is too coarse to carry an argument
+  about lost work. It is a hint, not a measurement.
 - **[CORE] Build a genuinely bandwidth-saturated kernel and re-run the fine sweep.** This is now the
   sharpest open question. `membw` is issue-limited below ~1990 MHz, so the V100 prediction was
   tested outside the domain where its premise holds. A kernel that saturates DRAM across the whole

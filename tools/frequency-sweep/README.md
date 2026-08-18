@@ -267,6 +267,41 @@ not damage. It is also exactly what the stability logger's verdict logic is buil
 
 ---
 
+## `probe_launch_bound.py` — is the workload CPU-launch-limited?
+
+A diagnostic, not a sweep. Answers one question: does the CPU fail to feed the GPU as kernels
+shorten at high clock? It matters because a yes would suppress high-clock throughput and bias the
+measured efficiency optimum downward.
+
+```bash
+python tools/frequency-sweep/probe_launch_bound.py --rounds 3 --json out.json
+```
+
+It holds total bytes moved constant while varying bytes-per-kernel over a 32× range, so the launch
+count changes 320 → 10240 while the work does not. A launch-limited workload must speed up as
+kernels grow. It then replays the identical sequence from a CUDA graph, which removes nearly all
+per-launch CPU work — the same kernel size against itself, so cache behaviour is controlled.
+
+**Answer on this card: not launch-limited.** 0.5% throughput spread across the range, −0.1% from
+graph replay. Full result in `data/probes/README.md`.
+
+Two things this script does that are worth copying into any similar probe:
+
+- **It refuses to report a verdict it cannot support.** If achieved clock varies more than 60 MHz
+  between conditions, or any condition runs under 2 s, it prints `UNTRUSTWORTHY` and says what to
+  change. Both guards fired during development and both were correct: the first draft ran each
+  condition in 250 ms, which left the 100 ms sampler two or three samples per window, and the clock
+  guard then correctly flagged a 1302 MHz "spread" that was really the card boosting up from idle.
+- **It settles before measuring.** 20 s of untimed work first. Without it, the ramp from idle is
+  charged to whichever condition happened to run first — which on a reversed-order design is a
+  different condition every round.
+
+The `cpu_submit_fraction` field is the one to read. At 16 M elements per kernel the CPU spent 90% of
+wall time submitting launches and throughput was unaffected; at 512 M it spent 0.0% and throughput
+was the same. **A high CPU cost is not a CPU bottleneck**, and only one of those is a defect.
+
+---
+
 ## What the control APIs actually allow
 
 Verified directly against an RTX 5060 Ti on driver 610.88 by dumping `nvml.dll`'s export table and

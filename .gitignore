@@ -23,3 +23,7 @@ venv/
 .idea/
 Thumbs.db
 desktop.ini
+
+# Probe telemetry written to the working directory when --telemetry is left at its default.
+# The kept results live in data/probes/ as JSON; the raw 100 ms sample stream is scratch.
+probe_telemetry.csv
