@@ -82,8 +82,20 @@ Nothing here is research. It is the difference between "code exists" and "code i
   tested outside the domain where its premise holds. A kernel that saturates DRAM across the whole
   swept range would test it properly, and would say whether the contradiction above is about
   consumer silicon or about this particular kernel.
-- **[CORE] Add a `LICENSE` file** and check the GPU-DVFS-Dataset's license before quoting its data
-  in any write-up. Still open.
+- ✅ **[CORE] Add a `LICENSE` file** and check the GPU-DVFS-Dataset's license. Done — MIT for the
+  software (`LICENSE`), CC BY 4.0 for the collected data (`LICENSE-DATA`), split because the dataset
+  is the contribution that warrants attribution and the tooling is not.
+  **Both DVFS datasets turned out to have no license file at all** — GPU-DVFS-Dataset and
+  HKBU-HPML/GPU-DVFS-Job-Schedule. Both repos exist and are public; neither states terms, which
+  under default copyright means all rights reserved and no redistribution. Verified that
+  `data/raw/` and `data/external/` are gitignored, so nothing has ever been redistributed and the
+  README's claim was accurate. That arrangement is now load-bearing and must stay. The other two
+  sources are Apache-2.0 and MIT. Full table in `README.md`.
+  Also resolved a citation gap: the dataset's README asks that its paper be cited, and it was
+  referenced only by GitHub URL. It is Zhang et al., EuroSys '24, doi:10.1145/3627703.3629584 —
+  **and that paper reports 26.7% mean V100 efficiency gain for 5.8% performance loss**, a
+  performance-constrained figure that is not the same quantity as this project's unconstrained
+  44.4%. Recorded in reference [6] so the write-up cannot accidentally imply it beats them.
 
 ---
 
@@ -150,6 +162,12 @@ Turning two separate models into one project with a single research question.
 - **[CORE] Add a performance-constrained optimum.** "Best efficiency" is the wrong objective for
   most real users. "Lowest power subject to keeping ≥95% of stock performance" is the question
   people actually have, and the dataset can already answer it.
+  **There is now a published number to compare against:** GEEPAFS [6], the paper the V100 dataset
+  comes from, reports **26.7% mean efficiency gain for 5.8% performance loss** on the same chip.
+  That is the right benchmark for a constrained result, and it is a much harder bar than the
+  unconstrained 44.4%. Landing near or below it is a perfectly good outcome — they had an online
+  policy with hardware feedback; this would be an offline oracle on the same data, so the two are
+  not measuring the same difficulty either. Say which is which.
 - **[CORE] Report uncertainty, not just point estimates.** Leave-one-workload-out gives 33 regret
   values — report the distribution, not only the mean. The worst case matters more than the average
   when the failure mode is an unstable machine.

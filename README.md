@@ -228,7 +228,48 @@ figure isn't a metric they define. Useful for framing, not for training.
 
 ---
 
-## License and attribution
+## License
 
-The GPU-DVFS-Dataset belongs to its authors and is not redistributed here. Check its license before
-using its data in any published write-up.
+Split, because the code and the data are different contributions with different reuse needs.
+
+| | License | Covers |
+|---|---|---|
+| Software | [MIT](LICENSE) | `tools/`, `analysis/`, `scripts/` |
+| Data | [CC BY 4.0](LICENSE-DATA) | `data/frequency-sweeps/`, `data/stability-runs/`, `data/probes/` |
+
+The dataset is the part of this project nobody else can replicate, so it carries an attribution
+requirement; the tooling does not.
+
+**Before using any run, read the README in its data directory.** Several are explicitly marked not
+dataset-grade, and one carries a verdict later shown to be wrong. Those notes are part of the data.
+
+## Third-party data
+
+No third-party data is redistributed in this repository. `data/raw/` and `data/external/` are
+gitignored and populated locally by `scripts/Get-Dataset.ps1`, which downloads from each upstream
+project. Licenses were checked on 2026-08-18:
+
+| Source | License | Status |
+|---|---|---|
+| [GPU-DVFS-Dataset](https://github.com/zyjopensource/GPU-DVFS-Dataset) | **None stated** | Redistribution not permitted |
+| [HKBU-HPML/GPU-DVFS-Job-Schedule](https://github.com/HKBU-HPML/GPU-DVFS-Job-Schedule) | **None stated** | Redistribution not permitted |
+| [RightNow-AI/RightNow-GPU-Database](https://github.com/RightNow-AI/RightNow-GPU-Database) | Apache-2.0 | Redistribution permitted with notice |
+| [kylemcdonald/ethereum-emissions](https://github.com/kylemcdonald/ethereum-emissions) | MIT | Redistribution permitted with notice |
+
+**The two DVFS datasets have no license file at all.** Both repositories exist and are public, and
+neither states terms — which under default copyright means all rights reserved, so the CSVs must not
+be redistributed. The fetch-don't-vendor arrangement already in place is what makes this fine, and it
+needs to stay that way. Citing them and reporting findings derived from them is ordinary academic
+use and is unaffected.
+
+The GPU-DVFS-Dataset's README asks that its paper be cited, which costs nothing and is done:
+
+> Zhang, Wang, Lin, Xu, Wang. *Improving GPU Energy Efficiency through an Application-transparent
+> Frequency Scaling Policy with Performance Assurance.* EuroSys '24, pp. 769–785. ACM.
+> [doi:10.1145/3627703.3629584](https://doi.org/10.1145/3627703.3629584)
+
+Worth knowing what that paper reports, because it is the closest published comparison to this
+project's own numbers: their GEEPAFS policy improves V100 energy efficiency by **26.7% on average
+for 5.8% performance loss**. That is a *performance-constrained* result. This project's 44.4% figure
+is the unconstrained per-workload optimum and is not the same quantity — any write-up must not
+present the two as if one beats the other.

@@ -691,7 +691,14 @@ Throughput is the measurement; utilisation is a diagnostic hint. Data in `data/p
   Workloads and GPU Scaling.* arXiv:2501.08219.
 - [5] Yang et al. *Accurate and Convenient Energy Measurements for GPUs: A Detailed Study of NVIDIA
   GPU's Built-in Power Sensor.* 2024. Code: `github.com/JimZeyuYang/GPU_Power_Benchmark`
-- [6] GPU-DVFS-Dataset. `github.com/zyjopensource/GPU-DVFS-Dataset`
+- [6] Zhang, Wang, Lin, Xu, Wang. *Improving GPU Energy Efficiency through an
+  Application-transparent Frequency Scaling Policy with Performance Assurance.* EuroSys '24,
+  pp. 769–785. ACM. doi:10.1145/3627703.3629584.
+  Dataset: `github.com/zyjopensource/GPU-DVFS-Dataset` — **no license stated**; not redistributed
+  here, fetched locally by `scripts/Get-Dataset.ps1`. Their reported result is **26.7% mean V100
+  efficiency gain for 5.8% performance loss**, which is performance-constrained and therefore not
+  the same quantity as this project's unconstrained 44.4% (§5.1). The two must not be compared
+  directly as if one beats the other.
 - [7] HKBU-HPML DVFS datasets. `github.com/HKBU-HPML/GPU-DVFS-Job-Schedule`,
   `github.com/HKBU-HPML/NV-DVFS-Benchmark`
 - [8] Leng, Buyuktosunoglu, Bertran, Bose, Janapa Reddi. *Safe Limits on Voltage Reduction
