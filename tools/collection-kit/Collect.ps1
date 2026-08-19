@@ -209,7 +209,10 @@ foreach ($workload in $workloads) {
     $command = '{0} {1} --workload {2} --json' -f $pythonForCmd, $workloadForCmd, $workload
 
     try {
-        & $sweepPs1 -SessionLabel "$Label-$workload-stock" `
+        # No hardcoded "-stock" here. It produced filenames like
+        # `5060ti-oc-gemm-stock_sweep.csv` on an overclocked run, which reads as stock data
+        # to anyone scanning the directory. $Label already carries the tuning state.
+        & $sweepPs1 -SessionLabel "$Label-$workload" `
                     -WorkloadCommand $command `
                     -OutputDirectory $outDir
         $results += [pscustomobject]@{ Workload = $workload; Ok = ($LASTEXITCODE -eq 0 -or $null -eq $LASTEXITCODE) }

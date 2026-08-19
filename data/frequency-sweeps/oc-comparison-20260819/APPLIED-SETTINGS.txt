@@ -1,0 +1,53 @@
+APPLIED OVERCLOCK SETTINGS - RTX 5060 Ti
+========================================
+Recorded 2026-08-19 from the MSI Afterburner UI directly, confirmed by the operator.
+This is the configuration in force for the sweep labelled `5060ti-oc`.
+
+SOURCE OF TRUTH
+  Read off the Afterburner window and V/F curve editor, NOT parsed from the .cfg.
+  The .cfg files in this folder contain ALL FOUR profile slots with no reliable
+  indicator of which is active, and an earlier attempt to read the applied values
+  from them pulled numbers out of an INACTIVE slot (+2000 MHz memory, 100% power
+  limit). Those figures were wrong. The values below are the correct ones.
+
+SETTINGS
+  Memory clock offset : +2500 MHz
+  Core clock          : V/F CURVE OVERRIDE - not a flat offset
+  Core voltage offset : 0 mV
+  Power limit         : 111 %
+  Temp limit          : default (slider at minimum position, not raised)
+  Fan speed           : 0 % = automatic curve
+
+V/F CURVE SHAPE
+  Flat-pinned at approximately 3000 MHz for every voltage point at and above
+  ~925 mV. Below that it ramps roughly linearly from ~1900 MHz at 700 mV to
+  ~2900 MHz at ~920 mV, with a step discontinuity near 845 mV.
+
+  This is the "flattened curve" style of overclock: rather than raising the whole
+  curve, it caps frequency at a chosen ceiling and forces the card to reach that
+  ceiling at a lower voltage than stock would use. It is why the card sustains
+  2942-3000 MHz under load instead of boosting high and then dropping back.
+
+  IMPORTANT for the write-up: this is a frequency-at-voltage change, and no
+  documented API on this hardware reads voltage back. The project measures
+  frequency against power, not voltage. Do not describe this as a measured
+  undervolt - the curve was SET at these voltage points, not verified at them.
+
+IDLE STATE WHEN RECORDED
+  Core 1545 MHz, memory 7001 MHz, 0 mV reported, 38 C.
+
+RAW FILES IN THIS FOLDER
+  VEN_10DE&DEV_2D04&...cfg  - the GPU profile config, all four slots, 26346 bytes.
+                              Contains the VFCurve hex blob for each slot.
+  MSIAfterburner.cfg        - global Afterburner settings.
+  Profile1-4.cfg            - 31-byte slot files.
+
+  Kept because they are the only machine-readable record of the exact per-point
+  curve. Treat APPLIED-SETTINGS.txt above as authoritative for which values were
+  actually in force.
+
+WHY THIS FILE EXISTS
+  `-AppliedSettings` is the one field nothing can reconstruct after the fact. An
+  earlier stability run on this card recorded its settings by observation rather
+  than from Afterburner, and that run still carries a caveat saying it must not be
+  used for anything comparative. This file is the fix for that gap.

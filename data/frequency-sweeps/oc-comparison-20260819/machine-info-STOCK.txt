@@ -1,0 +1,19 @@
+﻿label            : 5060ti-kittest-stock
+collected_at     : 2026-08-19T14:28:39.7675690-07:00
+collected_by     : kit v1
+tuning_state     : STOCK (no overclock or undervolt applied by this kit)
+
+--- GPU (nvidia-smi) ---
+name, driver_version, vbios_version, memory.total [MiB], power.limit [W], power.max_limit [W], pcie.link.gen.max, pcie.link.width.max
+NVIDIA GeForce RTX 5060 Ti, 610.88, 98.06.4e.40.b4, 16311 MiB, 180.00 W, 200.00 W, 5, 8
+
+--- CPU / RAM / OS ---
+cpu              : AMD Ryzen 7 9700X 8-Core Processor
+cpu_cores        : 8 cores / 16 threads
+ram_gb           : 31.1
+os               : Microsoft Windows 11 Pro 10.0.26200
+
+--- NOTE ---
+This machine was measured AT STOCK. If any overclock, undervolt, or custom fan
+curve was applied before this ran, this file is WRONG and the run must be
+discarded or re-labelled by hand.
