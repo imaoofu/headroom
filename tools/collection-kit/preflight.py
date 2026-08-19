@@ -15,10 +15,46 @@ WHY torch.cuda.is_available() IS NOT ENOUGH
 Prints one line per fact. Exits non-zero with a readable reason on any failure.
 """
 
+import subprocess
 import sys
+
+# membw allocates three 256M-float buffers totalling 3.07 GB; gemm about 0.8 GB.
+REQUIRED_VRAM_BYTES = 4.0e9
+
+
+def freeVramBytesViaSmi():
+    """Free VRAM according to nvidia-smi. Returns None if it cannot be determined.
+
+    Checked BEFORE torch is imported, and that ordering is the whole point. torch does not
+    fail fast on a starved GPU - it blocks trying to allocate. Measured here: with an
+    unrelated 19 GB model resident and ~765 MB free, the preflight hung indefinitely at
+    "testing the GPU" instead of refusing, and had to be killed. A hang with no message is
+    the worst possible failure on a machine nobody can debug, so the cheap external check
+    runs first.
+    """
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits", "-i", "0"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return None
+        return float(result.stdout.strip().splitlines()[0]) * 1024 * 1024
+    except Exception:
+        return None
 
 
 def main():
+    freeEarly = freeVramBytesViaSmi()
+    if freeEarly is not None:
+        print(f"INFO|vram_free_before_torch_gb={freeEarly / 1e9:.1f}")
+        if freeEarly < REQUIRED_VRAM_BYTES:
+            print(f"FAIL|only {freeEarly / 1e9:.1f} GB of VRAM is free and the benchmark needs "
+                  f"about {REQUIRED_VRAM_BYTES / 1e9:.1f} GB. Close whatever is using the GPU - "
+                  f"a game, a browser playing video, or a local AI model still loaded. "
+                  f"Checked before loading PyTorch, which would otherwise hang rather than fail.")
+            return 7
+
     try:
         import torch
     except Exception as error:
@@ -75,12 +111,12 @@ def main():
     print(f"INFO|vram_total_gb={totalBytes / 1e9:.1f}")
     print(f"INFO|vram_free_gb={freeBytes / 1e9:.1f}")
 
-    # membw allocates three buffers of 256M float32 = 3.07 GB, gemm about 0.8 GB. Below this
-    # the workload will OOM partway through a clock-locked sweep.
-    requiredBytes = 4.0e9
-    if freeBytes < requiredBytes:
+    # Second look, now from torch's own view. The nvidia-smi check above already refused the
+    # starved case; this catches the narrower one where memory was freed between the two
+    # checks or where nvidia-smi was unavailable and returned None.
+    if freeBytes < REQUIRED_VRAM_BYTES:
         print(f"FAIL|only {freeBytes / 1e9:.1f} GB of VRAM free; the benchmark needs about "
-              f"{requiredBytes / 1e9:.1f} GB. Close anything using the GPU.")
+              f"{REQUIRED_VRAM_BYTES / 1e9:.1f} GB. Close anything using the GPU.")
         return 6
 
     print("OK|this GPU can run the benchmark")
