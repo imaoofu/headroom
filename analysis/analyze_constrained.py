@@ -219,6 +219,115 @@ def analyseCurves(curves, floors):
     return rows, disagreements
 
 
+def bestFixedFrequency(curves, floor):
+    """
+    Best SINGLE frequency that satisfies the floor for every curve. Returns (mhz, meanEff).
+
+    This is the baseline §5.2's null was measured against, and applying it under a constraint
+    is what makes the constrained result meaningful. A policy that promises "you keep 95% of
+    your performance" must keep that promise on every workload it might meet, so it cannot
+    pick a frequency that is fine on average - it is pinned by the most frequency-sensitive
+    workload in the set. That is the entire mechanism.
+
+    Returns None when the curves share no common frequency grid, which is not a failure but a
+    real limitation: two sweeps whose achieved clocks differ cannot be served by one policy
+    frequency in any meaningful sense, and pretending otherwise would invent a comparison.
+    """
+    if not curves:
+        return None
+    grids = [set(round(p["mhz"], 3) for p in points) for points in curves.values()]
+    shared = set.intersection(*grids)
+    if not shared:
+        return None
+
+    best = None
+    for frequency in sorted(shared):
+        efficiencies = []
+        for points in curves.values():
+            point = next(p for p in points if round(p["mhz"], 3) == frequency)
+            if point["perf"] < floor - 1e-9:
+                efficiencies = None
+                break
+            efficiencies.append(point["eff"])
+        if efficiencies is None:
+            continue
+        mean = sum(efficiencies) / len(efficiencies)
+        if best is None or mean > best[1]:
+            best = (frequency, mean)
+    return best
+
+
+def bindingCurve(curves, floor):
+    """Which curve forces the fixed policy upward: the one with the highest floor of its own."""
+    lowest = {}
+    for name, points in curves.items():
+        feasible = [p["mhz"] for p in points if p["perf"] >= floor - 1e-9]
+        if feasible:
+            lowest[name] = min(feasible)
+    if not lowest:
+        return None
+    name = max(lowest, key=lambda k: lowest[k])
+    return name, lowest[name], lowest
+
+
+def reportFixedVersusPerWorkload(curves, floors):
+    """The comparison that decides whether knowing the workload is worth anything."""
+    print("=== per-workload selection vs one fixed frequency ===")
+    print("  A fixed-frequency policy must hold its guarantee on EVERY workload, so it is")
+    # ASCII only in printed output: the Windows console is cp1252 and mangles anything else.
+    print("  pinned by the most frequency-sensitive one. This is the 5.2 baseline, applied")
+    print("  under a constraint.")
+    print()
+    probe = bestFixedFrequency(curves, 0.0)
+    if probe is None:
+        print("  The curves share no common frequency grid, so no single policy frequency")
+        print("  exists to evaluate. This is a property of the data, not a missing feature:")
+        print("  each sweep achieved its own clocks. Aligning targets across workloads in a")
+        print("  future sweep would make this comparison available on consumer hardware.")
+        print()
+        return []
+
+    print(f"{'floor':>7}{'per-workload':>14}{'best fixed':>12}{'at':>9}{'gap':>10}{'share':>9}")
+    rows = []
+    for floor in floors:
+        perWorkload = []
+        for points in curves.values():
+            best = constrainedOptimum(points, floor)
+            if best is not None:
+                perWorkload.append(best["eff"])
+        fixed = bestFixedFrequency(curves, floor)
+        if not perWorkload or fixed is None:
+            print(f"{floor * 100:6.0f}%   no frequency is feasible for every workload")
+            continue
+        perMean = sum(perWorkload) / len(perWorkload)
+        gainPer = (perMean - 1.0) * 100.0
+        gainFixed = (fixed[1] - 1.0) * 100.0
+        gap = gainPer - gainFixed
+        share = (gap / gainPer * 100.0) if gainPer > 1e-9 else 0.0
+        rows.append({"floor": floor, "per_workload_pct": gainPer, "fixed_pct": gainFixed,
+                     "fixed_mhz": fixed[0], "gap_pp": gap, "share_pct": share})
+        print(f"{floor * 100:6.0f}%{gainPer:>13.1f}%{gainFixed:>11.1f}%{fixed[0]:>9.0f}"
+              f"{gap:>9.1f}pp{share:>8.0f}%")
+
+    print("  'gap' = what knowing the workload is worth. 'share' = that gap as a fraction of")
+    print("  all gain available at that floor.")
+
+    # Tightest floor = HIGHEST fraction. 0.95 constrains harder than 0.80, so this is max().
+    tightest = max((f for f in floors if f < 1.0 - NOISE_BAND_PCT / 100.0), default=None)
+    if tightest is not None:
+        binding = bindingCurve(curves, tightest)
+        if binding:
+            name, mhz, lowest = binding
+            relaxed = sorted(lowest.items(), key=lambda kv: kv[1])[:3]
+            print()
+            print(f"  At a {tightest * 100:.0f}% floor the policy is pinned at {mhz:.0f} MHz by "
+                  f"{name}.")
+            print(f"  Least demanding: " +
+                  ", ".join(f"{n} ({f:.0f} MHz)" for n, f in relaxed))
+    print()
+    return rows
+
+
 def printFloorTable(title, rows):
     print(f"=== {title} ===")
     print(f"{'floor':>7}{'moved':>8}{'eff gain':>10}{'median':>9}{'range':>16}"
@@ -401,6 +510,7 @@ def main():
     v100Rows, v100Disagreements = analyseCurves(v100, floors)
     printFloorTable("V100 (33 workloads, 757-1530 MHz)", v100Rows)
     reportAssumptions(v100, v100Disagreements)
+    reportFixedVersusPerWorkload(v100, [f for f in floors if f < 1.0 - NOISE_BAND_PCT / 100.0])
     compareToGeepafs(v100Rows)
 
     consumer = loadSweepCurves(args.pattern)
@@ -412,6 +522,9 @@ def main():
                             f"{points[0]['mhz']:.0f}-{points[-1]['mhz']:.0f} MHz)", rows)
             if disagreements:
                 reportAssumptions({name: points}, disagreements)
+        if len(consumer) > 1:
+            reportFixedVersusPerWorkload(
+                consumer, [f for f in floors if f < 1.0 - NOISE_BAND_PCT / 100.0])
         print("  NOTE: the consumer reference is the card's SUSTAINED maximum in that sweep,")
         print("  not a stock clock - these sweeps ran on an overclocked card, and the applied")
         print("  offsets were never recorded. Treat the consumer half as shape, not magnitude,")

@@ -696,8 +696,54 @@ axes. **That comparison must not be presented as a win.** GEEPAFS chooses freque
 prior knowledge of the application; this is an offline oracle that has already measured the entire
 curve for every workload. An oracle is *supposed* to beat an online policy, and a margin this
 narrow — 1.8 points of efficiency — is the more notable observation: it bounds how much a perfect
-predictor could add over an existing deployed method, and the answer is *not much*. That is a
-result about the ceiling on §5.2's prediction problem, and it points the same way §5.2 already did.
+predictor could add over an existing deployed method, and the answer is *not much*.
+
+That bound applies to *adaptive* methods only, and reading it as a general statement about
+frequency selection would be a mistake — §5.6.1 shows the comparison against a non-adaptive baseline
+runs the other way entirely.
+
+#### 5.6.1 The constraint is what makes workload identity valuable
+
+§5.2 found that a probe-based model does not beat a single fixed frequency, and that null stands.
+It was measured *without* a performance constraint. Applying the same baseline under one reverses
+it.
+
+A fixed-frequency policy must honour its guarantee on **every** workload it might meet, so it cannot
+choose a frequency that is merely good on average — it is pinned by the most frequency-sensitive
+workload in the set. On the V100 at a 95% floor, `BiCG` and `GeMM` need at least 1462 MHz, while
+`CNN_1.5M`, `ViT_t` and `RL-PPO` would be fine at 757 MHz. One frequency has to serve both ends.
+
+| floor | per-workload optimum | best single fixed frequency | pinned at | gap | share of available gain |
+|---|---|---|---|---|---|
+| 95% | 28.5% | **4.9%** | 1462 MHz | **23.6 pp** | **83%** |
+| 90% | 35.8% | 10.2% | 1402 MHz | 25.6 pp | 72% |
+| 85% | 41.1% | 22.2% | 1275 MHz | 18.9 pp | 46% |
+| 80% | 43.1% | 27.5% | 1207 MHz | 15.6 pp | 36% |
+
+**At a 95% floor, 83% of all available efficiency gain requires knowing which workload is running.**
+The fixed policy can descend only one grid step below stock and captures 4.9% of an available 28.5%.
+
+Robustness: excluding the four flat-top workloads of §5.6 whose curves may be noise, the gap is
+still **20.7 pp of 25.8 pp** — 80%. The effect does not depend on the questionable points.
+
+The consumer sweeps reproduce the mechanism at smaller scale, and one detail is worth stating
+plainly: **at a 95% floor no single frequency is feasible for both workloads at all**, because
+`gemm` needs 2592 MHz to hold 95% and no shared grid point that high exists in `membw`'s sweep. The
+tool reports that rather than substituting a number. At a 90% floor the gap is 7.4 pp of 26.2 pp
+(28%), smaller than the V100's — expected, since two workloads of similar clock sensitivity span
+much less of the space than 33.
+
+**This is the reconciliation between §5.2 and the project's premise.** Unconstrained, the efficiency
+curve is flat near its peak and one frequency serves nearly everything — hence the null, which is
+real and stays reported. Constrained, the flat region is cut off from below by whichever workload
+loses performance fastest, and workload identity becomes worth most of the available gain. The
+defensible claim is therefore not *"per-workload tuning is worth its cost"* nor *"it is not"*, but
+that **the answer inverts depending on whether a performance guarantee is required, and the
+unconstrained measurement is the misleading one** — because a performance guarantee is what
+essentially every real deployment has.
+
+It also explains why GEEPAFS is a substantial result rather than an over-engineered one: adaptation
+is doing real work under a constraint, which is precisely the regime it targets.
 
 **Consumer hardware, and this is where the constraint bites unevenly.** The two workloads diverge
 sharply once a performance floor is imposed, in a way the unconstrained optima did not reveal:

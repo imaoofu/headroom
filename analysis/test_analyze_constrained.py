@@ -16,6 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from analyze_constrained import (  # noqa: E402
     analyseCurves,
+    bestFixedFrequency,
+    bindingCurve,
     buildPoints,
     constrainedOptimum,
     flatTopCurves,
@@ -199,6 +201,69 @@ check("near-duplicate frequencies are detected",
       nearDuplicateFrequencies(clamped) == [(1495.0, 1500.0)],
       f"got {nearDuplicateFrequencies(clamped)}")
 check("well-separated frequencies are not flagged", nearDuplicateFrequencies(points) == [])
+
+print("\nOne fixed frequency vs per-workload selection:")
+# Two curves sharing a grid, reference 1500 MHz for both.
+#
+#   sensitive : perf 0.50 @1000, 1.00 @1500 | power 40, 100
+#               eff 0.0125, 0.0100  ->  relative 1.25, 1.00
+#   flat      : perf 0.98 @1000, 1.00 @1500 | power 40, 100
+#               eff 0.0245, 0.0100  ->  relative 2.45, 1.00
+#
+# At floor 0.95: 'sensitive' cannot use 1000 (0.50 < 0.95) so it is stuck at 1500 (+0%).
+#                'flat' can (0.98 >= 0.95) so it takes 1000 (+145%).
+#                per-workload mean gain = (0 + 145)/2 = 72.5%
+#                a FIXED frequency must serve both, so 1000 is out; only 1500 works, +0%.
+#                gap = 72.5 pp, i.e. 100% of all available gain needs the workload identity.
+sensitive = buildPoints([1000, 1500], [0.50, 1.00], [40, 100])
+flat = buildPoints([1000, 1500], [0.98, 1.00], [40, 100])
+pair = {"sensitive": sensitive, "flat": flat}
+
+fixed = bestFixedFrequency(pair, 0.95)
+check("floor 0.95 pins the fixed policy at 1500 MHz", fixed[0] == 1500.0, f"got {fixed}")
+check("fixed policy gains 0% at 1500 MHz", abs((fixed[1] - 1.0) * 100.0) < 1e-9,
+      f"got {(fixed[1] - 1.0) * 100.0:.4f}%")
+
+perMean = sum(constrainedOptimum(p, 0.95)["eff"] for p in pair.values()) / 2
+check("per-workload mean gain is +72.5%", abs((perMean - 1.0) * 100.0 - 72.5) < 1e-9,
+      f"got {(perMean - 1.0) * 100.0:.4f}%")
+
+# When the constraint is slack both curves prefer the SAME frequency, so the gap vanishes.
+# At floor 0.40: both feasible at 1000. Fixed picks 1000, mean eff (1.25+2.45)/2 = 1.85.
+# Per-workload also picks 1000 for both. Gap must be exactly zero.
+fixedSlack = bestFixedFrequency(pair, 0.40)
+perSlack = sum(constrainedOptimum(p, 0.40)["eff"] for p in pair.values()) / 2
+check("slack floor puts the fixed policy at 1000 MHz", fixedSlack[0] == 1000.0, f"got {fixedSlack}")
+check("slack floor gain is +85%", abs((fixedSlack[1] - 1.0) * 100.0 - 85.0) < 1e-9,
+      f"got {(fixedSlack[1] - 1.0) * 100.0:.4f}%")
+check("slack floor gap is EXACTLY zero - the workloads agree",
+      abs(perSlack - fixedSlack[1]) < 1e-12, f"got {(perSlack - fixedSlack[1]) * 100:.6f} pp")
+
+# Identical curves can never produce a gap, whatever the floor.
+twin = {"a": buildPoints([1000, 1500], [0.96, 1.00], [40, 100]),
+        "b": buildPoints([1000, 1500], [0.96, 1.00], [40, 100])}
+for floor in (0.95, 0.90, 0.50):
+    f = bestFixedFrequency(twin, floor)
+    p = sum(constrainedOptimum(pts, floor)["eff"] for pts in twin.values()) / 2
+    check(f"identical curves have zero gap at floor {floor:.2f}", abs(p - f[1]) < 1e-12,
+          f"got {(p - f[1]) * 100:.6f} pp")
+
+print("\nThe binding workload is the one with the highest floor of its own:")
+name, mhz, lowest = bindingCurve(pair, 0.95)
+check("'sensitive' is identified as binding", name == "sensitive", f"got {name}")
+check("binding frequency is 1500 MHz", mhz == 1500.0, f"got {mhz}")
+check("'flat' is recorded as needing only 1000 MHz", lowest["flat"] == 1000.0,
+      f"got {lowest['flat']}")
+
+print("\nCurves on different grids cannot share a policy frequency, and must say so:")
+mismatched = {"a": buildPoints([1000, 1500], [0.9, 1.0], [40, 100]),
+              "b": buildPoints([1100, 1600], [0.9, 1.0], [40, 100])}
+check("no shared grid returns None rather than inventing a comparison",
+      bestFixedFrequency(mismatched, 0.90) is None,
+      f"got {bestFixedFrequency(mismatched, 0.90)}")
+check("empty curve set returns None", bestFixedFrequency({}, 0.90) is None)
+check("a floor nothing can satisfy returns None",
+      bestFixedFrequency(pair, 1.01) is None, f"got {bestFixedFrequency(pair, 1.01)}")
 
 print()
 if failures:

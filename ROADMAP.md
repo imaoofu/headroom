@@ -169,6 +169,16 @@ Turning two separate models into one project with a single research question.
   do **nothing at all** while `membw` gains **36.4% efficiency for 4.9% loss and 30.2% power saved**.
   Workload-aware selection matters far more under a performance constraint than without one — an
   argument for the project's premise that §5.4.1 alone does not make.
+  **The result that matters most is §5.6.1**, added after the above: against a single FIXED
+  frequency — the baseline §5.2's null actually used — per-workload selection at a 95% floor gives
+  28.5% against **4.9%**, a gap of **23.6 pp, i.e. 83% of all available gain**. A fixed policy must
+  hold its guarantee on every workload so it is pinned by the most sensitive one (`BiCG` needs
+  1462 MHz; `ViT_t` would be fine at 757). **This reconciles §5.2's null with the project's
+  premise:** unconstrained the curve is flat and one frequency serves everything; constrained, the
+  flat region is cut off from below and workload identity becomes worth most of the gain. Claim
+  neither "tuning is worth it" nor "it isn't" — claim that the answer inverts with the constraint,
+  and that the unconstrained measurement is the misleading one. Robust to dropping the four
+  flat-top workloads (20.7 pp of 25.8 pp).
   **Against GEEPAFS [6]:** 28.5% for 3.3% loss versus their 26.7% for 5.8%, better on both axes —
   and this must never be written as a win. They are an online policy with no prior knowledge; this
   is an offline oracle holding the whole measured curve. An oracle is supposed to win. The narrow
