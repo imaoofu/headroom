@@ -48,6 +48,7 @@ headroom/
 ├── analysis/                     Python — modelling on the public dataset
 │   ├── load_data.py              loading + a validation check against the published files
 │   ├── characterize.py           measures the stock-vs-optimum gap directly, before any model
+│   ├── analyze_constrained.py    best efficiency subject to a performance floor — the useful form
 │   └── predict_optimal_frequency.py   the model, and the baselines built to embarrass it
 ├── tools/
 │   └── stability-logger/         PowerShell — original data collection
@@ -90,10 +91,19 @@ python analysis/characterize.py
 python analysis/predict_optimal_frequency.py
 ```
 
+"Best efficiency at any cost" is rarely the objective anyone actually has. This asks the constrained
+version — most efficiency subject to keeping ≥95% (or 90%, 85%) of stock performance — across both
+datasets, and reports the assumption checks alongside the answer:
+
+```bash
+python analysis/analyze_constrained.py
+```
+
 ### Getting the data
 
-The public CSVs are **not redistributed in this repo** — their license has not been checked, and
-re-hosting someone else's dataset without that check is not a thing to do casually. Download them:
+The public CSVs are **not redistributed in this repo**, and now cannot be: the license check found
+that the two DVFS datasets state no terms at all, which under default copyright means all rights
+reserved. See [Third-party data](#third-party-data). Download them yourself:
 
 ```powershell
 .\scripts\Get-Dataset.ps1

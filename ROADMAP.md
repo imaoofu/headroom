@@ -159,15 +159,23 @@ Turning two separate models into one project with a single research question.
 
 ## Phase 3 — analysis the prototype doesn't do yet
 
-- **[CORE] Add a performance-constrained optimum.** "Best efficiency" is the wrong objective for
-  most real users. "Lowest power subject to keeping ≥95% of stock performance" is the question
-  people actually have, and the dataset can already answer it.
-  **There is now a published number to compare against:** GEEPAFS [6], the paper the V100 dataset
-  comes from, reports **26.7% mean efficiency gain for 5.8% performance loss** on the same chip.
-  That is the right benchmark for a constrained result, and it is a much harder bar than the
-  unconstrained 44.4%. Landing near or below it is a perfectly good outcome — they had an online
-  policy with hardware feedback; this would be an offline oracle on the same data, so the two are
-  not measuring the same difficulty either. Say which is which.
+- ✅ **[CORE] Add a performance-constrained optimum.** Done — `analysis/analyze_constrained.py`,
+  with known-answer tests in `analysis/test_analyze_constrained.py`. See §5.6.
+  **At a 95% floor all 33 V100 workloads benefit**: mean 28.5% efficiency gain (median 22.3%, worst
+  case still +3.3%) for 3.3% realised performance loss and 23.4% power saved. Two-thirds of the
+  unconstrained 44.4% survives a constraint that removes three-quarters of its performance cost.
+  **The consumer contrast is the more interesting finding.** Unconstrained, the two workloads'
+  optima differ by 146 MHz with under 2% penalty for swapping them. Constrained to 95%, `gemm` can
+  do **nothing at all** while `membw` gains **36.4% efficiency for 4.9% loss and 30.2% power saved**.
+  Workload-aware selection matters far more under a performance constraint than without one — an
+  argument for the project's premise that §5.4.1 alone does not make.
+  **Against GEEPAFS [6]:** 28.5% for 3.3% loss versus their 26.7% for 5.8%, better on both axes —
+  and this must never be written as a win. They are an online policy with no prior knowledge; this
+  is an offline oracle holding the whole measured curve. An oracle is supposed to win. The narrow
+  1.8-point margin is the real observation: it bounds what a perfect predictor could add over a
+  deployed method, and the answer is *not much* — pointing the same way the §5.2 null already did.
+  Grid overshoot means every saving is a lower bound; the 100% and 99% floors are flagged
+  unquotable because 4 workloads record performance above their own 1530 MHz value.
 - **[CORE] Report uncertainty, not just point estimates.** Leave-one-workload-out gives 33 regret
   values — report the distribution, not only the mean. The worst case matters more than the average
   when the failure mode is an unstable machine.

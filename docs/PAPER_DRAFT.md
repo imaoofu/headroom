@@ -668,6 +668,68 @@ Throughput is the measurement; utilisation is a diagnostic hint. Data in `data/p
 
 `[PENDING — requires multiple units]`
 
+### 5.6 The performance-constrained optimum
+
+§5.1's 44.4% is the *unconstrained* optimum: best efficiency at any cost, and the cost is a mean
+13.7% performance. Almost nobody wants that trade. The question users actually ask is constrained —
+maximise efficiency subject to keeping at least some fraction of stock performance — and the same
+data answers it. Run `python analysis/analyze_constrained.py`.
+
+**Reference dataset, 33 workloads.** Realised loss is below the floor because the optimum must land
+on one of 13 grid points, so the constraint is usually overshot; every saving here is therefore a
+lower bound on what a continuous knob would reach.
+
+| floor | workloads that downclock | efficiency gain (mean / median) | realised perf lost (mean / worst) | power saved | median freq |
+|---|---|---|---|---|---|
+| 95% | 33/33 | **28.5% / 22.3%** | 3.3% / 4.9% | 23.4% | 1275 MHz |
+| 90% | 33/33 | 35.8% / 36.6% | 6.5% / 9.9% | 30.5% | 1080 MHz |
+| 85% | 33/33 | 41.1% / 43.3% | 9.4% / 15.0% | 35.5% | 952 MHz |
+
+**Every workload benefits at a 5% budget** — the worst case is still +3.3% efficiency, and the mean
+28.5% gain costs only 3.3% realised performance. Two-thirds of the unconstrained 44.4% survives a
+constraint that removes three-quarters of its performance cost, which is the practically useful form
+of the result.
+
+**Against GEEPAFS [6], on the same chip.** Their online policy achieves 26.7% mean efficiency gain
+for 5.8% performance loss. At a 95% floor this analysis reaches 28.5% for 3.3% — better on both
+axes. **That comparison must not be presented as a win.** GEEPAFS chooses frequencies live with no
+prior knowledge of the application; this is an offline oracle that has already measured the entire
+curve for every workload. An oracle is *supposed* to beat an online policy, and a margin this
+narrow — 1.8 points of efficiency — is the more notable observation: it bounds how much a perfect
+predictor could add over an existing deployed method, and the answer is *not much*. That is a
+result about the ceiling on §5.2's prediction problem, and it points the same way §5.2 already did.
+
+**Consumer hardware, and this is where the constraint bites unevenly.** The two workloads diverge
+sharply once a performance floor is imposed, in a way the unconstrained optima did not reveal:
+
+| floor | `gemm` (compute-bound) | `membw` (memory-bound) |
+|---|---|---|
+| 99% | 0% gain — cannot move | 21.6% gain, 0.9% lost, 18.5% power saved |
+| 95% | **0% gain — cannot move** | **36.4% gain, 4.9% lost, 30.2% power saved** |
+| 90% | 16.1% gain, 7.1% lost | 36.4% gain, 4.9% lost |
+
+At a 5% performance budget `gemm` can do nothing at all, while `membw` gains 36.4% efficiency and
+saves 30.2% power. The unconstrained optima differ by only 146 MHz (§5.4.1) with under 2% penalty
+for using one for the other; **the constrained optima differ qualitatively.** Workload-aware
+frequency selection matters far more under a performance constraint than without one — which is an
+argument for the project's premise that the §5.4.1 result on its own does not make.
+
+**Caveats, all reported by the tool rather than left to the reader.** Floors of 100% and 99% sit
+inside a 1% noise band and are flagged as unquotable: 4 of the 33 V100 workloads (CNN_1.8M, FDTD,
+CNN_1.5M, RL-PPO) record performance *above* their own 1530 MHz value at some lower frequency, by
++0.62 to +1.44 percentage points. Either those curves are genuinely flat across the top — which
+would mean real downclocking at literally zero cost, and they are the memory-bound workloads where
+that is most plausible — or a 1% excess is noise in a dataset averaging 5 repeats. The data cannot
+separate the two and neither is asserted. Separately, the consumer reference is the card's
+*sustained maximum* on an overclocked card whose offsets were never recorded, so the consumer half
+is shape, not magnitude, until §5.4's interleaved stock-versus-tuned run exists.
+
+The optimiser brute-forces the feasible set rather than using the closed form
+`max(unconstrained optimum, lowest feasible frequency)`, and reports whether the two agree. They
+agree on all 33 V100 workloads. They disagree on the consumer sweeps, but only by 1–5 MHz, and the
+tool identifies why: the card clamped several high targets onto one achieved clock, so those are
+repeat measurements of one condition rather than distinct grid points.
+
 ---
 
 ## 6. Limitations
