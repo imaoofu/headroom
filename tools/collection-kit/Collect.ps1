@@ -105,14 +105,32 @@ if ($pythonForCmd -match '\s' -or $workloadForCmd -match '\s') {
 }
 Say "  [ok] kit path is usable" "Green"
 
-# The single most likely failure: torch present but CUDA-less, or a half-copied kit.
-# Better to find out in 60 seconds than after a clock lock is applied.
-Say "  ... loading PyTorch (first run can take a minute)" "Gray"
-$cudaCheck = & $pythonExe -c "import torch;print('OK' if torch.cuda.is_available() else 'NOCUDA');print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else '')" 2>&1
-if ($LASTEXITCODE -ne 0) { Fail "The bundled Python failed to run.`n`n$cudaCheck" }
-if ($cudaCheck -notcontains "OK") { Fail "PyTorch loaded but reports no CUDA device.`n`n$cudaCheck" }
-$gpuName = ($cudaCheck | Where-Object { $_ -and $_ -ne "OK" } | Select-Object -First 1)
-Say "  [ok] PyTorch sees the GPU: $gpuName" "Green"
+# torch.cuda.is_available() is NOT sufficient: it says True on a card whose compute
+# capability this build has no compiled kernels for, then fails on the first real operation
+# with "no kernel image is available". preflight.py runs the actual benchmark kernels and
+# synchronises, so that failure surfaces here rather than mid-sweep with clocks locked.
+Say "  ... testing the GPU (first run can take a minute)" "Gray"
+$preflightPy = Join-Path $kit "preflight.py"
+if (-not (Test-Path $preflightPy)) { Fail "Missing file in the kit: $preflightPy" }
+$pre = & $pythonExe $preflightPy 2>&1
+$preExit = $LASTEXITCODE
+
+$gpuName = ""
+$vramFree = ""
+foreach ($line in $pre) {
+    $text = [string]$line
+    if ($text -match '^INFO\|device=(.+)$')        { $gpuName = $matches[1] }
+    if ($text -match '^INFO\|capability=(.+)$')    { Say "  [ok] compute capability: $($matches[1])" "Green" }
+    if ($text -match '^INFO\|vram_free_gb=(.+)$')  { $vramFree = $matches[1] }
+    if ($text -match '^WARN\|(.+)$')               { Say "  [warn] $($matches[1])" "Yellow" }
+}
+if ($preExit -ne 0) {
+    $reason = ($pre | Where-Object { $_ -match '^FAIL\|' } | Select-Object -First 1) -replace '^FAIL\|', ''
+    if (-not $reason) { $reason = ($pre -join "`n") }
+    Fail "This GPU cannot run the benchmark.`n`n$reason"
+}
+Say "  [ok] GPU ran the benchmark kernels: $gpuName" "Green"
+if ($vramFree) { Say "  [ok] VRAM free: $vramFree GB" "Green" }
 
 # A busy GPU makes every number wrong. The sweep refuses above 10% anyway; say so early.
 $util = (& $smi.Source --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 0 2>$null | Select-Object -First 1)
