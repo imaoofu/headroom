@@ -1,0 +1,87 @@
+# Collection kit
+
+A self-contained folder that runs a stock frequency sweep on a machine with **nothing
+installed** — no Python, no PyTorch, no admin setup beyond one UAC click. Built for shop
+builds, where the machine belongs to a customer, time is short, and nobody is available to
+debug a failure.
+
+Delete the folder when done and the machine is exactly as it was.
+
+## What it collects
+
+Two 13-point sweeps at stock (`gemm` and `membw`), plus a `machine-info.txt` recording GPU,
+driver, VBIOS, CPU, RAM and OS. **About 15 minutes total**, measured — not estimated:
+
+| sweep | duration on an RTX 5060 Ti |
+|---|---|
+| `gemm`, 13 points | 6 min 42 s |
+| `membw`, 13 points | 5 min 11 s |
+
+This matters because `ROADMAP.md` and the original execution plan both budgeted ~5 hours per
+machine, which is why collection felt too expensive to start. It is not. A sweep is a coffee
+break, and the correction is what makes per-build collection realistic.
+
+## Building the kit
+
+The kit is not committed here — it contains a 4.65 GB copy of Python and PyTorch. Rebuild it:
+
+```powershell
+# 1. Copy a working Python that already has torch+cu128 installed.
+robocopy "C:\Users\<you>\AppData\Local\Programs\Python\Python312" "E:\headroom-kit\python" /E /MT:16
+
+# 2. Copy the tooling.
+mkdir E:\headroom-kit\tools\frequency-sweep, E:\headroom-kit\tools\stability-logger, E:\headroom-kit\results
+copy tools\frequency-sweep\Invoke-FrequencySweep.ps1  E:\headroom-kit\tools\frequency-sweep\
+copy tools\frequency-sweep\gpu_workload.py            E:\headroom-kit\tools\frequency-sweep\
+copy tools\Disable-QuickEdit.ps1                      E:\headroom-kit\tools\
+copy tools\stability-logger\Log-GpuStability.ps1      E:\headroom-kit\tools\stability-logger\
+
+# 3. Copy this directory's Collect.ps1, RUN-ME.bat and CHECKLIST.txt to E:\headroom-kit\
+```
+
+Then verify before trusting it:
+
+```powershell
+E:\headroom-kit\python\python.exe -c "import torch; print(torch.cuda.is_available())"
+```
+
+**A plain copy of a normal Python install is relocatable** — verified on a different drive
+letter, CUDA still detected, and the workload returned 412 GB/s against 415 GB/s from the
+installed copy. An embeddable-Python build is not required and is harder to get right.
+
+First `import torch` from cold storage takes ~45 s; subsequent imports are ~1.5 s once the OS
+caches the DLLs. The sweep launches Python once per frequency, so this is a one-off cost, not
+13 × 45 s. Copying the kit to the target machine's local disk before running keeps it fast.
+
+## Two things that will bite whoever rebuilds this
+
+**Paths must not contain spaces.** `Invoke-FrequencySweep.ps1` hands its `-WorkloadCommand`
+string to `cmd /c` via `Start-Process -ArgumentList`, which mangles embedded quotes. Measured
+directly: the quoted form fails with *"The filename, directory name, or volume label syntax is
+incorrect"*, the unquoted form runs fine. The existing sweeps only ever worked because they
+used unquoted relative paths. `Collect.ps1` resolves 8.3 short names and refuses up front if
+the resulting command still contains a space — because discovering this halfway through a
+clock-locked sweep is much worse than refusing to start.
+
+**`tuning_state_claimed` is an assertion the script cannot verify.** Nothing in `nvidia-smi`
+reliably reports whether an Afterburner profile is applied, so that field records what the
+operator was *supposed* to do — and it would say `STOCK` just as confidently on a run where
+someone forgot. This is the same gap that made an earlier stability run unusable.
+
+The fix is that the kit also appends `peak_sm_clock_mhz[<workload>]`, taken from the achieved
+clock the sweep already records. That is a measurement, not a claim, and on a known model the
+stock/tuned gap dwarfs run-to-run noise — on this RTX 5060 Ti, **2588 MHz stock against
+~2950 MHz tuned**.
+
+**Peak clock is recorded per workload and must never be pooled.** The two workloads draw
+different power and so reach different clocks at identical settings: measured at stock,
+`gemm` 2598 MHz against `membw` 2753 MHz — a 165 MHz spread from workload alone. A pooled
+figure reports membw's 2753 and invites comparison against gemm's ~2597 stock reference, which
+looks like a 156 MHz overclock and is nothing of the sort. Compare each workload only against
+the same workload's reference.
+
+## Running it
+
+`RUN-ME.bat` — double-click, click Yes on UAC, type a label, wait. Full operator instructions,
+including every failure message and what to do about it, are in `CHECKLIST.txt`. That file is
+written to be printed and followed by someone who has never seen the project.

@@ -1,0 +1,129 @@
+HEADROOM COLLECTION KIT - build-day checklist
+=============================================
+
+WHAT THIS DOES
+  Measures GPU performance and power at 13 locked core frequencies, twice (one
+  compute-heavy workload, one memory-heavy). About 15 minutes total.
+
+WHAT IT INSTALLS
+  Nothing. Python and PyTorch run out of this folder. Delete the folder when done
+  and the machine is exactly as it was.
+
+
+BEFORE YOU START
+----------------
+[ ] Machine is at STOCK. No overclock, no undervolt, no custom fan curve, no
+    Afterburner profile applied. If anything IS applied, this run is not a stock
+    baseline and you must write that down.
+
+[ ] Windows is installed, NVIDIA drivers are installed.
+    Check: open Command Prompt, type   nvidia-smi
+    You should see a table with the GPU name. If "not recognized", install drivers first.
+
+[ ] Nothing heavy is running. Close games, Discord, browsers playing video, any AI
+    or mining app. The kit refuses to start above 10% GPU usage and will tell you.
+
+[ ] Copy this whole folder to the machine's own drive first - for example
+    C:\headroom-kit. Running it straight off the USB works but is slower.
+    IMPORTANT: the folder path must have NO SPACES in it.
+
+
+RUNNING IT
+----------
+1. Double-click  RUN-ME.bat
+
+2. A blue/black window appears and asks for Administrator. Click YES.
+   (Needed to lock GPU clocks. Without it, nothing can be measured.)
+
+3. It checks the machine, then asks:   Machine label
+   Type the GPU model, no spaces. Examples:
+       rtx4070-super
+       rtx5070ti-build3
+   Press Enter.
+
+4. Wait. Two sweeps run, about 6-12 minutes each.
+
+   *** DO NOT CLICK INSIDE THE WINDOW ***
+   Clicking in a Windows console selects text and FREEZES the program. It looks
+   like a crash but it is just paused. This has happened before and corrupted a
+   run. If you do it by accident: press Esc, or right-click once, and it resumes.
+
+5. When it finishes it prints either
+       COLLECTION SUCCEEDED         <- good
+   or
+       COLLECTION INCOMPLETE        <- something went wrong, keep the folder anyway
+
+6. Copy the results folder off the machine (USB, cloud, email to yourself).
+   It is at:   results\<date>_<label>\
+   It is small - a few hundred KB.
+
+7. Delete the kit folder from the machine.
+
+
+HOW TO TELL IT WORKED
+---------------------
+The kit checks itself and prints one line per sweep, like:
+
+  [ok] 20260820-...-gemm-stock_sweep.csv: 13 points, 13 with performance data, 11 locks held
+
+Good:    at least 10 points "with performance data" for each of the two sweeps.
+Bad:     "[BAD]" in red, or fewer than 10 points.
+
+"locks held" being less than 13 is NORMAL and fine - the card refuses some
+frequencies near the top. It is recorded and handled later.
+
+
+IF SOMETHING GOES WRONG
+-----------------------
+It refuses to start and says why. The message tells you what to fix. Common ones:
+
+  "Not running as Administrator"
+      You clicked No on the prompt, or launched Collect.ps1 directly.
+      Use RUN-ME.bat and click Yes.
+
+  "nvidia-smi not found"
+      NVIDIA drivers are not installed on this machine. Install them, reboot, retry.
+
+  "PyTorch loaded but reports no CUDA device"
+      The GPU is not being seen. Usually a driver problem. Reboot and retry.
+      If it persists, skip this machine - do not waste build time on it.
+
+  "GPU is already N% busy"
+      Something is using the GPU. Close it. Task Manager > Performance > GPU shows
+      what. Then retry.
+
+  "This kit is in a folder whose path contains a space"
+      Move the folder to C:\headroom-kit and retry.
+
+  Window seems frozen, no new output for minutes
+      You probably clicked in it. Press Esc or right-click once.
+
+  Anything else, or it crashes
+      Take a photo of the screen. Copy the results folder anyway. Move on - do not
+      burn build time debugging. A missed machine costs less than a late delivery.
+
+
+DID IT LEAVE THE GPU LOCKED?
+----------------------------
+No - the kit resets clocks automatically, even if it crashes, and clock locks do
+not survive a reboot in any case. To confirm by hand:
+
+    nvidia-smi -q -d CLOCK
+
+If you are worried, just reboot. That always clears it.
+
+
+WRITE THIS DOWN FOR EACH MACHINE
+--------------------------------
+The kit records the GPU, driver, VBIOS, CPU, RAM and OS automatically. It CANNOT
+know these, so note them yourself in the results folder (a text file or a photo):
+
+  [ ] Case and cooler (airflow changes thermals, thermals change everything)
+  [ ] Ambient room temperature, roughly
+  [ ] Anything unusual - riser cable, vertical mount, small case, dusty
+  [ ] Whether this GPU is new or used
+
+  [ ] IF the customer wants it overclocked: run this kit FIRST at stock, then
+      apply the OC, then run it AGAIN with a label ending -oc.
+      Two runs on one machine is worth far more than one run on two machines,
+      because it is the same silicon under both conditions.

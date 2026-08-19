@@ -112,6 +112,17 @@ The part nobody else can replicate, and the reason the project is worth doing at
 - **[CORE] Start with machines already accessible.** Own rig first, then anything nearby. Do not
   wait on new shop builds to begin; shop cadence limits how fast the sample *grows*, not when it
   starts.
+- ✅ **[CORE] Build a collection kit that runs on a machine with nothing installed.** Done —
+  `tools/collection-kit/`, proven end-to-end on the 5060 Ti on 2026-08-19: UAC elevation, portable
+  Python finding CUDA from a non-system drive, clock locking, both sweeps completing, self-check
+  reporting success. 13/13 points with performance data on each sweep.
+  **The timing assumption that made collection look expensive was wrong.** The execution plan
+  budgeted ~5 hours per machine. Measured from the session JSONs: `gemm` 6 min 42 s, `membw`
+  5 min 11 s — **about 15 minutes for both sweeps including setup.** Collection is a coffee break,
+  not a build-day sacrifice, which removes the main reason it had not started.
+  Nothing is installed on the target: Python and PyTorch run from the kit folder and leave no
+  trace when it is deleted. A plain copy of a working Python install is relocatable — verified on
+  a different drive letter, 412 GB/s against 415 GB/s from the installed copy.
 - **[CORE] Decide the sampling strategy, and be honest about which question it can answer:**
   - *Many different GPU models, one unit each* → answers "does the efficiency curve shape
     generalise across architectures?" Cannot say anything about chip-to-chip variance.
