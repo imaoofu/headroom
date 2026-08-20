@@ -49,24 +49,64 @@ Below ~1545 MHz the sign flips — the tuned configuration draws *more* power (+
 1237 MHz). Plausibly the custom curve sets a higher voltage floor at low clocks than stock
 would, but with no voltage readback on this hardware that is a hypothesis, not a finding.
 
-## An anomaly that is NOT resolved
+## An anomaly that is REAL and REPRODUCIBLE, but unexplained
 
 Across 1545–1852 MHz the tuned `membw` run is flat at ~295 GB/s while stock rises
 312 → 332 → 342. That is 11–14% **slower** with more memory bandwidth available, at identical
-core clock and temperature. It looks capped and there is no confident explanation.
+core clock and temperature.
 
-**A confound was introduced into the tuned run and not the stock one.** A stability logger ran
-concurrently during the tuned sweep, spawning `nvidia-smi` once per second — a process spawn
-measured at ~42 ms in this project's own instrumentation work, and the same class of
-contention that once cost `membw` 50.5% of its reported duration. The two runs are therefore
-not methodologically identical.
+This was originally recorded here as probably an artifact, because a stability logger ran
+concurrently during the tuned sweep and not the stock one, spawning `nvidia-smi` once per
+second. **That explanation is now ruled out.** A second tuned `membw` sweep was run the same
+evening with no logger and nothing else touching the GPU — see
+`../membw-anomaly-20260819/` — and the plateau reproduced to within 1%:
 
-The contention does not obviously explain the shape — a per-sample penalty should be roughly
-uniform, and the top-end points are unaffected — but it cannot be ruled out.
+| SM MHz | stock | tuned run 1 (logger) | tuned run 2 (clean) | run 1 vs run 2 |
+|---|---|---|---|---|
+| ~1560 | 311.8 | 296.6 | 294.1 | −0.8% |
+| ~1710 | 331.8 | 295.3 | 297.8 | +0.8% |
+| ~1867 | 341.6 | 294.5 | 297.5 | +1.0% |
+| ~2025 | 344.4 | 324.4 | 326.7 | +0.7% |
 
-**Treat the 1545–1852 MHz `membw` comparison as unusable.** The top-end figures and all of
-`gemm` are far less exposed: `gemm`'s matched-frequency rows are internally consistent across
-four frequencies and have a coherent mechanism.
+Three mechanisms are now eliminated:
+
+- **Not the logger.** Two independent runs, one with it and one without, agree within 1%.
+- **Not memory clock.** The re-run added memory-clock telemetry to the sweep tool, which had
+  only ever recorded the SM clock — the wrong clock for a bandwidth-bound workload. Memory
+  held at exactly 16301 MHz at every frequency, with `min` equal to `max` equal to `avg`. There
+  is no downclock.
+- **Not throttling.** `clocks_throttle_reasons.active` was decoded for all three runs. No power
+  cap, no thermal slowdown, no hardware slowdown anywhere. The `GpuIdle` bit appears in the
+  tuned runs at *every* frequency including the ones performing at +17.6%, so it reflects a
+  telemetry sample landing between benchmark iterations, not a stall.
+
+Temperature in the band was 44–48 °C, far below any throttle point.
+
+**So the 1545–1852 MHz data is not unusable — it is corroborated.** What is missing is a
+mechanism, not a measurement. The plateau is genuine behaviour of this card under this tuned
+profile, and it is the one result here that contradicts the simple story the rest of the data
+tells.
+
+### The leading untested hypothesis
+
+The applied profile pins the core V/F curve flat near 3000 MHz at every voltage at and above
+~925 mV. When `nvidia-smi` locks the SM clock to 1560–1867 MHz, the card must select a voltage
+point *below* the flattened region, where the custom curve and the stock curve differ most.
+The plateau may be an artifact of that voltage selection rather than anything about bandwidth.
+
+That is cheap to test and not yet done: run the same `membw` sweep with the **memory overclock
+only** and the core V/F curve left at stock. If the plateau vanishes, it belongs to the curve;
+if it survives, it belongs to the memory overclock. About 4 minutes of card time.
+
+### What this still does not establish
+
+The stock leg of the comparison is unchanged and was measured at 14:33 the same day, while the
+clean tuned re-run was at 20:42 — roughly six hours and an unknown ambient shift apart. The
+tuned-versus-tuned reproduction is solid; the tuned-versus-stock gap in this band rests on the
+original same-session pair, not on the re-run.
+
+`gemm` is unaffected by all of this: its matched-frequency rows are internally consistent
+across four frequencies and have a coherent mechanism.
 
 ## Other caveats that stay attached
 

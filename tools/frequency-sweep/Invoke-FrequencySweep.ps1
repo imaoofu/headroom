@@ -167,11 +167,16 @@ function Select-SweepFrequencies {
 
 function Read-Telemetry {
     param([string]$Smi)
-    $fields = "clocks.current.sm,power.draw,temperature.gpu,utilization.gpu,clocks_throttle_reasons.active"
+    # Memory clock is appended LAST so the existing positional offsets are untouched. It is
+    # here because a bandwidth-bound workload tracks memory clock, not SM clock, and sweeps
+    # that recorded only the SM clock could not explain why membw capped at ~295 GB/s across
+    # 1545-1852 MHz on a tuned card while stock rose 312 -> 342. That question is unanswerable
+    # from telemetry that never looked at the relevant clock.
+    $fields = "clocks.current.sm,power.draw,temperature.gpu,utilization.gpu,clocks_throttle_reasons.active,clocks.current.memory"
     $lines = @(& $Smi --query-gpu=$fields --format=csv,noheader,nounits -i 0 2>$null)
     if ($lines.Count -eq 0) { return $null }
     $parts = ("$($lines[0])") -split "\s*,\s*"
-    if ($parts.Count -lt 5) { return $null }
+    if ($parts.Count -lt 6) { return $null }
     return [pscustomobject]@{
         # Unix epoch seconds, same clock the benchmark stamps its timed region with, so
         # samples can be matched to the interval that actually produced the performance number.
@@ -181,6 +186,7 @@ function Read-Telemetry {
         Temperature  = [double]$parts[2]
         Utilization  = [double]$parts[3]
         ThrottleMask = $parts[4]
+        MemClock     = [double]$parts[5]
     }
 }
 
@@ -542,6 +548,7 @@ try {
         }
 
         $clockStats = $statSamples | Select-Object -ExpandProperty SmClock | Measure-Object -Average -Minimum -Maximum
+        $memClockStats = $statSamples | Select-Object -ExpandProperty MemClock | Measure-Object -Average -Minimum -Maximum
         $powerStats = $statSamples | Select-Object -ExpandProperty PowerDraw | Measure-Object -Average -Minimum -Maximum
         $tempStats = $statSamples | Select-Object -ExpandProperty Temperature | Measure-Object -Average -Maximum
         $utilStats = $statSamples | Select-Object -ExpandProperty Utilization | Measure-Object -Average
@@ -552,6 +559,9 @@ try {
             achieved_frequency_avg = [math]::Round($clockStats.Average, 1)
             achieved_frequency_min = $clockStats.Minimum
             achieved_frequency_max = $clockStats.Maximum
+            memory_clock_avg_mhz   = [math]::Round($memClockStats.Average, 1)
+            memory_clock_min_mhz   = $memClockStats.Minimum
+            memory_clock_max_mhz   = $memClockStats.Maximum
             lock_held              = ([math]::Abs($clockStats.Average - $target) -le 30)
             # Direction matters, and conflating the two hides the more dangerous failure.
             # BELOW target = the card could not sustain the request (power/thermal limits) -
