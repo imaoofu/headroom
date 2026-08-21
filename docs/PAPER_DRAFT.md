@@ -920,7 +920,21 @@ this is unexplained and recorded rather than trimmed.
 
 ## 6. Limitations
 
-1. **Voltage is unmeasured.** No documented API exposes it. This is a frequency-power study.
+1. **Voltage is unmeasured by this study, though it is not unmeasurable - DRAFT.** NVML does not
+   expose it: `nvidia-smi` has no voltage field, and an exhaustive scan of NVML field IDs 1-259 via
+   `nvmlDeviceGetFieldValues` returns 44 readable fields, none of them a core voltage at any scale.
+   That scan also confirms the fields it *does* return are correct - IDs 185/186 give instantaneous
+   and average power in milliwatts, and 187-192 give the power limits (150/180/200 W), matching both
+   `nvidia-smi` and third-party tools. Earlier drafts asserted "no documented API exposes it" without
+   testing; this is now verified for NVML specifically.
+
+   **HWiNFO64 does read core voltage on this device** (observed 0.665-0.800 V at idle on the
+   RTX 5060 Ti), so the sensor exists and the limitation is one of tooling integration rather than
+   hardware. Joining HWiNFO's CSV log to a locked-frequency sweep on timestamp would convert the
+   mechanism proposed in 5.7.3 from hypothesis to measurement, and is the single highest-value
+   outstanding experiment in this study. Until that is done, every voltage statement here -
+   including the guardband interpretation in 5.4 and the V/F curve mechanism in 5.7.3 - is inference
+   from power at matched frequency, not a voltage measurement.
 2. **Small, heterogeneous sample.** Access is limited to roughly one machine every 2–3 weeks, mostly
    different models rather than repeats, which bounds any claim about chip-to-chip variation.
 3. **Single vendor, recent architecture.** NVIDIA only; no AMD or Intel measurements.
