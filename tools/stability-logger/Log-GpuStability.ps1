@@ -311,7 +311,14 @@ $crashEvents = Get-DisplayDriverCrashEvents -Since $startTime
 
 $flags = New-Object System.Collections.ArrayList
 if ($crashEvents.Count -gt 0) {
-    [void]$flags.Add("$($crashEvents.Count) display-driver crash/reset event(s) in the Windows System log during this run")
+    # Say WHICH events, not just how many. The count alone is unfalsifiable by the person
+    # reading the log: a self-test found this flag firing on nvlddmkm Error 153, which was a
+    # genuine GPU context reset caused by force-killing a CUDA process - real, but not the
+    # hard crash the bare wording implies. Provider, id, level and time let a human judge.
+    $eventDetail = ($crashEvents | ForEach-Object {
+        "{0} {1} id={2} ({3})" -f $_.TimeCreated.ToString("HH:mm:ss"), $_.ProviderName, $_.Id, $_.LevelDisplayName
+    }) -join "; "
+    [void]$flags.Add("$($crashEvents.Count) display-driver crash/reset event(s) in the Windows System log during this run: $eventDetail")
 }
 if ($queryFailureCount -gt 0) {
     [void]$flags.Add("$queryFailureCount telemetry query failure(s) - the driver may have been unresponsive")
@@ -388,6 +395,14 @@ $session = [ordered]@{
     applied_settings         = $AppliedSettings
     test_method              = $TestMethod
     verdict                  = $verdict
+    crash_events             = @($crashEvents | ForEach-Object {
+        [ordered]@{
+            time     = $_.TimeCreated.ToString("o")
+            provider = $_.ProviderName
+            id       = $_.Id
+            level    = $_.LevelDisplayName
+        }
+    })
     flags                    = @($flags)
     gpu_name                 = $gpuName
     driver_version           = $driverVersion
@@ -427,7 +442,11 @@ $session = [ordered]@{
     schema_version           = "0.2.0"
 }
 
-$session | ConvertTo-Json -Depth 4 | Out-File -FilePath $metaPath -Encoding utf8
+# NOT Out-File -Encoding utf8: on Windows PowerShell 5.1 that writes a UTF-8 BOM, and a BOM
+# in front of "{" makes this file fail every standard JSON parser - Python's json.load raises
+# "Expecting value: line 1 column 1". This is a machine-readable artifact, so it gets BOM-less
+# UTF-8 written explicitly.
+[IO.File]::WriteAllText($metaPath, ($session | ConvertTo-Json -Depth 4), [Text.UTF8Encoding]::new($false))
 
 Write-Host ""
 Write-Host "[LOGGER] ===================== RESULT ====================="
