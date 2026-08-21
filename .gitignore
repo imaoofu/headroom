@@ -16,6 +16,9 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+# Isolated env for the CuPy-based bandwidth kernel probes. Created with
+# --system-site-packages so it reuses the main torch install rather than duplicating it.
+.venv-cupy/
 .ipynb_checkpoints/
 
 # Editors / OS

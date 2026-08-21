@@ -63,16 +63,76 @@ lever and a limited one: a deeply unrolled kernel could plausibly move `membw` f
 ~280 GB/s at this clock, but there is a second ceiling well short of saturation that more
 parallelism does not lift.
 
+## Probe 4 — a hand-written unrolled float4 kernel (the decisive test)
+
+`tools/frequency-sweep/probe_unrolled_kernel.py`, via CuPy's `RawKernel` (NVRTC compiles at
+runtime, so no CUDA toolkit or Visual Studio install is needed). The kernel issues `UNROLL`
+independent `float4` loads into registers **before storing any of them**, so one thread holds
+`UNROLL` memory requests in flight instead of one. `UNROLL` is a `-D` define, not a runtime
+argument, because it must be a compile-time constant for `#pragma unroll` to fire and for the
+staging array to live in registers rather than spilling to local memory.
+
+torch is never imported in that process. CuPy has its own memory pool and two allocators
+competing on a 16 GB card would contaminate a bandwidth measurement.
+
+Peak here is 522 GB/s: the card's 448 GB/s rating scaled by the applied memory overclock
+(16301 against a 14001 rating).
+
+| | @1395 MHz | of peak | @2760 MHz | of peak |
+|---|---|---|---|---|
+| cupy elementwise | 269.4 | 51.6% | 337.3 | 64.6% |
+| raw float4 unroll=1 | 268.3 | 51.4% | 387.9 | 74.3% |
+| raw float4 unroll=2 | 268.7 | 51.5% | 383.2 | 73.4% |
+| raw float4 unroll=4 | 265.4 | 50.8% | 381.6 | 73.1% |
+| raw float4 unroll=8 | 266.6 | 51.1% | 382.9 | 73.4% |
+| raw float4 unroll=16 | **281.9** | **54.0%** | 387.1 | 74.2% |
+
+**At 1395 MHz, unrolling depth does essentially nothing.** Sixteen requests in flight per thread
+performs within 5% of one. The best result, 281.9 GB/s at `unroll=16`, is 54% of available
+bandwidth.
+
+**Two independent methods converge on the same wall.** Probe 3 reached 281.2 GB/s by running
+four concurrent streams. Probe 4 reached 281.9 GB/s by deep per-thread unrolling. Those agree to
+within 0.25%, from completely different mechanisms for raising memory-level parallelism. That is
+a hardware ceiling, not a property of any one kernel.
+
+At 2760 MHz the hand-written kernel does beat CuPy's elementwise copy by 1.15x — but it does not
+beat torch's, which reached 408 GB/s (78% of peak) in probe 1. torch's elementwise kernel is
+already close to the achievable ceiling at high clock, and hand-writing one is not an
+improvement there either.
+
+### A measurement bug in this probe, corrected
+
+The first run reported throughput as **173% of theoretical peak**, which is impossible and is
+recorded here rather than quietly fixed. Cause: memory clock was sampled after the settle but
+*before* the load started, so it read the idle memory P-state (7001 MHz) instead of the loaded
+one (16301), halving the computed peak. The probe now samples memory clock while the card is
+deliberately kept busy. The throughput figures themselves were never affected — only the
+percentage column.
+
 ## Answer to the roadmap question
 
 The roadmap asks whether the contradiction is "about consumer silicon or about this particular
-kernel." The evidence says **mostly the silicon, partly the kernel**:
+kernel." With probe 4 in hand the answer is **the silicon**, and a conclusion drawn earlier from
+probe 3 alone has to be withdrawn.
+
+**Correction.** Probe 3 showed concurrency buying 1.29x at low clock, and that was read here as
+"the ceiling is memory-level parallelism, which a better kernel can attack." That inference was
+wrong. A better kernel was then written, and it does not attack it: sixteen outstanding requests
+per thread performs the same as one, and lands on the identical 281 GB/s ceiling that
+concurrency found. The 1.29x was concurrency climbing *to* the wall from a lower starting point,
+not evidence the wall could be moved.
+
+The evidence now:
 
 - Six different access patterns, including a pre-vectorised one and a read-only one, all land in
   the same issue/MLP-limited regime. That is not a property of one badly written kernel.
 - Concurrency lifts low-clock bandwidth by only 29% and then stops, well short of saturation.
-- **A fully DRAM-saturated workload at 1400 MHz appears not to be constructible on this part.**
-  The crossover into genuine bandwidth-limited behaviour happens somewhere above 2000 MHz.
+- A hand-written float4 kernel sweeping memory-level parallelism from 1 to 16 outstanding
+  requests per thread moves nothing, and stops at the same ceiling two other methods found.
+- **A DRAM-saturated workload at 1400 MHz is not constructible on this part.** Not "appears not
+  to be" - three independent approaches now agree. The crossover into genuine bandwidth-limited
+  behaviour happens somewhere above 2000 MHz.
 
 The practical consequence for the project is that a `membw` sweep below ~2000 MHz is not
 measuring a memory-bound workload, whatever the kernel. That is a domain limitation to state in
@@ -80,10 +140,13 @@ the paper, not a bug to fix.
 
 ## Not established
 
-- **No hand-tuned CUDA kernel was tested.** This machine has no `nvcc`, no CuPy and no Triton, so
-  a custom kernel with deep unrolling could not be compiled. Everything above is torch-level
-  access patterns. CuPy's `RawKernel` bundles NVRTC and would not need a separate CUDA toolkit;
-  that is the cheapest path if this is worth pursuing.
+- **What the 281 GB/s ceiling actually is remains unidentified.** It is not per-thread MLP and
+  not concurrency, and it is well below both the DRAM peak and any plausible instruction-issue
+  bound. Candidates not tested: L2 or fabric bandwidth scaling with core clock, a limit on
+  outstanding requests per SM, or memory-controller clocking tied to the core domain. Naming it
+  would need hardware counters this project does not currently read.
+- **Only a copy pattern was hand-tuned.** A strided or gather pattern might behave differently,
+  though it would be expected to do worse rather than better.
 - **The two probes disagree on single-stream `copy` at 1395 MHz: 299.9 GB/s in probe 1 against
   218.3 in probe 3.** They differ in array size (1 GiB against 256 MiB) and in how many arrays
   are resident (2 against 16). The 37% gap is not explained, and it means absolute numbers across
