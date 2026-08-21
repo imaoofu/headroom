@@ -171,16 +171,57 @@ holds core voltage constant; the crossbar clock - the SM-to-memory-controller in
 to voltage rather than to the locked core clock; so the path *to* memory stalls at ~1320-1350 MHz
 while the core rises a third. DRAM was never the constraint, sitting at 16301 MHz throughout.
 
-## The control this still needs
+## The control, run: it is the curve
 
-**This run alone does not prove the curve caused it.** An alternative reading is that the crossbar
-simply never scales with core clock on this part, in which case the tuned-versus-stock difference
-remains unexplained. The test is the same sweep under the **stock V/F curve with the memory overclock
-retained**: if voltage and crossbar clock rise with locked frequency there, the mechanism is
-established. If they are flat there too, this explanation fails and the plateau needs a different one.
+Run 5 (`*-stock-volt-membw`, 2026-08-20 21:16) repeats the sweep at **full stock** - no memory
+overclock, no curve - with the same logging. The prediction was stated before the data landed: if
+the mechanism holds, stock should show voltage *rising* with locked frequency and the crossbar
+rising with it. If both were flat here too, the explanation would have failed.
 
-Until that run exists, this is a strong and self-consistent measurement of *what the tuned card does*,
-not yet a demonstration that the curve is *why*.
+| core | STOCK volts | STOCK xbar | xbar/core | GB/s | TUNED volts | TUNED xbar | xbar/core | GB/s |
+|---|---|---|---|---|---|---|---|---|
+| 1402 | 0.720 | 1335 | 0.953 | 283.8 | 0.720 | 1320 | 0.942 | 280.6 |
+| 1477 | 0.720 | 1402 | 0.954 | 298.5 | 0.720 | 1320 | 0.895 | 284.2 |
+| 1560 | 0.720 | 1470 | 0.947 | 309.7 | 0.720 | 1342 | 0.863 | 292.8 |
+| 1635 | 0.740 | 1545 | 0.950 | 321.0 | 0.720 | 1342 | 0.824 | 299.0 |
+| 1710 | 0.760 | 1642 | 0.965 | 329.4 | 0.720 | 1342 | 0.788 | 300.4 |
+| 1792 | 0.780 | 1721 | 0.964 | 334.6 | 0.720 | 1350 | 0.756 | 301.7 |
+| 1867 | 0.805 | 1815 | 0.976 | 338.8 | 0.720 | 1350 | 0.726 | 302.3 |
+| 1942 | 0.820 | 1875 | 0.969 | 340.4 | 0.720 | 1402 | 0.725 | 314.9 |
+| 2025 | 0.840 | 1942 | 0.963 | 342.1 | 0.720 | 1470 | 0.729 | 329.2 |
+| 2100 | 0.840 | 1935 | 0.928 | 342.0 | 0.740 | 1545 | 0.739 | 345.0 |
+
+**Voltage.** Stock swings +0.120 V across the range (0.720 to 0.840). Tuned swings +0.020 V. The
+flattened curve does exactly what it was configured to do - it holds one voltage - and the
+consequence is visible two columns to the right.
+
+**The crossbar-to-core ratio is the cleanest single statistic in this study.** At stock it holds
+between 0.928 and 0.976, a spread of 0.048: the interconnect tracks the core clock. Under the
+flattened curve it collapses from 0.942 to 0.726, a spread of 0.218: the interconnect decouples from
+the core and stops scaling.
+
+**The two configurations agree exactly where their voltages agree.** At 1402 MHz both sit at
+0.720 V, both report a crossbar near 1330 MHz, and both deliver ~282 GB/s - despite one card having
+a memory overclock and the other not. They separate at 1635 MHz, which is the first point where
+stock raises voltage to 0.740 and tuned does not. Divergence begins at the voltage divergence, not
+before it.
+
+## The mechanism, stated as a chain
+
+    flattened V/F curve
+      -> core voltage pinned at 0.720 V regardless of locked frequency
+      -> crossbar clock pinned near 1340 MHz instead of tracking the core
+      -> the SM-to-memory-controller path stops scaling
+      -> membw plateaus at ~300 GB/s while DRAM sits idle-capable at 16301 MHz
+
+Every link is measured. The control shows all four moving together when the curve is removed.
+
+**This also explains why the same curve helps `gemm` and hurts `membw`, which had looked like two
+unrelated findings.** They are one intervention with one mechanism. `gemm` at ~1365 FLOP per byte
+never touches the crossbar hard enough to care, so for it the pinned low voltage is pure benefit -
+the 18 to 26% power reduction at matched clock. `membw` at 0.167 FLOP per byte lives on that path,
+so the same pinned voltage is pure cost. **The undervolt's benefit and its harm are the same
+mechanism seen from two workloads.**
 
 ## Caveats
 

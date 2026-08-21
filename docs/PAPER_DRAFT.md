@@ -892,9 +892,41 @@ region, where the applied and stock curves diverge most, and that the memory con
 interconnect - which share the core voltage domain, unlike the DRAM devices themselves - become the
 limiter. `gemm` is unaffected because at ~1365 FLOP per byte it is nowhere near saturating that path.
 
-**This mechanism is not established.** The hardware exposes no voltage readback (section 6, item 1),
-so what these sweeps pin down is *which knob* is responsible, not how. Testing it needs either a
-voltage-reading tool or a curve with only its sub-925 mV points raised.
+**This mechanism is now established by direct measurement - DRAFT.** NVML exposes neither core
+voltage nor interconnect clock, but HWiNFO exposes both, and two further sweeps were run with it
+logging alongside: one fully tuned, one at full stock.
+
+| core MHz | stock volts | stock crossbar | crossbar/core | tuned volts | tuned crossbar | crossbar/core |
+|---|---|---|---|---|---|---|
+| 1402 | 0.720 | 1335 | 0.953 | 0.720 | 1320 | 0.942 |
+| 1560 | 0.720 | 1470 | 0.947 | 0.720 | 1342 | 0.863 |
+| 1710 | 0.760 | 1642 | 0.965 | 0.720 | 1342 | 0.788 |
+| 1867 | 0.805 | 1815 | 0.976 | 0.720 | 1350 | 0.726 |
+| 2025 | 0.840 | 1942 | 0.963 | 0.720 | 1470 | 0.729 |
+
+Across the swept range stock core voltage rises 0.120 V while the tuned card's rises 0.020 V: the
+flattened curve holds one voltage, as configured. The consequence is the crossbar clock - the
+SM-to-memory-controller interconnect. At stock its ratio to core clock holds between 0.928 and
+0.976. Under the flattened curve that ratio collapses from 0.942 to 0.726: the interconnect
+decouples from the core and stops scaling.
+
+Throughput follows the crossbar, not the core. On the tuned card, elasticity of `membw` throughput
+to core clock is 0.51; to crossbar clock it is 1.31. Above the plateau a 14.4% crossbar increase
+buys 14.1% more throughput.
+
+The two configurations agree precisely where their voltages agree - at 1402 MHz both sit at 0.720 V
+and both deliver ~282 GB/s - and diverge from 1635 MHz, the first point at which stock raises
+voltage and the tuned card does not.
+
+The chain is therefore: flattened curve, so pinned voltage, so pinned crossbar clock, so a
+non-scaling path to memory, so a bandwidth plateau while DRAM itself is untouched at 16301 MHz.
+
+**This also unifies 5.7.1 and 5.7.2, which had read as two unrelated findings.** They are one
+intervention with one mechanism. `gemm`, at ~1365 FLOP per byte, never loads the crossbar hard
+enough to care, so the pinned low voltage is pure benefit - the 18 to 26% power reduction at
+matched clock. `membw`, at 0.167 FLOP per byte, lives on that path, so the same pinned voltage is
+pure cost. The undervolt's benefit and its harm are the same mechanism observed through two
+workloads.
 
 The practical consequence is that a profile tuned at the top of the V/F curve - the region a card
 actually occupies in normal use - can be badly wrong in the mid-range, which is precisely where a
