@@ -30,6 +30,7 @@ REQUIRES an elevated shell: locking clocks needs administrator rights.
 
 import ctypes
 import json
+import pathlib
 import subprocess
 import sys
 import time
@@ -135,7 +136,9 @@ def main():
     print(f"CURRENT membw : triad_current (elasticity "
           f"{[r[1] for r in ranked if r[0]=='triad_current'][0]:.3f})")
 
-    with open("probe_saturating_kernel_result.json", "w", encoding="utf-8") as handle:
+    resultPath = pathlib.Path(__file__).resolve().parent.parent.parent / "data" / "probes" / "probe_saturating_kernel_result.json"
+    resultPath.parent.mkdir(parents=True, exist_ok=True)
+    with open(resultPath, "w", encoding="utf-8") as handle:
         json.dump({"low_mhz": LOW_MHZ, "high_mhz": HIGH_MHZ, "elements": ELEMENTS,
                    "iterations": ITERATIONS, "results": results}, handle, indent=2)
     return 0

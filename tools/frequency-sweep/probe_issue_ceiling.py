@@ -24,6 +24,7 @@ REQUIRES an elevated shell.
 
 import ctypes
 import json
+import pathlib
 import subprocess
 import sys
 import time
@@ -108,7 +109,9 @@ def main():
         print("No workload can be DRAM-saturated at this clock on this part. The [CORE] item")
         print("is not achievable as written, and that is itself the answer it was asking for.")
 
-    with open("probe_issue_ceiling_result.json", "w", encoding="utf-8") as handle:
+    resultPath = pathlib.Path(__file__).resolve().parent.parent.parent / "data" / "probes" / "probe_issue_ceiling_result.json"
+    resultPath.parent.mkdir(parents=True, exist_ok=True)
+    with open(resultPath, "w", encoding="utf-8") as handle:
         json.dump({"low_mhz": LOW_MHZ, "achieved_mhz": achieved, "elements": ELEMENTS,
                    "iterations": ITERATIONS,
                    "aggregate_gbs": {str(k): v for k, v in results.items()}}, handle, indent=2)
