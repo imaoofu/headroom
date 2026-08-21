@@ -49,7 +49,7 @@ Below ~1545 MHz the sign flips — the tuned configuration draws *more* power (+
 1237 MHz). Plausibly the custom curve sets a higher voltage floor at low clocks than stock
 would, but with no voltage readback on this hardware that is a hypothesis, not a finding.
 
-## An anomaly that is REAL and REPRODUCIBLE, but unexplained
+## An anomaly that is REAL, REPRODUCIBLE, and now traced to the core V/F curve
 
 Across 1545–1852 MHz the tuned `membw` run is flat at ~295 GB/s while stock rises
 312 → 332 → 342. That is 11–14% **slower** with more memory bandwidth available, at identical
@@ -87,16 +87,37 @@ mechanism, not a measurement. The plateau is genuine behaviour of this card unde
 profile, and it is the one result here that contradicts the simple story the rest of the data
 tells.
 
-### The leading untested hypothesis
+### RESOLVED: it is the core V/F curve, not the memory overclock
 
-The applied profile pins the core V/F curve flat near 3000 MHz at every voltage at and above
-~925 mV. When `nvidia-smi` locks the SM clock to 1560–1867 MHz, the card must select a voltage
-point *below* the flattened region, where the custom curve and the stock curve differ most.
-The plateau may be an artifact of that voltage selection rather than anything about bandwidth.
+The separation test was run the same evening: memory left at +2500, core V/F curve reverted to
+stock. **The plateau disappears completely.** Throughput rises monotonically across the whole
+band, 291.8 GB/s at 1402 MHz to 400.4 GB/s at 2100 MHz, with memory still reading 16301 MHz
+under load.
 
-That is cheap to test and not yet done: run the same `membw` sweep with the **memory overclock
-only** and the core V/F curve left at stock. If the plateau vanishes, it belongs to the curve;
-if it survives, it belongs to the memory overclock. About 4 minutes of card time.
+| SM MHz | mem-OC only | full tuned | throughput | efficiency |
+|---|---|---|---|---|
+| ~1560 | 323.0 | 294.1 | +9.8% | +8.8% |
+| ~1710 | 360.1 | 297.8 | +20.9% | +9.3% |
+| ~1867 | 385.7 | 297.5 | **+29.6%** | **+12.1%** |
+| ~2025 | 399.9 | 326.7 | +22.4% | +1.7% |
+
+**The flattened curve costs up to 29.6% of throughput and 12.1% of efficiency on this workload
+across this band. It costs more throughput than it saves power.** Memory-overclock-only also
+beats stock on both axes (+3.6% to +16.1% throughput, +2.1% to +8.4% efficiency).
+
+This does not overturn the headline `membw` +17.6% figure above, which was measured at each
+configuration's own sustained maximum near 2900-3000 MHz — outside this band. Both hold: the
+flattened curve helps at the top of the range and hurts badly in the middle.
+
+It does mean the profile recorded in `APPLIED-SETTINGS.txt` is **not** the right configuration
+for bandwidth-bound work below ~2100 MHz, which is precisely where a DVFS efficiency optimum
+would be looked for.
+
+What is pinned down is *which knob* is responsible, not *how*. The working hypothesis remains
+that locking the SM clock into this band forces a voltage selection below the curve's flattened
+region. This hardware has no voltage readback, so that stays a hypothesis.
+
+Full data, method and caveats: `../membw-anomaly-20260819/`.
 
 ### What this still does not establish
 
@@ -105,8 +126,12 @@ clean tuned re-run was at 20:42 — roughly six hours and an unknown ambient shi
 tuned-versus-tuned reproduction is solid; the tuned-versus-stock gap in this band rests on the
 original same-session pair, not on the re-run.
 
-`gemm` is unaffected by all of this: its matched-frequency rows are internally consistent
-across four frequencies and have a coherent mechanism.
+`gemm` was never run in the memory-only configuration, so whether the flattened curve costs it
+anything in this band is **untested**. That matters more than it first appears: the
+matched-frequency power finding above rests entirely on `gemm`, and it was measured with the
+flattened curve applied. Its rows are internally consistent across four frequencies, but
+consistency is not the same as having been separated into its two knobs the way `membw` now
+has. One `gemm` sweep in the memory-only configuration would close that gap.
 
 ## Other caveats that stay attached
 
