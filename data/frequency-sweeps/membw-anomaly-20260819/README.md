@@ -241,6 +241,90 @@ mechanism seen from two workloads.**
 
 ---
 
+# Part 1c — The fix, predicted from the mechanism and confirmed
+
+If the diagnosis is right, the repair follows from it: leave the flattened region above ~925 mV
+alone, and restore the stock voltage slope below it. Then voltage rises with frequency again, the
+crossbar scales again, and the high-clock gains — which live entirely in the flattened region —
+should be untouched.
+
+Run 6 (`*-curvefixed-membw`, 2026-08-20 21:53) tests that, on the full 13-point grid so both ends
+are covered. Memory overclock retained. Four checks were stated before the run:
+
+**1. Did the reshape take?** Yes. Voltage now rises where it was previously pinned:
+
+| locked MHz | full tuned | curve-fixed | crossbar/core (fixed) |
+|---|---|---|---|
+| 1545 | 0.720 V | 0.720 V | 0.939 |
+| 1702 | 0.720 V | **0.755 V** | 0.951 |
+| 1852 | 0.720 V | **0.795 V** | 0.963 |
+| 2010 | 0.720 V | **0.840 V** | 0.967 |
+
+Voltage spread across the swept range: **curve-fixed 0.175 V, stock 0.120 V, full tuned 0.020 V.**
+The crossbar-to-core ratio is back to 0.939–0.967, the stock-like band, from the tuned card's
+collapse to 0.726.
+
+**2. Was the memory overclock actually applied?** Yes — 15784–16301 MHz during the run, so the
+top-end comparison is like for like.
+
+**3. Is the plateau gone?** Yes, and it lands on the memory-only curve almost exactly:
+
+| MHz | stock | full tuned | memory-only | **curve-fixed** |
+|---|---|---|---|---|
+| 1545 | 311.8 | 296.6 | 323.0 | **320.3** |
+| 1702 | 331.8 | 295.3 | 360.1 | **355.7** |
+| 1852 | 341.6 | 294.5 | 385.7 | **383.2** |
+| 2010 | 344.4 | 324.4 | 399.9 | **400.2** |
+
+Against the full tuned profile that is **+8.0% at 1545, +20.4% at 1702, +30.1% at 1852.**
+
+**4. Did the top end survive?** Yes. Peak **411.8 GB/s at 2910 MHz achieved**, against full tuned's
+414.3 at 2916 and stock's 352.2 at 2753. That is **−0.6% against the tuned peak** — inside
+run-to-run noise, and with HWiNFO polling throughout this run and not the tuned one, so if anything
+it is understated.
+
+## The result
+
+| | stock | full tuned | curve-fixed |
+|---|---|---|---|
+| peak `membw` | 352.2 | 414.3 | **411.8** |
+| 1852 MHz `membw` | 341.6 | 294.5 | **383.2** |
+| efficiency at 2932 MHz | 4.03 | 5.03 | **5.19** |
+| power at 2932 MHz | 87.5 W | 82.4 W | **79.4 W** |
+
+**For `membw`, the curve-fixed profile dominates the fully tuned one at every point on the grid**,
+and is more efficient than both alternatives across almost the whole range. The defect is gone and
+nothing was traded away for it.
+
+This is the strongest evidence in the study that the mechanism is understood rather than merely
+described: the repair was derived from the diagnosis, its outcome was stated in advance, and it
+behaved as predicted at both ends of the range.
+
+## The cost, predicted and NOT yet tested
+
+`gemm` was not re-run under this curve, and there is good reason to expect it loses something.
+The 18–26% matched-frequency power reduction of Part 2 came from the tuned card sitting at 0.720 V
+where stock sits at 0.805–0.885. Curve-fixed restores roughly stock voltage in exactly that band
+(0.795 at 1852, 0.840 at 2010, 0.885 at 2317), so it should also restore roughly stock power — which
+is what the memory-only run did, reproducing stock power to within 3%.
+
+**So the honest expectation is: curve-fixed gives up `gemm`'s matched-frequency power advantage.**
+That advantage only matters when frequency is externally held, which is a research condition rather
+than a normal one, and at the top of the range curve-fixed already draws *less* power than the tuned
+profile (79.4 W against 82.4 at 2932 MHz). But it is untested, and one `gemm` sweep under this curve
+would settle it.
+
+## Caveats
+
+- **HWiNFO polled throughout this run** and did not during the original tuned and stock sweeps, so
+  cross-run throughput comparisons carry that asymmetry. It biases against curve-fixed, which
+  strengthens rather than weakens the conclusion.
+- **Sessions are separated by hours.** Same caveat as elsewhere in this folder.
+- **n = 1 chip, one curve shape.** How much of the sub-925 mV slope can be given back before the
+  crossbar starts starving is unmapped; only the two endpoints have been measured.
+
+---
+
 # Part 2 — gemm: the power finding survives, and belongs to the curve
 
 `../oc-comparison-20260819/` reports that the tuned profile draws **18–26% less power than

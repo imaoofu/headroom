@@ -34,7 +34,13 @@ param(
     [string]$Label,
 
     [ValidateSet("membw", "gemm")]
-    [string]$Workload = "membw"
+    [string]$Workload = "membw",
+
+    # membw defaults to the 1400-2100 plateau band. That band lies ENTIRELY below ~925 mV on
+    # the stock curve (0.840 V at 2085 MHz, measured), so a curve flattened only above 925 mV
+    # is identical to stock inside it and a band sweep would re-measure a known result. Use
+    # -FullRange to cover 1237-3090, where the flattened region actually takes effect.
+    [switch]$FullRange
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,7 +55,7 @@ $workloadScript = Join-Path $sweepDir "gpu_workload.py"
 $outputDir = Join-Path $repoRoot "data\frequency-sweeps\membw-anomaly-20260819"
 
 Write-Host "[RUN] label:    $Label" -ForegroundColor Cyan
-Write-Host "[RUN] workload: $Workload" -ForegroundColor Cyan
+Write-Host "[RUN] workload: $Workload$(if ($FullRange) { '  (FULL RANGE 1237-3090)' })" -ForegroundColor Cyan
 Write-Host "[RUN] repo:     $repoRoot" -ForegroundColor Gray
 Write-Host "[RUN] output:   $outputDir" -ForegroundColor Gray
 Write-Host ""
@@ -70,7 +76,7 @@ $sweepArgs = @{
     MeasureSeconds  = 20
     OutputDirectory = $outputDir
 }
-if ($Workload -eq "membw") {
+if ($Workload -eq "membw" -and -not $FullRange) {
     # The plateau band plus anchors either side of it.
     $sweepArgs.MinFrequencyMhz = 1400
     $sweepArgs.MaxFrequencyMhz = 2100

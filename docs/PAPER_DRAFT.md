@@ -974,6 +974,35 @@ both workloads.** This is the section 5.6 result one level up: not only is the e
 frequency workload-dependent, so is the efficiency-optimal hardware configuration, and by a
 considerably larger margin.
 
+#### 5.7.4 A repair derived from the mechanism, and confirmed - DRAFT
+
+If the account in 5.7.3 is correct, the repair follows from it: leave the flattened region above
+~925 mV intact and restore the stock voltage slope below it. A sixth sweep tested exactly that, on
+the full 13-point grid with the memory overclock retained, with four outcomes stated in advance.
+
+Voltage now rises where it had been pinned - 0.720 V at 1545 MHz through 0.840 V at 2010, against a
+flat 0.720 V on the tuned card - and the crossbar-to-core ratio returns to 0.939-0.967 from 0.726.
+The plateau disappears, and throughput lands on the memory-only curve: 383.2 GB/s at 1852 MHz
+against the tuned profile's 294.5, **+30.1%**. The top end is unaffected: 411.8 GB/s peak against
+the tuned 414.3, a 0.6% difference, with HWiNFO polling during this run and not the tuned one, so
+the gap is if anything overstated.
+
+For `membw` the repaired curve therefore dominates the fully tuned one at every point on the grid,
+while remaining more efficient than either alternative across most of the range and drawing less
+power at peak (79.4 W against 82.4 W at 2932 MHz).
+
+This is the strongest evidence in this study that the mechanism is understood rather than merely
+described. The intervention was derived from the diagnosis, its outcome was predicted before the
+measurement, and it behaved as predicted at both ends of a range where the two configurations were
+expected to differ in opposite directions.
+
+**The expected cost has not been measured.** `gemm` was not re-run under the repaired curve. Its
+18-26% matched-frequency power reduction (5.7.1) came from the tuned card holding 0.720 V where
+stock holds 0.805-0.885, and the repair restores approximately stock voltage in that band, so it
+should also restore approximately stock power. That advantage applies only when frequency is
+externally held, which is a research condition rather than an operating one - but it is an
+expectation, not a result, and one `gemm` sweep would settle it.
+
 #### 5.7.4 Caveats
 
 The three configurations were **not** measured contemporaneously: stock at 14:33 on 2026-08-19, full
