@@ -1,4 +1,23 @@
-# The membw plateau: reproduced, then explained — 2026-08-19 / 2026-08-20
+# Separating the two tuning knobs — 2026-08-19 / 2026-08-20
+
+> **Folder name is narrower than its contents.** It began as a `membw` investigation and now
+> also holds the `gemm` separation run. Kept as-is so existing links stay valid.
+
+The tuned profile changes two independent things: a **memory overclock** (+2500) and a **core
+V/F curve** pinned flat near 3000 MHz above ~925 mV. Every earlier result treated them as one
+setting. These runs separate them, and the two knobs turn out to do opposite things to the two
+workloads.
+
+| | memory overclock | core V/F curve |
+|---|---|---|
+| `gemm` (compute-bound) | nothing, ±1% | **the whole win**: −18% to −26% power at matched clock, +12% clock ceiling |
+| `membw` (bandwidth-bound) | **the whole win**: +3.6% to +16.1% over stock | **actively harmful**: up to −29.6% throughput in the 1560–1867 MHz band |
+
+Neither knob is good for both. That is the result.
+
+---
+
+# Part 1 — The membw plateau: reproduced, then explained
 
 Two focused `membw` sweeps over the same band on the same card, to find out what caused the
 1545–1852 MHz plateau recorded in `../oc-comparison-20260819/`.
@@ -104,6 +123,55 @@ region, where the custom and stock curves diverge most. This hardware exposes no
 readback, so that remains a hypothesis. What these runs pin down is *which knob* is
 responsible, not *how*.
 
+---
+
+# Part 2 — gemm: the power finding survives, and belongs to the curve
+
+`../oc-comparison-20260819/` reports that the tuned profile draws **18–26% less power than
+stock at identical core clock** on `gemm`, and attributes the efficiency gain to that rather
+than to the higher peak clock. That was measured with both knobs applied at once and had never
+been separated.
+
+Run 3 (`*-memonly-gemm`, 2026-08-20 18:32) uses the **full default 13-point grid**, the exact
+target list both existing `gemm` sweeps used, so all three configurations compare at identical
+targets rather than nearest neighbours.
+
+## The matched-frequency comparison, re-tested
+
+| MHz | tuned vs stock: thru / power / effic | mem-only vs stock: thru / power / effic |
+|---|---|---|
+| 1852 | −2.0% / **−18.1%** / +19.8% | +0.3% / **−0.6%** / +1.0% |
+| 2010 | −2.3% / **−26.4%** / +32.7% | −0.7% / **−2.9%** / +2.2% |
+| 2167 | +0.8% / **−19.9%** / +25.8% | −0.6% / **+0.9%** / −1.5% |
+| 2317 | −1.2% / **−18.1%** / +20.7% | +0.0% / **−2.5%** / +2.6% |
+
+**Memory-only reproduces stock power to within ±3%. The full tuned profile cuts it by 18–26%.**
+The power reduction is therefore entirely the core V/F curve. The original finding survives
+intact and its attribution was correct — the curve really is functioning as an undervolt.
+
+Temperatures at these four points matched to within 0.6 °C between the mem-only and stock runs,
+so this is not thermal.
+
+Memory overclocking does nothing measurable for `gemm`, which is what a compute-bound workload
+should do when only memory speed changes. That is a sanity check the experiment passes.
+
+## The curve also raises the ceiling
+
+At stock and at memory-only, `gemm` cannot hold the top three grid points — all of 2782, 2932
+and 3090 MHz collapse to ~2590 MHz achieved and ~15.7 TFLOP/s. With the curve applied the card
+holds 2775 / 2916 / 2948 MHz and reaches **17.61 TFLOP/s, +12.3%**.
+
+So for `gemm` the curve is a pure win on both axes: less power at matched clock, and a higher
+clock it can actually sustain.
+
+## Why this matters beyond one card
+
+The project's central claim is that the efficiency-optimal *frequency* is workload-dependent.
+This is the same claim one level up: the efficiency-optimal *hardware configuration* is
+workload-dependent too, and by a large margin. A single "tuned" profile chosen on `gemm` costs
+a bandwidth-bound workload up to 29.6% of its throughput; a profile chosen on `membw` gives up
+a 18–26% power reduction on compute-bound work.
+
 ## Caveats
 
 - **The `memory_clock_min_mhz` column reads 7001 at four points in run 2** (1560, 1635, 1710,
@@ -122,8 +190,16 @@ responsible, not *how*.
   the effect (up to +29.6%) is far outside any plausible day-to-day drift, so the direction of
   the result is safe; the precise percentages are not. Proper interleaving would need the
   profile switched between every point, which Afterburner cannot be scripted to do here.
-- **`membw` only.** Whether the flattened curve costs `gemm` anything in this band is untested,
-  and `gemm` is the workload the original matched-frequency power finding rested on.
+- **The gemm run has its own timing gap.** It ran 2026-08-20 18:32 against a stock leg from
+  2026-08-19 14:28. Temperatures at the four matched-frequency comparison points agree to within
+  0.6 °C, which is the relevant control, but the runs are a day apart.
+- **Two gemm points outside the comparison band disagree by ~6%.** At 2475 and 2625 MHz the
+  mem-only run drew 5.8% and 6.6% more power than stock, with only +1.2 and +2.1 °C to explain
+  it. Neither point is part of the matched-frequency finding, but the gap is unexplained and is
+  recorded rather than trimmed.
+- **At the low end the mem-only gemm run started 4–6 °C warmer** than the stock run (46 °C
+  against 41 °C at 1237 MHz), which accounts for its 1.4–3.6% higher power there. The four
+  comparison points are unaffected.
 - **n = 1 chip**, and one profile. Nothing here generalises to other cards or other curves.
 - **Sequential, not interleaved.** Temperature rose 42 → 52 °C within each run. The drift is
   similar in both so it does not obviously bias the comparison, but it is not controlled.

@@ -45,6 +45,16 @@ between identical passes). **The efficiency gain is mostly power reduction at ma
 frequency, not the higher peak clock.** That is the voltage guardband, visible in the only
 terms this project can measure.
 
+**This has since been separated into its two knobs and the attribution is confirmed.** A third
+`gemm` sweep with the memory overclock retained and the core V/F curve reverted to stock
+reproduces stock power to within ±3% at all four of these frequencies (−0.6%, −2.9%, +0.9%,
+−2.5%), against the tuned profile's −18% to −26%. Temperatures matched to within 0.6 °C. So the
+power reduction is entirely the core V/F curve, not the memory overclock, and memory speed does
+nothing measurable for this compute-bound workload. The curve additionally lifts the sustainable
+ceiling: stock and memory-only both collapse to ~2590 MHz and ~15.7 TFLOP/s at the top three
+grid points, while the curve holds 2948 MHz and reaches 17.61 TFLOP/s, +12.3%. See
+`../membw-anomaly-20260819/`.
+
 Below ~1545 MHz the sign flips — the tuned configuration draws *more* power (+4.4% at
 1237 MHz). Plausibly the custom curve sets a higher voltage floor at low clocks than stock
 would, but with no voltage readback on this hardware that is a hypothesis, not a finding.
@@ -127,12 +137,11 @@ clean tuned re-run was at 20:42 — roughly six hours and an unknown ambient shi
 tuned-versus-tuned reproduction is solid; the tuned-versus-stock gap in this band rests on the
 original same-session pair, not on the re-run.
 
-`gemm` was never run in the memory-only configuration, so whether the flattened curve costs it
-anything in this band is **untested**. That matters more than it first appears: the
-matched-frequency power finding above rests entirely on `gemm`, and it was measured with the
-flattened curve applied. Its rows are internally consistent across four frequencies, but
-consistency is not the same as having been separated into its two knobs the way `membw` now
-has. One `gemm` sweep in the memory-only configuration would close that gap.
+That gap in the `gemm` evidence is now closed — see the note added to the matched-frequency
+section above. The short version is that the two knobs do opposite things to the two workloads:
+the core V/F curve is the entire benefit for `gemm` and a large penalty for `membw` in the
+1560–1867 MHz band, while the memory overclock is the entire benefit for `membw` and does
+nothing measurable for `gemm`. **There is no single tuned profile that is right for both.**
 
 ## Other caveats that stay attached
 
