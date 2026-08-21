@@ -63,6 +63,25 @@ lever and a limited one: a deeply unrolled kernel could plausibly move `membw` f
 ~280 GB/s at this clock, but there is a second ceiling well short of saturation that more
 parallelism does not lift.
 
+## Reproducing probe 4
+
+Probe 4 needs CuPy, which is NOT installed in the main Python and is not a project dependency -
+nothing else in the repo uses it, and the collection kit does not ship it. It lived in a
+throwaway virtual environment that was deleted once the question was answered. To recreate:
+
+```
+python -m venv --system-site-packages .venv-cupy
+.venv-cupy\Scripts\pip install "cupy-cuda12x[ctk]"
+.venv-cupy\Scripts\pip uninstall -y nvidia-cublas-cu12 nvidia-cusolver-cu12 nvidia-cufft-cu12 nvidia-cusparse-cu12 nvidia-curand-cu12
+.venv-cupy\Scripts\python toolsrequency-sweep\probe_unrolled_kernel.py
+```
+
+`--system-site-packages` reuses the existing torch install rather than duplicating 4.6 GB. The
+`[ctk]` extra supplies the CUDA headers `RawKernel` needs to compile; without it compilation
+fails with "Failed to find CUDA headers". The uninstall line drops five CUDA math libraries a
+raw memory kernel never touches and takes the environment from 2.4 GB to 445 MB. `.venv-cupy/`
+is gitignored. Requires an elevated shell, for clock locking.
+
 ## Probe 4 — a hand-written unrolled float4 kernel (the decisive test)
 
 `tools/frequency-sweep/probe_unrolled_kernel.py`, via CuPy's `RawKernel` (NVRTC compiles at
