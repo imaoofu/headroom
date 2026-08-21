@@ -255,12 +255,11 @@ compute/memory-bound axis identified in §2.1:
   approximately linearly with core clock. Matrix multiplication was chosen over a bespoke kernel
   specifically because `GeMM` appears in the reference V100 dataset [6], making the two directly
   comparable.
-- **`membw`** — a scaled elementwise add over a 256 M-element buffer (≈3 GB of traffic per
-  iteration). Bandwidth-bound; substantially less sensitive to core clock, though **not
-  insensitive** — measured elasticity of throughput to core clock is ≈0.35 against ≈1.09 for
-  `gemm` (§5.4). Below roughly 1200 MHz the streaming multiprocessors cannot issue memory requests
-  fast enough to saturate DRAM, so the workload becomes issue-limited rather than bandwidth-limited
-  and does retain clock sensitivity there.
+- **`membw`** - a scaled elementwise add over a 256 M-element buffer (~3 GB of traffic per
+  iteration). Intended as the bandwidth-bound counterpart; substantially less sensitive to core
+  clock than `gemm` - measured elasticity of throughput to core clock is ~0.36 against ~1.12 for
+  `gemm` (section 5.4) - but **it is not bandwidth-saturated over most of the swept range**, and
+  that is a material limitation rather than a detail. See 3.3.1.
 
 Both perform identical arithmetic on every invocation, so wall-clock duration is a valid performance
 metric and efficiency follows as work ÷ (duration × power).
@@ -273,6 +272,41 @@ reach steady clock and thermal state and left kernel-launch overhead visible in 
 `membw`'s count was originally 600, which appeared to yield a 9.4 s run. Once instrumentation
 overhead was excluded from the timer (§3.4) only 4.7 s of that proved to be memory traffic, and the
 count was doubled to restore the intended duration.
+
+#### 3.3.1 `membw` is issue-limited, not bandwidth-limited, below roughly 2000 MHz - DRAFT
+
+An earlier version of this section placed the issue-limited regime below ~1200 MHz. Direct
+measurement puts it far higher, and the correction matters: it means the frequency-prediction
+results of section 5.2 were tested against a workload whose memory-bound premise does not hold
+where the test was run.
+
+A DRAM-limited kernel is flat against core clock. `membw` is not: on stock it rises 264.9 to 352.2
+GB/s from 1237 to 2932 MHz, i.e. 59% to 79% of the card's 448 GB/s rating, flattening only at the
+very top.
+
+Three independent attempts to construct a genuinely saturated kernel all fail, and converge:
+
+1. **Six access patterns** - triad, copy, a width-doubled copy, scale, read-only reduction, and
+   in-place add - measured at 1395 and 2760 MHz. Elasticity to core clock ranges 0.45 to 0.96. None
+   is DRAM-limited. The read-only reduction is the *worst* (0.957): it carries dependency chains and
+   performs one add per 4 bytes, making it more issue-hungry per byte moved than the triad. The
+   width-doubled copy is indistinguishable from the plain one, indicating the library kernels already
+   emit vectorised accesses.
+2. **Concurrency** - four independent copies on separate streams at 1395 MHz reach 281.2 GB/s
+   aggregate, against 218.3 for one, then plateau; eight streams add nothing.
+3. **A hand-written CUDA kernel** issuing 1 to 16 independent `float4` loads into registers before
+   storing any, so a single thread holds up to 16 memory requests in flight. At 1395 MHz it delivers
+   268.3 GB/s at unroll 1 and 281.9 at unroll 16 - a 5% spread across a 16x change in memory-level
+   parallelism.
+
+Methods 2 and 3 agree to within 0.25% (281.2 against 281.9 GB/s) from entirely different mechanisms
+for raising memory-level parallelism. That is a hardware ceiling at roughly 54% of the bandwidth
+available, not a defect in any one kernel.
+
+**A DRAM-saturated workload at 1400 MHz is therefore not constructible on this part.** What sets the
+281 GB/s ceiling is not identified: it is neither per-thread parallelism nor concurrency, and it sits
+well below both the DRAM peak and any plausible instruction-issue bound. Naming it would require
+hardware performance counters this study does not read.
 
 ### 3.4 Measurement protocol
 
@@ -347,6 +381,16 @@ because contemporary drivers detect FurMark's constant synthetic load pattern sp
 Telemetry is logged throughout and the Windows System event log is checked for display-driver reset
 events (ID 4101) within the run window. Runs are classified `CLEAN`, `FLAGGED` (thermal or hardware
 throttling observed), or `UNSTABLE` (driver reset or telemetry failure).
+
+**The classifier has been tested against induced failures - DRAFT.** Until 2026-08-20 the logger
+had only ever run on sessions that went well, so a tool that unconditionally reported `CLEAN` would
+have been indistinguishable from a working one. Three 45-second cases were run: sustained load
+throughout (reported `CLEAN`, 95% of samples loaded), an idle device (`INCONCLUSIVE`, 0% loaded),
+and a load that stops a third of the way through (`INCONCLUSIVE`, 28% loaded). The positive control
+is load-bearing: without it a classifier stuck on `INCONCLUSIVE` would have passed both failure
+cases. The driver-reset detector also fired correctly for the first time, on an `nvlddmkm`
+context-reset event induced by force-terminating a CUDA process. An actual hard lock remains
+untested, and by construction can only be inferred from a truncated log.
 
 **A `CLEAN` result is reported as "no failure observed in 10 minutes," never as "stable."**
 Undervolt-induced instability commonly requires hours to manifest. Separately, GDDR7 employs error
@@ -776,6 +820,102 @@ agree on all 33 V100 workloads. They disagree on the consumer sweeps, but only b
 tool identifies why: the card clamped several high targets onto one achieved clock, so those are
 repeat measurements of one condition rather than distinct grid points.
 
+### 5.7 Separating the two tuning knobs - DRAFT, 2026-08-20
+
+> **Draft.** Written the day the measurements were taken. Numbers are checked against the
+> committed CSVs; prose and framing are not settled.
+
+Every earlier consumer result treats "tuned" as one setting. It is two: a **memory overclock**
+(+2500 MHz offset, 16301 against a 14001 rating) and a **core V/F curve** pinned flat near
+3000 MHz at every voltage at and above ~925 mV. Three sweeps separate them - full tuned, memory
+overclock only with the core curve reverted to stock, and stock - on the same card at identical
+locked targets.
+
+**The two knobs have opposite effects on the two workloads.**
+
+| | memory overclock | core V/F curve |
+|---|---|---|
+| `gemm` (compute-bound) | nothing measurable, plus or minus 1% | the entire benefit: -18% to -26% power at matched clock, +12.3% sustainable ceiling |
+| `membw` (bandwidth-bound) | the entire benefit: +3.6% to +16.1% over stock | actively harmful: up to -29.6% throughput across 1560-1867 MHz |
+
+#### 5.7.1 The matched-frequency power reduction is entirely the core curve
+
+Section 5.4 reports the tuned configuration drawing 18-26% less power than stock at identical core
+clock on `gemm`, and attributes the efficiency gain to that rather than to the higher peak clock.
+That was measured with both knobs applied and had not been separated. It survives separation:
+
+| locked clock | tuned vs stock (power) | memory-only vs stock (power) |
+|---|---|---|
+| 1852 MHz | **-18.1%** | -0.6% |
+| 2010 MHz | **-26.4%** | -2.9% |
+| 2167 MHz | **-19.9%** | +0.9% |
+| 2317 MHz | **-18.1%** | -2.5% |
+
+Memory-only reproduces stock power to within 3%. Temperatures at these four points matched to
+within 0.6 C. Memory speed does nothing measurable for a compute-bound workload, which is the
+sanity check this design should pass and does.
+
+The curve additionally raises the sustainable ceiling: at stock and at memory-only the card cannot
+hold the top three grid points, collapsing to ~2590 MHz and ~15.7 TFLOP/s, while with the curve it
+holds 2948 MHz and reaches 17.61 TFLOP/s (+12.3%).
+
+#### 5.7.2 The same curve costs a bandwidth-bound workload up to 29.6%
+
+Across 1560-1867 MHz the fully tuned configuration runs `membw` flat at ~295 GB/s while stock rises
+312 to 332 to 342. Five consecutive points sit inside a 1.2% band while core clock rises 20%.
+
+Three mechanisms were eliminated before the curve was implicated. It is **not** contention from
+concurrent monitoring - a repeat run with nothing else touching the device reproduces the plateau to
+within 1%. It is **not** a memory downclock - memory-clock telemetry was added to the sweep tool for
+this question and reads exactly 16301 MHz at every point, `min` equal to `max`. It is **not**
+throttling - `clocks_throttle_reasons.active` was decoded across all runs and shows no power cap, no
+thermal slowdown and no hardware slowdown, at 42-52 C.
+
+Reverting only the core curve removes the plateau entirely; throughput becomes monotone, 291.8 GB/s
+at 1402 MHz to 400.4 at 2100:
+
+| locked clock | memory-only | full tuned | throughput delta | efficiency delta |
+|---|---|---|---|---|
+| ~1560 MHz | 323.0 | 294.1 | +9.8% | +8.8% |
+| ~1710 MHz | 360.1 | 297.8 | +20.9% | +9.3% |
+| ~1867 MHz | 385.7 | 297.5 | **+29.6%** | **+12.1%** |
+| ~2025 MHz | 399.9 | 326.7 | +22.4% | +1.7% |
+
+In this band the flattened curve costs more throughput than it saves power.
+
+#### 5.7.3 Interpretation
+
+At identical core clock and identical memory clock, the tuned configuration draws ~10% less power
+and delivers ~20% less bandwidth. The remaining free variable is voltage. The working hypothesis is
+that forcing the core clock into 1560-1867 MHz selects a voltage point *below* the curve's flattened
+region, where the applied and stock curves diverge most, and that the memory controllers and
+interconnect - which share the core voltage domain, unlike the DRAM devices themselves - become the
+limiter. `gemm` is unaffected because at ~1365 FLOP per byte it is nowhere near saturating that path.
+
+**This mechanism is not established.** The hardware exposes no voltage readback (section 6, item 1),
+so what these sweeps pin down is *which knob* is responsible, not how. Testing it needs either a
+voltage-reading tool or a curve with only its sub-925 mV points raised.
+
+The practical consequence is that a profile tuned at the top of the V/F curve - the region a card
+actually occupies in normal use - can be badly wrong in the mid-range, which is precisely where a
+DVFS efficiency optimum is looked for. **There is no single tuned configuration that is right for
+both workloads.** This is the section 5.6 result one level up: not only is the efficiency-optimal
+frequency workload-dependent, so is the efficiency-optimal hardware configuration, and by a
+considerably larger margin.
+
+#### 5.7.4 Caveats
+
+The three configurations were **not** measured contemporaneously: stock at 14:33 on 2026-08-19, full
+tuned at 20:42 the same day, memory-only at 18:13 the next - switching configurations requires a
+manual Afterburner change that cannot be scripted here. Idle temperature was 40-42 C at the start of
+each, the only cross-run control available. Effect sizes up to 29.6% are far outside plausible
+day-to-day drift so the direction is safe, but the precise percentages are softer than they look.
+n = 1 chip, one profile. Two `gemm` points outside the comparison band (2475 and 2625 MHz) show
+memory-only drawing 5.8% and 6.6% more power than stock with only 1.2 and 2.1 C to account for it;
+this is unexplained and recorded rather than trimmed.
+
+---
+
 ---
 
 ## 6. Limitations
@@ -788,6 +928,13 @@ repeat measurements of one condition rather than distinct grid points.
 5. **Stability windows are short.** Ten minutes is not proof of stability.
 6. **Reference-dataset results are single-device.** The 44.4% figure is one V100; it is not a
    population estimate.
+7. **The memory-bound workload is not memory-bound over most of the swept range.** `membw` is
+   issue-limited below roughly 2000 MHz on this device, and no constructible kernel saturates DRAM
+   there (3.3.1). Consumer results that depend on a workload being bandwidth-limited hold only near
+   the top of the range.
+8. **Tuning configurations were not measured contemporaneously.** The stock, fully tuned and
+   memory-only sweeps of 5.7 are separated by hours to a day, because switching between them
+   requires a manual change that cannot be scripted (5.7.4).
 
 ---
 
