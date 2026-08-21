@@ -300,19 +300,99 @@ This is the strongest evidence in the study that the mechanism is understood rat
 described: the repair was derived from the diagnosis, its outcome was stated in advance, and it
 behaved as predicted at both ends of the range.
 
-## The cost, predicted and NOT yet tested
+## The cost, predicted in advance and then measured
 
-`gemm` was not re-run under this curve, and there is good reason to expect it loses something.
-The 18–26% matched-frequency power reduction of Part 2 came from the tuned card sitting at 0.720 V
-where stock sits at 0.805–0.885. Curve-fixed restores roughly stock voltage in exactly that band
-(0.795 at 1852, 0.840 at 2010, 0.885 at 2317), so it should also restore roughly stock power — which
-is what the memory-only run did, reproducing stock power to within 3%.
+The prediction, written before the run: the 18–26% matched-frequency power reduction of Part 2 came
+from the tuned card sitting at 0.720 V where stock sits at 0.805–0.885, and curve-fixed restores
+roughly stock voltage in exactly that band (0.795 at 1852, 0.840 at 2010, 0.885 at 2317), so it
+should also restore roughly stock power — which is what the memory-only run did, reproducing stock
+power to within 3%. **The honest expectation was that curve-fixed gives up `gemm`'s
+matched-frequency power advantage.**
 
-**So the honest expectation is: curve-fixed gives up `gemm`'s matched-frequency power advantage.**
-That advantage only matters when frequency is externally held, which is a research condition rather
-than a normal one, and at the top of the range curve-fixed already draws *less* power than the tuned
-profile (79.4 W against 82.4 at 2932 MHz). But it is untested, and one `gemm` sweep under this curve
-would settle it.
+Runs 7 and 8 (`*-curvefixed-gemm`, 22:02, and `*-curvefixed2-gemm`, 22:14) tested it.
+
+**Run 7 is discarded at one point.** Under an 1852 MHz target the card ran at 2854.6 MHz and 151.6 W
+— an overshoot of **+1002.6 MHz**, the cap never applied at all. That is the failure mode the sweep
+tool's comments describe, where something outside `nvidia-smi` owns the V/F curve. The tool flagged
+it. Run 8 is the clean one and everything below comes from it.
+
+**The prediction holds.** Matched-clock power is back to stock:
+
+| locked | stock | tuned | tuned Δ | curve-fixed | fixed Δ |
+|---|---|---|---|---|---|
+| 1852 | 86.4 W | 70.7 W | **−18.1%** | 87.8 W | +1.7% |
+| 2010 | 103.3 W | 76.0 W | **−26.4%** | 103.5 W | +0.2% |
+| 2167 | 110.5 W | 88.6 W | **−19.9%** | 112.5 W | +1.8% |
+| 2317 | 123.4 W | 101.0 W | **−18.1%** | 124.9 W | +1.2% |
+
+Within 2% of stock everywhere. Same signature as memory-only, same reason.
+
+**And the loss is wider than the four matched points.** On efficiency the original tuned curve beats
+curve-fixed from 1545 all the way through 2782 MHz:
+
+| locked | tuned TFLOP/W | curve-fixed | tuned advantage |
+|---|---|---|---|
+| 1237 | 0.1266 | 0.1284 | −1.4% |
+| 1395 | 0.1354 | 0.1365 | −0.8% |
+| 1545 | 0.1415 | 0.1375 | +2.9% |
+| 1702 | 0.1476 | 0.1344 | +9.8% |
+| 1852 | 0.1513 | 0.1242 | **+21.8%** |
+| 2010 | 0.1533 | 0.1152 | **+33.1%** |
+| 2167 | 0.1442 | 0.1123 | **+28.4%** |
+| 2317 | 0.1361 | 0.1114 | +22.2% |
+| 2475 | 0.1219 | 0.1079 | +13.0% |
+| 2625 | 0.1193 | 0.1085 | +9.9% |
+| 2782 | 0.1147 | 0.1089 | +5.4% |
+| 2932 | 0.1057 | 0.1078 | −1.9% |
+| 3090 | 0.1059 | 0.1075 | −1.4% |
+
+Curve-fixed wins only at the two lowest targets and the two highest. The tuned curve owns the
+middle, and the middle is where `gemm`'s efficiency optimum sits — 2010 MHz, which is the single
+widest point of the gap.
+
+**At peak the ranking flips, and quoting only that would be cherry-picking.** Curve-fixed reaches
+16.82 TFLOP/s at 2898 MHz on 156.5 W; tuned reaches 17.61 at 2948 MHz on 166.3 W. That is 4.5% less
+throughput for 5.9% less power, so 1.5% better efficiency — at exactly one point out of thirteen.
+Both beat stock, which cannot hold anything above ~2590 MHz and peaks at 15.71.
+
+## The result, both workloads together
+
+| | `membw` | `gemm` |
+|---|---|---|
+| curve-fixed vs tuned | **wins at every grid point**, up to +30.1% | **loses across 1545–2782 MHz**, by up to 33.1% efficiency |
+| curve-fixed vs stock | wins throughout | matched-clock power within 2%, +7.0% peak throughput |
+
+**Neither configuration dominates.** The undervolt's benefit and its harm are one mechanism, so
+removing the harm removed the benefit. That is the project's thesis one level up: not only is the
+efficiency-optimal *frequency* workload-dependent, so is the efficiency-optimal *hardware
+configuration*.
+
+## Why curve-fixed caps at ~2898 MHz — a candidate, not a conclusion
+
+Curve-fixed tops out 50 MHz below the tuned card, which was recorded as unexplained. The voltage
+telemetry gives a plain candidate.
+
+**Both curve variants measure 0.895 V** at every target from 2625 MHz upward — variant 1 on its
+`membw` sweep (run 6) and variant 2 on its `gemm` sweep (run 8); run 7 was not voltage-logged, so
+the two readings come from different workloads. They are identical to the millivolt even though
+variant 2 was redrawn specifically to raise the top point by ~10 mV. The raise does not appear in
+the telemetry at all, on either workload.
+
+The tuned card's top voltage was never measured: HWiNFO was not running during its `gemm` sweep, and
+both voltage-logged runs on that configuration cover only 1402–2100 MHz. The Afterburner editor
+showed 0.925 V, which is a setting read off a screen rather than a measurement. If that is right,
+curve-fixed is running **30 mV short at the top**, which is enough on its own to explain 50 MHz and
+needs no inherent cost of the repair.
+
+Two things favour that reading. `membw` under the same curve lost only 0.6% at peak, which does not
+fit a repair-caps-the-top story. And no run of either configuration reports a hardware-slowdown,
+thermal or power-brake bit anywhere; `SwPowerCap` appears intermittently on both, and stock reports
+no throttle reason at all while still collapsing to ~2590 MHz. The ceiling is the curve, not the
+card protecting itself.
+
+**One sweep settles it**: raise the top point to 0.925 V, verify the change in HWiNFO before
+trusting it, re-run `gemm`. Until then the −4.5% peak deficit is provisional and is not used to
+argue anything about the repair.
 
 ## Caveats
 

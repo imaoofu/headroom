@@ -187,13 +187,28 @@ The part nobody else can replicate, and the reason the project is worth doing at
   **But it is a trade, not a win, and the trade reverses by workload.** `gemm` under the repaired
   curve returns to stock power at matched frequency (+0.2% to +1.8% across four points, against
   the tuned card's −18 to −26%) and loses 4.5% peak throughput. The original curve beats the
-  repaired one on `gemm` efficiency at every point from 2317 to 2782 MHz, by 5–18%.
+  repaired one on `gemm` efficiency at **every point from 1545 through 2782 MHz, by up to 33.1%**,
+  and the widest point of the gap is 2010 MHz, which is exactly where `gemm`'s efficiency optimum
+  sits. (An earlier version of this entry said "2317 to 2782 MHz, by 5–18%". That was computed
+  from run 7, whose 1852 MHz row is invalid — the lock overshot by +1002.6 MHz — and it
+  understated both the band and the magnitude. Corrected against run 8, 2026-08-21.)
+  Curve-fixed wins only at the two lowest and two highest targets, including peak throughput, where
+  it is 1.5% more efficient at one point out of thirteen.
   **Neither configuration dominates.** That is this project's thesis one level up: not only is the
   efficiency-optimal *frequency* workload-dependent, so is the efficiency-optimal *hardware
   configuration*.
-  **Still open:** why the repaired curve caps `gemm` at ~2898 MHz where the original sustains
-  2948. Two curve variants gave the same ceiling, so it is not a redraw artifact, and both fall
-  short of their target rather than being curve-limited. Unexplained.
+- **[CORE] Test whether the ~2898 MHz `gemm` ceiling is just a voltage shortfall.** Was recorded as
+  unexplained; the voltage telemetry now gives a candidate. **Both curve variants measure
+  0.895 V** at every target from 2625 MHz up — variant 1 on its `membw` sweep, variant 2 on its
+  `gemm` sweep (the first `gemm` run was not voltage-logged). Identical to the millivolt, even
+  though variant 2 was redrawn to raise the top by ~10 mV, so the raise never reached the card. The tuned card's top voltage was
+  never measured (HWiNFO was not running for its `gemm` sweep, and both voltage-logged runs cover
+  only 1402–2100 MHz); the Afterburner editor showed 0.925 V, which is a screen reading, not a
+  measurement. A 30 mV shortfall explains 50 MHz without invoking any inherent cost of the repair,
+  and `membw` losing only 0.6% at peak under the same curve fits that better than a
+  repair-caps-the-top story. No hardware-slowdown, thermal or power-brake bit appears in any run.
+  **The test is one sweep:** raise the top point to 0.925 V, *verify it in HWiNFO before trusting
+  it*, re-run `gemm`. Until then the −4.5% peak deficit is provisional.
 - ✅ **[CORE] Run a controlled stock-versus-tuned sweep on the same unit.** Done 2026-08-19,
   `data/frequency-sweeps/oc-comparison-20260819/`. Same chip, same tool, same 13 targets, ~90
   minutes apart in one session, with the applied settings recorded for the first time. At each

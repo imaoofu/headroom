@@ -996,14 +996,96 @@ described. The intervention was derived from the diagnosis, its outcome was pred
 measurement, and it behaved as predicted at both ends of a range where the two configurations were
 expected to differ in opposite directions.
 
-**The expected cost has not been measured.** `gemm` was not re-run under the repaired curve. Its
-18-26% matched-frequency power reduction (5.7.1) came from the tuned card holding 0.720 V where
-stock holds 0.805-0.885, and the repair restores approximately stock voltage in that band, so it
-should also restore approximately stock power. That advantage applies only when frequency is
-externally held, which is a research condition rather than an operating one - but it is an
-expectation, not a result, and one `gemm` sweep would settle it.
+**The predicted cost was then measured, and it is real.** Restoring stock voltage below the
+flattened region should restore roughly stock power on `gemm`, giving up the 18-26%
+matched-frequency saving of 5.7.1. That prediction was stated before the run and is confirmed in
+5.7.5, which is why this section is titled a repair rather than an improvement.
 
-#### 5.7.4 Caveats
+#### 5.7.5 The repair is a trade, not a win
+
+The repaired curve was swept on `gemm` twice, on the same 13-point grid, with HWiNFO logging
+throughout. The first run is discarded at one point: under an 1852 MHz target the card ran at
+2854.6 MHz and 151.6 W, an overshoot of +1002.6 MHz, which is the failure mode the sweep tool's own
+comments describe - something outside `nvidia-smi` owning the V/F curve and the cap never being
+applied. The tool flagged it. All numbers below are from the second run, where every point below
+2782 MHz held its lock.
+
+**The predicted loss is confirmed.** Matched-clock power returns to stock:
+
+| locked clock | tuned vs stock | repaired vs stock |
+|---|---|---|
+| 1852 MHz | **-18.1%** | +1.7% |
+| 2010 MHz | **-26.4%** | +0.2% |
+| 2167 MHz | **-19.9%** | +1.8% |
+| 2317 MHz | **-18.1%** | +1.2% |
+
+Within 2% of stock at every point, against the tuned card's 18-26% saving. This is the same
+signature the memory-only configuration produced in 5.7.1, and for the same reason: with the
+sub-925 mV slope restored, the card sits at approximately stock voltage in this band.
+
+**The loss extends well beyond those four points.** On efficiency the tuned curve beats the
+repaired one across the entire mid-range, not just where power was matched:
+
+| locked clock | tuned TFLOP/W | repaired TFLOP/W | tuned advantage |
+|---|---|---|---|
+| 1237 MHz | 0.1266 | 0.1284 | -1.4% |
+| 1395 MHz | 0.1354 | 0.1365 | -0.8% |
+| 1545 MHz | 0.1415 | 0.1375 | +2.9% |
+| 1702 MHz | 0.1476 | 0.1344 | +9.8% |
+| 1852 MHz | 0.1513 | 0.1242 | **+21.8%** |
+| 2010 MHz | 0.1533 | 0.1152 | **+33.1%** |
+| 2167 MHz | 0.1442 | 0.1123 | **+28.4%** |
+| 2317 MHz | 0.1361 | 0.1114 | +22.2% |
+| 2475 MHz | 0.1219 | 0.1079 | +13.0% |
+| 2625 MHz | 0.1193 | 0.1085 | +9.9% |
+| 2782 MHz | 0.1147 | 0.1089 | +5.4% |
+| 2932 MHz | 0.1057 | 0.1078 | -1.9% |
+| 3090 MHz | 0.1059 | 0.1075 | -1.4% |
+
+The tuned curve is ahead at every point from 1545 through 2782 MHz, by up to 33.1%, and behind only
+at the two lowest targets and the two highest. **The band it wins is the band that matters**: the
+`gemm` efficiency optimum sits at 2010 MHz under the tuned curve, which is exactly where the gap is
+widest.
+
+At peak throughput the ranking inverts, and reporting only that would misrepresent the result. The
+repaired curve reaches 16.82 TFLOP/s at 2898 MHz drawing 156.5 W, against the tuned card's 17.61 at
+2948 MHz drawing 166.3 W - 4.5% less throughput for 5.9% less power, so 1.5% better efficiency at
+that one point. Both beat stock, which cannot hold anything above ~2590 MHz and peaks at 15.71.
+
+**Neither configuration dominates the other.** For `membw` the repaired curve wins at every point on
+the grid (5.7.4); for `gemm` the tuned curve wins across the whole mid-range. The undervolt's
+benefit and its harm are one mechanism (5.7.3), so removing the harm removes the benefit. This is
+the 5.6 result one level up, and the stronger form of it: not only is the efficiency-optimal
+*frequency* workload-dependent, so is the efficiency-optimal *hardware configuration*, and no
+setting of this knob is right for both workloads at once.
+
+##### The 2898 MHz ceiling is probably a voltage shortfall, not a cost of the repair
+
+The repaired curve tops out 50 MHz below the tuned card, and this was recorded as unexplained. The
+voltage telemetry gives a mundane candidate. **Both curve variants measure 0.895 V at every target
+from 2625 MHz upward** - the first on its `membw` sweep, the second on this `gemm` sweep, since the
+first `gemm` run was not voltage-logged. The two readings are identical to the millivolt, despite
+the second curve having been redrawn specifically to raise the top point by roughly 10 mV. That
+raise does not appear in the telemetry at all, on either workload.
+
+The tuned card's top voltage was never measured. HWiNFO was not running during its `gemm` sweep, and
+the two voltage-logged runs on that configuration cover only 1402-2100 MHz. The Afterburner curve
+editor showed 0.925 V, which is a setting that was read off a screen, not a measurement. If it is
+right, the repaired curve is running 30 mV short at the top, which is sufficient on its own to
+explain a 50 MHz deficit and requires no inherent cost of the repair.
+
+Two observations support that reading over an inherent-cost one. `membw` under the same repaired
+curve lost only 0.6% at its peak, which does not fit a story where the repair caps the top of the
+range. And no run of either configuration reports a hardware-slowdown, thermal or power-brake
+throttle bit at any point; `SwPowerCap` appears intermittently on both and stock reports no reason
+at all while still collapsing to ~2590 MHz. The ceiling is set by the curve, not by the card
+protecting itself.
+
+**This is testable in one sweep**: raise the repaired curve's top point to 0.925 V, confirm the
+change in HWiNFO before trusting it, and re-run `gemm`. Until then the -4.5% peak deficit is
+attributed provisionally and not used to argue anything about the repair.
+
+#### 5.7.6 Caveats
 
 The three configurations were **not** measured contemporaneously: stock at 14:33 on 2026-08-19, full
 tuned at 20:42 the same day, memory-only at 18:13 the next - switching configurations requires a
@@ -1048,7 +1130,7 @@ this is unexplained and recorded rather than trimmed.
    the top of the range.
 8. **Tuning configurations were not measured contemporaneously.** The stock, fully tuned and
    memory-only sweeps of 5.7 are separated by hours to a day, because switching between them
-   requires a manual change that cannot be scripted (5.7.4).
+   requires a manual change that cannot be scripted (5.7.6).
 
 ---
 
