@@ -125,6 +125,81 @@ responsible, not *how*.
 
 ---
 
+# Part 1b — The mechanism, measured: voltage and crossbar clock
+
+Run 4 (`*-oc-volt-membw`, 2026-08-20 21:08) repeats the tuned `membw` sweep with HWiNFO logging
+core voltage and interconnect clock alongside. NVML exposes neither - an exhaustive scan of field
+IDs 1-259 returns 44 readable fields and no voltage at any scale - so this is the first run in the
+project with a voltage number in it.
+
+**A labelling error, corrected from the data rather than the label.** The run was launched with
+`-Label memonly-volt` by mistake; the applied configuration was the full tuned profile. The files
+were renamed and a `label_correction` field added to the session JSON. The configuration was
+confirmed from the measurement, not from memory: throughput is flat at 292.8-302.3 GB/s across
+1560-1867 MHz, the plateau signature of the tuned curve, where the memory-only configuration rises
+323.0 to 385.7 over the same band.
+
+| target | achieved | GB/s | core voltage | crossbar MHz | crossbar/core |
+|---|---|---|---|---|---|
+| 1402 | 1400.6 | 280.6 | 0.720 | 1320 | 0.942 |
+| 1477 | 1474.8 | 284.2 | 0.720 | 1320 | 0.895 |
+| 1560 | 1554.6 | 292.8 | 0.720 | 1342 | 0.863 |
+| 1635 | 1628.7 | 299.0 | 0.720 | 1342 | 0.824 |
+| 1710 | 1702.7 | 300.4 | 0.720 | 1342 | 0.788 |
+| 1792 | 1785.3 | 301.7 | 0.720 | 1350 | 0.756 |
+| 1867 | 1859.7 | 302.3 | 0.720 | 1350 | 0.726 |
+| 1942 | 1935.0 | 314.9 | 0.720 | 1402 | 0.725 |
+| 2025 | 2017.0 | 329.2 | 0.720 | 1470 | 0.729 |
+| 2100 | 2092.0 | 345.0 | 0.740 | 1545 | 0.739 |
+
+**Core voltage is 0.720 V at nine of ten points, across a 49% rise in core clock.** It is pinned.
+
+**Throughput tracks the crossbar clock, not the core clock.**
+
+| | plateau band, 1400 to 1860 MHz core | above it, 1860 to 2092 |
+|---|---|---|
+| core clock | **+32.8%** | +12.5% |
+| crossbar clock | **+2.3%** | **+14.4%** |
+| throughput | **+7.7%** | **+14.1%** |
+
+Elasticity of throughput to core clock over the full range is **0.51**; to crossbar clock it is
+**1.31**. Above the plateau a 14.4% crossbar increase buys a 14.1% throughput increase, very nearly
+one for one.
+
+This is the mechanism proposed earlier, now measured rather than inferred. The flattened V/F curve
+holds core voltage constant; the crossbar clock - the SM-to-memory-controller interconnect - is tied
+to voltage rather than to the locked core clock; so the path *to* memory stalls at ~1320-1350 MHz
+while the core rises a third. DRAM was never the constraint, sitting at 16301 MHz throughout.
+
+## The control this still needs
+
+**This run alone does not prove the curve caused it.** An alternative reading is that the crossbar
+simply never scales with core clock on this part, in which case the tuned-versus-stock difference
+remains unexplained. The test is the same sweep under the **stock V/F curve with the memory overclock
+retained**: if voltage and crossbar clock rise with locked frequency there, the mechanism is
+established. If they are flat there too, this explanation fails and the plateau needs a different one.
+
+Until that run exists, this is a strong and self-consistent measurement of *what the tuned card does*,
+not yet a demonstration that the curve is *why*.
+
+## Caveats
+
+- **HWiNFO was polling throughout.** That is the class of contention this project has already been
+  burned by, so the throughput figures from this run are not clean measurements and are not quoted
+  as such anywhere - the tuned throughput numbers of record remain those from runs 1 and 2. Voltage
+  and crossbar readings are what this run is for.
+- **Idle samples must be excluded or the result inverts.** HWiNFO samples every 2 s including the
+  8 s settle gaps between points, and those gaps sit at boost voltage. Including them manufactures
+  a voltage-frequency slope that does not exist. The join filters on GPU power above 30 W, leaving
+  68 of 194 samples, 6-7 per point.
+- **HWiNFO reports two GPU sensor blocks on this machine**, one carrying AMD-style names
+  (`VDDCR_GFX`, `SoC Clock`, `VCN Clock`) that does not describe this card. The join resolves
+  columns by picking the block whose clock actually moves, rather than by fixed index.
+- Raw HWiNFO logs are gitignored: 300+ columns of unrelated host sensors. The distilled per-run
+  extract is committed beside the sweep.
+
+---
+
 # Part 2 — gemm: the power finding survives, and belongs to the curve
 
 `../oc-comparison-20260819/` reports that the tuned profile draws **18–26% less power than

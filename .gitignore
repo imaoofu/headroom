@@ -30,3 +30,9 @@ desktop.ini
 # Probe telemetry written to the working directory when --telemetry is left at its default.
 # The kept results live in data/probes/ as JSON; the raw 100 ms sample stream is scratch.
 probe_telemetry.csv
+
+# Raw HWiNFO sensor dumps. 300+ columns covering every CPU, motherboard, drive and fan sensor
+# on the logging machine - almost all of it irrelevant here, and more host detail than belongs
+# in a public repo. Distilled per-run extracts (timestamp, GPU core voltage, clock, power) are
+# committed instead, beside the sweep they belong to.
+data/HWiNFO-Data/
