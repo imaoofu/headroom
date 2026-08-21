@@ -71,9 +71,9 @@ throwaway virtual environment that was deleted once the question was answered. T
 
 ```
 python -m venv --system-site-packages .venv-cupy
-.venv-cupy\Scripts\pip install "cupy-cuda12x[ctk]"
-.venv-cupy\Scripts\pip uninstall -y nvidia-cublas-cu12 nvidia-cusolver-cu12 nvidia-cufft-cu12 nvidia-cusparse-cu12 nvidia-curand-cu12
-.venv-cupy\Scripts\python toolsrequency-sweep\probe_unrolled_kernel.py
+.venv-cupy/Scripts/pip install "cupy-cuda12x[ctk]"
+.venv-cupy/Scripts/pip uninstall -y nvidia-cublas-cu12 nvidia-cusolver-cu12 nvidia-cufft-cu12 nvidia-cusparse-cu12 nvidia-curand-cu12
+.venv-cupy/Scripts/python tools/frequency-sweep/probe_unrolled_kernel.py
 ```
 
 `--system-site-packages` reuses the existing torch install rather than duplicating 4.6 GB. The
