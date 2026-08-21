@@ -1,15 +1,20 @@
-# The membw plateau: reproduced, then explained — 2026-08-19 evening
+# The membw plateau: reproduced, then explained — 2026-08-19 / 2026-08-20
 
-Two focused `membw` sweeps over the same band, run back to back the same evening on the same
-card, to find out what caused the 1545–1852 MHz plateau recorded in
-`../oc-comparison-20260819/`.
+Two focused `membw` sweeps over the same band on the same card, to find out what caused the
+1545–1852 MHz plateau recorded in `../oc-comparison-20260819/`.
+
+**These two runs are 21.5 hours apart, not the same session.** Run 1 was 2026-08-19 20:42; run 2
+was 2026-08-20 18:13. The gap is unavoidable — it takes a manual Afterburner change to switch
+configurations — but it means ambient temperature, driver state and background load were not
+held constant between them. See the caveats.
 
 **Answer: the core V/F curve, not the memory overclock.** Reverting the core curve to stock
 while keeping memory at +2500 removes the plateau entirely.
 
 ## Conditions common to both runs
 
-- RTX 5060 Ti, 1400–2100 MHz, 10 points, 8 s settle, 20 s measure.
+- RTX 5060 Ti, 1400–2100 MHz, 10 points, 8 s settle, 20 s measure. Identical tool, identical
+  targets, identical workload invocation.
 - **No stability logger, no local LLM resident, no other GPU work.** The 18 GB
   `qwen3-coder:30b` model was explicitly unloaded first; it had 15.6 GB of the card's 16 GB
   held, which is what wedged an earlier attempt at preflight.
@@ -109,9 +114,14 @@ responsible, not *how*.
   `min = max = 16301` (1792, 1942, 2025, 2100) sit exactly on the same smooth trend as the four
   with 7001 minima. A genuine downclock during timed work would show as a throughput dip, and
   there is none.
-- **The stock leg is not contemporaneous.** It was measured at 14:33, about six hours before
-  run 2, with an unknown ambient shift. The two evening runs are directly comparable to each
-  other; comparisons to stock are weaker.
+- **Neither leg is contemporaneous, and this is the weakest point of the study.** Run 1 was
+  2026-08-19 20:42, run 2 was 2026-08-20 18:13, and the stock leg was 2026-08-19 14:33. All
+  three are separated by hours to a full day. Idle temperature was 40–42 °C at the start of
+  each, which is the only cross-run control available, and no driver or system change is known
+  to have occurred — but "not known to have occurred" is not the same as verified. The size of
+  the effect (up to +29.6%) is far outside any plausible day-to-day drift, so the direction of
+  the result is safe; the precise percentages are not. Proper interleaving would need the
+  profile switched between every point, which Afterburner cannot be scripted to do here.
 - **`membw` only.** Whether the flattened curve costs `gemm` anything in this band is untested,
   and `gemm` is the workload the original matched-frequency power finding rested on.
 - **n = 1 chip**, and one profile. Nothing here generalises to other cards or other curves.

@@ -89,8 +89,9 @@ tells.
 
 ### RESOLVED: it is the core V/F curve, not the memory overclock
 
-The separation test was run the same evening: memory left at +2500, core V/F curve reverted to
-stock. **The plateau disappears completely.** Throughput rises monotonically across the whole
+The separation test was run the following evening (2026-08-20 18:13, against run 1 at
+2026-08-19 20:42 — a 21.5 hour gap, since switching configurations needs a manual Afterburner
+change): memory left at +2500, core V/F curve reverted to stock. **The plateau disappears completely.** Throughput rises monotonically across the whole
 band, 291.8 GB/s at 1402 MHz to 400.4 GB/s at 2100 MHz, with memory still reading 16301 MHz
 under load.
 
