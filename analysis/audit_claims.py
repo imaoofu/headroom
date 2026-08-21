@@ -322,7 +322,27 @@ def unauditedSections(documents, results):
     return out
 
 
+def makeConsoleSafe():
+    """Stop a non-ASCII claim from killing the whole report.
+
+    Claims render whatever the document contains, and the document contains U+2212 MINUS SIGN
+    and U+2014 EM DASH - section 5.4's table uses both. Printing those raw raises
+    UnicodeEncodeError on a cp1252 console, which is what a plain `python` on Windows gets
+    unless the code page has been changed, and the failure takes out every remaining claim
+    rather than the one that could not be shown.
+
+    CLAUDE.md's rule is that printed output stays ASCII. That cannot apply to a rendered claim,
+    whose whole purpose is to be byte-identical to the document, so the next best thing is to
+    degrade rather than crash: a console that cannot show U+2212 gets the escape instead.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure:
+            reconfigure(errors="backslashreplace")
+
+
 def main():
+    makeConsoleSafe()
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     parser.add_argument("--filter", default="",
                         help="Only run claims whose id contains this substring.")

@@ -54,6 +54,7 @@ PROVENANCE
 """
 
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -414,6 +415,30 @@ check(
     "unauditedSections does not list a section that has a claim",
     ("docs/DOC.md", "1 First section") not in audit_claims.unauditedSections(
         {"docs/DOC.md"}, passing),
+)
+
+# --------------------------------------------------------------------------------------
+# Non-ASCII claims must survive being reported
+# --------------------------------------------------------------------------------------
+
+# Section 5.4's table uses U+2212 MINUS SIGN and U+2014 EM DASH, so claims covering it MUST
+# render them - matching the document byte for byte is the entire mechanism. Printing them raw
+# raises UnicodeEncodeError on a cp1252 console, which is what a plain `python` gets on Windows,
+# and that killed the whole report rather than the one line that could not be shown.
+audit_claims.makeConsoleSafe()
+
+check(
+    "makeConsoleSafe leaves stdout able to encode a minus sign without raising",
+    (lambda: (chr(0x2212).encode(sys.stdout.encoding or "utf-8", errors=sys.stdout.errors),
+              True)[1])(),
+    "a console that cannot show U+2212 must degrade to an escape, not take the run down",
+)
+
+nonAscii = audit_claims.audit([makeClaim(lambda: "value is " + chr(0x2212) + "18.1%")])[0]
+check(
+    "a claim rendering non-ASCII is compared, not rejected",
+    nonAscii["status"] == "FAIL" and chr(0x2212) in nonAscii["expected"],
+    f"got {nonAscii['status']}; the character must reach the comparison intact",
 )
 
 # --------------------------------------------------------------------------------------

@@ -104,11 +104,13 @@ Six claims. Use the id given for each, exactly. Each of the first five is one ta
    From GEMM_FLOOR15 only, using the two rows whose ACHIEVED clocks are 1987 and 2205 MHz. The
    achieved clocks are not round numbers in the file, so select the row nearest each. Renders:
 
-       at <lower> MHz (<lower efficiency>) sits marginally below <higher> MHz (<higher
-       efficiency>), breaking monotonicity by <gap>%
+       at <lower> MHz (<lower efficiency> GFLOP/J) sits marginally below <higher> MHz
+       (<higher efficiency>), breaking monotonicity by <gap>%
 
    - clocks to zero decimals
-   - efficiencies in GFLOP/J to two decimals, so divide by 1e9
+   - efficiencies to two decimals, so divide by 1e9
+   - the literal text "GFLOP/J" appears after the FIRST efficiency only, not the second.
+     That asymmetry is how the paper writes it; reproduce it rather than tidying it up.
    - gap is how much the HIGHER-clock point exceeds the LOWER-clock one, as a percentage to one
      decimal, with no sign character at all
    - no trailing punctuation
