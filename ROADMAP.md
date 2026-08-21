@@ -32,9 +32,27 @@ Nothing here is research. It is the difference between "code exists" and "code i
   load, so it cannot be used to detect idleness.
   **Still open:** the throttling path has never fired (the card never neared its limits — 139 W of
   a 200 W budget) and no run has used the locked OCCT protocol.
-- **[CORE] Deliberately trigger a failure and check it gets caught.** Push an undervolt until
-  something actually crashes, and confirm the logger records it. A detector that has never seen a
-  positive case is not known to work. This is the single highest-value hour in Phase 0.
+- ✅ **[CORE] Deliberately trigger a failure and check it gets caught.** Done 2026-08-20 —
+  `tools/stability-logger/Test-LoggerCatchesFailure.ps1`. Three 45-second cases including a
+  positive control, without which a classifier stuck on `INCONCLUSIVE` would have passed both
+  failure cases: sustained load → `CLEAN` (95% of samples loaded), idle device → `INCONCLUSIVE`
+  (0%), load stopping a third of the way through → `INCONCLUSIVE` (28%). The load-fraction
+  detector is accurate to the sample.
+  **The driver-reset path also fired for the first time**, on an `nvlddmkm` Error 153 context
+  reset induced by force-terminating a CUDA process — caused by the test harness itself, which
+  contaminated the following case until the harness was reordered and given a settle delay.
+  **Two real defects found and fixed:** the crash flag reported a count with no event id, level or
+  timestamp, making a false alarm impossible to identify without going to the Windows event log by
+  hand; and `session.json` carried a UTF-8 BOM that broke every standard JSON parser, so a
+  machine-readable artifact was unreadable by machines.
+  **Still open:** an actual hard lock. All three cases exercise the load-fraction and event-log
+  detectors, not survival of a real crash, which by construction can only be inferred from a
+  truncated log.
+- **[CORE] Stability-test the applied curves.** Nothing in this project has been stability-tested.
+  Not the original OC, not the repaired curve. The logger is now known to work, so this is cheap
+  and it blocks any honest statement about whether the tuned configurations are sound. Note the
+  GDDR7 trap specifically: error correction retries silently, so a memory overclock can be
+  crash-free while being net slower.
 - ✅ **[BLOCKER] Verify the fixed-work benchmark actually measures anything.** Done — and it did not,
   at first. Two instrumentation bugs made every number wrong (`nvidia-smi` inside the timed region
   cost `membw` 50.5% of its duration; power was averaged over a wider window than performance,
@@ -77,11 +95,27 @@ Nothing here is research. It is the difference between "code exists" and "code i
   `python tools/frequency-sweep/probe_launch_bound.py --rounds 3`; data in `data/probes/`.
   **Methodological lesson:** `utilization.gpu` over ~25 samples is too coarse to carry an argument
   about lost work. It is a hint, not a measurement.
-- **[CORE] Build a genuinely bandwidth-saturated kernel and re-run the fine sweep.** This is now the
-  sharpest open question. `membw` is issue-limited below ~1990 MHz, so the V100 prediction was
-  tested outside the domain where its premise holds. A kernel that saturates DRAM across the whole
-  swept range would test it properly, and would say whether the contradiction above is about
-  consumer silicon or about this particular kernel.
+- ✅ **[CORE] Build a genuinely bandwidth-saturated kernel and re-run the fine sweep.** Answered
+  2026-08-20, and the answer is **it cannot be built on this part**. Three independent approaches
+  converge:
+  six torch access patterns at 1395 and 2760 MHz all issue-limited (elasticity 0.45–0.96, and the
+  read-only reduction is the *worst* at 0.957 rather than the best);
+  four concurrent streams reaching 281.2 GB/s where one reaches 218.3, then plateauing;
+  and a hand-written `float4` CUDA kernel through CuPy sweeping 1 to 16 outstanding loads per
+  thread, which delivers 268.3 GB/s at unroll 1 and 281.9 at unroll 16 — a 5% spread across a
+  16× change in memory-level parallelism.
+  Methods 2 and 3 agree to within **0.25%** from entirely different mechanisms for raising
+  parallelism, at roughly 54% of available bandwidth. That is a hardware ceiling, not a kernel
+  defect. **A `membw` sweep below ~2000 MHz is not measuring a memory-bound workload whatever
+  kernel is used**, which is a domain limitation to state rather than a bug to fix.
+  A conclusion drawn mid-investigation — that concurrency's 1.29× meant a better kernel could
+  break the wall — was withdrawn when the better kernel did not.
+  **Still open:** what the 281 GB/s ceiling actually is. Neither per-thread parallelism nor
+  concurrency, and well below both the DRAM peak and any plausible issue bound. Naming it needs
+  hardware counters this project does not read (Nsight Compute).
+  Also unresolved: two probes disagree on single-stream copy at 1395 MHz, 299.9 against 218.3
+  GB/s, differing in array size and resident array count. Ratios within a probe are unaffected;
+  absolute figures across probes are provisional.
 - ✅ **[CORE] Add a `LICENSE` file** and check the GPU-DVFS-Dataset's license. Done — MIT for the
   software (`LICENSE`), CC BY 4.0 for the collected data (`LICENSE-DATA`), split because the dataset
   is the contribution that warrants attribution and the tooling is not.
@@ -129,13 +163,48 @@ The part nobody else can replicate, and the reason the project is worth doing at
   - *Repeated units of one popular GPU model* → answers "how much does headroom vary between
     supposedly identical chips?" This is the silicon-lottery question and it needs same-SKU repeats.
   - These need different builds tested. **Pick one before collecting, not after.**
-- **[CORE] Run a controlled stock-versus-tuned sweep on the same unit.** Two validation sweeps
-  incidentally straddled this: the tuned configuration sustained 2942 MHz at 162.91 W / 17.42 TFLOP/s
-  against stock's 2617.6 MHz at 167.03 W / 15.40 TFLOP/s — **+13.1% throughput for −2.5% power**.
-  That is the project's whole thesis in one comparison, and it is currently worth nothing, because
-  the runs were separate, background load differed (6.2% vs 3.6%), and thermal state was not matched.
-  Interleaved on one chip under matched conditions, it becomes the headline result. This is now the
-  highest-value single measurement available.
+- ✅ **[CORE] Separate the two tuning knobs, and explain the `membw` plateau.** Done 2026-08-19/20,
+  six sweeps. "Tuned" was always two settings — a memory overclock and a core V/F curve — and they
+  do **opposite** things to the two workloads. `gemm` gets nothing from the memory overclock
+  (±1%) and everything from the curve (−18 to −26% power at matched clock). `membw` gets
+  everything from the memory overclock (+3.6 to +16.1%) and is **harmed** by the curve, up to
+  −29.6% across 1560–1867 MHz.
+  **The mechanism is measured, not inferred.** NVML exposes no voltage (verified by scanning field
+  IDs 1–259; 44 readable fields, none a voltage) but HWiNFO does, along with the crossbar clock.
+  The flattened curve pins core voltage at 0.720 V across a 49% rise in core clock; the crossbar
+  clock — the SM-to-memory-controller interconnect — is pinned with it. Crossbar-to-core ratio
+  holds 0.928–0.976 at stock and collapses to 0.726 under the curve. Throughput follows the
+  crossbar (elasticity 1.31) not the core (0.51). The two configurations agree exactly where their
+  voltages agree, at 1402 MHz, and diverge from 1635 MHz, the first point where stock raises
+  voltage and the tuned card does not.
+  This unifies the two findings above: `gemm` at ~1365 FLOP/byte never loads the crossbar, so the
+  pinned low voltage is pure benefit; `membw` at 0.167 FLOP/byte lives on it, so the same pinned
+  voltage is pure cost. **The undervolt's benefit and its harm are one mechanism.**
+- ✅ **[CORE] Test a repair derived from the mechanism.** Done 2026-08-20. Restoring the stock
+  voltage slope below the flattened region, with four outcomes stated before the run, removes the
+  plateau entirely: crossbar ratio returns to 0.939–0.967 and `membw` at 1852 MHz goes 294.5 →
+  383.2 GB/s, **+30.1%**, with peak within 0.6% of the tuned card.
+  **But it is a trade, not a win, and the trade reverses by workload.** `gemm` under the repaired
+  curve returns to stock power at matched frequency (+0.2% to +1.8% across four points, against
+  the tuned card's −18 to −26%) and loses 4.5% peak throughput. The original curve beats the
+  repaired one on `gemm` efficiency at every point from 2317 to 2782 MHz, by 5–18%.
+  **Neither configuration dominates.** That is this project's thesis one level up: not only is the
+  efficiency-optimal *frequency* workload-dependent, so is the efficiency-optimal *hardware
+  configuration*.
+  **Still open:** why the repaired curve caps `gemm` at ~2898 MHz where the original sustains
+  2948. Two curve variants gave the same ceiling, so it is not a redraw artifact, and both fall
+  short of their target rather than being curve-limited. Unexplained.
+- ✅ **[CORE] Run a controlled stock-versus-tuned sweep on the same unit.** Done 2026-08-19,
+  `data/frequency-sweeps/oc-comparison-20260819/`. Same chip, same tool, same 13 targets, ~90
+  minutes apart in one session, with the applied settings recorded for the first time. At each
+  configuration's own sustained maximum: `gemm` **+12.1% throughput / −2.9% power / +15.4%
+  efficiency**, `membw` **+17.6% / −3.7% / +22.1%**. That corroborates the earlier uncontrolled
+  +13.1% / −2.5% rather than overturning it.
+  The more interesting half is at **matched** clock, where `gemm` does the same work for
+  −18% to −26% power across four frequencies with clocks matched to 0 MHz and temperatures to
+  1 °C — the efficiency gain is mostly power reduction, not the higher peak clock.
+  **Still open:** interleaving. All of stock then all of tuned, so thermal drift remains confounded
+  with condition. Proper interleaving alternates them.
 - **[CORE] Reset any overclocking utility to stock before collecting.** Not hygiene — an active V/F
   curve override silently defeats `nvidia-smi -lgc`, collapsing grid points onto one achieved clock
   while every CSV row still looks well-formed. Verified both ways; see `data/frequency-sweeps/`.
