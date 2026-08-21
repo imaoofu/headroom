@@ -143,6 +143,29 @@ def findToolCall(text):
     return None
 
 
+def appendReply(target, reply):
+    """Append a reply to a source file without corrupting its encoding.
+
+    This exists because the obvious shell equivalent is broken on this machine. PowerShell's
+    `>>` and Out-File write a UTF-8 BOM - measured, bytes EF BB BF - so appending a draft to an
+    existing .py inserts a BOM in the MIDDLE of the file and Python then refuses it with
+    "invalid non-printable character U+FEFF". The stability logger had the same bug in its
+    session.json for weeks. Read and rewrite the whole file in one encoding instead.
+    """
+    existing = ""
+    if target.exists():
+        # newline="" on the READ as well as the write. read_text() applies universal-newline
+        # translation, so a CRLF target comes back as LF and gets written back as LF - turning
+        # a three-line append into a diff that touches every line in the file.
+        with open(target, encoding="utf-8", newline="") as handle:
+            existing = handle.read()
+
+    ending = "\r\n" if "\r\n" in existing else "\n"
+    body = reply.strip().replace("\r\n", "\n").replace("\n", ending)
+    with open(target, "w", encoding="utf-8", newline="") as handle:
+        handle.write(existing.rstrip() + ending * 3 + body + ending)
+
+
 def ask(model, system, user, think, numPredict, timeout):
     payload = {
         "model": model,
@@ -184,6 +207,9 @@ def main():
     parser.add_argument("--raw", action="store_true", help="Do not strip a wrapping code fence.")
     parser.add_argument("--force", action="store_true",
                         help="Send even when the context budget check says it will not fit.")
+    parser.add_argument("--append",
+                        help="On success, also append the reply to this file. Refused if the "
+                             "run had problems.")
     args = parser.parse_args()
 
     model = MODELS.get(args.model, args.model)
@@ -245,7 +271,13 @@ def main():
         for problem in problems:
             print(f"  - {problem}")
         print("\nThe reply was still written so it can be inspected. Do not use it as source.")
+        if args.append:
+            print(f"NOT appended to {args.append}: the run had problems.")
         return 1
+
+    if args.append:
+        appendReply(Path(args.append), outPath.read_text(encoding="utf-8"))
+        print(f"appended        {args.append}")
 
     print("\nNow VERIFY it. Nothing from a local model goes in without being run:")
     print("  python analysis/audit_claims.py        for claims work")

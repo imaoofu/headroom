@@ -31,9 +31,25 @@ A REAL BUG THESE CHECKS FOUND, recorded because the fix is not obvious from the 
     neither would have found it. It took a case with a fence at the start AND at the end AND
     something in between.
 
+A SECOND REAL BUG, in appendReply
+    The first version read the target with Path.read_text(), which applies universal-newline
+    translation. A CRLF file - which every file in this repo is - came back as LF and was
+    written back as LF, so appending three lines produced a diff touching every line in the
+    module. Caught by the CRLF check below on its first run. The fix reads with newline="" as
+    well as writing with it, and converts the reply's own endings to match the target, because
+    a model's reply always arrives with LF and leaving it produces a mixed-ending file instead.
+
 PROVENANCE
-    Written directly. Ten deliberate mutations were introduced into ask_local.py and all ten
-    were caught:
+    Written directly. Fifteen deliberate mutations were introduced into ask_local.py and all
+    fifteen were caught. On appendReply:
+
+      - reading without newline="", so CRLF is translated away on the way in
+      - writing the reply verbatim, leaving mixed endings in a CRLF file
+      - always using CRLF regardless of what the target uses
+      - writing with utf-8-sig, putting a BOM in the middle of the file
+      - dropping the existing content instead of appending to it
+
+    And on the rest:
 
       - stripFences using re.sub over every fence it finds
       - stripFences keeping the greedy match without the inner-fence guard
@@ -197,6 +213,64 @@ with tempfile.TemporaryDirectory() as directory:
     check(
         "the reference file is named so the model can refer to it",
         str(contextFile) in message,
+    )
+
+# --------------------------------------------------------------------------------------
+# Appending without corrupting the target
+# --------------------------------------------------------------------------------------
+
+with tempfile.TemporaryDirectory() as directory:
+    target = Path(directory) / "module.py"
+    target.write_text("existing = 1\n", encoding="utf-8")
+    askLocal.appendReply(target, "added = 2")
+
+    check(
+        "appending writes no BOM anywhere in the file",
+        b"\xef\xbb\xbf" not in target.read_bytes(),
+        "PowerShell's >> writes EF BB BF, measured on this machine. Appended to an existing "
+        "module that lands mid-file and Python refuses it with 'invalid non-printable "
+        "character U+FEFF'",
+    )
+    check(
+        "appending keeps the existing content and adds the new",
+        target.read_text(encoding="utf-8") == "existing = 1\n\n\nadded = 2\n",
+        f"got {target.read_text(encoding='utf-8')!r}",
+    )
+
+    fresh = Path(directory) / "new.py"
+    askLocal.appendReply(fresh, "x = 1")
+    check(
+        "appending to a file that does not exist yet creates it",
+        fresh.read_text(encoding="utf-8").strip() == "x = 1",
+    )
+
+    # A CRLF target must stay wholly CRLF: the existing lines untouched, and the appended ones
+    # converted to match. read_text() would translate the existing CRLF to LF on the way in and
+    # write it back as LF, turning a three-line append into a diff over the whole file. Mixing
+    # the two is the other failure, and is what a naive newline="" write produces because the
+    # model's reply always arrives with LF.
+    crlf = Path(directory) / "crlf.py"
+    crlf.write_bytes(b"a = 1\r\n")
+    askLocal.appendReply(crlf, "b = 2\nc = 3")
+    written = crlf.read_bytes()
+    check(
+        "a CRLF target keeps its existing CRLF lines",
+        written.startswith(b"a = 1\r\n"),
+        f"got {written!r}",
+    )
+    check(
+        "the appended lines are converted to the target's endings, not left mixed",
+        b"\n" not in written.replace(b"\r\n", b""),
+        f"got {written!r}; a bare LF among CRLF lines is a mixed-ending file",
+    )
+
+    lf = Path(directory) / "lf.py"
+    lf.write_bytes(b"a = 1\n")
+    askLocal.appendReply(lf, "b = 2")
+    check(
+        "an LF target is not promoted to CRLF",
+        b"\r" not in lf.read_bytes(),
+        f"got {lf.read_bytes()!r}",
     )
 
 # --------------------------------------------------------------------------------------
