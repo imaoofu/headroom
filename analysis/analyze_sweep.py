@@ -49,6 +49,15 @@ def loadSweep(path):
             if raw.get("lock_miss_direction") in EXCLUDE_DIRECTIONS:
                 continue
             rows.append({
+                # The COMMANDED frequency, kept alongside the achieved one so callers can align
+                # rows across configurations. Achieved clocks differ by a few MHz between runs at
+                # the same target, so matched-frequency comparisons have to key on the target.
+                # audit_claims.py depends on this.
+                # None when the column is absent, which is true of some early smoke-test CSVs
+                # and of this module's own minimal test fixtures. Consumers that need it must
+                # check; audit_claims.py raises rather than matching a None key.
+                "target": (int(float(raw["target_frequency_mhz"]))
+                           if raw.get("target_frequency_mhz") else None),
                 "mhz": float(raw["achieved_frequency_avg"]),
                 "throughput": float(raw["bench_throughput"]),
                 "power": float(raw["power_avg_w"]),

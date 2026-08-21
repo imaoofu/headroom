@@ -874,7 +874,7 @@ locked targets.
 
 | | memory overclock | core V/F curve |
 |---|---|---|
-| `gemm` (compute-bound) | nothing measurable, plus or minus 1% | the entire benefit: -18% to -26% power at matched clock, +12.3% sustainable ceiling |
+| `gemm` (compute-bound) | nothing measurable, plus or minus 1% | the entire benefit: -18% to -26% power at matched clock, +12.1% sustainable ceiling |
 | `membw` (bandwidth-bound) | the entire benefit: +3.6% to +16.1% over stock | actively harmful: up to -29.6% throughput across 1560-1867 MHz |
 
 #### 5.7.1 The matched-frequency power reduction is entirely the core curve
@@ -896,7 +896,10 @@ sanity check this design should pass and does.
 
 The curve additionally raises the sustainable ceiling: at stock and at memory-only the card cannot
 hold the top three grid points, collapsing to ~2590 MHz and ~15.7 TFLOP/s, while with the curve it
-holds 2948 MHz and reaches 17.61 TFLOP/s (+12.3%).
+holds 2948 MHz and reaches 17.61 TFLOP/s (+12.1%). The denominator is stock's own peak,
+15.71 TFLOP/s at 2598 MHz. An earlier version of this sentence said +12.3%, which is the
+comparison against stock's LAST grid point (15.68 at 2588 MHz) rather than its best, and
+did not say so.
 
 #### 5.7.2 The same curve costs a bandwidth-bound workload up to 29.6%
 

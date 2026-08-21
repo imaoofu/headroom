@@ -296,6 +296,27 @@ Turning two separate models into one project with a single research question.
 
 ## Phase 4 — write-up
 
+- ✅ **[CORE] Make the paper's numbers mechanically checkable.** Done 2026-08-21,
+  `analysis/audit_claims.py` with claims in `analysis/claims_consumer.py`. A claim stores no
+  expected value: it stores a function that RENDERS the string the document should contain,
+  computed from the CSVs at audit time, and the engine asserts that string appears verbatim
+  and exactly once. That one mechanism catches drift in both directions — change the data and
+  the rendering stops matching the prose; edit the prose and it stops matching the rendering.
+  Matching twice is reported AMBIGUOUS rather than passing, because a claim that appears in two
+  places is not pinning the line anyone thinks it is.
+  30 claims over §5.7.1 and §5.7.5, all green. `--coverage` lists every number in an audited
+  section that no claim pins, and every numbered section with no claims at all, so the gap is
+  visible instead of assumed: 31 of the paper's numbered sections currently have none.
+  **It found a real error on its first run**, in a section written days earlier: §5.7.1's
+  "+12.3% sustainable ceiling" is measured against stock's LAST grid point (15.68 TFLOP/s at
+  2588 MHz) rather than its peak (15.71 at 2598), and the sentence did not say which. Corrected
+  to +12.1% with the denominator stated.
+  Engine tests in `analysis/test_audit_claims.py`, 36 checks, mutation-gated 11/11. Two
+  mutations survived the first pass — both because the check asserted an outcome the mutation
+  also produced — and both are written up in that file rather than quietly fixed.
+  **Still open:** claims cover two subsections. Everything else in the paper is unaudited, and
+  a green run says nothing about it.
+
 - **[CORE] State plainly which results are validated and which are exploratory.** Public-dataset
   results have a real train/test split. Collected-data results, at small N, do not. Say which is
   which in the same breath as the number.

@@ -99,6 +99,15 @@ datasets, and reports the assumption checks alongside the answer:
 python analysis/analyze_constrained.py
 ```
 
+The paper cites eight frequency sweeps, and prose drifts away from data quietly. Each claim below
+is a function that *renders* the string the document should contain, computed from the CSVs at run
+time; the audit asserts that string is present verbatim and exactly once, so changing either side
+breaks it. `--coverage` also lists every number in an audited section that nothing pins:
+
+```bash
+python analysis/audit_claims.py --coverage
+```
+
 ### Getting the data
 
 The public CSVs are **not redistributed in this repo**, and now cannot be: the license check found
