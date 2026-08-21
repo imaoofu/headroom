@@ -904,7 +904,7 @@ did not say so.
 #### 5.7.2 The same curve costs a bandwidth-bound workload up to 29.6%
 
 Across 1560-1867 MHz the fully tuned configuration runs `membw` flat at ~295 GB/s while stock rises
-312 to 332 to 342. Five consecutive points sit inside a 1.2% band while core clock rises 20%.
+312 to 332 to 342. Five consecutive points sit inside a 1.3% band while core clock rises 20%.
 
 Three mechanisms were eliminated before the curve was implicated. It is **not** contention from
 concurrent monitoring - a repeat run with nothing else touching the device reproduces the plateau to

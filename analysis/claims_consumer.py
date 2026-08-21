@@ -203,3 +203,54 @@ def theWidestEfficiencyGap():
     widest = max(efficiency(tuned[t]) / efficiency(fixed[t]) for t in band)
     return (f"ahead at every point from {min(band)} through {max(band)} MHz, "
             f"by up to {signedPct(widest)[1:]}")
+
+
+TUNED_MEMBW = "membw-anomaly-20260819/20260819-204233_5060ti-oc-membw-anomaly_sweep.csv"
+MEMONLY_MEMBW = "membw-anomaly-20260819/20260820-181307_5060ti-memonly-membw-anomaly_sweep.csv"
+STOCK_MEMBW_13PT = "oc-comparison-20260819/20260819-143337_5060ti-kittest-stock-membw-stock_sweep.csv"
+
+# --------------------------------------------------------------------------------------
+# 5.7.2 - the core curve costs a bandwidth-bound workload up to 29.6%
+# --------------------------------------------------------------------------------------
+
+PLATEAU_TARGETS = [1560, 1710, 1867, 2025]
+
+
+def _plateauRow(target):
+    memonly, tuned = sweep(MEMONLY_MEMBW), sweep(TUNED_MEMBW)
+    m, t = memonly[target], tuned[target]
+    return (f"| ~{target} MHz | {m['throughput'] / 1e9:.1f} | {t['throughput'] / 1e9:.1f} "
+            f"| {deltaPct(m['throughput'], t['throughput'])} "
+            f"| {deltaPct(efficiency(m), efficiency(t))} |")
+
+
+for _target in PLATEAU_TARGETS:
+    claim(f"5.7.2-plateau-{_target}", PAPER, "5.7.2")(
+        lambda target=_target: _plateauRow(target))
+
+
+@claim("5.7.2-monotone-range", PAPER, "5.7.2")
+def monotoneRange():
+    rows = sweep(MEMONLY_MEMBW)
+    targets = sorted(rows)
+    lo, hi = targets[0], targets[-1]
+    return f"at {lo} MHz to {rows[hi]['throughput'] / 1e9:.1f} at {hi}:"
+
+
+@claim("5.7.2-plateau-band", PAPER, "5.7.2")
+def plateauBand():
+    rows = sweep(TUNED_MEMBW)
+    bandTargets = [1560, 1635, 1710, 1792, 1867]
+    throughputs = [rows[t]["throughput"] for t in bandTargets]
+    smallest = min(throughputs)
+    band = (max(throughputs) - smallest) / smallest * 100
+    # rise is over achieved clock, not commanded target
+    rise = (rows[bandTargets[-1]]["mhz"] / rows[bandTargets[0]]["mhz"] - 1) * 100
+    return f"Five consecutive points sit inside a {band:.1f}% band while core clock rises {rise:.0f}%."
+
+
+@claim("5.7.2-stock-rises", PAPER, "5.7.2")
+def stockRises():
+    rows = sweep(STOCK_MEMBW_13PT)
+    vals = [rows[t]["throughput"] / 1e9 for t in (1545, 1702, 1852)]
+    return f"{vals[0]:.0f} to {vals[1]:.0f} to {vals[2]:.0f}."
