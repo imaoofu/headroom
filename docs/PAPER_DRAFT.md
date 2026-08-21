@@ -308,6 +308,45 @@ available, not a defect in any one kernel.
 well below both the DRAM peak and any plausible instruction-issue bound. Naming it would require
 hardware performance counters this study does not read.
 
+#### 3.3.2 What limits `membw` is not one thing, and it moves with frequency - DRAFT
+
+Section 5.7.3 identifies a third limiter, and taken together the three make a more honest picture
+than "the memory-bound workload":
+
+| regime | binding constraint |
+|---|---|
+| low core clock | SM instruction issue rate, and a ceiling near 281 GB/s that neither concurrency nor per-thread unrolling lifts (3.3.1) |
+| mid core clock, flattened V/F curve | **the crossbar clock**, pinned because core voltage is pinned (5.7.3) |
+| high core clock | DRAM bandwidth, at roughly 78% of the rated peak |
+
+Only the last of these is what "bandwidth-bound" is normally taken to mean. A workload's identity as
+memory-bound is therefore **frequency-dependent on this hardware**, and a study that assumes it holds
+across a swept range is assuming something measurably false.
+
+This matters for how the crossbar result should be read. It is not that a core-domain setting
+mysteriously reaches into memory. The path from a streaming multiprocessor to a DRAM device is
+mostly on-die logic - crossbar, L2 slices, memory controllers - and only its final stage, the PHY
+and the GDDR devices themselves, sits in the memory clock domain. A "core" V/F curve governs the
+rest of it. The measurements are consistent with the crossbar clock being derived from core voltage
+rather than from the locked graphics clock: locking the graphics clock 32.8% higher while voltage is
+held constant moves the crossbar 2.3%, whereas at stock the crossbar holds a near-constant 0.95
+ratio to the graphics clock across the same range. The rail topology itself was not probed; what was
+measured is the behaviour.
+
+#### 3.3.3 The governing clock is invisible to standard telemetry - DRAFT
+
+`nvidia-smi` exposes four clock domains - graphics, SM, memory and video - and on this device
+graphics and SM report identical values. **There is no crossbar or fabric clock among them**, and
+NVML's field-value interface does not supply one either (see 6, item 1). The clock that best predicts
+`membw` throughput on a tuned card - elasticity 1.31, against 0.51 for the graphics clock - cannot be
+read by the tooling that essentially every published GPU DVFS study relies on.
+
+Every measurement of it here comes from HWiNFO, joined to the sweep by binning samples on the
+graphics clock they were taken at. That is a workable method and it is also a reason this effect
+could persist unnoticed in the literature: a study logging `nvidia-smi` telemetry on a card with a
+modified V/F curve would record a clean frequency sweep and a well-behaved power curve, and would
+have no column in which the actual limiter appears.
+
 ### 3.4 Measurement protocol
 
 For each target frequency:
