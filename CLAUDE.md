@@ -373,9 +373,20 @@ disagrees with the data directory, the data directory is right.*
   Replay was switched off.** The first version of this entry credited the wallpaper alone. That
   attribution is not supported and has been withdrawn — the effect is real and the direction is
   certain, but WHICH background consumer caused how much of it is untested. Instant Replay is the
-  more interesting suspect because it runs continuously, shows no window, is on by default, and
-  costs nothing measurable at idle (encoder 0%, baseline 4.5% with it off against 4.3% with it on),
-  so it would be invisible to exactly the kind of preflight check this project runs.
+  more interesting suspect because it runs continuously, shows no window, and is on by default.
+
+  **Measured 2026-08-22, and it is NOT subtle at idle:**
+
+  | Instant Replay | idle SM utilisation | encoder |
+  |---|---|---|
+  | off | 4.3% mean | 0% |
+  | on | **10.8% mean, 15% max** | **21%** |
+
+  It more than doubles idle GPU utilisation and runs NVENC at 21% with nothing being recorded to
+  screen. An earlier version of this entry said it "costs nothing measurable at idle" — that was
+  wrong, and it was wrong because both numbers behind it (4.5% and 4.3%) had been taken with the
+  feature already off. It does trip the sweep tool's 10% baseline guard, so the preflight check
+  does catch it, which is better news than the earlier text implied.
 
   | band | mean uplift from a quiet machine |
   |---|---|
@@ -408,9 +419,31 @@ disagrees with the data directory, the data directory is right.*
   idle. Note that Instant Replay was almost certainly running during every earlier sweep in this
   project, including the stock, tuned, memory-only and curve-fixed legs.
 
-  **The discriminating experiment has not been run.** Re-enable Instant Replay with the wallpaper
-  still closed, sweep `gemm`, and compare against run 3: slower means Instant Replay carries the
-  cost, unchanged means the wallpaper did. The wandering `membw` dip is very likely the
+  **The discriminating experiment was run, and Instant Replay is the culprit.** Run 4 re-enabled it
+  with the wallpaper still closed. It is slower than run 3 at **all thirteen points** — mean −2.9%
+  across 1237–2010 MHz and −1.7% above it.
+
+  **At the peak the attribution is clean, because the wallpaper varied inside the Instant-Replay-on
+  group and changed nothing:**
+
+  | run | Instant Replay | wallpaper | peak `gemm` |
+  |---|---|---|---|
+  | r1 | on | on | 17.97 TFLOP/s @ 2975.9 MHz |
+  | r2 | on | on | 17.98 @ 2976.5 |
+  | r4 | on | **off** | 17.99 @ 2977.1 |
+  | **r3** | **off** | off | **18.24 @ 2977.0** |
+
+  Spread within the three Instant-Replay-on runs: **0.09%**. Gap to the one with it off: **1.48%**,
+  at an achieved clock identical to within 1.2 MHz. Closing the wallpaper moved the peak by nothing
+  at all; switching off Instant Replay moved it by sixteen times the measurement spread.
+
+  In the mid-band the split is roughly even — Instant Replay accounts for about 2.9 of the ~6.0
+  points, with the remainder from the wallpaper and from the baseline wander in run 1.
+
+  **Limits on this.** The Instant-Replay-off condition is n=1 at present and should be repeated
+  before the 18.24 figure is treated as settled. And `gemm` renders nothing to screen, so Instant
+  Replay has little new frame content to encode here; its cost during a graphics workload could be
+  larger, and this measurement does not bound that. The wandering `membw` dip is very likely the
   same phenomenon and needs no other explanation.
 - ✅ **"Neither configuration dominates" was tested and SURVIVES.** This entry previously said it
   "may now be false"; the measurement says otherwise. The split curve beats tuned on `membw` at
