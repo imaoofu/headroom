@@ -630,7 +630,8 @@ around the peak buys frequency resolution and pays for it in signal.
 
 *The order is counterbalanced.* Sweeps run ascending and the card warms over a ~30 minute session,
 so run position is confounded with temperature. The ABBA order put each workload in one early and
-one late slot. It worked: `gemm` ran at 47–53 °C then 44–51 °C, `membw` at 39–49 °C then 45–52 °C,
+one late slot. It worked: `gemm` ran at 47.5–53.5 °C then 44.0–50.8 °C, `membw` at 39.0–49.0 °C
+then 45.9–52.0 °C,
 so drift landed on both workloads rather than on the difference between them.
 
 *The estimator is a cubic, not a parabola.* Efficiency curves are asymmetric — steep rise, gentle

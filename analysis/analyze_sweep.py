@@ -63,6 +63,12 @@ def loadSweep(path):
                 "power": float(raw["power_avg_w"]),
                 "unit": raw.get("bench_throughput_unit", ""),
                 "windowed": raw.get("power_window_applied") in ("True", "true"),
+                # A DIAGNOSTIC HINT, NOT A MEASUREMENT. Section 5.4.3 establishes that
+                # utilization.gpu averaged over ~25 samples decouples from throughput: two
+                # passes at 1890 MHz read 99.0% and 92.7% and both delivered 342.3 GB/s. Use it
+                # to describe the telemetry, never to argue about work done. None when absent.
+                "utilisation": (float(raw["utilization_avg_pct"])
+                                if raw.get("utilization_avg_pct") else None),
             })
     for row in rows:
         row["efficiency"] = row["throughput"] / row["power"]

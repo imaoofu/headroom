@@ -236,10 +236,37 @@ check(
     "stripping single '*' would silently match italic text against plain",
 )
 
+# Whitespace is presentation for the same reason bold is: the documents are hard-wrapped, so a
+# sentence breaks wherever the wrap falls. Without collapsing it a claim can only pin what fits
+# on one line, and re-wrapping a paragraph - which changes nothing factual - would break every
+# claim in it.
 check(
-    "normalisation does not paper over whitespace differences",
-    statusOf(lambda: "the  gain is +80.0% over the low point") == "FAIL",
-    "a claim must pin the text as written, not an approximation of it",
+    "a claim may span a line break in the document",
+    statusOf(lambda: "described in 5.7.3. The file is `run-3000.csv`") == "PASS",
+    "this text is split across two lines in the fixture; pinning it must still work",
+)
+
+check(
+    "a claim may itself contain a newline where the document has a space, and vice versa",
+    statusOf(lambda: "taken on 2026-08-21\nand described in 5.7.3.") == "PASS",
+)
+
+check(
+    "a doubled space is tolerated",
+    statusOf(lambda: "the  gain is +80.0% over the low point") == "PASS",
+)
+
+# The limit of the tolerance. Collapsing whitespace must not start matching text that differs
+# in any character that is not whitespace, which is where every number lives.
+check(
+    "a changed digit still fails",
+    statusOf(lambda: "the gain is +80.1% over the low point") == "FAIL",
+)
+
+check(
+    "a missing word still fails",
+    statusOf(lambda: "the gain is +80.0% over low point") == "FAIL",
+    "collapsing whitespace must not collapse the words either",
 )
 
 check(

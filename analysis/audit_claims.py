@@ -195,20 +195,32 @@ def deltaPct(new, old, minus="-"):
 
 
 BOLD = re.compile(r"\*\*")
+WHITESPACE = re.compile(r"\s+")
 
 
 def normalise(text):
-    """Strip bold markers before matching.
+    """Strip bold markers and collapse whitespace before matching.
 
-    Which numbers a section puts in bold is an editorial decision that changes as the prose is
-    edited, and it is not a factual claim about the data. Without this, moving emphasis from
-    one row of a table to another breaks a claim that is still perfectly true - and the fix
-    would be to teach the claim WHICH rows deserve bold, putting an editorial judgement inside
-    the checker. Both sides are normalised, so a claim may render the markers or not.
+    BOLD, because which numbers a section puts in bold is an editorial decision that changes as
+    the prose is edited, and it is not a factual claim about the data. Without this, moving
+    emphasis from one row of a table to another breaks a claim that is still perfectly true -
+    and the fix would be to teach the claim WHICH rows deserve bold, putting an editorial
+    judgement inside the checker.
 
-    The cost: a claim cannot pin emphasis. That is the intended trade.
+    WHITESPACE, because the documents are hard-wrapped at ~100 characters and a sentence
+    therefore breaks wherever the wrap happens to fall. Without this a claim can only pin text
+    that fits on one line, so covering a sentence like "utilisation of 99.0% and 92.7% - and
+    throughput of 342.3 and 342.3 GB/s" means splitting it into fragments chosen by where the
+    line ends rather than by what the claim is about. Worse, re-wrapping a paragraph - which
+    changes nothing factual - would break every claim in it.
+
+    Both sides are normalised, so a claim may render the markers or not and may wrap or not.
+
+    The cost: a claim cannot pin emphasis, and cannot distinguish one space from two. Both are
+    the intended trade. What a claim still pins exactly is every character that is not
+    whitespace or an asterisk pair, which is where the numbers live.
     """
-    return BOLD.sub("", text)
+    return WHITESPACE.sub(" ", BOLD.sub("", text)).strip()
 
 
 def audit(claims):

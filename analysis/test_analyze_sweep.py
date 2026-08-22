@@ -185,6 +185,36 @@ try:
 finally:
     os.unlink(temp_path10)
 
+# Test 11: `utilization_avg_pct` is carried through, and its absence is None rather than a
+# fabricated 0.0 or 100.0. Section 5.4.3 argues that utilisation DECOUPLES from throughput, so a
+# missing reading silently becoming a number would put an invented figure into that argument.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+    f.write("achieved_frequency_avg,bench_throughput,power_avg_w,utilization_avg_pct\n")
+    f.write("1000,1000,100,92.7\n")
+    temp_path11 = f.name
+
+try:
+    result11 = loadSweep(temp_path11)
+    check("utilization_avg_pct is carried through as a float",
+          result11[0]["utilisation"] == 92.7,
+          f"got {result11[0]['utilisation']!r}")
+finally:
+    os.unlink(temp_path11)
+
+# Test 12: no utilisation column at all.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+    f.write("achieved_frequency_avg,bench_throughput,power_avg_w\n")
+    f.write("1000,1000,100\n")
+    temp_path12 = f.name
+
+try:
+    result12 = loadSweep(temp_path12)
+    check("A missing utilisation column yields None, not a number",
+          result12[0]["utilisation"] is None,
+          f"got {result12[0]['utilisation']!r}; a fabricated 0.0 would read as an idle GPU")
+finally:
+    os.unlink(temp_path12)
+
 if failures:
     print(f"FAILED: {', '.join(failures)}")
     raise SystemExit(1)
