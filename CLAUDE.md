@@ -356,21 +356,48 @@ disagrees with the data directory, the data directory is right.*
 
 - ✅ **The transcript-only results were re-measured 2026-08-22 and are now committed.** The
   split-region curve peaks at **17.97 and 17.98 TFLOP/s at ~2976 MHz** across two back-to-back
-  sweeps — 0.08% apart, and above the 17.84–17.88 the unsaved run had shown. It is the fastest
-  result recorded on this card, beating full tuned's 17.61 at 2948.1 MHz by 2.0%.
+  sweeps — 0.08% apart, and above the 17.84–17.88 the unsaved run had shown. A third sweep on a
+  quiet machine reached **18.24 TFLOP/s at 2977.0 MHz**, which is the figure of record and the
+  fastest result on this card, beating full tuned's 17.61 at 2948.1 MHz by **3.6%**. Note that the
+  tuned figure was itself measured under desktop load and is therefore also understated.
 - ✅ **The 1867 MHz `membw` dip did not reproduce — and the dip MOVED.** The repeat gives 386.7 GB/s
   at 1867, matching memory-only's 385.7. But 1792 came back at 354.5, below its own 1710 neighbour,
   where it had been fine the night before. A defect that lands on a different frequency each time
   is transient, not a property of the curve. Do not attribute either dip to the hardware.
-- 🔑 **NEW, and the most consequential finding of that session: single-run mid-band throughput is
-  not reproducible to better than ~5% on this machine, on BOTH workloads.** Two back-to-back `gemm`
-  sweeps on identical settings differ by 5.5% at 1545 MHz and 5.5% at 1852 MHz while agreeing to
-  0.08% at the peak and within 0.7% everywhere above 2167 MHz. The `membw` wandering dip is the
-  same phenomenon. **§5.4 puts the efficiency optimum at 1552 MHz, inside that band**, so the
-  optimum's location and its efficiency-gain figure carry more uncertainty than the paper states.
-  Run 1 was 3-4 °C warmer and 2-3 points lower on utilisation across the affected band, but the
-  relationship is not proportional and §5.4.3 is the section warning against reading utilisation
-  this way, so the cause is NOT established. Repeats, not single sweeps, in this band.
+- 🔑 **THE MOST CONSEQUENTIAL FINDING OF 2026-08-22: ordinary desktop GPU load systematically
+  depresses measured throughput, and it hits the low and mid band four times harder than the top.**
+  Three `gemm` sweeps on identical hardware settings. Runs 1 and 2 ran at ~7% idle baseline
+  wandering between 6 and 17%; run 3 ran at 4.3% stable after closing Wallpaper Engine. **Run 3 is
+  faster at all thirteen points.**
+
+  | band | mean uplift from a quiet machine |
+  |---|---|
+  | 1237-2010 MHz | **+6.0%** (worst point +10.3% at 1545 MHz) |
+  | 2167-3090 MHz | +1.5% |
+
+  **This is contention, not noise, and not the hardware.** The evidence: the achieved clock is
+  identical across all three runs (2975.9 / 2976.5 / 2977.0 MHz at the top) while throughput moves,
+  so the card runs at the same speed and only the share we get changes. Power RISES with throughput
+  rather than falling, which is what removing a competitor looks like. Efficiency improves too, so
+  it is not a power-for-performance trade. Temperature is eliminated: run 3 was the WARMEST at the
+  mid-band points and still the fastest, which is the opposite of throttling. Utilisation does not
+  explain it either - run 2 read 99% at the affected points and was still slower than run 3 - which
+  is §5.4.3's warning holding up.
+
+  **What this costs the project.** Every cross-configuration comparison in the repo was measured
+  under uncontrolled desktop load, so all of them carry an unknown bias of this size. Large effects
+  are safe: the 29.6% `membw` plateau is far outside it. These are not:
+  - **§5.4's efficiency optimum at 1552 MHz sits exactly where contention bites hardest.** Its
+    location and its efficiency-gain figure are less certain than stated.
+  - **The matched-frequency power claims of "within 2%" and "within ±3%"** are the same magnitude
+    as the power shift seen here (up to 5.0% at 1852 MHz).
+  - The −4.5% / −4.0% peak deficits sit in the band where contention is smallest (~1.5%), so they
+    are the least affected, but not unaffected.
+
+  **Protocol from now on: close Wallpaper Engine, browsers and media players, verify the baseline
+  is stable and under ~5%, and record it in `-AppliedSettings`.** A passing 10% guard is not enough;
+  run 1 passed at 6% and still lost 10.3% at 1545 MHz. The wandering `membw` dip is very likely the
+  same phenomenon and needs no other explanation.
 - ✅ **"Neither configuration dominates" was tested and SURVIVES.** This entry previously said it
   "may now be false"; the measurement says otherwise. The split curve beats tuned on `membw` at
   every point (+3.2% to +30.0%) and on `gemm` peak throughput (+2.0%), but **tuned still wins
