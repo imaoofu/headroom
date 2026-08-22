@@ -367,8 +367,15 @@ disagrees with the data directory, the data directory is right.*
 - 🔑 **THE MOST CONSEQUENTIAL FINDING OF 2026-08-22: ordinary desktop GPU load systematically
   depresses measured throughput, and it hits the low and mid band four times harder than the top.**
   Three `gemm` sweeps on identical hardware settings. Runs 1 and 2 ran at ~7% idle baseline
-  wandering between 6 and 17%; run 3 ran at 4.3% stable after closing Wallpaper Engine. **Run 3 is
-  faster at all thirteen points.**
+  wandering between 6 and 17%; run 3 ran at 4.3% stable. **Run 3 is faster at all thirteen points.**
+
+  ⚠️ **TWO variables changed before run 3, not one: Wallpaper Engine was closed AND NVIDIA Instant
+  Replay was switched off.** The first version of this entry credited the wallpaper alone. That
+  attribution is not supported and has been withdrawn — the effect is real and the direction is
+  certain, but WHICH background consumer caused how much of it is untested. Instant Replay is the
+  more interesting suspect because it runs continuously, shows no window, is on by default, and
+  costs nothing measurable at idle (encoder 0%, baseline 4.5% with it off against 4.3% with it on),
+  so it would be invisible to exactly the kind of preflight check this project runs.
 
   | band | mean uplift from a quiet machine |
   |---|---|
@@ -394,9 +401,16 @@ disagrees with the data directory, the data directory is right.*
   - The −4.5% / −4.0% peak deficits sit in the band where contention is smallest (~1.5%), so they
     are the least affected, but not unaffected.
 
-  **Protocol from now on: close Wallpaper Engine, browsers and media players, verify the baseline
-  is stable and under ~5%, and record it in `-AppliedSettings`.** A passing 10% guard is not enough;
-  run 1 passed at 6% and still lost 10.3% at 1545 MHz. The wandering `membw` dip is very likely the
+  **Protocol from now on: close Wallpaper Engine, browsers and media players, switch off NVIDIA
+  Instant Replay / ShadowPlay, verify the baseline is stable and under ~5%, and record all of it in
+  `-AppliedSettings`.** A passing 10% guard is not enough; run 1 passed at 6% and still lost 10.3%
+  at 1545 MHz. **Idle baseline is not a sufficient check either** — Instant Replay is invisible at
+  idle. Note that Instant Replay was almost certainly running during every earlier sweep in this
+  project, including the stock, tuned, memory-only and curve-fixed legs.
+
+  **The discriminating experiment has not been run.** Re-enable Instant Replay with the wallpaper
+  still closed, sweep `gemm`, and compare against run 3: slower means Instant Replay carries the
+  cost, unchanged means the wallpaper did. The wandering `membw` dip is very likely the
   same phenomenon and needs no other explanation.
 - ✅ **"Neither configuration dominates" was tested and SURVIVES.** This entry previously said it
   "may now be false"; the measurement says otherwise. The split curve beats tuned on `membw` at
