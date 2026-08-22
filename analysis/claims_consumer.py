@@ -380,3 +380,55 @@ def decoupled1605():
     return (f"At 1605 MHz, {p1['utilisation']:.1f}% and {p2['utilisation']:.1f}% "
             f"utilisation gave {p1['throughput'] / 1e9:.1f} and "
             f"{p2['throughput'] / 1e9:.1f} GB/s")
+
+
+# ---------------------------------------------------------------------------------------------
+# 5.7.5 The voltage-shortfall hypothesis, refuted
+#
+# These pin a REFUTATION. The paragraph they cover previously proposed the test as future work,
+# and disagreed with every other project document for a day after the test was run. Pinning the
+# numbers is what stops that paragraph drifting back out of step with the sweeps.
+# ---------------------------------------------------------------------------------------------
+
+CURVEFIXED2_GEMM = "membw-anomaly-20260819/20260820-221451_5060ti-curvefixed2-gemm_sweep.csv"
+CURVEFIXED925_GEMM = "membw-anomaly-20260819/20260821-215215_5060ti-curvefixed925-gemm_sweep.csv"
+
+
+def _peakPoint(path):
+    return max(sweep(path).values(), key=lambda r: r["throughput"])
+
+
+@claim("5.7.5-ceiling-fell", PAPER, "5.7.5")
+def ceilingFell():
+    before, after = _peakPoint(CURVEFIXED2_GEMM), _peakPoint(CURVEFIXED925_GEMM)
+    drop = before["mhz"] - after["mhz"]
+    if drop <= 0:
+        raise ValueError(
+            f"the ceiling did not fall: {before['mhz']:.1f} -> {after['mhz']:.1f} MHz. "
+            "The paragraph this pins argues the prediction failed; if the data now says "
+            "otherwise the prose is wrong, not this claim.")
+    return (f"it fell, from {before['mhz']:.1f} MHz to {after['mhz']:.1f} MHz, "
+            f"{drop:.1f} MHz in the wrong direction")
+
+
+@claim("5.7.5-peak-improved", PAPER, "5.7.5")
+def peakImproved():
+    before, after = _peakPoint(CURVEFIXED2_GEMM), _peakPoint(CURVEFIXED925_GEMM)
+    return (f"to {after['throughput'] / 1e12:.2f} TFLOP/s from "
+            f"{before['throughput'] / 1e12:.2f}")
+
+
+@claim("5.7.5-deficit-narrowed", PAPER, "5.7.5")
+def deficitNarrowed():
+    tuned = _peakPoint(TUNED_GEMM)
+    before, after = _peakPoint(CURVEFIXED2_GEMM), _peakPoint(CURVEFIXED925_GEMM)
+    return (f"against the tuned card's {tuned['throughput'] / 1e12:.2f} TFLOP/s from "
+            f"{100 * (before['throughput'] / tuned['throughput'] - 1):.1f}% to "
+            f"{100 * (after['throughput'] / tuned['throughput'] - 1):.1f}%")
+
+
+@claim("5.7.5-frequency-gap", PAPER, "5.7.5")
+def frequencyGap():
+    tuned, after = _peakPoint(TUNED_GEMM), _peakPoint(CURVEFIXED925_GEMM)
+    return (f"{after['mhz']:.1f} MHz against {tuned['mhz']:.1f} MHz, a shortfall of "
+            f"{tuned['mhz'] - after['mhz']:.1f} MHz")

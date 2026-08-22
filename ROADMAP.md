@@ -49,10 +49,17 @@ Nothing here is research. It is the difference between "code exists" and "code i
   detectors, not survival of a real crash, which by construction can only be inferred from a
   truncated log.
 - **[CORE] Stability-test the applied curves.** Nothing in this project has been stability-tested.
-  Not the original OC, not the repaired curve. The logger is now known to work, so this is cheap
-  and it blocks any honest statement about whether the tuned configurations are sound. Note the
-  GDDR7 trap specifically: error correction retries silently, so a memory overclock can be
-  crash-free while being net slower.
+  Not the original OC, not the repaired curve, not the split-region curve. The logger is now known
+  to work, so this is cheap and it blocks any honest statement about whether the tuned
+  configurations are sound. Note the GDDR7 trap specifically: error correction retries silently,
+  so a memory overclock can be crash-free while being net slower.
+
+  **Now has evidence behind it, which it did not when this item was written.** The split-region
+  curve produced a ~2.5% low outlier on `gemm` in roughly one run in three, against a 0.06% spread
+  across three runs on the tuned curve and ~0.5% on the repaired one. An intermittent 2.5% loss is
+  exactly what a marginal curve looks like before it becomes a crash, and it sits on the
+  configuration currently producing the project's best numbers. This is no longer just good
+  practice.
 - ✅ **[BLOCKER] Verify the fixed-work benchmark actually measures anything.** Done — and it did not,
   at first. Two instrumentation bugs made every number wrong (`nvidia-smi` inside the timed region
   cost `membw` 50.5% of its duration; power was averaged over a wider window than performance,
@@ -197,18 +204,24 @@ The part nobody else can replicate, and the reason the project is worth doing at
   **Neither configuration dominates.** That is this project's thesis one level up: not only is the
   efficiency-optimal *frequency* workload-dependent, so is the efficiency-optimal *hardware
   configuration*.
-- **[CORE] Test whether the ~2898 MHz `gemm` ceiling is just a voltage shortfall.** Was recorded as
-  unexplained; the voltage telemetry now gives a candidate. **Both curve variants measure
-  0.895 V** at every target from 2625 MHz up — variant 1 on its `membw` sweep, variant 2 on its
-  `gemm` sweep (the first `gemm` run was not voltage-logged). Identical to the millivolt, even
-  though variant 2 was redrawn to raise the top by ~10 mV, so the raise never reached the card. The tuned card's top voltage was
-  never measured (HWiNFO was not running for its `gemm` sweep, and both voltage-logged runs cover
-  only 1402–2100 MHz); the Afterburner editor showed 0.925 V, which is a screen reading, not a
-  measurement. A 30 mV shortfall explains 50 MHz without invoking any inherent cost of the repair,
-  and `membw` losing only 0.6% at peak under the same curve fits that better than a
-  repair-caps-the-top story. No hardware-slowdown, thermal or power-brake bit appears in any run.
-  **The test is one sweep:** raise the top point to 0.925 V, *verify it in HWiNFO before trusting
-  it*, re-run `gemm`. Until then the −4.5% peak deficit is provisional.
+- ❌ **[CORE] Test whether the ~2898 MHz `gemm` ceiling is just a voltage shortfall.** Done
+  2026-08-21, and the hypothesis is **refuted**. Do not re-run this test.
+
+  The prediction was that the repaired curve was running ~30 mV short at the top, which would
+  explain the deficit without invoking any inherent cost of the repair. Raising the top point to
+  0.925 V **lowered** the ceiling, from 2898.5 MHz to 2876.6 MHz — 21.9 MHz the wrong way.
+  Locking the curve flat at 925 mV changed nothing further. HWiNFO shows 0.925 V requested
+  delivering 0.920 V under ~170 W of load, which is vdroop rather than a missing voltage bin, so
+  the raise did reach the card and the card simply does not clock higher for it.
+
+  **The deficit is real, reproduces, and is now unexplained.** Against full tuned's 17.61 TFLOP/s
+  at 2948.1 MHz, the best repaired result is 16.90 at 2876.6 — a 71.5 MHz gap. Voltage, thermals,
+  power and throttling are all eliminated. Recorded as an open question rather than closed with a
+  guess.
+
+  The reasoning above was sound and is left in the history rather than deleted: 0.895 V really was
+  identical to the millivolt across both curve variants, and that really did look like a raise
+  that never reached the card. It was a good hypothesis that the measurement killed.
 - ✅ **[CORE] Run a controlled stock-versus-tuned sweep on the same unit.** Done 2026-08-19,
   `data/frequency-sweeps/oc-comparison-20260819/`. Same chip, same tool, same 13 targets, ~90
   minutes apart in one session, with the applied settings recorded for the first time. At each

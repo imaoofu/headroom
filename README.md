@@ -2,19 +2,29 @@
 
 **Quantifying the gap between conservative stock GPU behaviour and the empirically-found safe optimum.**
 
-> ## ⚠️ This is a very early prototype
+> ## ⚠️ Scope and status — read before citing anything here
 >
-> Day-one scaffolding, not a result. Nothing here has produced a finding worth citing yet.
-> Specifically:
+> Original data now exists and the central mechanism has been measured. What follows is what that
+> does and does not license.
 >
-> - The analysis runs on **one published dataset covering a single NVIDIA V100**. Thirty-three
->   workloads on one chip. Nothing in it transfers to a consumer GPU without being retested there.
-> - **No original data has been collected yet.** The stability logger works, but it has only been
->   smoke-tested at idle. Zero real stress-test runs exist.
-> - The prediction model is a first pass whose main job right now is to **find out whether it beats
->   a fixed-frequency lookup table at all**. It may not. If it doesn't, that is the result and it
->   gets reported, not buried.
-> - Interfaces, file layout, and metrics will move. Do not build anything on this yet.
+> - **N = 1 chip.** Every consumer result comes from one RTX 5060 Ti. Chip-to-chip variation on
+>   this class of part is published at roughly 11%, so nothing here is a statement about the model
+>   line, let alone about GPUs. A second card is in the roadmap and has not been run.
+> - **The V100 analysis is a separate dataset** — 33 workloads, one chip, published by others.
+>   It is never pooled with the consumer data, and the two are reported side by side rather than
+>   merged.
+> - **The prediction model lost.** Leave-one-workload-out, it gives 0.883% mean regret against
+>   0.837% for a best-fixed-frequency lookup table. That null is the result and is reported as one.
+> - **Configuration runs are not contemporaneous.** Switching profiles needs a manual Afterburner
+>   change, so comparisons are separated by hours. Effect sizes are far outside plausible drift;
+>   the precise percentages are not defended to the last decimal.
+> - **Nothing here has been stability-tested yet**, including the configurations producing the best
+>   numbers. See the roadmap.
+> - Interfaces, file layout, and metrics still move.
+>
+> Two results discussed in working notes — the split-region curve's `gemm` peak and a tuned
+> control re-run — were taken as ad-hoc single points and never written to disk. They are
+> excluded from this README and must be re-measured before being cited anywhere.
 >
 > See [ROADMAP.md](ROADMAP.md) for what needs to happen next and in what order.
 

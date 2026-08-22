@@ -1085,9 +1085,23 @@ throttle bit at any point; `SwPowerCap` appears intermittently on both and stock
 at all while still collapsing to ~2590 MHz. The ceiling is set by the curve, not by the card
 protecting itself.
 
-**This is testable in one sweep**: raise the repaired curve's top point to 0.925 V, confirm the
-change in HWiNFO before trusting it, and re-run `gemm`. Until then the -4.5% peak deficit is
-attributed provisionally and not used to argue anything about the repair.
+**That prediction was tested on 2026-08-21, and it is wrong.** The repaired curve's top point was
+raised to 0.925 V and `gemm` re-run on the same grid. The ceiling did not rise: it fell, from
+2898.5 MHz to 2876.6 MHz, 21.9 MHz in the wrong direction. Locking the curve flat at 925 mV
+changed nothing further. HWiNFO shows 0.925 V requested delivering 0.920 V under roughly 170 W of
+load, so the raise did reach the card - the 5 mV shortfall is ordinary vdroop, not a missing
+voltage bin - and the card simply does not clock higher for it.
+
+Peak throughput did improve slightly, to 16.90 TFLOP/s from 16.82, which narrows the deficit
+against the tuned card's 17.61 TFLOP/s from -4.5% to -4.0%. The frequency gap is unchanged in
+character: 2876.6 MHz against 2948.1 MHz, a shortfall of 71.5 MHz.
+
+**The deficit is therefore real, reproducible, and unexplained.** Voltage is eliminated by this
+sweep; thermals, power limit and throttle state were eliminated earlier. It is recorded here as an
+open question rather than closed with a second guess, and it is still not used to argue anything
+about the repair. What the failed prediction does establish is that the 0.895 V reading was not a
+setting that failed to apply, which had been the reason for doubting the telemetry at the top of
+the range.
 
 #### 5.7.6 Caveats
 
