@@ -354,20 +354,30 @@ is the immediate next step" — was true on 08-15 and badly false a week later, 
 still being loaded into every session as the authority on project state. If this section ever
 disagrees with the data directory, the data directory is right.*
 
-- **Two results exist only in a chat transcript and must be re-measured before citation.** The
-  split-region curve's `gemm` peak (2970 MHz, 17.84–17.88 TFLOP/s — the fastest recorded on this
-  card) and the tuned control re-run (17.69 TFLOP/s at 2947 MHz, three runs, 0.06% spread) were
-  taken as ad-hoc single points and never written to disk. `grep` finds neither anywhere in the
-  repo. The tuned figure is corroborated by the saved sweep (17.61 at 2948.1 MHz); the split-curve
-  peak has no corroboration at all.
-- **The 1867 MHz dip in the split `membw` run is unexplained.** 344.3 GB/s between 363.3 and 387.6.
-  A contamination theory was raised and then withdrawn — utilisation there matches the memory-only
-  baseline. A repeat sweep is the cheap discriminator.
-- **The applied curves are stability-untested**, and split-curve `gemm` showed a ~2.5% low outlier
-  in roughly 1 of 3 runs against 0.06% spread on tuned.
-- **The paper's "neither configuration dominates" may now be false** (`docs/PAPER_DRAFT.md` §5.7.5,
-  and the same sentence in the anomaly README). Do not rewrite it until the two runs above are
-  re-measured.
+- ✅ **The transcript-only results were re-measured 2026-08-22 and are now committed.** The
+  split-region curve peaks at **17.97 and 17.98 TFLOP/s at ~2976 MHz** across two back-to-back
+  sweeps — 0.08% apart, and above the 17.84–17.88 the unsaved run had shown. It is the fastest
+  result recorded on this card, beating full tuned's 17.61 at 2948.1 MHz by 2.0%.
+- ✅ **The 1867 MHz `membw` dip did not reproduce — and the dip MOVED.** The repeat gives 386.7 GB/s
+  at 1867, matching memory-only's 385.7. But 1792 came back at 354.5, below its own 1710 neighbour,
+  where it had been fine the night before. A defect that lands on a different frequency each time
+  is transient, not a property of the curve. Do not attribute either dip to the hardware.
+- 🔑 **NEW, and the most consequential finding of that session: single-run mid-band throughput is
+  not reproducible to better than ~5% on this machine, on BOTH workloads.** Two back-to-back `gemm`
+  sweeps on identical settings differ by 5.5% at 1545 MHz and 5.5% at 1852 MHz while agreeing to
+  0.08% at the peak and within 0.7% everywhere above 2167 MHz. The `membw` wandering dip is the
+  same phenomenon. **§5.4 puts the efficiency optimum at 1552 MHz, inside that band**, so the
+  optimum's location and its efficiency-gain figure carry more uncertainty than the paper states.
+  Run 1 was 3-4 °C warmer and 2-3 points lower on utilisation across the affected band, but the
+  relationship is not proportional and §5.4.3 is the section warning against reading utilisation
+  this way, so the cause is NOT established. Repeats, not single sweeps, in this band.
+- ✅ **"Neither configuration dominates" was tested and SURVIVES.** This entry previously said it
+  "may now be false"; the measurement says otherwise. The split curve beats tuned on `membw` at
+  every point (+3.2% to +30.0%) and on `gemm` peak throughput (+2.0%), but **tuned still wins
+  `gemm` efficiency from 1545 through 2625 MHz, by up to 30.5% at 2010 MHz** — which is where
+  `gemm`'s efficiency optimum sits. The trade is unchanged in character. Do not rewrite §5.7.5.
+- **The applied curves are still stability-untested.** What was called a "~2.5% outlier in 1 of 3
+  runs" is now better described by the mid-band reproducibility entry above.
 - **27 paper sections are unaudited.** 50 claims are green; `analyze_fine_sweep.py` needs its
   summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming
