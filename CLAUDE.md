@@ -45,8 +45,11 @@ consumer hardware, openly and reproducibly, and release the dataset.
   to 25% energy savings are already published, as is chip-to-chip frequency variation (140 MHz /
   ~11%, "Not All GPUs Are Created Equal"). What is genuinely unpublished is narrower: **open,
   reproducible, downloadable data for current consumer hardware.**
-- ❌ *"This is undervolting research."* **Voltage cannot be read or written through any documented
-  API.** This measures frequency versus power. Say that plainly.
+- ❌ *"This is undervolting research."* **Voltage cannot be *written* through any documented API**,
+  so nothing here controls voltage programmatically — curve changes are made by hand in Afterburner.
+  It can now be *read*: HWiNFO exposes core voltage and the crossbar clock, and that telemetry is
+  what the plateau mechanism below rests on. This measures frequency versus power, with voltage as
+  observed telemetry rather than an independent variable. Say that plainly.
 
 ---
 
@@ -125,7 +128,8 @@ That is a sharper, more defensible contribution claim, and it is checkable by an
 | `nvidia-smi -pl` (power limit) | ✅ Works, 150–200 W. Requires admin. |
 | `nvmlDeviceSetClockOffsets` (per-P-state) | ✅ Available. Graphics ±1000 MHz, memory −2000/+6000. Writes return `NO_PERMISSION` un-elevated — **not** `NOT_SUPPORTED`, so it works with elevation. |
 | `nvmlDeviceGetGpcClkVfOffset` (global V/F) | ❌ **NOT_SUPPORTED** on this card. Closed on consumer Blackwell. |
-| **Read or write voltage** | ❌ **Impossible.** Zero voltage exports across all 260 NVML device functions. |
+| **Read or write voltage via NVML** | ❌ **Impossible.** Zero voltage exports across all 260 NVML device functions; a scan of field IDs 1–259 returns 44 readable fields and no voltage at any scale. |
+| **Read voltage via HWiNFO** | ✅ **Works, and is load-bearing.** Core voltage and crossbar clock at 2 s polling, joined to sweeps by timestamp. Five runs carry it. This is the project's central mechanism result — see below. |
 | `nvidia-smi -svfd` | ❌ Rubin+ only. Not Blackwell. |
 | Per-point V/F curve reshaping | ⚠️ Undocumented NVAPI only (`ClockClientClkVfPointsSetControl`, `0x0733E009`). Out of scope — breaks on driver updates. |
 
@@ -133,6 +137,63 @@ That is a sharper, more defensible contribution claim, and it is checkable by an
 `Profiles\VEN_10DE&DEV_2D04&…cfg` as hex — 3224 bytes, header, then 127 points × 3 float32.
 His Profile 4 shows `+478` mid-band and `−2500` at top. `MSIAfterburner.exe -profile4 -q` applies
 and exits. Scriptable curve control **as a stretch goal only.**
+
+### 🔑 The `membw` plateau: mechanism measured, repair built (2026-08-19 → 08-21)
+
+The largest body of original work in the project. Every table is in
+`data/frequency-sweeps/membw-anomaly-20260819/README.md`. Do not re-derive any of it.
+
+**The tuned profile changes two independent things** — memory +2500 and a core V/F curve pinned flat
+near 3000 MHz above ~925 mV. Every earlier result treated them as one setting. Separated, they do
+opposite things to the two workloads:
+
+| | memory overclock | core V/F curve |
+|---|---|---|
+| `gemm` (compute-bound) | nothing, ±1% | **the whole win**: −18% to −26% power at matched clock |
+| `membw` (bandwidth-bound) | **the whole win**: +3.6% to +16.1% over stock | **actively harmful**: up to −29.6% throughput at 1560–1867 MHz |
+
+**The mechanism, every link measured, with a stock control run:**
+
+    flattened V/F curve
+      -> core voltage pinned at 0.720 V across a 49% rise in core clock
+      -> crossbar clock pinned near 1340 MHz instead of tracking the core
+      -> the SM-to-memory-controller path stops scaling
+      -> membw plateaus at ~300 GB/s while DRAM sits at 16301 MHz throughout
+
+The crossbar-to-core ratio is the cleanest single statistic in the study: **0.928–0.976 at stock**
+(spread 0.048 — the interconnect tracks the core) against **0.942 collapsing to 0.726 under the
+flattened curve** (spread 0.218). The two configurations agree exactly where their voltages agree
+— at 1402 MHz both sit at 0.720 V and both deliver ~282 GB/s — and diverge from the first point
+where stock raises voltage and tuned does not.
+
+**This unified two findings that had looked unrelated.** `gemm` at ~1365 FLOP/byte never stresses
+the crossbar, so the pinned low voltage is pure benefit; `membw` at 0.167 FLOP/byte lives on that
+path, so the same pinned voltage is pure cost. **The undervolt's benefit and its harm are one
+mechanism seen from two workloads.**
+
+**The repair was derived from the diagnosis, stated in advance, and behaved as predicted.** Restore
+the stock voltage slope *below* ~925 mV, leave the flattened region above it alone: plateau gone
+(+8.0% / +20.4% / +30.1% at 1545 / 1702 / 1852 MHz over tuned), top end intact (−0.6% at peak).
+The predicted *cost* arrived too — `gemm`'s matched-frequency power advantage returned to within 2%
+of stock, and tuned beats curve-fixed on `gemm` efficiency across 1545–2782 MHz by up to 33.1%.
+
+**`gemm` peaks of record, all from committed sweeps:**
+
+| configuration | peak | at |
+|---|---|---|
+| stock | 15.71 TFLOP/s | 2597.8 MHz |
+| memory-only | 15.67 | 2583.7 |
+| curve-fixed v1 | 16.81 | 2887.1 |
+| curve-fixed v2 | 16.82 | 2898.5 |
+| curve-fixed + 0.925 V top | 16.90 | 2876.6 |
+| **full tuned** | **17.61** | **2948.1** |
+
+**❌ REFUTED 2026-08-21 — the voltage-shortfall hypothesis.** Curve-fixed's `gemm` ceiling sat ~71 MHz
+below tuned, and the candidate explanation was a 30 mV shortfall at the top of the curve. Raising
+the top point to 0.925 V *lowered* the ceiling by 21.9 MHz (2898.5 → 2876.6); locking it there
+changed nothing. 0.925 V requested delivers 0.920 V under ~170 W load — vdroop, not a missing
+voltage bin. **The deficit is real and reproduces, and is still unexplained.** Voltage, thermals,
+power and throttling are all eliminated. Do not re-run this test.
 
 ---
 
@@ -142,8 +203,11 @@ and exits. Scriptable curve control **as a stretch goal only.**
   destroys the automated-sweep economics. Many Intel parts had undervolting locked in microcode
   post-Plundervolt. And unstable CPU/RAM causes **silent data corruption and filesystem damage** —
   categorically worse than a GPU driver crash. Scoped out, not deferred.
-- **Simultaneous OC+UV recommendations.** Needs Tier-3 curve control *and* voltage readback. The
-  latter does not exist. Ship "recommended frequency cap + power limit" instead.
+- ~~**Simultaneous OC+UV recommendations.**~~ **Reopened 2026-08-20 — the premise expired.** Ruled
+  out because it "needs Tier-3 curve control *and* voltage readback, and the latter does not
+  exist." Both now exist: Afterburner supplies curve control by hand, HWiNFO supplies the readback.
+  The split-region curve *is* simultaneous OC+UV. Struck rather than deleted — the reasoning was
+  correct when written; what changed was the tooling, not the argument.
 - **HWBOT / UL-3DMark as data sources.** No API; paid-enterprise aggregate-only respectively.
 - **Pooling the V100 and consumer datasets into one training set.** Different architecture, workload
   type, feature space, and sample size. Two separate models, compared. Never one merged fit.
@@ -223,20 +287,60 @@ same-chip stock comparison measures nothing.
 
 ---
 
+## The claims auditor — how it works, and the trap in it
+
+`analysis/audit_claims.py` mechanically checks `docs/PAPER_DRAFT.md` against the CSVs. It has
+already caught four wrong numbers in the paper, so it earns its keep, but its design is
+counter-intuitive and easy to break by "improving".
+
+**A claim stores no expected number.** It stores a function that *renders the exact string the
+document must contain*, computed from the CSVs at audit time. The engine then asserts that string
+appears in the paper verbatim and **exactly once**. This is what closes drift in both directions:
+edit the paper and the claim fails; change the data and the claim fails. A stored expected value
+would only catch the first.
+
+- **Matching twice is `AMBIGUOUS`, not a pass.** A claim that matches two lines is not pinning the
+  line anyone thinks it is.
+- **Bold markers and whitespace runs are normalised away on both sides**, so a claim may span a
+  line break and does not need to know where the paper wraps. Line wrapping is presentation.
+- **A claim's job is to state what the data says, not to make the audit green.** If a correctly
+  written claim does not match the paper, that is a *finding*. Fix the paper, never the formula.
+
+**⚠️ The double-import trap.** Running `audit_claims.py` directly binds it as `__main__`. A claims
+module then does `from audit_claims import claim`, which imports a *second copy* of the module with
+its own empty registry — claims register into one copy and the runner reads the other, reporting
+"0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
+
+Coverage as of 2026-08-22: **46 claims green, 27 sections unaudited.**
+
+---
+
 ## Repo layout
 
 ```
 analysis/          Python modelling on the public V100 dataset
+  audit_claims.py     mechanical paper auditor — see "The claims auditor" above
+  claims_consumer.py  the claims themselves, one function per sentence of the paper
+  test_*.py           10 suites, 241 checks total
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset
     gpu_workload.py   fixed-work benchmark (gemm = compute, membw = bandwidth)
+  local-model/        delegate spec'd work to Ollama; specs/ holds reusable task specs
 scripts/           dataset download
+docs/
+  PAPER_DRAFT.md      the write-up the auditor checks
 data/
   raw/                public CSVs (gitignored, not redistributed — license unchecked)
+  external/           downloaded GPU specs (gitignored)
+  probes/             kernel-probe results as JSON
+  HWiNFO-Data/        gitignored raw dumps; distilled extracts live beside their sweep
   stability-runs/     logger output — becomes the original dataset
   frequency-sweeps/   sweep output — becomes the original dataset
 ```
+
+**Every data directory carries its own README** explaining what is dataset-grade and what is not.
+Keep that true for anything added.
 
 `ROADMAP.md` holds the ordered plan. `README.md` holds results and related work.
 
@@ -244,10 +348,29 @@ data/
 
 ## Open right now
 
-- **Zero real data collected.** The logger has only run at idle; the sweep has only dry-run. First
-  real sweep is the immediate next step, at stock, on a quiet GPU.
+*Status as of 2026-08-22. The bullet this replaced — "zero real data collected... first real sweep
+is the immediate next step" — was true on 08-15 and badly false a week later, while this file was
+still being loaded into every session as the authority on project state. If this section ever
+disagrees with the data directory, the data directory is right.*
+
+- **Two results exist only in a chat transcript and must be re-measured before citation.** The
+  split-region curve's `gemm` peak (2970 MHz, 17.84–17.88 TFLOP/s — the fastest recorded on this
+  card) and the tuned control re-run (17.69 TFLOP/s at 2947 MHz, three runs, 0.06% spread) were
+  taken as ad-hoc single points and never written to disk. `grep` finds neither anywhere in the
+  repo. The tuned figure is corroborated by the saved sweep (17.61 at 2948.1 MHz); the split-curve
+  peak has no corroboration at all.
+- **The 1867 MHz dip in the split `membw` run is unexplained.** 344.3 GB/s between 363.3 and 387.6.
+  A contamination theory was raised and then withdrawn — utilisation there matches the memory-only
+  baseline. A repeat sweep is the cheap discriminator.
+- **The applied curves are stability-untested**, and split-curve `gemm` showed a ~2.5% low outlier
+  in roughly 1 of 3 runs against 0.06% spread on tuned.
+- **The paper's "neither configuration dominates" may now be false** (`docs/PAPER_DRAFT.md` §5.7.5,
+  and the same sentence in the anomaly README). Do not rewrite it until the two runs above are
+  re-measured.
+- **27 paper sections are unaudited.** 46 claims are green; `analyze_fine_sweep.py` needs its
+  summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming
-  the logger catches it is the highest-value single hour available.
+  the logger catches it is still the highest-value single hour available.
 - **Inspirit deliverable format unknown** — asked repeatedly, still unanswered.
 - **Push directly with `git push`.** `gh` is installed but auth never completed; Windows Credential
   Manager already works. Do not route through `gh`.
