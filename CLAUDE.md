@@ -318,6 +318,7 @@ Coverage as of 2026-08-22: **46 claims green, 27 sections unaudited.**
 ## Repo layout
 
 ```
+run_tests.py       runs every suite, one verdict - `python run_tests.py`
 analysis/          Python modelling on the public V100 dataset
   audit_claims.py     mechanical paper auditor — see "The claims auditor" above
   claims_consumer.py  the claims themselves, one function per sentence of the paper
