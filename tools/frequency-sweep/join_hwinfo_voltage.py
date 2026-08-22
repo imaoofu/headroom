@@ -107,6 +107,49 @@ def loadSweep(path):
     return out
 
 
+def filterIdle(samples, minPower):
+    """Drop samples taken while the card was idle between sweep points.
+
+    This is the single most consequential line in the file. HWiNFO polls straight through the
+    settle gaps, and an idle card sits at BOOST voltage, not at the voltage the locked point was
+    running at. Keeping those samples pulls the per-point medians upward by an amount that grows
+    with how long the gaps are - which manufactures a voltage-frequency slope out of nothing.
+    Since "stock has a voltage slope and the tuned curve does not" IS the project's mechanism
+    result, a defect here does not perturb a number, it invents the finding.
+
+    A sample with no power reading at all is KEPT rather than dropped. An absent power column
+    means the log never carried one, so there is nothing to filter on, and discarding every
+    sample would silently produce an empty join instead of an obvious error.
+    """
+    return [s for s in samples if s["power"] is None or s["power"] >= minPower]
+
+
+def matchSamples(samples, achievedMhz, toleranceMhz=CLOCK_TOLERANCE_MHZ):
+    """Bin samples to a sweep point by the core clock they were taken at.
+
+    The sweep CSV has no absolute timestamps, so the clock itself is the join key - see the
+    module docstring. The tolerance has to be wide enough to absorb the reported clock jitter
+    within one held point and narrow enough not to reach the neighbouring point; the grid steps
+    are ~75 MHz apart at the low end, so 25 MHz leaves margin on both sides.
+    """
+    return [s for s in samples if abs(s["clock"] - achievedMhz) <= toleranceMhz]
+
+
+def summarisePoint(matched, achievedMhz):
+    """Median voltage and crossbar clock for one point, plus the crossbar-to-core ratio.
+
+    Median rather than mean because a single sample landing in a ramp is a large outlier and
+    there are only 5-7 samples per point. Crossbar is nan rather than 0.0 when the column is
+    absent: the ratio is quoted in the paper, and a fabricated 0.0 would read as a stalled
+    interconnect - which is exactly the effect being argued about.
+    """
+    voltage = statistics.median(s["voltage"] for s in matched)
+    crossbars = [s["crossbar"] for s in matched if s["crossbar"] is not None]
+    crossbar = statistics.median(crossbars) if crossbars else float("nan")
+    ratio = crossbar / achievedMhz if crossbars else float("nan")
+    return voltage, crossbar, ratio
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("sweep")
@@ -121,22 +164,19 @@ def main():
     print(f"HWiNFO columns used: {indices}")
     print(f"{len(samples)} samples, {len(sweep)} sweep points\n")
 
-    loaded = [s for s in samples if s["power"] is None or s["power"] >= args.min_power]
+    loaded = filterIdle(samples, args.min_power)
     print(f"{len(loaded)} of {len(samples)} samples are above {args.min_power} W and kept\n")
 
     print(f"{'target':>7} {'achieved':>9} {'GB/s':>8} {'W':>6} {'n':>4} "
           f"{'volts':>7} {'crossbar':>9} {'xbar/core':>10}")
     merged = []
     for point in sweep:
-        matched = [s for s in loaded if abs(s["clock"] - point["achieved"]) <= CLOCK_TOLERANCE_MHZ]
+        matched = matchSamples(loaded, point["achieved"])
         if not matched:
             print(f"{point['target']:>7} {point['achieved']:>9.1f} "
                   f"{point['throughputGbs']:>8.1f} {point['powerW']:>6.1f} {0:>4}  (no samples)")
             continue
-        voltage = statistics.median(s["voltage"] for s in matched)
-        crossbars = [s["crossbar"] for s in matched if s["crossbar"] is not None]
-        crossbar = statistics.median(crossbars) if crossbars else float("nan")
-        ratio = crossbar / point["achieved"] if crossbars else float("nan")
+        voltage, crossbar, ratio = summarisePoint(matched, point["achieved"])
         print(f"{point['target']:>7} {point['achieved']:>9.1f} {point['throughputGbs']:>8.1f} "
               f"{point['powerW']:>6.1f} {len(matched):>4} {voltage:>7.3f} {crossbar:>9.1f} {ratio:>10.3f}")
         merged.append({**point, "voltage": voltage, "crossbar": crossbar,

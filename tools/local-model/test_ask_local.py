@@ -301,6 +301,20 @@ check(
     "bad answer",
 )
 
+# A reply that is commentary AND code was previously written out with no problem reported, so a
+# file that does not parse looked like a clean run. That happened on the first delegation whose
+# output was a test suite, and cost a debugging cycle before anyone looked at line 1.
+FENCE = chr(96) * 3
+
+check("prose before a fenced block is reported as prose-and-code",
+      askLocal.looksLikeProseAndCode("Here is my reasoning.\n\n" + FENCE + "python\nx = 1\n" + FENCE))
+check("two fenced blocks are reported as prose-and-code",
+      askLocal.looksLikeProseAndCode(FENCE + "python\na=1\n" + FENCE + "\naside\n" + FENCE + "python\nb=2\n" + FENCE))
+check("a single wrapping fence is NOT reported, it is the normal case",
+      not askLocal.looksLikeProseAndCode(FENCE + "python\nx = 1\n" + FENCE))
+check("bare code with no fence at all is NOT reported",
+      not askLocal.looksLikeProseAndCode("x = 1\n"))
+
 if failures:
     print(f"{len(failures)} check(s) failed.")
     raise SystemExit(1)

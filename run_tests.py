@@ -39,7 +39,7 @@ REPO_ROOT = Path(__file__).resolve().parent
 
 # Directories that hold suites. Listed rather than globbed from the repo root so that a stray
 # test_*.py in a scratch directory or a virtualenv cannot silently join the run.
-SUITE_DIRS = ["analysis", "tools/local-model"]
+SUITE_DIRS = ["analysis", "tools/frequency-sweep", "tools/local-model"]
 
 
 def findSuites(nameFilter):

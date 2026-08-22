@@ -1,0 +1,345 @@
+"""
+Known-answer checks for the join pipeline in join_hwinfo_voltage.py.
+
+WHY THIS FUNCTION NEEDS TESTS AT ALL
+    join_hwinfo_voltage.py is the only place in this project that turns raw HWiNFO telemetry
+    into the voltage numbers behind the central result: that a stock GPU raises voltage as
+    frequency climbs while a flattened V/F curve does not. A defect here does not shift a
+    decimal. It invents or erases that slope. The file has no test coverage, which is what
+    this suite fixes.
+
+    The subtle cases, each of which a careless implementation gets wrong without an error:
+
+    - HWiNFO on this machine emits TWO sensor blocks, so the header can carry two `GPU Clock
+      [MHz]` columns. The phantom block sits at a fixed clock, so the loader must pick the
+      column with the LARGEST spread, not the first one it sees. Voltage, crossbar and power
+      are then resolved to the column nearest the chosen clock.
+
+    - The boundaries are inclusive. A sample exactly at minPower is kept by filterIdle, and a
+      sample exactly toleranceMhz away is kept by matchSamples. An off-by-one in either
+      direction silently drops the boundary sample and shifts the median.
+
+    - A sample whose power is None is KEPT by filterIdle. An absent power column means the log
+      never carried one, and dropping every sample would produce a silently empty join.
+
+    - loadSweep here does NOT filter on bench_ok and does NOT drop overshot clock locks,
+      unlike the loader in analysis/analyze_sweep.py. It keeps every non-empty row.
+
+PROVENANCE
+    Drafted by a local model (qwen38-headroom via Ollama) from
+    tools/local-model/specs/join-hwinfo-voltage-tests.md, then verified here rather than trusted.
+    The draft had three defects, all in the tests and none in the module: two floating-point
+    equality assertions on computed medians, and a tolerance case whose sample comments measured
+    distance from a different reference point than the call passed, so a sample 1 MHz away was
+    labelled "26 away, outside" and expected to be dropped.
+
+    Eleven deliberate mutations were then introduced into join_hwinfo_voltage.py - inverting the
+    idle filter, making either boundary exclusive, dropping samples with no power reading,
+    swapping the median for the mean, reporting a missing crossbar as 0.0, selecting the phantom
+    AMD sensor block, taking the first voltage column instead of the nearest, and two loadSweep
+    changes - and all eleven were caught. Tests that pass against a broken function are worse
+    than no tests, so that check is the reason this file is committed.
+
+    Delete __pycache__ between mutations if repeating this. Stale bytecode has previously run a
+    mutated module while the restored source was on screen.
+
+Run: python tools/frequency-sweep/test_join_hwinfo_voltage.py
+"""
+
+import sys
+from pathlib import Path
+import tempfile
+import os
+import math
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from join_hwinfo_voltage import (loadHwinfo, loadSweep, filterIdle,
+                                 matchSamples, summarisePoint)
+
+failures = []
+
+def check(description, condition, detail=""):
+    if not condition:
+        print(f"[FAIL] {description}")
+        if detail:
+            print(f"  Detail: {detail}")
+        failures.append(description)
+    else:
+        print(f"[PASS] {description}")
+
+# Test 1: loadHwinfo picks the MOVING clock column, not the first one.
+# Header carries two `GPU Clock [MHz]` columns. The first (index 0) is constant; the
+# second (index 2) varies. The loader must choose the varying one.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="latin-1") as f:
+    f.write("GPU Clock [MHz],GPU Core Voltage [V],GPU Clock [MHz],GPU Core Voltage [V],GPU Crossbar Clock [MHz],GPU Power [W]\n")
+    # phantom clock constant at 100, real clock varies
+    f.write("100,0.90,1000,1.05,2000,120\n")
+    f.write("100,0.90,1200,1.10,2000,140\n")
+    f.write("100,0.90,1400,1.15,2000,160\n")
+    temp_path1 = f.name
+
+try:
+    samples1, indices1 = loadHwinfo(temp_path1)
+    # The chosen clock column is the varying one: sample clocks must not all be equal.
+    clocks = [s["clock"] for s in samples1]
+    check("loadHwinfo picks the moving clock column", len(set(clocks)) > 1,
+          f"clocks were {clocks}; expected variation, not a constant phantom")
+    # And the chosen index must be the second clock column (index 2), not the first (index 0).
+    check("loadHwinfo clock index is the varying column", indices1["clock"] == 2,
+          f"clock index was {indices1['clock']}, expected 2")
+finally:
+    os.unlink(temp_path1)
+
+# Test 2: loadHwinfo resolves voltage to the column nearest the chosen clock,
+# with two voltage candidates present.
+# In the same layout, voltage candidates are index 1 and index 3. The chosen clock is
+# index 2, so the nearest voltage column is index 3 (distance 1), not index 1 (distance 1)
+# -- wait, both are distance 1. To make this unambiguous, shift the layout so the chosen
+# clock is closer to one voltage column. Rebuild: phantom clock at 0, real clock at 3,
+# voltage candidates at 1 and 4. Distances from 3: |1-3|=2, |4-3|=1 -> index 4 wins.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="latin-1") as f:
+    f.write("GPU Clock [MHz],GPU Core Voltage [V],GPU Crossbar Clock [MHz],GPU Clock [MHz],GPU Core Voltage [V],GPU Power [W]\n")
+    f.write("100,0.90,2000,1000,1.05,120\n")
+    f.write("100,0.90,2000,1200,1.10,140\n")
+    f.write("100,0.90,2000,1400,1.15,160\n")
+    temp_path2 = f.name
+
+try:
+    samples2, indices2 = loadHwinfo(temp_path2)
+    # Chosen clock is index 3 (the varying one). Nearest voltage is index 4.
+    check("loadHwinfo voltage resolves to nearest column", indices2["voltage"] == 4,
+          f"voltage index was {indices2['voltage']}, expected 4")
+    # Sanity: the real voltage values (1.05, 1.10, 1.15) should be what we read, not the
+    # phantom 0.90.
+    check("loadHwinfo reads the nearest voltage values",
+          sorted(s["voltage"] for s in samples2) == [1.05, 1.10, 1.15],
+          f"voltages were {sorted(s['voltage'] for s in samples2)}")
+finally:
+    os.unlink(temp_path2)
+
+# Test 3: loadHwinfo raises SystemExit when the voltage column is missing.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="latin-1") as f:
+    f.write("GPU Clock [MHz],GPU Crossbar Clock [MHz],GPU Power [W]\n")
+    f.write("1000,2000,120\n")
+    f.write("1200,2000,140\n")
+    temp_path3 = f.name
+
+try:
+    raised = False
+    try:
+        loadHwinfo(temp_path3)
+    except SystemExit:
+        raised = True
+    check("loadHwinfo raises SystemExit when voltage column is missing", raised)
+finally:
+    os.unlink(temp_path3)
+
+# Test 4: loadHwinfo skips a row whose voltage is not a number, and keeps the surrounding rows.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="latin-1") as f:
+    f.write("GPU Clock [MHz],GPU Core Voltage [V],GPU Power [W]\n")
+    f.write("1000,1.05,120\n")
+    f.write("1200,NOT_A_NUMBER,140\n")
+    f.write("1400,1.15,160\n")
+    temp_path4 = f.name
+
+try:
+    samples4, _ = loadHwinfo(temp_path4)
+    check("loadHwinfo skips non-numeric voltage row", len(samples4) == 2,
+          f"got {len(samples4)} samples, expected 2")
+    check("loadHwinfo keeps surrounding rows",
+          [s["clock"] for s in samples4] == [1000.0, 1400.0],
+          f"clocks were {[s['clock'] for s in samples4]}")
+finally:
+    os.unlink(temp_path4)
+
+# Test 5: loadHwinfo returns crossbar None and power None when those columns are absent.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="latin-1") as f:
+    f.write("GPU Clock [MHz],GPU Core Voltage [V]\n")
+    f.write("1000,1.05\n")
+    f.write("1200,1.10\n")
+    temp_path5 = f.name
+
+try:
+    samples5, indices5 = loadHwinfo(temp_path5)
+    check("loadHwinfo crossbar index is None when absent", indices5["crossbar"] is None)
+    check("loadHwinfo power index is None when absent", indices5["power"] is None)
+    check("loadHwinfo sample crossbar is None", all(s["crossbar"] is None for s in samples5))
+    check("loadHwinfo sample power is None", all(s["power"] is None for s in samples5))
+finally:
+    os.unlink(temp_path5)
+
+# Test 6: loadSweep parses a file written with a UTF-8 BOM.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8-sig") as f:
+    f.write("target_frequency_mhz,achieved_frequency_avg,bench_throughput,power_avg_w,memory_clock_avg_mhz\n")
+    f.write("1000,1000,1000000000,100,1500\n")
+    temp_path6 = f.name
+
+try:
+    rows6 = loadSweep(temp_path6)
+    check("loadSweep parses UTF-8 BOM file", len(rows6) == 1,
+          f"got {len(rows6)} rows")
+    check("loadSweep BOM row fields parsed",
+          rows6[0]["target"] == 1000 and rows6[0]["achieved"] == 1000.0
+          and rows6[0]["throughputGbs"] == 1.0 and rows6[0]["powerW"] == 100.0
+          and rows6[0]["memoryMhz"] == 1500.0,
+          f"row was {rows6[0] if rows6 else None}")
+finally:
+    os.unlink(temp_path6)
+
+# Test 7: loadSweep keeps a row with bench_ok False and a row whose lock overshot.
+# Unlike analysis/analyze_sweep.py, this loader does NOT filter on bench_ok and does NOT
+# drop overshot clock locks. Both rows must survive.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+    f.write("target_frequency_mhz,achieved_frequency_avg,bench_throughput,power_avg_w,memory_clock_avg_mhz,bench_ok,lock_miss_direction\n")
+    f.write("1000,1000,1000000000,100,1500,False,above\n")
+    f.write("1200,1200,1200000000,120,1500,True,below\n")
+    temp_path7 = f.name
+
+try:
+    rows7 = loadSweep(temp_path7)
+    check("loadSweep keeps bench_ok False and overshot lock row", len(rows7) == 2,
+          f"got {len(rows7)} rows, expected 2")
+    check("loadSweep keeps both rows' achieved values",
+          sorted(r["achieved"] for r in rows7) == [1000.0, 1200.0],
+          f"achieved were {sorted(r['achieved'] for r in rows7)}")
+finally:
+    os.unlink(temp_path7)
+
+# Test 8: loadSweep gives memoryMhz nan when the column is absent.
+with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+    f.write("target_frequency_mhz,achieved_frequency_avg,bench_throughput,power_avg_w\n")
+    f.write("1000,1000,1000000000,100\n")
+    temp_path8 = f.name
+
+try:
+    rows8 = loadSweep(temp_path8)
+    check("loadSweep memoryMhz is nan when column absent",
+          math.isnan(rows8[0]["memoryMhz"]),
+          f"memoryMhz was {rows8[0]['memoryMhz']!r}; nan != nan, so use math.isnan")
+finally:
+    os.unlink(temp_path8)
+
+# Test 9: filterIdle keeps a None-power sample.
+samples9 = [
+    {"clock": 1000.0, "voltage": 1.05, "crossbar": 2000.0, "power": None},
+    {"clock": 1200.0, "voltage": 1.10, "crossbar": 2000.0, "power": 140.0},
+]
+kept9 = filterIdle(samples9, 50.0)
+check("filterIdle keeps None-power sample", len(kept9) == 2,
+      f"got {len(kept9)} kept, expected 2")
+
+# Test 10: filterIdle keeps a sample exactly at minPower and drops one below it.
+samples10 = [
+    {"clock": 1000.0, "voltage": 1.05, "crossbar": 2000.0, "power": 50.0},   # exactly at min
+    {"clock": 1200.0, "voltage": 1.10, "crossbar": 2000.0, "power": 49.0},   # below min
+    {"clock": 1400.0, "voltage": 1.15, "crossbar": 2000.0, "power": 51.0},   # above min
+]
+kept10 = filterIdle(samples10, 50.0)
+check("filterIdle keeps sample exactly at minPower",
+      any(s["clock"] == 1000.0 for s in kept10),
+      f"kept clocks were {[s['clock'] for s in kept10]}")
+check("filterIdle drops sample below minPower",
+      not any(s["clock"] == 1200.0 for s in kept10),
+      f"kept clocks were {[s['clock'] for s in kept10]}")
+check("filterIdle keeps sample above minPower",
+      any(s["clock"] == 1400.0 for s in kept10),
+      f"kept clocks were {[s['clock'] for s in kept10]}")
+
+# Test 11: the manufactured-slope case. An idle high-voltage sample above the real ones is
+# excluded by filterIdle, and this changes the summarised median.
+# Two loaded samples at low voltage (1.05, 1.10) and one idle sample at high voltage (1.35).
+# The idle sample has a high power reading so that, if it were NOT filtered, it would survive
+# filterIdle and pull the median up. We prove the filter is what removes it.
+samples11 = [
+    {"clock": 1000.0, "voltage": 1.05, "crossbar": 2000.0, "power": 120.0},  # loaded
+    {"clock": 1200.0, "voltage": 1.10, "crossbar": 2000.0, "power": 140.0},  # loaded
+    {"clock": 1400.0, "voltage": 1.35, "crossbar": 2000.0, "power": 10.0},   # idle, high V
+]
+# A minPower of 50 drops the idle sample (power 10) and keeps the two loaded ones.
+kept11 = filterIdle(samples11, 50.0)
+check("filterIdle excludes the idle high-voltage sample", len(kept11) == 2,
+      f"got {len(kept11)} kept, expected 2")
+voltage11, crossbar11, ratio11 = summarisePoint(kept11, 1100.0)
+check("filterIdle + summarisePoint median is the loaded voltage",
+      abs(voltage11 - 1.075) < 1e-9,
+      f"median voltage was {voltage11!r}, expected 1.075 (median of 1.05 and 1.10)")
+# Prove the filter changed the result: without it, the idle sample would be in the median.
+voltage11_unfiltered, _, _ = summarisePoint(samples11, 1100.0)
+check("idle sample would have changed the median if not filtered",
+      voltage11_unfiltered != voltage11,
+      f"unfiltered median was {voltage11_unfiltered!r}, filtered was {voltage11!r}")
+
+# Test 12: matchSamples keeps a sample exactly at the tolerance and drops one just outside.
+# All distances are from 1000.0, which is what the call below passes. Both boundary samples
+# sit exactly ON the tolerance and must be kept; inclusivity is the whole point of the case.
+samples12 = [
+    {"clock": 1025.0, "voltage": 1.05, "crossbar": 2000.0, "power": 120.0},  # +25, exactly on
+    {"clock": 975.0, "voltage": 1.04, "crossbar": 2000.0, "power": 120.0},   # -25, exactly on
+    {"clock": 1026.0, "voltage": 1.06, "crossbar": 2000.0, "power": 120.0},  # +26, just outside
+    {"clock": 974.0, "voltage": 1.03, "crossbar": 2000.0, "power": 120.0},   # -26, just outside
+]
+matched12 = matchSamples(samples12, 1000.0, toleranceMhz=25.0)
+check("matchSamples keeps both samples exactly at the tolerance",
+      any(s["clock"] == 1025.0 for s in matched12) and any(s["clock"] == 975.0 for s in matched12),
+      f"matched clocks were {[s['clock'] for s in matched12]}")
+check("matchSamples drops samples just outside the tolerance",
+      not any(s["clock"] in (1026.0, 974.0) for s in matched12),
+      f"matched clocks were {[s['clock'] for s in matched12]}")
+
+# Test 13: matchSamples returns an empty list when nothing is near.
+samples13 = [
+    {"clock": 1000.0, "voltage": 1.05, "crossbar": 2000.0, "power": 120.0},
+]
+matched13 = matchSamples(samples13, 5000.0, toleranceMhz=25.0)
+check("matchSamples returns empty list when nothing is near", matched13 == [])
+
+# Test 14: summarisePoint returns the median and not the mean.
+# Voltages where median != mean: [1.0, 1.0, 1.0, 1.0, 1.5] -> median 1.0, mean 1.1.
+samples14 = [
+    {"clock": 1000.0, "voltage": 1.0, "crossbar": 2000.0, "power": 120.0},
+    {"clock": 1000.0, "voltage": 1.0, "crossbar": 2000.0, "power": 120.0},
+    {"clock": 1000.0, "voltage": 1.0, "crossbar": 2000.0, "power": 120.0},
+    {"clock": 1000.0, "voltage": 1.0, "crossbar": 2000.0, "power": 120.0},
+    {"clock": 1000.0, "voltage": 1.5, "crossbar": 2000.0, "power": 120.0},
+]
+voltage14, crossbar14, ratio14 = summarisePoint(samples14, 1000.0)
+check("summarisePoint returns median not mean", voltage14 == 1.0,
+      f"voltage was {voltage14!r}; median is 1.0, mean would be 1.1")
+
+# Test 15: summarisePoint ignores None crossbars but still uses the rest.
+samples15 = [
+    {"clock": 1000.0, "voltage": 1.05, "crossbar": 2000.0, "power": 120.0},
+    {"clock": 1000.0, "voltage": 1.10, "crossbar": None, "power": 120.0},
+    {"clock": 1000.0, "voltage": 1.15, "crossbar": 2100.0, "power": 120.0},
+]
+voltage15, crossbar15, ratio15 = summarisePoint(samples15, 1000.0)
+check("summarisePoint ignores None crossbars and uses the rest",
+      crossbar15 == 2050.0,
+      f"crossbar was {crossbar15!r}, expected 2050.0 (median of 2000 and 2100)")
+
+# Test 16: summarisePoint gives nan crossbar AND nan ratio when every crossbar is None.
+samples16 = [
+    {"clock": 1000.0, "voltage": 1.05, "crossbar": None, "power": 120.0},
+    {"clock": 1000.0, "voltage": 1.10, "crossbar": None, "power": 120.0},
+]
+voltage16, crossbar16, ratio16 = summarisePoint(samples16, 1000.0)
+check("summarisePoint crossbar is nan when all None", math.isnan(crossbar16),
+      f"crossbar was {crossbar16!r}")
+check("summarisePoint ratio is nan when all crossbar None", math.isnan(ratio16),
+      f"ratio was {ratio16!r}")
+
+# Test 17: summarisePoint's ratio equals crossbar divided by achievedMhz, verifiable by hand.
+# crossbar median 2000.0, achievedMhz 1000.0 -> ratio 2.0.
+samples17 = [
+    {"clock": 1000.0, "voltage": 1.05, "crossbar": 2000.0, "power": 120.0},
+]
+voltage17, crossbar17, ratio17 = summarisePoint(samples17, 1000.0)
+check("summarisePoint ratio equals crossbar / achievedMhz",
+      crossbar17 == 2000.0 and ratio17 == 2.0,
+      f"crossbar was {crossbar17!r}, ratio was {ratio17!r}, expected 2000.0 and 2.0")
+
+if failures:
+    print(f"FAILED: {', '.join(failures)}")
+    raise SystemExit(1)
+else:
+    print("ALL CHECKS PASSED")

@@ -135,6 +135,18 @@ def stripFences(text):
     return body
 
 
+def looksLikeProseAndCode(text):
+    """True when a reply is commentary AND code rather than code.
+
+    stripFences declines to unwrap anything that is not one single fenced block, which is the
+    right call - but it did so silently, so a reply that opened with a paragraph of reasoning
+    before its fenced block was written straight out as a file that does not parse, with the run
+    reported as clean. A surviving fence at the start of any line means unwrapping did not
+    happen, whether because prose came first or because there was more than one block.
+    """
+    return bool(re.search(r"^```", stripFences(text), re.MULTILINE))
+
+
 def findToolCall(text):
     lowered = text.lower()
     for marker in TOOL_CALL_MARKERS:
@@ -261,6 +273,14 @@ def main():
                         f"was never offered, rather than answering. Check the system message.")
     if not reply.strip():
         problems.append("Empty reply.")
+    # stripFences hands back the WHOLE reply when it is not one single fenced block, which is
+    # the right call - but silently, so a reply of "here is my reasoning" followed by a fenced
+    # block was written out as a file that does not parse, with the run reported as clean.
+    if not args.raw and looksLikeProseAndCode(reply):
+        problems.append("The reply is prose AND code, not code: it does not start with a fenced "
+                        "block, so nothing was unwrapped and the file will not parse. Usually a "
+                        "spec that invited commentary - check for an instruction to explain, or "
+                        "to open a file the model cannot reach.")
 
     outPath = Path(args.out) if args.out else Path(args.spec).with_suffix(".out.py")
     outPath.write_text(reply if args.raw else stripFences(reply), encoding="utf-8")
