@@ -109,24 +109,39 @@ may not elsewhere. Never assume; probe.
 ## State as of this handoff
 
 **Done:** V100 analysis complete with both findings (the 44.4% gap and the null). Stability logger
-built and tested at idle. Frequency sweep tool built and dry-run tested. Fixed-work benchmark built
-and tested. Curve model with adaptive probe selection built and validated. Four external datasets
-verified downloadable.
+built and tested at idle. Fixed-work benchmark built and tested. Curve model with adaptive probe
+selection built and validated. Four external datasets verified downloadable.
 
-**Not done — this is the whole remaining project:**
+**Also done since this section was first written**, which it used to say was the whole remaining
+project — 21 sweeps are committed on one RTX 5060 Ti, covering stock, memory-only, the tuned
+profile and three curve variants. The `membw` plateau was found, traced to the core V/F curve,
+explained by core voltage and crossbar clock measured through HWiNFO, and repaired by a change
+derived from that diagnosis. See `data/frequency-sweeps/membw-anomaly-20260819/README.md`, which
+holds the tables, and `CLAUDE.md` for the short version.
 
-1. **Zero real data has been collected.** No sweep has actually run. This is the next step and
-   everything downstream depends on it.
+**Not done:**
+
+1. **Nothing has been stability-tested**, including the configurations producing the best numbers.
+   A ~2.5% low outlier appears in roughly one split-curve `gemm` run in three, against 0.06%
+   spread on the tuned curve, so this now has evidence behind it rather than being prudence.
 2. **The failure detector has never seen a failure.** Deliberately crashing something and confirming
    the logger catches it is the highest-value single hour available.
-3. **Specs conditioning is stubbed.** `loadSpecFeatures()` in `curve_model.py` returns `None` on
+3. **Two results exist only in working notes** — the split-region curve's `gemm` peak and a tuned
+   control re-run were taken as ad-hoc single points and never written to disk. Re-measure before
+   citing either.
+4. **Specs conditioning is stubbed.** `loadSpecFeatures()` in `curve_model.py` returns `None` on
    purpose. The specs table now exists (`data/external/all-gpus.json`), but fitting specs → curve
    needs ~10+ distinct GPU models. Validate leave-one-*model*-out when activating, or two cards of
    the same model leak across the split.
-4. **Inspirit deliverable format still unknown** — paper, poster, journal, or symposium.
+5. **Only one chip.** A second card (3070 Ti) is staged at `F:\headroom-kit` and has not been run.
+6. **Inspirit deliverable format still unknown** — paper, poster, journal, or symposium.
 
-**The immediate next command**, from an elevated shell on a quiet GPU (close games, browsers,
-Discord — the sweep refuses above 10% baseline utilisation and will tell you what to close):
+**To check the repo is sound on a fresh machine**, `python run_tests.py` runs every suite (276
+checks across 11) and `python analysis/audit_claims.py` recomputes all 50 pinned paper numbers
+from the CSVs.
+
+**To run a sweep**, from an elevated shell on a quiet GPU (close games, browsers, Discord — the
+sweep refuses above 10% baseline utilisation and will tell you what to close):
 
 ```powershell
 .\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "5060ti-gemm-stock" -WorkloadCommand "python tools\frequency-sweep\gpu_workload.py --workload gemm --json"

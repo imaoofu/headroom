@@ -390,9 +390,21 @@ thermal or power-brake bit anywhere; `SwPowerCap` appears intermittently on both
 no throttle reason at all while still collapsing to ~2590 MHz. The ceiling is the curve, not the
 card protecting itself.
 
-**One sweep settles it**: raise the top point to 0.925 V, verify the change in HWiNFO before
-trusting it, re-run `gemm`. Until then the −4.5% peak deficit is provisional and is not used to
-argue anything about the repair.
+**That sweep was run on 2026-08-21, and it refuted the hypothesis.**
+`20260821-215215_5060ti-curvefixed925-gemm_sweep.csv` raises the top point to 0.925 V. The
+ceiling did not rise — it fell, from 2898.5 MHz to 2876.6 MHz, 21.9 MHz the wrong way. Locking
+the curve flat at 925 mV changed nothing further. HWiNFO shows 0.925 V requested delivering
+0.920 V under ~170 W, which is ordinary vdroop rather than a missing voltage bin, so the raise
+did reach the card and the card does not clock higher for it.
+
+Peak throughput improved slightly, 16.82 → 16.90 TFLOP/s, narrowing the deficit against tuned's
+17.61 from −4.5% to −4.0%. The frequency shortfall is 71.5 MHz, 2876.6 against 2948.1.
+
+**So the deficit is real, reproduces, and is unexplained.** Voltage is eliminated by this sweep;
+thermals, power limit and throttle state were eliminated earlier. It is still not used to argue
+anything about the repair. The hypothesis above is kept rather than deleted — 0.895 V really was
+identical to the millivolt on both curve variants, which is what made a failed-to-apply setting
+the obvious reading.
 
 ## Caveats
 
@@ -439,7 +451,9 @@ should do when only memory speed changes. That is a sanity check the experiment 
 
 At stock and at memory-only, `gemm` cannot hold the top three grid points — all of 2782, 2932
 and 3090 MHz collapse to ~2590 MHz achieved and ~15.7 TFLOP/s. With the curve applied the card
-holds 2775 / 2916 / 2948 MHz and reaches **17.61 TFLOP/s, +12.3%**.
+holds 2775 / 2916 / 2948 MHz and reaches **17.61 TFLOP/s, +12.1%** against stock's own peak of
+15.71 TFLOP/s at 2598 MHz. An earlier version of this line said +12.3%, which measured against
+stock's LAST grid point (15.68 at 2588 MHz) rather than its best, without saying so.
 
 So for `gemm` the curve is a pure win on both axes: less power at matched clock, and a higher
 clock it can actually sustain.

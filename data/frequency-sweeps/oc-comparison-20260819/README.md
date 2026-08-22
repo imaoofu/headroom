@@ -52,12 +52,16 @@ reproduces stock power to within ±3% at all four of these frequencies (−0.6%,
 power reduction is entirely the core V/F curve, not the memory overclock, and memory speed does
 nothing measurable for this compute-bound workload. The curve additionally lifts the sustainable
 ceiling: stock and memory-only both collapse to ~2590 MHz and ~15.7 TFLOP/s at the top three
-grid points, while the curve holds 2948 MHz and reaches 17.61 TFLOP/s, +12.3%. See
+grid points, while the curve holds 2948 MHz and reaches 17.61 TFLOP/s, +12.1% against stock's
+own peak of 15.71 TFLOP/s at 2598 MHz. An earlier version of this line said +12.3%, measured
+against stock's last grid point rather than its best. See
 `../membw-anomaly-20260819/`.
 
 Below ~1545 MHz the sign flips — the tuned configuration draws *more* power (+4.4% at
 1237 MHz). Plausibly the custom curve sets a higher voltage floor at low clocks than stock
-would, but with no voltage readback on this hardware that is a hypothesis, not a finding.
+would. **Voltage readback was later obtained via HWiNFO** (see `../membw-anomaly-20260819/`,
+Part 1b), and the voltage-logged runs cover 1402–2100 MHz, so the region below 1402 MHz is still
+unmeasured and this remains a hypothesis — for want of coverage now, not for want of a sensor.
 
 ## An anomaly that is REAL, REPRODUCIBLE, and now traced to the core V/F curve
 
@@ -124,9 +128,15 @@ It does mean the profile recorded in `APPLIED-SETTINGS.txt` is **not** the right
 for bandwidth-bound work below ~2100 MHz, which is precisely where a DVFS efficiency optimum
 would be looked for.
 
-What is pinned down is *which knob* is responsible, not *how*. The working hypothesis remains
+What is pinned down here is *which knob* is responsible, not *how*. The working hypothesis was
 that locking the SM clock into this band forces a voltage selection below the curve's flattened
-region. This hardware has no voltage readback, so that stays a hypothesis.
+region.
+
+**That hypothesis has since been confirmed by measurement, and this paragraph is left as the
+record of what was known at the time.** HWiNFO turned out to read core voltage on this hardware
+even though NVML does not, and the follow-up runs show core voltage pinned at 0.720 V across a
+49% rise in core clock, with the crossbar clock pinned alongside it. The mechanism is no longer a
+hypothesis. See `../membw-anomaly-20260819/`, Part 1b.
 
 Full data, method and caveats: `../membw-anomaly-20260819/`.
 

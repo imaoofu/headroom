@@ -311,7 +311,7 @@ module then does `from audit_claims import claim`, which imports a *second copy*
 its own empty registry — claims register into one copy and the runner reads the other, reporting
 "0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
 
-Coverage as of 2026-08-22: **46 claims green, 27 sections unaudited.**
+Coverage as of 2026-08-22: **50 claims green, 27 sections unaudited.**
 
 ---
 
@@ -368,7 +368,7 @@ disagrees with the data directory, the data directory is right.*
 - **The paper's "neither configuration dominates" may now be false** (`docs/PAPER_DRAFT.md` §5.7.5,
   and the same sentence in the anomaly README). Do not rewrite it until the two runs above are
   re-measured.
-- **27 paper sections are unaudited.** 46 claims are green; `analyze_fine_sweep.py` needs its
+- **27 paper sections are unaudited.** 50 claims are green; `analyze_fine_sweep.py` needs its
   summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming
   the logger catches it is still the highest-value single hour available.

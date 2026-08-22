@@ -317,17 +317,18 @@ Turning two separate models into one project with a single research question.
   the rendering stops matching the prose; edit the prose and it stops matching the rendering.
   Matching twice is reported AMBIGUOUS rather than passing, because a claim that appears in two
   places is not pinning the line anyone thinks it is.
-  30 claims over §5.7.1 and §5.7.5, all green. `--coverage` lists every number in an audited
-  section that no claim pins, and every numbered section with no claims at all, so the gap is
-  visible instead of assumed: 31 of the paper's numbered sections currently have none.
+  50 claims over §5.4, §5.4.1, §5.4.3, §5.7.1, §5.7.2 and §5.7.5, all green. `--coverage` lists
+  every number in an audited section that no claim pins, and every numbered section with no claims
+  at all, so the gap is visible instead of assumed: 27 of the paper's numbered sections have none.
   **It found a real error on its first run**, in a section written days earlier: §5.7.1's
   "+12.3% sustainable ceiling" is measured against stock's LAST grid point (15.68 TFLOP/s at
   2588 MHz) rather than its peak (15.71 at 2598), and the sentence did not say which. Corrected
   to +12.1% with the denominator stated.
-  Engine tests in `analysis/test_audit_claims.py`, 36 checks, mutation-gated 11/11. Two
+  Engine tests in `analysis/test_audit_claims.py`, 42 checks, mutation-gated 11/11 then 5/5 on
+  later behaviour. Two
   mutations survived the first pass — both because the check asserted an outcome the mutation
   also produced — and both are written up in that file rather than quietly fixed.
-  **Still open:** claims cover two subsections. Everything else in the paper is unaudited, and
+  **Still open:** claims cover six subsections. Everything else in the paper is unaudited, and
   a green run says nothing about it.
 
 - **[CORE] State plainly which results are validated and which are exploratory.** Public-dataset

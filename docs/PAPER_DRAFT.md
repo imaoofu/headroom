@@ -1,8 +1,12 @@
 # Headroom — paper draft
 
-> **Status: Related Work and Methods are drafted. Results are a skeleton — no original data has
-> been collected yet.** Every number below that is not marked `[PENDING]` traces to something
-> actually run or actually read. Placeholders are marked rather than filled with plausible values.
+> **Status: Related Work and Methods are drafted. Results are partly written and rest on original
+> data.** Sections 5.4 and 5.7 are backed by 21 committed sweeps on one RTX 5060 Ti, including
+> core-voltage and crossbar telemetry; earlier sections still carry `[PENDING]` placeholders.
+> Every number not marked `[PENDING]` traces to something actually run or actually read, and 50 of
+> them are pinned by `analysis/audit_claims.py`, which recomputes each from the CSVs and fails if
+> the text and the data disagree. Placeholders are marked rather than filled with plausible
+> values.
 >
 > Citation reliability is flagged per entry in [References](#references). Anything marked
 > ⚠️ needs the primary source opened before it appears in a submitted version.
@@ -1120,21 +1124,36 @@ this is unexplained and recorded rather than trimmed.
 
 ## 6. Limitations
 
-1. **Voltage is unmeasured by this study, though it is not unmeasurable - DRAFT.** NVML does not
-   expose it: `nvidia-smi` has no voltage field, and an exhaustive scan of NVML field IDs 1-259 via
+1. **Voltage is measured, but thinly, and not through the vendor API.** NVML does not expose it:
+   `nvidia-smi` has no voltage field, and an exhaustive scan of NVML field IDs 1-259 via
    `nvmlDeviceGetFieldValues` returns 44 readable fields, none of them a core voltage at any scale.
    That scan also confirms the fields it *does* return are correct - IDs 185/186 give instantaneous
    and average power in milliwatts, and 187-192 give the power limits (150/180/200 W), matching both
    `nvidia-smi` and third-party tools. Earlier drafts asserted "no documented API exposes it" without
-   testing; this is now verified for NVML specifically.
+   testing; this is verified for NVML specifically.
 
-   **HWiNFO64 does read core voltage on this device** (observed 0.665-0.800 V at idle on the
-   RTX 5060 Ti), so the sensor exists and the limitation is one of tooling integration rather than
-   hardware. Joining HWiNFO's CSV log to a locked-frequency sweep on timestamp would convert the
-   mechanism proposed in 5.7.3 from hypothesis to measurement, and is the single highest-value
-   outstanding experiment in this study. Until that is done, every voltage statement here -
-   including the guardband interpretation in 5.4 and the V/F curve mechanism in 5.7.3 - is inference
-   from power at matched frequency, not a voltage measurement.
+   HWiNFO64 does read core voltage and the crossbar clock on this device, and an earlier version of
+   this limitation named joining that log to a sweep as the highest-value outstanding experiment in
+   the study. **That join was built and run, and the mechanism in 5.7.3 is a measurement rather
+   than an inference.** The joining tool is `tools/frequency-sweep/join_hwinfo_voltage.py`; it bins
+   samples by the core clock they were taken at rather than by timestamp, because the sweep CSV
+   records durations per point and not absolute times.
+
+   What remains limited is the coverage and the conditions, and those bound the voltage claims:
+
+   - **The voltage-logged runs cover 1402-2100 MHz.** The tuned card's voltage at the top of its
+     range was never measured, so statements about the top point rest on the Afterburner editor
+     rather than on telemetry.
+   - **HWiNFO polls throughout**, which is the class of contention this study has already been
+     burned by, so throughput from a voltage-logged run is not quoted as a clean measurement.
+   - **Idle samples must be excluded or the result inverts.** HWiNFO samples through the settle
+     gaps and an idle card sits at boost voltage, so the join discards samples below 30 W. That
+     threshold is a judgment call; it is the parameter this result is most sensitive to, and it is
+     covered by tests for exactly that reason.
+   - **One source log no longer exists.** HWiNFO reuses a single log filename, and the log for the
+     `curvefixed-membw` run was overwritten by a later capture, so its committed distilled extract
+     is now the only record and cannot be regenerated.
+   - **N = 1 chip**, one set of curves.
 2. **Small, heterogeneous sample.** Access is limited to roughly one machine every 2–3 weeks, mostly
    different models rather than repeats, which bounds any claim about chip-to-chip variation.
 3. **Single vendor, recent architecture.** NVIDIA only; no AMD or Intel measurements.
