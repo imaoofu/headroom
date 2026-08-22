@@ -89,6 +89,24 @@
     server or an animated wallpaper is on the card measures that load mixed with ours at
     every frequency, inseparably. The output looks like ordinary data and is worthless.
 
+.PARAMETER AppliedSettings
+    Free text describing the GPU configuration this run was made under - the V/F curve shape,
+    memory offset, power limit, and anything else changed by hand before starting.
+
+    This is the only field in the output that nothing else can reconstruct afterwards. Clocks,
+    power and throughput are all measured; what was DELIBERATELY SET is not, because it is set
+    outside this tool in Afterburner, and the card does not report the curve back. A sweep whose
+    configuration is unknown can still be compared against itself, but it cannot be compared
+    against anything else, which is most of what a sweep is for.
+
+    Learned the hard way: two runs on 2026-08-21 produced the best result recorded on this card
+    and it was not possible, the following morning, to say from the repo what curve had produced
+    it. Voltage telemetry could confirm the lower half of the curve and nothing above 2100 MHz.
+
+    Be specific enough to reproduce. "split curve, stock slope below 845 mV, tuned flat shape
+    850-920 mV, top point 920 mV at 3000 MHz, memory +2500, power limit 111%" is the standard;
+    "tuned" is not.
+
 .PARAMETER DryRun
     Plan the sweep and print the frequencies WITHOUT touching GPU state. Always do this first.
 
@@ -115,6 +133,7 @@ param(
     [int]$MeasureSeconds = 20,
     [double]$SampleIntervalSeconds = 0.5,
     [double]$MaxBaselineUtilization = 10,
+    [string]$AppliedSettings = "",
     [string]$OutputDirectory = "",
     [switch]$DryRun
 )
@@ -313,6 +332,30 @@ if ($WorkloadCommand -ne "") {
 
 $perPointSeconds = $SettleSeconds + $MeasureSeconds
 Write-Host ("[SWEEP] Estimated:  ~{0:N1} min of measurement (plus workload time if any)" -f (($targets.Count * $perPointSeconds) / 60))
+Write-Host ""
+
+# --- Applied configuration ------------------------------------------------------------
+
+# Placed BEFORE the dry-run exit on purpose: the dry run is the rehearsal that exists to catch
+# mistakes, and a forgotten -AppliedSettings is one of them. Warning only after the real run has
+# started would be telling someone their 15 minutes are unattributable too late to fix it.
+#
+# Not a hard refusal: a stock run genuinely has nothing to declare, and blocking would tempt
+# someone to type a space to get past it. The JSON records which of the two cases this was rather
+# than leaving an empty string to be interpreted later. The pause is skipped on a dry run, where
+# nothing is at stake and it would only cost patience.
+if ([string]::IsNullOrWhiteSpace($AppliedSettings)) {
+    Write-Host "[SWEEP] WARNING: no -AppliedSettings given."
+    Write-Host "[SWEEP] Clocks and power are measured, but what you SET is not - the card does not"
+    Write-Host "[SWEEP] report its V/F curve back, so nothing can reconstruct it after the fact."
+    Write-Host "[SWEEP] If anything is non-stock, stop now and pass -AppliedSettings ""...""."
+    if (-not $DryRun) {
+        Write-Host "[SWEEP] Continuing in 5s - Ctrl+C to abort."
+        Start-Sleep -Seconds 5
+    }
+} else {
+    Write-Host ("[SWEEP] Configuration: {0}" -f $AppliedSettings)
+}
 Write-Host ""
 
 if ($DryRun) {
@@ -640,6 +683,10 @@ $session = [ordered]@{
     max_clock_mhz        = $maxClock
     power_limit_w        = $powerLimit
     workload_command     = $WorkloadCommand
+    # The one field nothing else can reconstruct. Absent means the operator was not asked or did
+    # not answer - NOT that the card was at stock. Do not read it as stock.
+    applied_settings     = $AppliedSettings
+    applied_settings_declared = (-not [string]::IsNullOrWhiteSpace($AppliedSettings))
     started_at           = $startTime.ToString("o")
     ended_at             = (Get-Date).ToString("o")
     aborted_by_user      = $abortedByUser
@@ -660,13 +707,19 @@ $session = [ordered]@{
     power_windowed_points = ($results.Count - $undilutedPoints.Count)
     supported_clock_count = $supported.Count
     samples_file         = Split-Path $csvPath -Leaf
-    schema_version       = "0.1.0"
+    schema_version       = "0.2.0"
 }
 $session | ConvertTo-Json -Depth 4 | Out-File -FilePath $jsonPath -Encoding utf8
 
 Write-Host ""
 Write-Host "[SWEEP] ===================== RESULT ====================="
 Write-Host ("[SWEEP] Measured {0} of {1} planned frequencies." -f $results.Count, $targets.Count)
+if ([string]::IsNullOrWhiteSpace($AppliedSettings)) {
+    Write-Host "[SWEEP] NO CONFIGURATION RECORDED. This run cannot be compared against any other."
+    Write-Host "[SWEEP] If the card was not at stock, note the settings beside the CSV now."
+} else {
+    Write-Host ("[SWEEP] Configuration: {0}" -f $AppliedSettings)
+}
 if ($abortedByUser) { Write-Host "[SWEEP] Sweep was stopped early by the user - partial curve." }
 if ($undershotPoints.Count -gt 0) {
     Write-Host ("[SWEEP] NOTE: {0} point(s) ran BELOW their target by more than 30 MHz." -f $undershotPoints.Count)

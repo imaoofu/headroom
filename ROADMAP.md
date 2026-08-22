@@ -236,8 +236,17 @@ The part nobody else can replicate, and the reason the project is worth doing at
 - **[CORE] Reset any overclocking utility to stock before collecting.** Not hygiene — an active V/F
   curve override silently defeats `nvidia-smi -lgc`, collapsing grid points onto one achieved clock
   while every CSV row still looks well-formed. Verified both ways; see `data/frequency-sweeps/`.
-- **[CORE] Record what was applied, every single time.** `-AppliedSettings` is the one field nothing
-  can reconstruct later. A run without it is close to worthless.
+- ✅ **[CORE] Record what was applied, every single time.** `-AppliedSettings` is the one field
+  nothing can reconstruct later. A run without it is close to worthless.
+
+  **This item asserted a safeguard that did not exist.** The parameter was described here for
+  weeks and was never implemented, so every sweep in the repo predating 2026-08-22 lacks it — which
+  is why the curve behind the best `gemm` result on this card could not be recovered the morning
+  after it was measured. Voltage telemetry reconstructed the region below 2100 MHz and nothing
+  above it. Built 2026-08-22: free text, warned about at preflight *before* the dry-run exit so the
+  rehearsal catches a forgotten one, echoed in the result banner, and stored in the session JSON
+  alongside `applied_settings_declared` so an absent value cannot later be misread as "stock".
+  Schema 0.1.0 → 0.2.0.
 - **[STRETCH] Commit real runs to the repo as they accumulate.** The dataset is the contribution.
   An open, consistently-collected set of consumer stability results does not currently exist —
   [gpu-undervolt-db](https://github.com/iBlessi/gpu-undervolt-db) has the right schema and, as of
