@@ -311,7 +311,7 @@ module then does `from audit_claims import claim`, which imports a *second copy*
 its own empty registry — claims register into one copy and the runner reads the other, reporting
 "0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
 
-Coverage as of 2026-08-22: **50 claims green, 27 sections unaudited.**
+Coverage as of 2026-08-22: **61 claims green, 27 sections unaudited.**
 
 ---
 
@@ -322,7 +322,7 @@ run_tests.py       runs every suite, one verdict - `python run_tests.py`
 analysis/          Python modelling on the public V100 dataset
   audit_claims.py     mechanical paper auditor — see "The claims auditor" above
   claims_consumer.py  the claims themselves, one function per sentence of the paper
-  test_*.py           10 suites, 241 checks total
+  test_*.py           11 suites, 276 checks total (plus tools/frequency-sweep)
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset
@@ -358,8 +358,13 @@ disagrees with the data directory, the data directory is right.*
   split-region curve peaks at **17.97 and 17.98 TFLOP/s at ~2976 MHz** across two back-to-back
   sweeps — 0.08% apart, and above the 17.84–17.88 the unsaved run had shown. A third sweep on a
   quiet machine reached **18.24 TFLOP/s at 2977.0 MHz**, which is the figure of record and the
-  fastest result on this card, beating full tuned's 17.61 at 2948.1 MHz by **3.6%**. Note that the
-  tuned figure was itself measured under desktop load and is therefore also understated.
+  fastest result on this card.
+
+  **The comparison against the original tune was settled later the same day and the earlier
+  numbers here are superseded.** The 3.6% first quoted was clean-vs-dirty and is withdrawn; the
+  tuned card was then re-measured clean. Final figures, §5.7.6 of the paper: **tuned n=5 gives
+  17.96 TFLOP/s mean with 0.76% spread, split n=3 gives 18.23 with 0.13%, a gap of +1.53% with
+  ranges that do not overlap** — lowest split 18.22 above highest tuned 18.02.
 - ✅ **The 1867 MHz `membw` dip did not reproduce — and the dip MOVED.** The repeat gives 386.7 GB/s
   at 1867, matching memory-only's 385.7. But 1792 came back at 354.5, below its own 1710 neighbour,
   where it had been fine the night before. A defect that lands on a different frequency each time
@@ -370,10 +375,10 @@ disagrees with the data directory, the data directory is right.*
   wandering between 6 and 17%; run 3 ran at 4.3% stable. **Run 3 is faster at all thirteen points.**
 
   ⚠️ **TWO variables changed before run 3, not one: Wallpaper Engine was closed AND NVIDIA Instant
-  Replay was switched off.** The first version of this entry credited the wallpaper alone. That
-  attribution is not supported and has been withdrawn — the effect is real and the direction is
-  certain, but WHICH background consumer caused how much of it is untested. Instant Replay is the
-  more interesting suspect because it runs continuously, shows no window, and is on by default.
+  Replay was switched off.** The first version of this entry credited the wallpaper alone, which
+  was not supported. **The A/B below settled it: Instant Replay is the cause.** The wallpaper state
+  varied inside the Instant-Replay-on group and moved the peak by nothing at all. Left here as the
+  record of an attribution made too early on two co-varying changes.
 
   **Measured 2026-08-22, and it is NOT subtle at idle:**
 
@@ -475,7 +480,7 @@ disagrees with the data directory, the data directory is right.*
   `gemm`'s efficiency optimum sits. The trade is unchanged in character. Do not rewrite §5.7.5.
 - **The applied curves are still stability-untested.** What was called a "~2.5% outlier in 1 of 3
   runs" is now better described by the mid-band reproducibility entry above.
-- **27 paper sections are unaudited.** 50 claims are green; `analyze_fine_sweep.py` needs its
+- **27 paper sections are unaudited.** 61 claims are green; `analyze_fine_sweep.py` needs its
   summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming
   the logger catches it is still the highest-value single hour available.

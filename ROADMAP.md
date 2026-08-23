@@ -326,7 +326,7 @@ Turning two separate models into one project with a single research question.
   the rendering stops matching the prose; edit the prose and it stops matching the rendering.
   Matching twice is reported AMBIGUOUS rather than passing, because a claim that appears in two
   places is not pinning the line anyone thinks it is.
-  50 claims over §5.4, §5.4.1, §5.4.3, §5.7.1, §5.7.2 and §5.7.5, all green. `--coverage` lists
+  61 claims over §5.4, §5.4.1, §5.4.3, §5.4.4, §5.7.1, §5.7.2, §5.7.5 and §5.7.6, all green. `--coverage` lists
   every number in an audited section that no claim pins, and every numbered section with no claims
   at all, so the gap is visible instead of assumed: 27 of the paper's numbered sections have none.
   **It found a real error on its first run**, in a section written days earlier: §5.7.1's
