@@ -34,6 +34,7 @@ WHY SOME CLAIMS PIN A SENTENCE FRAGMENT
     claim; changing a number will.
 """
 
+from statistics import fmean as mean
 from audit_claims import claim, deltaPct, signedPct, sweep, sweepRaw, voltageJoin
 
 PAPER = "docs/PAPER_DRAFT.md"
@@ -432,3 +433,102 @@ def frequencyGap():
     tuned, after = _peakPoint(TUNED_GEMM), _peakPoint(CURVEFIXED925_GEMM)
     return (f"{after['mhz']:.1f} MHz against {tuned['mhz']:.1f} MHz, a shortfall of "
             f"{tuned['mhz'] - after['mhz']:.1f} MHz")
+
+
+# ---------------------------------------------------------------------------------------------
+# 5.4.4 Default-enabled capture software shifts the measured optimum
+#
+# Five sweeps on one configuration in one session: three with NVIDIA Instant Replay enabled, two
+# with it disabled. These pin the section that reports a contaminant which biased this project's
+# own measurements, so they matter more than most - a drifted number here would undermine the
+# section's whole argument about measurement discipline.
+# ---------------------------------------------------------------------------------------------
+
+IR_ON = ["20260822-160740_5060ti-splitcurve-gemm-r1_sweep.csv",
+         "20260822-161322_5060ti-splitcurve-gemm-r2_sweep.csv",
+         "20260822-165213_5060ti-splitcurve-gemm-r4-instantreplay-on_sweep.csv"]
+IR_OFF = ["20260822-163705_5060ti-splitcurve-gemm-r3-quiet_sweep.csv",
+          "20260822-165944_5060ti-splitcurve-gemm-r5-instantreplay-off_sweep.csv"]
+
+
+def _irCondition(paths):
+    """Per-target mean throughput and mean power across the runs in one condition."""
+    runs = [sweep(p) for p in paths]
+    shared = set(runs[0])
+    for r in runs[1:]:
+        shared &= set(r)
+    return {t: (mean(r[t]["throughput"] for r in runs),
+                mean(r[t]["power"] for r in runs)) for t in shared}
+
+
+def _irPeaks(paths):
+    return [max(sweep(p).values(), key=lambda r: r["throughput"])["throughput"] / 1e12
+            for p in paths]
+
+
+def _irBandMeanGap(low, high):
+    on, off = _irCondition(IR_ON), _irCondition(IR_OFF)
+    targets = [t for t in sorted(on) if low <= t <= high]
+    return mean(100 * (off[t][0] / on[t][0] - 1) for t in targets)
+
+
+@claim("5.4.4-peaks-on", PAPER, "5.4.4")
+def peaksOn():
+    return "| Instant Replay enabled | " + " / ".join(f"{v:.2f}" for v in _irPeaks(IR_ON)) + " TFLOP/s |"
+
+
+@claim("5.4.4-peaks-off", PAPER, "5.4.4")
+def peaksOff():
+    return "| Instant Replay disabled | " + " / ".join(f"{v:.2f}" for v in _irPeaks(IR_OFF)) + " TFLOP/s |"
+
+
+@claim("5.4.4-band-penalty", PAPER, "5.4.4")
+def bandPenalty():
+    return (f"{_irBandMeanGap(1237, 2010):.2f}% mean across 1237-2010 MHz against "
+            f"{_irBandMeanGap(2167, 3090):.2f}% across 2167-3090 MHz")
+
+
+@claim("5.4.4-clock-unchanged", PAPER, "5.4.4")
+def clockUnchanged():
+    def peakMhz(p):
+        return max(sweep(p).values(), key=lambda r: r["throughput"])["mhz"]
+    on = [peakMhz(p) for p in IR_ON]
+    off = [peakMhz(p) for p in IR_OFF]
+    # The sentence gives ONE figure for the disabled condition, which is only honest if both of
+    # its runs peaked at the same clock. Raise rather than quietly picking one of two.
+    if len(set(round(v, 1) for v in off)) != 1:
+        raise ValueError(f"disabled runs peaked at different clocks: {off}; the prose states a "
+                         "single value and would be misdescribing the data")
+    listed = ", ".join(f"{v:.1f}" for v in on[:-1]) + f" and {on[-1]:.1f}"
+    return f"{listed} MHz enabled against {off[0]:.1f} MHz disabled"
+
+
+def _irSpread(paths, target):
+    values = [sweep(p)[target]["throughput"] for p in paths]
+    return 100 * (max(values) - min(values)) / mean(values)
+
+
+@claim("5.4.4-spread-1545", PAPER, "5.4.4")
+def spread1545():
+    return (f"At 1545 MHz the spread is\n{_irSpread(IR_ON, 1545):.2f}% enabled against "
+            f"{_irSpread(IR_OFF, 1545):.2f}% disabled.")
+
+
+def _irOptimum(paths):
+    cond = _irCondition(paths)
+    best = max(cond, key=lambda t: cond[t][0] / cond[t][1])
+    top = max(cond)
+    gain = 100 * ((cond[best][0] / cond[best][1]) / (cond[top][0] / cond[top][1]) - 1)
+    return best, gain
+
+
+@claim("5.4.4-optimum-on", PAPER, "5.4.4")
+def optimumOn():
+    best, gain = _irOptimum(IR_ON)
+    return f"| Instant Replay enabled | {best} MHz | +{gain:.1f}% |"
+
+
+@claim("5.4.4-optimum-off", PAPER, "5.4.4")
+def optimumOff():
+    best, gain = _irOptimum(IR_OFF)
+    return f"| Instant Replay disabled | {best} MHz | +{gain:.1f}% |"

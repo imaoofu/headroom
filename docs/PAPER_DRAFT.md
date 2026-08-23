@@ -752,6 +752,81 @@ The conclusion for methodology is narrow but worth stating: `utilization.gpu` av
 samples is too coarse to support an argument about lost work, and should not be used as one.
 Throughput is the measurement; utilisation is a diagnostic hint. Data in `data/probes/`.
 
+#### 5.4.4 Default-enabled capture software shifts the measured optimum
+
+This subsection reports a contaminant that biased this study's own measurements, was not detected
+for several weeks, and is not caught by the quiet-GPU check the sweep tool performs. It is reported
+as a result rather than as a caveat because it moved a quantity this paper reports, not merely the
+confidence in one.
+
+**How it surfaced.** Two `gemm` sweeps run minutes apart on identical hardware settings disagreed by
+5.5% at 1545 MHz and 5.5% at 1852 MHz while agreeing to 0.08% at the peak. Repeating a sweep that
+had previously only ever been run once is what exposed it; no single run looked wrong.
+
+**The controlled comparison.** NVIDIA Instant Replay is a continuous capture feature, enabled by
+default with the NVIDIA app, which keeps a rolling buffer of recent gameplay. It has no window. Five
+sweeps were run on one configuration in one session, three with it enabled and two with it disabled,
+with nothing else changed:
+
+| condition | peak `gemm` | spread |
+|---|---|---|
+| Instant Replay enabled | 17.97 / 17.98 / 17.99 TFLOP/s | 0.09% |
+| Instant Replay disabled | 18.24 / 18.24 TFLOP/s | 0.04% |
+
+The disabled condition is faster at all thirteen grid points. **The penalty is frequency-dependent:
+4.22% mean across 1237-2010 MHz against 1.71% across 2167-3090 MHz.** The achieved clock is
+unchanged - 2975.9, 2976.5 and 2977.1 MHz enabled against 2977.0 MHz disabled - so the card runs at
+the same speed and only the share of it available to the measured workload differs. Power rises
+along with throughput rather than falling, which is what removing a competitor looks like and not
+what a faster card looks like. Temperature is excluded: the fastest run was also the warmest at the
+affected points.
+
+**It is a variance source as well as a bias, and that is the more damaging half.** Mean run-to-run
+spread is 1.82% with the feature enabled against 0.35% with it disabled. At 1545 MHz the spread is
+6.95% enabled against 0.13% disabled.
+
+**It moves the reported optimum.** Because the penalty is larger at low frequency than at high, it
+tilts the efficiency curve rather than shifting it uniformly, and curve shape is what this study
+measures:
+
+| | efficiency optimum | gain over the top grid point |
+|---|---|---|
+| Instant Replay enabled | 1395 MHz | +26.4% |
+| Instant Replay disabled | 1545 MHz | +32.6% |
+
+One full grid step of movement in the optimum, and 6.2 percentage points of the efficiency gain.
+
+**Why a quiet-GPU check does not catch it.** Encode and decode execute on NVENC and NVDEC, engines
+separate from the streaming multiprocessors, and `nvidia-smi`'s `utilization.gpu` reports neither.
+On the machine used here the feature raised idle SM utilisation from 4.3% to 10.8%, which does cross
+this study's 10% refusal threshold - but only incidentally, and a capture tool that sat quieter on
+the SMs would pass unnoticed. The discriminating signal is `utilization.encoder`, which reads 0%
+with the feature disabled and 21% with it enabled and nothing being recorded to screen. The sweep
+tool now refuses to start on any encoder or decoder activity and records both in the session
+metadata.
+
+**The category, not the instance.** Always-on clip capture is common on the consumer hardware that
+consumer DVFS measurements are made on: NVIDIA Instant Replay and ShadowPlay, the OBS replay buffer,
+Discord and Steam recording, Xbox Game Bar, AMD ReLive. Any of these occupies the video engines
+continuously while remaining invisible to a utilisation check and, in most cases, to the operator.
+
+**What this does and does not support.** It is one feature, one card, one workload, one session. The
+claim is that on this hardware a default-enabled capture feature shifted a measured efficiency
+optimum by a grid step and its gain figure by 6.2 points, and that idle SM utilisation is an
+insufficient precondition check. It is **not** a claim that any published dataset is affected: the
+measurement conditions of those datasets are not documented, which is itself the point, and
+asserting contamination without evidence would repeat the error corrected in section 2.
+`gemm` renders nothing to the screen, so the capture feature has little new frame content to encode
+during these measurements; the cost measured here is plausibly a floor rather than a typical case,
+and a graphics workload was not tested.
+
+**Consequence for this study.** The feature was enabled during every sweep in this paper predating
+2026-08-22. Because it was enabled uniformly, comparisons between configurations retain their
+direction and their large effects - the 29.6% bandwidth plateau of section 5.7.2 is six times the
+contaminant. Absolute throughput figures from those runs are understated, and the optimum locations
+and efficiency gains in sections 5.4 and 5.4.1 are subject to the shift demonstrated above. Those
+sweeps are being repeated under the corrected protocol.
+
 ### 5.5 Cross-chip variation
 
 `[PENDING — requires multiple units]`
