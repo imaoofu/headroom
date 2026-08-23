@@ -782,9 +782,14 @@ $session = [ordered]@{
     power_windowed_points = ($results.Count - $undilutedPoints.Count)
     supported_clock_count = $supported.Count
     samples_file         = Split-Path $csvPath -Leaf
-    schema_version       = "0.3.0"
+    schema_version       = "0.3.1"
 }
-$session | ConvertTo-Json -Depth 4 | Out-File -FilePath $jsonPath -Encoding utf8
+# Out-File -Encoding utf8 writes a BOM in PowerShell 5.1, and json.load, jq and every other
+# standard parser choke on it with "Expecting value: line 1 column 1". This is a
+# machine-readable artifact, so it gets BOM-less UTF-8 written explicitly. Same defect and same
+# fix as the stability logger's session.json, found there 2026-08-20 and missed here until a
+# collection-kit verification run parsed the output on 2026-08-23.
+[IO.File]::WriteAllText($jsonPath, ($session | ConvertTo-Json -Depth 4), [Text.UTF8Encoding]::new($false))
 
 Write-Host ""
 Write-Host "[SWEEP] ===================== RESULT ====================="

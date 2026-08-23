@@ -247,7 +247,9 @@ $sysinfo += "The measured peak clock appended below is the actual evidence. On a
 $sysinfo += "model, stock and tuned sustained clocks differ far more than run-to-run noise -"
 $sysinfo += "measured on an RTX 5060 Ti: 2588 MHz stock against ~2950 MHz tuned, a 360 MHz"
 $sysinfo += "gap. Classify the run from that number, not from the claim."
-$sysinfo | Out-File -FilePath $infoPath -Encoding utf8
+# BOM-less for the same reason as the sweep JSON - this file gets grepped and parsed by
+# whoever receives the kit's output, and a BOM makes the first key read as "label".
+[IO.File]::WriteAllLines($infoPath, [string[]]$sysinfo, [Text.UTF8Encoding]::new($false))
 Say "  [ok] saved machine-info.txt" "Green"
 
 # ---- the sweeps ----
