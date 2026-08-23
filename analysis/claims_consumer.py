@@ -261,8 +261,8 @@ def stockRises():
 # 5.4 - consumer hardware measurements
 # --------------------------------------------------------------------------------------
 
-GEMM_FLOOR15 = "20260816-001048_5060ti-gemm-floor15_sweep.csv"
-MEMBW_FLOOR15 = "20260816-001734_5060ti-membw-floor15_sweep.csv"
+GEMM_FLOOR15 = "20260822-173451_5060ti-gemm-floor15-rerun_sweep.csv"
+MEMBW_FLOOR15 = "20260822-174118_5060ti-membw-floor15-rerun_sweep.csv"
 
 
 def _optimum(rows):
@@ -340,10 +340,10 @@ def monotonicityBreak():
 # 5.4.3 - The sub-100% utilisation is a telemetry artifact, not lost work
 # --------------------------------------------------------------------------------------
 
-GEMM_FINE_P1 = "20260816-124651_5060ti-gemm-fine-p1_sweep.csv"
-MEMBW_FINE_P1 = "20260816-125959_5060ti-membw-fine-p1_sweep.csv"
-MEMBW_FINE_P2 = "20260816-130549_5060ti-membw-fine-p2_sweep.csv"
-GEMM_FINE_P2 = "20260816-131140_5060ti-gemm-fine-p2_sweep.csv"
+GEMM_FINE_P1 = "20260822-174624_5060ti-gemm-fine-p1-rerun_sweep.csv"
+MEMBW_FINE_P1 = "20260822-175205_5060ti-membw-fine-p1-rerun_sweep.csv"
+MEMBW_FINE_P2 = "20260822-175706_5060ti-membw-fine-p2-rerun_sweep.csv"
+GEMM_FINE_P2 = "20260822-180206_5060ti-gemm-fine-p2-rerun_sweep.csv"
 
 
 @claim("5.4.1-point-count", PAPER, "5.4.1")

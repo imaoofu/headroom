@@ -524,31 +524,34 @@ Thirteen-point sweeps on an RTX 5060 Ti, stock V/F curve, 464–3090 MHz request
 | | `gemm` (compute-bound) | `membw` (bandwidth-bound) |
 |---|---|---|
 | Efficiency optimum | **1552 MHz** | **1552 MHz** |
-| — as % of sustained max | 60% (of 2597 MHz) | 56% (of 2755 MHz) |
-| Efficiency gain vs sustained max | **+46.5%** | **+41.6%** |
-| Performance cost at optimum | −43.2% | **−11.3%** |
-| Power saved at optimum | −61.2% | −37.4% |
+| — as % of sustained max | 59% (of 2609 MHz) | 56% (of 2753 MHz) |
+| Efficiency gain vs sustained max | **+63.1%** | **+50.1%** |
+| Performance cost at optimum | −40.6% | **−9.8%** |
+| Power saved at optimum | −63.6% | −39.9% |
 
 **The V100 headroom result reproduces on consumer silicon.** The reference dataset gives a 44.4%
 mean efficiency gain for a 13.7% performance cost and 40.1% power saving, with its optimum at 62%
 of maximum (§5.1). The `membw` figures here — 41.6%, 11.3%, 37.4%, at 56% of sustained maximum —
-match that on every axis, on a 2025 consumer part measured independently seven years and four
+are more favourable than that on two of four axes, on a 2025 consumer part measured
+independently seven years and four
 architectural generations later. This is the central empirical claim of the work: the efficiency
 headroom identified on datacentre hardware is not an artefact of datacentre hardware.
 
 **The compute/memory distinction appears in what the optimum costs, not where it sits.** Both
 optima land on the same grid point, so at this resolution they are *indistinguishable* — which is
 not the same as equal, and separating them requires a finer sweep around 1300–1800 MHz rather than
-a wider one. What does separate cleanly is the price of operating there: `gemm` surrenders 43.2% of
-its throughput to reach its optimum, `membw` only 11.3%. For bandwidth-bound work, running at 56%
+a wider one. What does separate cleanly is the price of operating there: `gemm` surrenders 40.6% of
+its throughput to reach its optimum, `membw` only 9.8%. For bandwidth-bound work, running at 56%
 of maximum clock is close to free — 37.4% less power for an 11.3% slowdown. For compute-bound work
 it is a genuine trade. Any recommender built on this must therefore be workload-aware in its
 *advice*, even where the optimal frequency itself is common.
 
 Both curves are single-peaked with the optimum well inside the swept range, so these are interior
 optima rather than artefacts of where the sweep stopped. One minor irregularity: `gemm` efficiency
-at 1987 MHz (119.40 GFLOP/J) sits marginally below 2205 MHz (120.12), breaking monotonicity by 0.6%
-— within run-to-run variation and not treated as structure.
+at 1987 MHz (119.58 GFLOP/J) sits marginally below 2205 MHz (124.03), breaking monotonicity by 3.7%
+— larger than the 0.6% the contaminated dataset showed for the same irregularity, and no
+longer comfortably inside run-to-run variation. It is recorded as an open irregularity rather
+than dismissed; a third pass over this region would settle whether it is structure or noise.
 
 #### Correction: the earlier 3-point diagnosis was wrong
 
@@ -611,13 +614,25 @@ is more than suggestive, and is the obvious next measurement.
 
 #### 5.4.1 Resolving the two optima
 
+> ⚠️ **This subsection still uses the 2026-08-16 dataset, while §5.4 above has been switched to the
+> 2026-08-22 repeat.** The document is deliberately inconsistent here rather than silently so. The
+> fine sweeps were repeated under the clean protocol on 2026-08-22 and the pooled cubic fit gives
+> `gemm` **1492 MHz (95% CI 1471–1516)** and `membw` **1604 MHz (95% CI 1571–1630)**, a difference
+> of **−112 MHz (95% CI −146 to −70)** against the −146 MHz reported below. **The finding survives:
+> the interval still excludes zero, and the bandwidth-bound workload still prefers the higher
+> clock.** What has not been redone is the sensitivity table, which depends on outlier-handling
+> decisions specific to the original passes and needs re-deriving rather than transcribing.
+> Reproduce the new fit with
+> `python analysis/analyze_fine_sweep.py --pattern "*fine-p*-rerun_sweep.csv" --bootstrap 5000`.
+
+
 The coarse sweep placed both workloads' optima in the same 217 MHz bin, which is a statement about
 grid resolution rather than about the hardware. Separating them required a design change, because
 the obvious approach does not work.
 
 **An efficiency curve is flat near its optimum by construction, so its argmax is largely noise.**
 In the 13-point coarse run `gemm`'s peak stood 1.8% above the points ±218 MHz on either side, while
-the same run contained an unexplained 0.6% non-monotonicity between 1987 and 2205 MHz. On synthetic
+the same run contained an unexplained 3.7% non-monotonicity between 1987 and 2205 MHz. On synthetic
 curves with a known peak, this grid and realistic noise, the raw argmax moved **53–60 MHz between
 identical passes**. Comparing two argmaxes would have compared two coin flips. The measured
 repeatability here was worse than assumed at design time — median 2.4% for `gemm` and 1.7% for
@@ -729,11 +744,19 @@ as they shorten — which would suppress high-clock throughput, understate high-
 bias `membw`'s optimum downward. That would undermine §5.4.1, so it was tested.
 
 **The counterbalanced passes already answer it.** Each target frequency was measured twice in
-opposite order. At 1897 MHz the two passes recorded utilisation of **99.0% and 92.7%** — and
-throughput of **342.3 and 342.3 GB/s**. At 1605 MHz, 99.0% and 93.0% utilisation gave 320.1 and
-321.4 GB/s, the *lower*-utilisation pass being marginally faster. A six-point utilisation difference
-with no throughput difference means the two are decoupled: whatever `utilization.gpu` is varying
-over, it is not work.
+opposite order. At 1897 MHz the two passes recorded utilisation of **91.8% and 94.0%** — and
+throughput of **350.2 and 350.3 GB/s**. At 1605 MHz, 91.6% and 91.7% utilisation gave 328.8 and
+328.4 GB/s, the *lower*-utilisation pass being marginally faster. A two-point utilisation
+difference with throughput identical to within 0.03% means the two are decoupled: whatever
+`utilization.gpu` is varying over, it is not work.
+
+**This leg of the argument is weaker than it was, and the reason is instructive.** Measured on
+the contaminated 2026-08-16 dataset the same two passes read 99.0% and 92.7%, a six-point
+spread, against 2.2 points here. The clean dataset shows both a lower absolute utilisation and
+far less variation in it, which is consistent with §5.4.4: a background consumer inflates the
+run-to-run scatter in this reading as well as depressing throughput. A smaller gap is less
+striking evidence for decoupling, so the case now rests mainly on the launch-count experiment
+below, which is a direct manipulation rather than an observation.
 
 **A direct test confirms it.** Holding total bytes moved constant while varying bytes-per-kernel
 over a 32× range changes the launch count from 320 to 10240. Throughput across that range spans
