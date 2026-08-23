@@ -71,12 +71,33 @@ def peak(sweepRows):
 # 5.7.1 - the matched-frequency power reduction is entirely the core curve
 # --------------------------------------------------------------------------------------
 
+# Section 5.7.1 uses the 2026-08-22 clean-protocol runs, two per configuration, averaged.
+#
+# NEW CONSTANTS RATHER THAN REPOINTING STOCK_GEMM AND TUNED_GEMM IN PLACE. Those two are read by
+# nine claims, including 5.7.5's voltage-shortfall refutation, which compares the tuned card
+# against the curvefixed925 run of 2026-08-21. That is a dirty-vs-dirty comparison and valid on
+# its own terms; repointing the shared constant would silently make it clean-vs-dirty, corrupting
+# a sound refutation while breaking no test and looking like a tidy refactor.
+#
+# Averaged over two runs because a single sweep is what this project spent 2026-08-22 learning not
+# to trust. Stock run-to-run spread on power at these four targets is 1.54% mean, 3.05% worst.
+STOCK_GEMM_CLEAN = ["20260822-201101_5060ti-stock-gemm-clean-r1_sweep.csv", "20260822-201554_5060ti-stock-gemm-clean-r2_sweep.csv"]
+TUNED_GEMM_CLEAN = ["20260822-182129_5060ti-tuned-gemm-clean-r1_sweep.csv", "20260822-182619_5060ti-tuned-gemm-clean-r2_sweep.csv"]
+MEMONLY_GEMM_CLEAN = ["20260822-211705_5060ti-memonly-gemm-clean-r1_sweep.csv", "20260822-212156_5060ti-memonly-gemm-clean-r2_sweep.csv"]
+
+
+def _meanPower(paths, target):
+    return mean(sweep(p)[target]["power"] for p in paths)
+
+
 def _powerRow171(target):
-    stock, tuned, memonly = sweep(STOCK_GEMM), sweep(TUNED_GEMM), sweep(MEMONLY_GEMM)
+    stockW = _meanPower(STOCK_GEMM_CLEAN, target)
+    tunedW = _meanPower(TUNED_GEMM_CLEAN, target)
+    memonlyW = _meanPower(MEMONLY_GEMM_CLEAN, target)
     # No ** around the tuned column even though the document bolds it: audit_claims.normalise
     # strips emphasis from both sides, so rendering it here would be decoration only.
-    return (f"| {target} MHz | {deltaPct(tuned[target]['power'], stock[target]['power'])} "
-            f"| {deltaPct(memonly[target]['power'], stock[target]['power'])} |")
+    return (f"| {target} MHz | {deltaPct(tunedW, stockW)} "
+            f"| {deltaPct(memonlyW, stockW)} |")
 
 
 for _target in MATCHED_TARGETS:
@@ -89,8 +110,7 @@ def memonlyReproducesStockPower():
     """The claim is a bound, so the rendering has to be a bound too: the sentence says "within
     3%" and what is checked is that 3 is the smallest whole percent that still contains every
     matched point."""
-    stock, memonly = sweep(STOCK_GEMM), sweep(MEMONLY_GEMM)
-    worst = max(abs(memonly[t]["power"] / stock[t]["power"] - 1.0) * 100.0
+    worst = max(abs(_meanPower(MEMONLY_GEMM_CLEAN, t) / _meanPower(STOCK_GEMM_CLEAN, t) - 1.0) * 100.0
                 for t in MATCHED_TARGETS)
     import math
     return f"Memory-only reproduces stock power to within {math.ceil(worst)}%."

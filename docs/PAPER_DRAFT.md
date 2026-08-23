@@ -977,24 +977,34 @@ locked targets.
 
 | | memory overclock | core V/F curve |
 |---|---|---|
-| `gemm` (compute-bound) | nothing measurable, plus or minus 1% | the entire benefit: -18% to -26% power at matched clock, +12.1% sustainable ceiling |
+| `gemm` (compute-bound) | nothing measurable, plus or minus 1% | the entire benefit: -17% to -28% power at matched clock, +12.1% sustainable ceiling |
 | `membw` (bandwidth-bound) | the entire benefit: +3.6% to +16.1% over stock | actively harmful: up to -29.6% throughput across 1560-1867 MHz |
 
 #### 5.7.1 The matched-frequency power reduction is entirely the core curve
 
-Section 5.4 reports the tuned configuration drawing 18-26% less power than stock at identical core
+Section 5.4 reports the tuned configuration drawing 17-28% less power than stock at identical core
 clock on `gemm`, and attributes the efficiency gain to that rather than to the higher peak clock.
 That was measured with both knobs applied and had not been separated. It survives separation:
 
+**All three legs below are the 2026-08-22 clean-protocol runs, two sweeps per configuration,
+averaged.** The originals were measured before the capture-software contamination of 5.4.4 was
+known. Each configuration was confirmed applied before measuring rather than assumed: stock and
+memory-only by the core clock collapsing to ~2610 MHz at a 3090 MHz target, tuned by it holding
+2947.6 MHz, and memory-only additionally by memory reading 16301 MHz under load against stock's
+13801 MHz - a memory overclock is invisible to a core-clock check. Measured cleanly the reduction
+is 17-28% where the contaminated pair gave 18-26%, so the finding is slightly stronger than
+published, not weaker.
+
 | locked clock | tuned vs stock (power) | memory-only vs stock (power) |
 |---|---|---|
-| 1852 MHz | **-18.1%** | -0.6% |
-| 2010 MHz | **-26.4%** | -2.9% |
-| 2167 MHz | **-19.9%** | +0.9% |
-| 2317 MHz | **-18.1%** | -2.5% |
+| 1852 MHz | **-22.3%** | -0.2% |
+| 2010 MHz | **-28.3%** | +1.1% |
+| 2167 MHz | **-21.4%** | -0.1% |
+| 2317 MHz | **-17.2%** | +1.6% |
 
-Memory-only reproduces stock power to within 3%. Temperatures at these four points matched to
-within 0.6 C. Memory speed does nothing measurable for a compute-bound workload, which is the
+Memory-only reproduces stock power to within 2%. That is tighter than the 3% the contaminated
+pair showed, so cleaning the measurement sharpened this result rather than softening it.
+Temperatures at these four points matched to within 0.6 C. Memory speed does nothing measurable for a compute-bound workload, which is the
 sanity check this design should pass and does.
 
 The curve additionally raises the sustainable ceiling: at stock and at memory-only the card cannot
@@ -1103,7 +1113,7 @@ measurement, and it behaved as predicted at both ends of a range where the two c
 expected to differ in opposite directions.
 
 **The predicted cost was then measured, and it is real.** Restoring stock voltage below the
-flattened region should restore roughly stock power on `gemm`, giving up the 18-26%
+flattened region should restore roughly stock power on `gemm`, giving up the 17-28%
 matched-frequency saving of 5.7.1. That prediction was stated before the run and is confirmed in
 5.7.5, which is why this section is titled a repair rather than an improvement.
 
