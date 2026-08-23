@@ -484,17 +484,18 @@ disagrees with the data directory, the data directory is right.*
   summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming
   the logger catches it is still the highest-value single hour available.
-- 🔑 **INSTANT REPLAY WENT FROM 0% TO 14% ENCODER INSIDE ONE SESSION, 2026-08-23.** Verified at
-  0% immediately before the 13:03 kit run; measured at a sustained 14% roughly forty minutes
-  later, with no deliberate change recorded in between. **The cause is NOT established** - either
-  the operator re-enabled it after a guard test, or it re-enabled itself, and nothing was logged
-  that distinguishes them. Do not write either into the paper.
+- **Instant Replay went 0% -> 14% inside one session on 2026-08-23, and the cause is now known:
+  the operator switched it back on** after a deliberate guard test, and confirmed so when asked.
+  **It did NOT re-enable itself.** An earlier version of this entry, and the `applied_settings`
+  field of `20260823-144349_5060ti-kitverify-idle`, both asserted that it had. That was an
+  attribution written without evidence, into the one field whose entire purpose is accuracy, and
+  about forty minutes after this file gained a warning against doing exactly that. There is no
+  software-hygiene finding here and none should be written into the paper.
 
-  What IS established is the operational consequence, and it is the important half: **"I turned
-  it off" is not a durable state.** A check done at the start of a session does not cover a run
-  started later in that session. The only defence that works is the preflight encoder check
-  firing on every single run, which is now in both the sweep tool and the collection kit.
-  Never skip it on the grounds that it was verified earlier.
+  The operational point survives in weakened form: it was off, then it was on, and only the
+  preflight check would have caught it. Re-check every run rather than trusting a check from
+  earlier in the session - not because the software is untrustworthy, but because a person in
+  the loop is enough to change the state.
 - **The collection kit rots between builds, and `Sync-Kit.ps1` is the answer.** It is a snapshot
   that version control cannot reach, because of the 4.65 GB Python copy. Checked 2026-08-23 it was
   four files stale, including a sweep with no video-engine guard. Run
