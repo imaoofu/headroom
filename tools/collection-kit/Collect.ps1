@@ -76,6 +76,46 @@ if (-not $smi) {
 if (-not $smi) { Fail "nvidia-smi not found. This machine needs an NVIDIA GPU with drivers installed." }
 Say "  [ok] nvidia-smi found" "Green"
 
+# utilization.gpu does NOT catch this. Video encode runs on NVENC, an engine separate from the
+# SMs, so an always-on clipper sits at 0% "GPU usage" while costing real throughput. Measured on
+# this project: NVIDIA Instant Replay - on by default with the NVIDIA app, and with no window of
+# its own - cost 1.5% of peak gemm, 4.2% across 1237-2010 MHz, moved the measured efficiency
+# optimum a full grid step, and took run-to-run spread at 1545 MHz from 0.13% to 6.95%.
+#
+# The sweep refuses on this too, but only once the run is already under way. This check needs
+# nothing but nvidia-smi, so it goes here - ahead of preflight.py, which spends about a minute
+# loading torch from cold storage before it can fail. Five samples at 300 ms is 1.5 seconds
+# against a minute saved on every refusal, on a machine where the operator is standing waiting.
+# A customer machine is exactly where GeForce Experience is installed and nobody has ever
+# turned Instant Replay off, so this is the check most likely to fire on build day.
+$encMax = 0
+$decMax = 0
+for ($i = 0; $i -lt 5; $i++) {
+    $vid = (& $smi.Source --query-gpu=utilization.encoder,utilization.decoder --format=csv,noheader,nounits -i 0 2>$null | Select-Object -First 1)
+    if ($vid) {
+        $parts = "$vid" -split '\s*,\s*'
+        if ($parts.Count -ge 2) {
+            if ([double]$parts[0] -gt $encMax) { $encMax = [double]$parts[0] }
+            if ([double]$parts[1] -gt $decMax) { $decMax = [double]$parts[1] }
+        }
+    }
+    Start-Sleep -Milliseconds 300
+}
+if ($encMax -gt 0 -or $decMax -gt 0) {
+    Fail ("Something is recording or playing video on this GPU (encoder $encMax%, decoder $decMax%).`n`n" +
+          "The usual cause is an always-on clipper that has no window and that Task Manager's`n" +
+          "GPU column will NOT show:`n`n" +
+          "  - NVIDIA Instant Replay / ShadowPlay  <- ON BY DEFAULT, check this one first`n" +
+          "      NVIDIA app > Settings, or GeForce Experience > Share, turn Instant Replay OFF`n" +
+          "  - OBS replay buffer, Discord or Steam recording, Xbox Game Bar, AMD ReLive`n" +
+          "  - a browser tab or media player decoding video`n`n" +
+          "This is not a technicality. Measured on this project, Instant Replay cost 1.5% of peak`n" +
+          "throughput, 4.2% in the mid band, and made repeat runs FIFTY TIMES less consistent.`n" +
+          "A run collected with it on is not comparable to one collected with it off.`n`n" +
+          "Switch it off and run RUN-ME.bat again.")
+}
+Say "  [ok] video engines idle (encoder $encMax%, decoder $decMax%)" "Green"
+
 foreach ($required in @($pythonExe, $workloadPy, $sweepPs1)) {
     if (-not (Test-Path $required)) { Fail "Missing file in the kit: $required`n`nThe kit did not copy fully. Copy the whole folder again." }
 }
@@ -139,43 +179,6 @@ if ($util -and [int]$util -gt 10) {
     Fail "GPU is already $util% busy. Close games, browsers with video, mining, or any AI app, then re-run.`n`nA loaded GPU makes every measurement wrong."
 }
 Say "  [ok] GPU is idle ($util% used)" "Green"
-
-# utilization.gpu does NOT catch this. Video encode runs on NVENC, an engine separate from the
-# SMs, so an always-on clipper sits at 0% "GPU usage" while costing real throughput. Measured on
-# this project: NVIDIA Instant Replay - on by default with the NVIDIA app, and with no window of
-# its own - cost 1.5% of peak gemm, 4.2% across 1237-2010 MHz, moved the measured efficiency
-# optimum a full grid step, and took run-to-run spread at 1545 MHz from 0.13% to 6.95%.
-#
-# The sweep refuses on this too, but only after preflight.py has spent a minute loading torch.
-# Checked here because a customer machine is exactly where GeForce Experience is installed and
-# nobody has ever turned Instant Replay off.
-$encMax = 0
-$decMax = 0
-for ($i = 0; $i -lt 5; $i++) {
-    $vid = (& $smi.Source --query-gpu=utilization.encoder,utilization.decoder --format=csv,noheader,nounits -i 0 2>$null | Select-Object -First 1)
-    if ($vid) {
-        $parts = "$vid" -split '\s*,\s*'
-        if ($parts.Count -ge 2) {
-            if ([double]$parts[0] -gt $encMax) { $encMax = [double]$parts[0] }
-            if ([double]$parts[1] -gt $decMax) { $decMax = [double]$parts[1] }
-        }
-    }
-    Start-Sleep -Milliseconds 300
-}
-if ($encMax -gt 0 -or $decMax -gt 0) {
-    Fail ("Something is recording or playing video on this GPU (encoder $encMax%, decoder $decMax%).`n`n" +
-          "The usual cause is an always-on clipper that has no window and that Task Manager's`n" +
-          "GPU column will NOT show:`n`n" +
-          "  - NVIDIA Instant Replay / ShadowPlay  <- ON BY DEFAULT, check this one first`n" +
-          "      NVIDIA app > Settings, or GeForce Experience > Share, turn Instant Replay OFF`n" +
-          "  - OBS replay buffer, Discord or Steam recording, Xbox Game Bar, AMD ReLive`n" +
-          "  - a browser tab or media player decoding video`n`n" +
-          "This is not a technicality. Measured on this project, Instant Replay cost 1.5% of peak`n" +
-          "throughput, 4.2% in the mid band, and made repeat runs FIFTY TIMES less consistent.`n" +
-          "A run collected with it on is not comparable to one collected with it off.`n`n" +
-          "Switch it off and run RUN-ME.bat again.")
-}
-Say "  [ok] video engines idle (encoder $encMax%, decoder $decMax%)" "Green"
 
 if ($Label -eq "") {
     Say ""
