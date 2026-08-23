@@ -614,30 +614,25 @@ is more than suggestive, and is the obvious next measurement.
 
 #### 5.4.1 Resolving the two optima
 
-> ⚠️ **This subsection still uses the 2026-08-16 dataset, while §5.4 above has been switched to the
-> 2026-08-22 repeat.** The document is deliberately inconsistent here rather than silently so. The
-> fine sweeps were repeated under the clean protocol on 2026-08-22 and the pooled cubic fit gives
-> `gemm` **1492 MHz (95% CI 1471–1516)** and `membw` **1604 MHz (95% CI 1571–1630)**, a difference
-> of **−112 MHz (95% CI −146 to −70)** against the −146 MHz reported below. **The finding survives:
-> the interval still excludes zero, and the bandwidth-bound workload still prefers the higher
-> clock.** What has not been redone is the sensitivity table, which depends on outlier-handling
-> decisions specific to the original passes and needs re-deriving rather than transcribing.
-> Reproduce the new fit with
-> `python analysis/analyze_fine_sweep.py --pattern "*fine-p*-rerun_sweep.csv" --bootstrap 5000`.
-
+**This subsection uses the 2026-08-22 clean-protocol repeat**, matching §5.4. The 2026-08-16
+originals are superseded and remain in the repository; `python analysis/compare_protocol.py`
+reports what moved. Reproduce these fits with
+`python analysis/analyze_fine_sweep.py --pattern "*fine-p*-rerun_sweep.csv" --bootstrap 5000`.
 
 The coarse sweep placed both workloads' optima in the same 217 MHz bin, which is a statement about
 grid resolution rather than about the hardware. Separating them required a design change, because
 the obvious approach does not work.
 
 **An efficiency curve is flat near its optimum by construction, so its argmax is largely noise.**
-In the 13-point coarse run `gemm`'s peak stood 1.8% above the points ±218 MHz on either side, while
+In the 13-point coarse run `gemm`'s peak stood only 3.4% above its nearer neighbour ±218 MHz away, while
 the same run contained an unexplained 3.7% non-monotonicity between 1987 and 2205 MHz. On synthetic
 curves with a known peak, this grid and realistic noise, the raw argmax moved **53–60 MHz between
 identical passes**. Comparing two argmaxes would have compared two coin flips. The measured
-repeatability here was worse than assumed at design time — median 2.4% for `gemm` and 1.7% for
-`membw` between passes, driven by power rather than by throughput, whose pass-to-pass agreement was
-0.2–1%.
+repeatability under the clean protocol is median 1.25% for `gemm` (worst 2.65%) and 2.25% for
+`membw` (worst 4.81%), driven by power rather than by throughput. Note the asymmetry: against the
+contaminated 2026-08-16 passes `gemm` improved from 2.4% and `membw` got worse, from 1.7%. Removing
+a background SM competitor helps the compute-bound workload and does little for the bandwidth-bound
+one, which is consistent with §5.4.4 but is reported here as measured rather than as expected.
 
 The design therefore: **13 points over 1200–1900 MHz, two passes per workload, run in the order
 `gemm`, `membw`, `membw`, `gemm`**, with the optimum located by fitting the curve rather than by
@@ -669,36 +664,43 @@ answers are known by construction, and not by inspection of the code.
 
 | | vertex | 95% CI |
 |---|---|---|
-| `gemm` pass 1 † | 1508 MHz | 1452–1580 |
-| `gemm` pass 2 | 1480 MHz | 1446–1524 |
-| `membw` pass 1 | 1636 MHz | 1590–1668 |
-| `membw` pass 2 | 1632 MHz | 1576–1667 |
+| `gemm` pass 1 | 1467 MHz | 1446–1491 |
+| `gemm` pass 2 | 1513 MHz | 1492–1536 |
+| `membw` pass 1 | 1598 MHz | 1552–1636 |
+| `membw` pass 2 | 1611 MHz | 1582–1633 |
 
-† excluding the two contaminated points identified below. The two `gemm` fits agree within 28 MHz
-and the two `membw` fits within 4 MHz, while the gap between workloads is ~150 MHz — so the effect
-is larger than the disagreement between repeats of the same measurement.
+The two `gemm` fits agree within 46 MHz and the two `membw` fits within 13 MHz, while the gap
+between workloads is ~112 MHz — so the effect remains larger than the disagreement between
+repeats of the same measurement, though by a narrower margin than the contaminated dataset
+suggested. No footnote is needed here: unlike the 2026-08-16 passes, no point in either pass
+was excluded.
 
-Pooled: `gemm` **1488 MHz**, `membw` **1634 MHz**, difference **−146 MHz (95% CI −187 to −93)**.
+Pooled: `gemm` **1492 MHz**, `membw` **1604 MHz**, difference **−112 MHz (95% CI −146 to −70)**. The interval excludes zero, so the optima do differ, and the bandwidth-bound workload prefers the higher clock.
 All 52 points held their locked clock exactly, none overshot, and all 52 had power windowed to the
 benchmark's timed region.
 
-**The finding is robust to the one known contamination.** A console-selection freeze (§5.4.2)
-interrupted `gemm` pass 1 at its 1725 and 1785 MHz points, which read 7.3% and 4.6% below their
-pass-2 counterparts and produced throughput *falling* as clock *rose* — physically impossible, and
-identifiable without reference to the conclusion. Because those points depress `gemm`'s
-high-frequency flank, they bias its vertex downward, i.e. *toward* the reported effect. Removing
-them does not remove it:
+**There is no contamination in this dataset to be robust to, and that is checkable.** The
+2026-08-16 measurement had one: a console-selection freeze (§5.4.2) interrupted `gemm` pass 1 at
+its 1725 and 1785 MHz points, which read 7.0% and 4.5% below their pass-2 counterparts and
+produced throughput *falling* as clock *rose* — physically impossible, and identifiable without
+reference to the conclusion. That section reported a four-way sensitivity analysis showing the
+effect surviving every way of handling those points.
 
-| Handling of the contaminated points | `gemm` | `membw` | difference |
-|---|---|---|---|
-| Retained | 1467 | 1634 | −167 (−204, −118) |
-| Dropped from `gemm` pass 1 | 1488 | 1634 | −146 (−187, −93) |
-| `gemm` pass 1 dropped entirely | 1480 | 1634 | −154 (−196, −103) |
-| Dropped from both `gemm` passes | 1489 | 1634 | −146 (−191, −88) |
+The repeat was run headless, with no console attached, so the freeze could not occur. The data
+confirms it did not:
 
-The contamination accounts for ~20 MHz of a ~150 MHz effect. The coarse sweep from the previous
-session — a separate run on a different grid — independently gives the same sign (`gemm` 1571 MHz,
-`membw` 1601 MHz by parabola over its four in-band points).
+| | 2026-08-16 | 2026-08-22 |
+|---|---|---|
+| worst pass-1 deficit against pass 2 | −7.0% at 1725 MHz | −2.2% at 1320 MHz |
+| points where throughput falls as clock rises | 1 (pass 1, 1665→1725 MHz) | **none, either pass** |
+
+The sensitivity table is therefore retired rather than recomputed: with no contaminated points
+there is nothing to be sensitive to, and transcribing four variants of an analysis whose premise
+no longer holds would be worse than dropping it. The check above replaces it.
+
+For reference, on the 2026-08-16 data the contamination accounted for ~20 MHz of a ~150 MHz
+effect, so it was never the source of the finding there either. The coarse sweep — a separate
+run on a different grid — independently gives the same sign.
 
 **Why this is not yet a refutation of the V100 correlation.** Two reasons, and both should survive
 into any write-up.
