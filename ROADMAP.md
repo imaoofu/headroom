@@ -164,6 +164,19 @@ The part nobody else can replicate, and the reason the project is worth doing at
   Nothing is installed on the target: Python and PyTorch run from the kit folder and leave no
   trace when it is deleted. A plain copy of a working Python install is relocatable — verified on
   a different drive letter, 412 GB/s against 415 GB/s from the installed copy.
+
+  **The kit is a snapshot and it rots — checked 2026-08-23, three days before a build, and it had.**
+  The 4.65 GB Python copy keeps the kit out of version control, so nothing links the tooling on the
+  USB drive to the tooling in the repository. Four of its eight files were stale: the sweep at
+  schema 0.1.0 against 0.3.0, so it carried **neither `-AppliedSettings` nor the video-engine
+  guard** — the two things built specifically to stop the contamination that cost this project two
+  days; a `Collect.ps1` predating the 08-19 label fix, which wrote `<label>-oc-gemm-stock_sweep.csv`
+  on an overclocked run; a stability logger without the BOM fix, whose `session.json` no standard
+  JSON parser can read; and a checklist that never mentions Instant Replay.
+  **None of them announce themselves.** Each produces a run that prints `COLLECTION SUCCEEDED` and
+  is quietly worth less than it should be. Fixed by `tools/collection-kit/Sync-Kit.ps1`, which
+  copies tooling only, re-hashes every file to prove the copy landed, and prints the sweep schema
+  version. Run it before every build.
 - **[CORE] Decide the sampling strategy, and be honest about which question it can answer:**
   - *Many different GPU models, one unit each* → answers "does the efficiency curve shape
     generalise across architectures?" Cannot say anything about chip-to-chip variance.
@@ -247,6 +260,12 @@ The part nobody else can replicate, and the reason the project is worth doing at
   rehearsal catches a forgotten one, echoed in the result banner, and stored in the session JSON
   alongside `applied_settings_declared` so an absent value cannot later be misread as "stock".
   Schema 0.1.0 → 0.2.0.
+
+  **Wired through the collection kit 2026-08-23**, which had been calling the sweep without it and
+  would therefore have recorded `applied_settings_declared = false` on every build-day run.
+  `Collect.ps1` now prompts for it and refuses a blank answer, and `machine-info.txt` reports what
+  was declared instead of the hardcoded `tuning_state_claimed : STOCK` it asserted before — a line
+  that was simply false on the second, overclocked run the checklist itself asks for.
 - **[STRETCH] Commit real runs to the repo as they accumulate.** The dataset is the contribution.
   An open, consistently-collected set of consumer stability results does not currently exist —
   [gpu-undervolt-db](https://github.com/iBlessi/gpu-undervolt-db) has the right schema and, as of

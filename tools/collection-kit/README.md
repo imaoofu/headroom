@@ -45,6 +45,35 @@ Then verify before trusting it:
 E:\headroom-kit\python\python.exe -c "import torch; print(torch.cuda.is_available())"
 ```
 
+## Keeping the kit current — do this before every build
+
+**The kit is a snapshot, and it rots.** Because the 4.65 GB Python copy keeps it out of version
+control, nothing links the tooling on the USB drive to the tooling in this repository. Every
+improvement made here has to be carried across by hand, and a kit that is a version behind still
+runs perfectly and still prints `COLLECTION SUCCEEDED`.
+
+```powershell
+.\tools\collection-kit\Sync-Kit.ps1 -KitPath F:\headroom-kit -WhatIfOnly   # report
+.\tools\collection-kit\Sync-Kit.ps1 -KitPath F:\headroom-kit               # apply
+```
+
+It copies tooling only — Python, PyTorch and any collected results are never touched — then
+re-hashes every file to confirm the copy landed, and prints the sweep's schema version, which is
+the field stamped into every session JSON the kit produces.
+
+**This is not hypothetical maintenance.** Checked on 2026-08-23, three days before a build, the
+kit was carrying:
+
+| file | state on the kit | consequence |
+|---|---|---|
+| `Invoke-FrequencySweep.ps1` | schema 0.1.0 vs 0.3.0 | no `-AppliedSettings`, **no video-engine guard** |
+| `Collect.ps1` | pre-08-19 | hardcoded `-stock` into the label, so an OC run wrote `…-oc-gemm-stock_sweep.csv` |
+| `Log-GpuStability.ps1` | pre-08-20 | `session.json` written with a UTF-8 BOM, unreadable by any standard JSON parser |
+| `CHECKLIST.txt` | pre-08-22 | no mention of Instant Replay, the contaminant that cost this project two days |
+
+Not one of those announces itself at collection time. Each produces a run that looks completely
+successful and is quietly worth less than it should be.
+
 **A plain copy of a normal Python install is relocatable** — verified on a different drive
 letter, CUDA still detected, and the workload returned 412 GB/s against 415 GB/s from the
 installed copy. An embeddable-Python build is not required and is harder to get right.

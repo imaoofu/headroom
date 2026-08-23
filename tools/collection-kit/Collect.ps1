@@ -18,6 +18,7 @@
 
 param(
     [string]$Label = "",
+    [string]$AppliedSettings = "",
     [switch]$SkipMembw,
     [switch]$NoPause
 )
@@ -139,6 +140,43 @@ if ($util -and [int]$util -gt 10) {
 }
 Say "  [ok] GPU is idle ($util% used)" "Green"
 
+# utilization.gpu does NOT catch this. Video encode runs on NVENC, an engine separate from the
+# SMs, so an always-on clipper sits at 0% "GPU usage" while costing real throughput. Measured on
+# this project: NVIDIA Instant Replay - on by default with the NVIDIA app, and with no window of
+# its own - cost 1.5% of peak gemm, 4.2% across 1237-2010 MHz, moved the measured efficiency
+# optimum a full grid step, and took run-to-run spread at 1545 MHz from 0.13% to 6.95%.
+#
+# The sweep refuses on this too, but only after preflight.py has spent a minute loading torch.
+# Checked here because a customer machine is exactly where GeForce Experience is installed and
+# nobody has ever turned Instant Replay off.
+$encMax = 0
+$decMax = 0
+for ($i = 0; $i -lt 5; $i++) {
+    $vid = (& $smi.Source --query-gpu=utilization.encoder,utilization.decoder --format=csv,noheader,nounits -i 0 2>$null | Select-Object -First 1)
+    if ($vid) {
+        $parts = "$vid" -split '\s*,\s*'
+        if ($parts.Count -ge 2) {
+            if ([double]$parts[0] -gt $encMax) { $encMax = [double]$parts[0] }
+            if ([double]$parts[1] -gt $decMax) { $decMax = [double]$parts[1] }
+        }
+    }
+    Start-Sleep -Milliseconds 300
+}
+if ($encMax -gt 0 -or $decMax -gt 0) {
+    Fail ("Something is recording or playing video on this GPU (encoder $encMax%, decoder $decMax%).`n`n" +
+          "The usual cause is an always-on clipper that has no window and that Task Manager's`n" +
+          "GPU column will NOT show:`n`n" +
+          "  - NVIDIA Instant Replay / ShadowPlay  <- ON BY DEFAULT, check this one first`n" +
+          "      NVIDIA app > Settings, or GeForce Experience > Share, turn Instant Replay OFF`n" +
+          "  - OBS replay buffer, Discord or Steam recording, Xbox Game Bar, AMD ReLive`n" +
+          "  - a browser tab or media player decoding video`n`n" +
+          "This is not a technicality. Measured on this project, Instant Replay cost 1.5% of peak`n" +
+          "throughput, 4.2% in the mid band, and made repeat runs FIFTY TIMES less consistent.`n" +
+          "A run collected with it on is not comparable to one collected with it off.`n`n" +
+          "Switch it off and run RUN-ME.bat again.")
+}
+Say "  [ok] video engines idle (encoder $encMax%, decoder $decMax%)" "Green"
+
 if ($Label -eq "") {
     Say ""
     Say "Name this machine. Use the GPU model, no spaces." "Yellow"
@@ -147,6 +185,23 @@ if ($Label -eq "") {
 }
 $Label = ($Label -replace '[^A-Za-z0-9\-_]', '-').Trim('-')
 if ($Label -eq "") { $Label = "unlabelled" }
+
+# Free text, and it must be answered rather than defaulted. A blank field is indistinguishable
+# from "stock" when the data is read back months later, which is how the curve behind this
+# project's best result became unrecoverable the morning after it was measured.
+if ($AppliedSettings -eq "") {
+    Say ""
+    Say "What is applied to this GPU right now?" "Yellow"
+    Say "If nothing has been touched, type:  stock" "Gray"
+    Say "Otherwise describe it - core offset, memory offset, power limit, V/F curve," "Gray"
+    Say "vendor profile, fan curve. Whatever you type is stored with the data and is" "Gray"
+    Say "the only record of it that will exist." "Gray"
+    while ($AppliedSettings.Trim() -eq "") {
+        $AppliedSettings = Read-Host "Applied settings"
+        if ($AppliedSettings.Trim() -eq "") { Say "  Needs an answer. Type 'stock' if nothing is applied." "Yellow" }
+    }
+}
+$AppliedSettings = $AppliedSettings.Trim()
 
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $outDir = Join-Path $kit "results\$stamp`_$Label"
@@ -161,8 +216,9 @@ $infoPath = Join-Path $outDir "machine-info.txt"
 $sysinfo = @()
 $sysinfo += "label            : $Label"
 $sysinfo += "collected_at     : $(Get-Date -Format o)"
-$sysinfo += "collected_by     : kit v1"
-$sysinfo += "tuning_state_claimed : STOCK - ASSERTED BY THE OPERATOR, NOT VERIFIED."
+$sysinfo += "collected_by     : kit v2"
+$sysinfo += "applied_settings : $AppliedSettings"
+$sysinfo += "                       ASSERTED BY THE OPERATOR, NOT VERIFIED."
 $sysinfo += "                       Nothing in nvidia-smi reports whether an Afterburner or"
 $sysinfo += "                       vendor profile is applied, so this kit cannot check it."
 $sysinfo += "                       See measured_peak_sm_clock_mhz at the end of this file -"
@@ -214,6 +270,7 @@ foreach ($workload in $workloads) {
         # to anyone scanning the directory. $Label already carries the tuning state.
         & $sweepPs1 -SessionLabel "$Label-$workload" `
                     -WorkloadCommand $command `
+                    -AppliedSettings $AppliedSettings `
                     -OutputDirectory $outDir
         $results += [pscustomobject]@{ Workload = $workload; Ok = ($LASTEXITCODE -eq 0 -or $null -eq $LASTEXITCODE) }
     } catch {

@@ -484,6 +484,11 @@ disagrees with the data directory, the data directory is right.*
   summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming
   the logger catches it is still the highest-value single hour available.
+- **The collection kit rots between builds, and `Sync-Kit.ps1` is the answer.** It is a snapshot
+  that version control cannot reach, because of the 4.65 GB Python copy. Checked 2026-08-23 it was
+  four files stale, including a sweep with no video-engine guard. Run
+  `.	ools\collection-kit\Sync-Kit.ps1 -KitPath F:\headroom-kit` before every build. A synced kit
+  is still not a tested kit — run `RUN-ME.bat` once on a machine you understand first.
 - **Inspirit deliverable format unknown** — asked repeatedly, still unanswered.
 - **Push directly with `git push`.** `gh` is installed but auth never completed; Windows Credential
   Manager already works. Do not route through `gh`.
