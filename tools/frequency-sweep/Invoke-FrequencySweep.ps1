@@ -89,6 +89,14 @@
     server or an animated wallpaper is on the card measures that load mixed with ours at
     every frequency, inseparably. The output looks like ordinary data and is worthless.
 
+.PARAMETER AllowVideoEngines
+    Proceed even though NVENC/NVDEC are active. Off by default, and it should stay off.
+
+    An always-on clipper is the most damaging contaminant this project has measured, precisely
+    because it is invisible - no window, enabled by default, and running on engines that
+    utilization.gpu does not report. Use this switch only to measure contaminated conditions
+    deliberately, as a control, and say so in -AppliedSettings when you do.
+
 .PARAMETER AppliedSettings
     Free text describing the GPU configuration this run was made under - the V/F curve shape,
     memory offset, power limit, and anything else changed by hand before starting.
@@ -133,6 +141,7 @@ param(
     [int]$MeasureSeconds = 20,
     [double]$SampleIntervalSeconds = 0.5,
     [double]$MaxBaselineUtilization = 10,
+    [switch]$AllowVideoEngines,
     [string]$AppliedSettings = "",
     [string]$OutputDirectory = "",
     [switch]$DryRun
@@ -221,6 +230,33 @@ function Get-BaselineUtilization {
     }
     if ($values.Count -eq 0) { return $null }
     return [math]::Round((($values | Measure-Object -Average).Average), 1)
+}
+
+function Get-EncoderActivity {
+    param([string]$Smi, [int]$Samples = 5)
+    # Video encode/decode runs on NVENC/NVDEC, engines separate from the SMs, so a capture tool
+    # can be busy while utilization.gpu still looks acceptable. It is not free to us: it competes
+    # for memory bandwidth, PCIe and the copy engines, and it periodically reads the framebuffer.
+    #
+    # This is not a hypothetical. NVIDIA Instant Replay - enabled by default with the NVIDIA app,
+    # and with no window of its own - measured 21% encoder at idle on this machine and cost 1.5%
+    # of peak gemm throughput, 4.2% across 1237-2010 MHz, and a fivefold increase in run-to-run
+    # spread. The same applies to any always-on clipper: ShadowPlay, OBS replay buffer, Discord
+    # or Steam recording, Xbox Game Bar, AMD ReLive.
+    $enc = @(); $dec = @()
+    for ($i = 0; $i -lt $Samples; $i++) {
+        $lines = @(& $Smi --query-gpu=utilization.encoder,utilization.decoder --format=csv,noheader,nounits -i 0 2>$null)
+        if ($lines.Count -gt 0) {
+            $parts = ("$($lines[0])") -split "\s*,\s*"
+            if ($parts.Count -ge 2) { $enc += [double]$parts[0]; $dec += [double]$parts[1] }
+        }
+        Start-Sleep -Milliseconds 300
+    }
+    if ($enc.Count -eq 0) { return $null }
+    return [pscustomobject]@{
+        Encoder = [math]::Round((($enc | Measure-Object -Maximum).Maximum), 1)
+        Decoder = [math]::Round((($dec | Measure-Object -Maximum).Maximum), 1)
+    }
 }
 
 function Get-HeavyGpuProcesses {
@@ -380,10 +416,44 @@ if (-not $elevated) {
 # Utilisation is the robust signal - it catches anything, including processes not on any
 # known-offenders list. Process names are only a hint for what to go close.
 
+# Null unless the preflight actually sampled them, which only happens when a workload was
+# given. A run with no workload records "not checked" rather than a misleading zero.
+$encoderUtilPct = $null
+$decoderUtilPct = $null
+
 if ($WorkloadCommand -ne "") {
     Write-Host "[SWEEP] Checking the GPU is quiet before starting..."
     $baseline = Get-BaselineUtilization -Smi $nvidiaSmi
     $heavy = Get-HeavyGpuProcesses -Smi $nvidiaSmi
+
+    # Checked BEFORE the utilisation threshold, because it names the specific thing to go and
+    # switch off rather than leaving the operator to guess from a percentage.
+    $media = Get-EncoderActivity -Smi $nvidiaSmi
+    if ($null -ne $media -and $AllowVideoEngines -and ($media.Encoder -gt 0 -or $media.Decoder -gt 0)) {
+        Write-Host ("[SWEEP] Video engines ACTIVE (encoder {0}%, decoder {1}%) and -AllowVideoEngines was given." -f $media.Encoder, $media.Decoder)
+        Write-Host "[SWEEP] This run is deliberately contaminated. Make sure -AppliedSettings says so."
+    }
+    elseif ($null -ne $media -and ($media.Encoder -gt 0 -or $media.Decoder -gt 0)) {
+        Write-Host ""
+        Write-Host ("[SWEEP] REFUSING TO START: the video engines are active - encoder {0}%, decoder {1}%." -f $media.Encoder, $media.Decoder)
+        Write-Host "[SWEEP] Something is capturing or playing video. The usual cause is an always-on"
+        Write-Host "[SWEEP] clipper: NVIDIA Instant Replay / ShadowPlay (ON BY DEFAULT, and it has no"
+        Write-Host "[SWEEP] window), OBS replay buffer, Discord or Steam recording, Xbox Game Bar, AMD ReLive."
+        Write-Host "[SWEEP] MEASURED ON THIS PROJECT: Instant Replay cost 1.5% of peak gemm throughput,"
+        Write-Host "[SWEEP] 4.2% across 1237-2010 MHz, moved the measured efficiency optimum by a full"
+        Write-Host "[SWEEP] grid step, and raised run-to-run spread at 1545 MHz from 0.13% to 6.95%."
+        Write-Host "[SWEEP] utilization.gpu alone does NOT reliably catch it - the encoder is a separate engine."
+        Write-Host "[SWEEP] Switch it off and re-run. Override with -AllowVideoEngines to measure"
+        Write-Host "[SWEEP] contaminated conditions on purpose, and say so in -AppliedSettings if you do."
+        exit 5
+    }
+    if ($null -ne $media) {
+        $encoderUtilPct = $media.Encoder
+        $decoderUtilPct = $media.Decoder
+        if ($media.Encoder -eq 0 -and $media.Decoder -eq 0) {
+            Write-Host ("[SWEEP] Video engines idle (encoder {0}%, decoder {1}%)." -f $media.Encoder, $media.Decoder)
+        }
+    }
 
     if ($null -ne $baseline -and $baseline -gt $MaxBaselineUtilization) {
         Write-Host ""
@@ -687,6 +757,11 @@ $session = [ordered]@{
     # not answer - NOT that the card was at stock. Do not read it as stock.
     applied_settings     = $AppliedSettings
     applied_settings_declared = (-not [string]::IsNullOrWhiteSpace($AppliedSettings))
+    # Recorded because a run made with a clipper running is not comparable to one without, and
+    # this is not recoverable afterwards. Null when no workload ran, since the check is skipped.
+    encoder_util_pct     = $encoderUtilPct
+    decoder_util_pct     = $decoderUtilPct
+    video_engines_allowed = [bool]$AllowVideoEngines
     started_at           = $startTime.ToString("o")
     ended_at             = (Get-Date).ToString("o")
     aborted_by_user      = $abortedByUser
@@ -707,7 +782,7 @@ $session = [ordered]@{
     power_windowed_points = ($results.Count - $undilutedPoints.Count)
     supported_clock_count = $supported.Count
     samples_file         = Split-Path $csvPath -Leaf
-    schema_version       = "0.2.0"
+    schema_version       = "0.3.0"
 }
 $session | ConvertTo-Json -Depth 4 | Out-File -FilePath $jsonPath -Encoding utf8
 
