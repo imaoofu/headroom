@@ -484,6 +484,17 @@ disagrees with the data directory, the data directory is right.*
   summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming
   the logger catches it is still the highest-value single hour available.
+- 🔑 **INSTANT REPLAY WENT FROM 0% TO 14% ENCODER INSIDE ONE SESSION, 2026-08-23.** Verified at
+  0% immediately before the 13:03 kit run; measured at a sustained 14% roughly forty minutes
+  later, with no deliberate change recorded in between. **The cause is NOT established** - either
+  the operator re-enabled it after a guard test, or it re-enabled itself, and nothing was logged
+  that distinguishes them. Do not write either into the paper.
+
+  What IS established is the operational consequence, and it is the important half: **"I turned
+  it off" is not a durable state.** A check done at the start of a session does not cover a run
+  started later in that session. The only defence that works is the preflight encoder check
+  firing on every single run, which is now in both the sweep tool and the collection kit.
+  Never skip it on the grounds that it was verified earlier.
 - **The collection kit rots between builds, and `Sync-Kit.ps1` is the answer.** It is a snapshot
   that version control cannot reach, because of the 4.65 GB Python copy. Checked 2026-08-23 it was
   four files stale, including a sweep with no video-engine guard. Run

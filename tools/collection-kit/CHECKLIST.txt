@@ -45,6 +45,13 @@ BEFORE YOU START
     recording. If it refuses and you cannot find the cause, Instant Replay is the
     answer nine times out of ten.
 
+    CHECK IT AGAIN FOR EVERY RUN, not once per machine. On 2026-08-23 it read 0%
+    before one run and a sustained 14% forty minutes later in the same session,
+    with nobody recording having changed it. Whether it was switched back on by
+    hand or came back on its own was never established - which is exactly why you
+    re-check rather than remember. If you are doing a stock run and then an
+    overclocked run on the same machine, that is TWO checks, not one.
+
 [ ] Nothing heavy is running. Close games, Discord, browsers playing video, any AI
     or mining app. The kit refuses to start above 10% GPU usage and will tell you.
     Note this check alone is NOT enough - see the Instant Replay item above, which
