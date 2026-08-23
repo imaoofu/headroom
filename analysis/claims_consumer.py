@@ -552,3 +552,56 @@ def optimumOn():
 def optimumOff():
     best, gain = _irOptimum(IR_OFF)
     return f"| Instant Replay disabled | {best} MHz | +{gain:.1f}% |"
+
+
+# ---------------------------------------------------------------------------------------------
+# 5.7.6 A split-region curve, derived from the mechanism, recovers both
+#
+# Eight clean-protocol sweeps, five tuned and three split. The non-overlap claim is the load-
+# bearing one here because it does not depend on averaging, so it is pinned separately from the
+# means and RAISES rather than rendering if the ranges ever start to overlap.
+# ---------------------------------------------------------------------------------------------
+
+TUNED_CLEAN_5 = [f"20260822-{s}_5060ti-tuned-gemm-clean-r{i}_sweep.csv" for i, s in
+                 zip((1, 2, 3, 4, 5), ("182129", "182619", "213750", "215317", "215811"))]
+SPLIT_CLEAN_3 = ["20260822-163705_5060ti-splitcurve-gemm-r3-quiet_sweep.csv",
+                 "20260822-165944_5060ti-splitcurve-gemm-r5-instantreplay-off_sweep.csv",
+                 "20260822-220443_5060ti-splitcurve-gemm-clean-r3_sweep.csv"]
+
+
+def _peakTf(path):
+    return max(sweep(path).values(), key=lambda r: r["throughput"])["throughput"] / 1e12
+
+
+@claim("5.7.6-tuned-runs", PAPER, "5.7.6")
+def tunedRuns():
+    v = [_peakTf(p) for p in TUNED_CLEAN_5]
+    return ("| original tune, n=5 | " + " / ".join(f"{x:.2f}" for x in v)
+            + f" | {mean(v):.2f} TFLOP/s |")
+
+
+@claim("5.7.6-split-runs", PAPER, "5.7.6")
+def splitRuns():
+    v = [_peakTf(p) for p in SPLIT_CLEAN_3]
+    return ("| split curve, n=3 | " + " / ".join(f"{x:.2f}" for x in v)
+            + f" | {mean(v):.2f} TFLOP/s |")
+
+
+@claim("5.7.6-no-overlap", PAPER, "5.7.6")
+def noOverlap():
+    """The section's central claim, and the one that survives a small sample. If the ranges ever
+    overlap the sentence is false, so this raises rather than quietly rendering numbers that no
+    longer support the surrounding prose."""
+    t = [_peakTf(p) for p in TUNED_CLEAN_5]
+    s = [_peakTf(p) for p in SPLIT_CLEAN_3]
+    if min(s) <= max(t):
+        raise ValueError(f"the ranges now OVERLAP: lowest split {min(s):.2f} is not above highest "
+                         f"tuned {max(t):.2f}. The prose claims they do not overlap.")
+    return f"{min(s):.2f} against\n{max(t):.2f}"
+
+
+@claim("5.7.6-gap", PAPER, "5.7.6")
+def splitGap():
+    t = mean(_peakTf(p) for p in TUNED_CLEAN_5)
+    s = mean(_peakTf(p) for p in SPLIT_CLEAN_3)
+    return f"The gap is **+{100 * (s / t - 1):.2f}%**"

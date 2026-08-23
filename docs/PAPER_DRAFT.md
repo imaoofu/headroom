@@ -1217,7 +1217,59 @@ about the repair. What the failed prediction does establish is that the 0.895 V 
 setting that failed to apply, which had been the reason for doubting the telemetry at the top of
 the range.
 
-#### 5.7.6 Caveats
+#### 5.7.6 A split-region curve, derived from the mechanism, recovers both
+
+Sections 5.7.4 and 5.7.5 describe a repair that removed the bandwidth penalty and gave up the
+compute advantage with it, because the two share a mechanism. That framing suggests a third option
+the earlier sections did not test: if the harm comes from pinned voltage *below* the flattened
+region and the benefit comes from the flattened region *itself*, the two can be separated by
+frequency rather than traded against each other.
+
+**The design follows directly from 5.7.3.** Restore the stock voltage slope below ~845 mV, so the
+crossbar clock scales with the core and the bandwidth-bound workload is not starved. Keep the
+tuned flat shape from 850 to 920 mV, where `gemm` lives at its ceiling and the pinned low voltage
+is pure benefit. Set the top point to 920 mV at 3000 MHz. Memory remains at +2500.
+
+**On `gemm` the split curve wins, and the two configurations do not overlap.** Eight sweeps under
+the clean protocol of 5.4.4, five on the tuned configuration and three on the split curve, each
+with both axes of the configuration confirmed before measuring:
+
+| configuration | peak `gemm` runs | mean | spread |
+|---|---|---|---|
+| original tune, n=5 | 17.98 / 17.88 / 18.02 / 17.98 / 17.93 | 17.96 TFLOP/s | 0.76% |
+| **split curve, n=3** | **18.24 / 18.24 / 18.22** | **18.23 TFLOP/s** | **0.13%** |
+
+The gap is **+1.53%**, and the lowest split-curve run exceeds the highest tuned run — 18.22 against
+18.02 — so the split curve wins on every pairwise comparison the data admits. That statement does
+not depend on averaging, which matters at these sample sizes. All three split runs peaked at 2977.0
+MHz achieved, against the tuned card's 2946-2948 MHz.
+
+**The split curve is also the steadier of the two**, 0.13% spread against 0.76%, a factor of 4.5 on
+standard deviation. This reverses a concern carried through the earlier sections: the split curve
+had been suspected of instability on the strength of a ~2.5% low outlier appearing in roughly one
+`gemm` run in three. That outlier was the capture software of 5.4.4. With the contaminant removed
+the configuration producing the best throughput is also the more reproducible one, and the
+remaining run-to-run variation belongs to the original tune.
+
+**On `membw` the split curve holds the repair.** Against the memory-overclock-only configuration,
+which is the ceiling for this workload because it carries no core curve at all, the split curve
+lands within 0.4% at seven of ten grid points and beats the fully tuned profile everywhere, by
++3.2% at 1402 MHz rising to +30.0% at 1867 MHz. The plateau of 5.7.2 does not appear.
+
+**What it does not recover.** The tuned curve still wins `gemm` efficiency across 1545-2625 MHz, by
+up to 30.5% at 2010 MHz, which is where that workload's efficiency optimum sits. The split curve
+buys peak throughput and bandwidth scaling; it does not buy back the matched-frequency power
+advantage, and 5.7.5's conclusion that no single configuration dominates survives this section
+rather than being overturned by it. What the split curve changes is the *shape* of the trade, not
+its existence.
+
+**Limits.** n=1 chip and one curve shape. Nothing here has been stability-tested, including this
+configuration - a curve that measures well over thirteen points and eight sweeps has not been shown
+to survive sustained load, and the sub-845 mV region was reshaped by hand rather than by any
+principled optimisation. How much of the stock slope can be given back before the crossbar starves
+is unmapped; only the two endpoints have been measured.
+
+#### 5.7.7 Caveats
 
 The three configurations were **not** measured contemporaneously: stock at 14:33 on 2026-08-19, full
 tuned at 20:42 the same day, memory-only at 18:13 the next - switching configurations requires a
@@ -1277,7 +1329,7 @@ this is unexplained and recorded rather than trimmed.
    the top of the range.
 8. **Tuning configurations were not measured contemporaneously.** The stock, fully tuned and
    memory-only sweeps of 5.7 are separated by hours to a day, because switching between them
-   requires a manual change that cannot be scripted (5.7.6).
+   requires a manual change that cannot be scripted (5.7.7).
 
 ---
 
