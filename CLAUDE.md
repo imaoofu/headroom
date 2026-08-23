@@ -440,10 +440,33 @@ disagrees with the data directory, the data directory is right.*
   In the mid-band the split is roughly even — Instant Replay accounts for about 2.9 of the ~6.0
   points, with the remainder from the wallpaper and from the baseline wander in run 1.
 
-  **Limits on this.** The Instant-Replay-off condition is n=1 at present and should be repeated
-  before the 18.24 figure is treated as settled. And `gemm` renders nothing to screen, so Instant
-  Replay has little new frame content to encode here; its cost during a graphics workload could be
-  larger, and this measurement does not bound that. The wandering `membw` dip is very likely the
+  **Repeated: n=3 on, n=2 off. 18.24 reproduced exactly.**
+
+  | condition | peak `gemm` | spread |
+  |---|---|---|
+  | Instant Replay on | 17.97 / 17.98 / 17.99 | 0.09% |
+  | Instant Replay off | **18.24 / 18.24** | **0.04%** |
+
+  The gap is **+1.46% at peak, +4.22% mean across 1237–2010 MHz, +1.71% above it**, positive at all
+  thirteen points, and roughly 16–36× the within-condition measurement spread.
+
+  🔑 **IT IS ALSO A VARIANCE SOURCE, WHICH IS THE MORE USEFUL HALF.** Mean run-to-run spread is
+  **1.82% with it on against 0.35% with it off**. At the two worst points:
+
+  | target | spread, IR on | spread, IR off |
+  |---|---|---|
+  | 1545 MHz | **6.95%** | **0.13%** |
+  | 1852 MHz | **5.97%** | **0.95%** |
+
+  Fifty-three times tighter at 1545 MHz. **This retires the "mid-band is not reproducible" entry
+  that this section previously carried as an open problem** — the mid-band is reproducible to
+  better than 1% once Instant Replay is off. It also explains the earlier "~2.5% outlier in roughly
+  1 of 3 runs" and very likely the wandering `membw` dip, neither of which needs another
+  explanation.
+
+  **Limits.** `gemm` renders nothing to screen, so Instant Replay has little new frame content to
+  encode here; its cost during a graphics workload could be larger and this does not bound that.
+  Two conditions on one chip on one evening. The wandering `membw` dip is very likely the
   same phenomenon and needs no other explanation.
 - ✅ **"Neither configuration dominates" was tested and SURVIVES.** This entry previously said it
   "may now be false"; the measurement says otherwise. The split curve beats tuned on `membw` at
