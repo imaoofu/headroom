@@ -55,6 +55,7 @@ USAGE
 
 import argparse
 import csv
+import json
 import re
 import sys
 from pathlib import Path
@@ -69,16 +70,83 @@ CLAIMS = []
 
 _documentCache = {}
 _sweepCache = {}
+_provenanceCache = {}
+
+# Files a claim touched while rendering. Populated by the loaders below, read and cleared by
+# audit(). A claim never sees this; it exists so the engine can answer a question the claim
+# itself cannot: were these numbers all measured under the same conditions?
+_accessLog = set()
+
+# What the run recorded about its own measurement conditions, in descending order of evidence.
+# Deliberately NOT derived from the filename date. A date cutoff encodes an assumption about
+# when the protocol changed; these tiers encode what each session actually wrote down.
+QUIET = "verified-quiet"          # session JSON reports encoder AND decoder at 0%
+BUSY = "video-engines-active"     # session JSON reports encoder or decoder above 0%
+DECLARED = "declared-unverified"  # settings were declared, but no video-engine telemetry exists
+UNKNOWN = "unknown"               # neither: predates schema 0.2.0, conditions unrecoverable
+
+PROVENANCE_ORDER = [QUIET, DECLARED, BUSY, UNKNOWN]
 
 
-def claim(claimId, document, section=None):
-    """Register a function whose return value is the exact text the document must contain."""
+def provenanceOf(relativePath):
+    """Classify a sweep CSV by what its sibling session JSON recorded about conditions.
+
+    WHY THIS EXISTS. On 2026-08-22 this project found that always-on capture software depressed
+    measured throughput by 4.22% across 1237-2010 MHz and inflated run-to-run spread fivefold
+    (paper 5.4.4). Half the repository's sweeps predate that finding. The claims engine verifies
+    that a rendered number matches the document, and it will do that perfectly for a number
+    computed by comparing a clean sweep against a contaminated one - which is exactly how two
+    such comparisons survived into the paper and were both found by accident on 2026-08-23.
+
+    Arithmetic was never the weak point. Provenance was, and nothing checked it.
+    """
+    if relativePath not in _provenanceCache:
+        csvPath = REPO_ROOT / "data" / "frequency-sweeps" / relativePath
+        # Voltage joins are derived artifacts; their conditions are the parent sweep's.
+        stem = str(csvPath).replace("_sweep_voltage.csv", "_sweep.csv")
+        jsonPath = Path(stem.replace("_sweep.csv", "_sweep.json"))
+        tier, evidence = UNKNOWN, "no session JSON alongside the CSV"
+        if jsonPath.exists():
+            try:
+                with open(jsonPath, encoding="utf-8-sig") as handle:
+                    session = json.load(handle)
+            except Exception as error:               # noqa: BLE001 - reported, not raised
+                session = None
+                evidence = f"session JSON unreadable: {type(error).__name__}"
+            if session is not None:
+                enc = session.get("encoder_util_pct")
+                dec = session.get("decoder_util_pct")
+                if enc is not None and dec is not None:
+                    if enc == 0 and dec == 0:
+                        tier, evidence = QUIET, "encoder 0%, decoder 0% at preflight"
+                    else:
+                        tier, evidence = BUSY, f"encoder {enc}%, decoder {dec}% at preflight"
+                elif session.get("applied_settings_declared") or session.get("applied_settings"):
+                    tier = DECLARED
+                    evidence = "settings declared, but this schema records no video-engine telemetry"
+                else:
+                    tier = UNKNOWN
+                    evidence = f"schema {session.get('schema_version', '?')} records neither"
+        _provenanceCache[relativePath] = (tier, evidence)
+    return _provenanceCache[relativePath]
+
+
+def claim(claimId, document, section=None, mixedProvenance=None):
+    """Register a function whose return value is the exact text the document must contain.
+
+    mixedProvenance: a REASON string, when the claim deliberately compares runs measured under
+    different conditions. Section 5.4.4 is the honest case - its entire subject is the difference
+    between contaminated and clean runs, so a claim there that did NOT mix would be the broken
+    one. Anything left unannotated is reported, not failed, because the engine cannot tell a
+    deliberate comparison from an accidental one and should not pretend to.
+    """
     def register(render):
         CLAIMS.append({
             "claimId": claimId,
             "document": document,
             "section": section,
             "render": render,
+            "mixedProvenance": mixedProvenance,
         })
         return render
     return register
@@ -107,6 +175,7 @@ def sweep(relativePath):
     curvefixed gemm run has a row that overshot 1852 MHz by +1002.6 MHz, and an audit that
     silently included it would reproduce the exact class of error it exists to catch.
     """
+    _accessLog.add(relativePath)
     if relativePath not in _sweepCache:
         path = REPO_ROOT / "data" / "frequency-sweeps" / relativePath
         if not path.exists():
@@ -130,6 +199,7 @@ def sweepRaw(relativePath):
     a loader whose whole job is to remove it. Use sweep() for anything analytical; this is for
     quoting a failure.
     """
+    _accessLog.add(relativePath)
     key = ("raw", relativePath)
     if key not in _sweepCache:
         path = REPO_ROOT / "data" / "frequency-sweeps" / relativePath
@@ -158,6 +228,7 @@ def voltageJoin(relativePath):
     carry HWiNFO's core voltage and crossbar clock, which NVML does not expose at all, and they
     exist only for the runs where HWiNFO happened to be logging.
     """
+    _accessLog.add(relativePath)
     key = ("voltage", relativePath)
     if key not in _sweepCache:
         path = REPO_ROOT / "data" / "frequency-sweeps" / relativePath
@@ -226,14 +297,17 @@ def normalise(text):
 def audit(claims):
     results = []
     for entry in claims:
+        _accessLog.clear()
         try:
             expected = normalise(entry["render"]())
             text = normalise(readDocument(entry["document"]))
             occurrences = text.count(expected)
         except Exception as error:                    # noqa: BLE001 - reported, not raised
             results.append({**entry, "status": "ERROR", "expected": None,
+                            "sources": sorted(_accessLog),
                             "detail": f"{type(error).__name__}: {error}"})
             continue
+        sources = sorted(_accessLog)
 
         if occurrences == 1:
             status, detail = "PASS", expected
@@ -245,8 +319,21 @@ def audit(claims):
             # so a change to the intended line would still pass against the other copy.
             status = "AMBIGUOUS"
             detail = f"{occurrences} occurrences of {expected!r}; anchor is not unique"
-        results.append({**entry, "status": status, "expected": expected, "detail": detail})
+        tiers = {provenanceOf(s)[0] for s in sources}
+        results.append({**entry, "status": status, "expected": expected, "detail": detail,
+                        "sources": sources, "provenanceTiers": sorted(tiers)})
     return results
+
+
+def provenanceReport(results):
+    """Claims whose numbers were computed across runs measured under different conditions."""
+    flagged, declared = [], []
+    for r in results:
+        tiers = r.get("provenanceTiers") or []
+        if len(tiers) < 2:
+            continue
+        (declared if r.get("mixedProvenance") else flagged).append(r)
+    return flagged, declared
 
 
 # --------------------------------------------------------------------------------------
@@ -360,6 +447,9 @@ def main():
                         help="Only run claims whose id contains this substring.")
     parser.add_argument("--coverage", action="store_true",
                         help="Also list numbers in audited sections that no claim pins.")
+    parser.add_argument("--provenance", action="store_true",
+                        help="Report what each claim's source runs recorded about measurement "
+                             "conditions, and every audited section's mix of them.")
     args = parser.parse_args()
 
     import claims_consumer                             # noqa: F401 - registers claims
@@ -376,6 +466,41 @@ def main():
 
     bad = [r for r in results if r["status"] != "PASS"]
     print(f"\n{len(results) - len(bad)} of {len(results)} claims verified against the CSVs.")
+
+    # Reported unconditionally. A cross-condition comparison is invisible in a green run - that
+    # is exactly why two of them went unnoticed until 2026-08-23 - so it does not hide behind a flag.
+    flagged, declaredMix = provenanceReport(results)
+    if flagged:
+        print("")
+        print(f"  ! {len(flagged)} claim(s) compute across runs measured under DIFFERENT conditions, without saying so:")
+        for r in flagged:
+            print(f"      {r['claimId']}  [{', '.join(r['provenanceTiers'])}]")
+            for s in r["sources"]:
+                tier, why = provenanceOf(s)
+                print(f"          {tier:<20s} {s.split('/')[-1]}  ({why})")
+        print('      Pass mixedProvenance="reason" to claim() if the comparison is deliberate.')
+    if declaredMix:
+        print("")
+        print(f"  {len(declaredMix)} claim(s) mix conditions deliberately and say why:")
+        for r in declaredMix:
+            print(f"      {r['claimId']}: {r['mixedProvenance']}")
+
+    if args.provenance:
+        print("")
+        print("--- provenance: what each audited section's sources recorded ---")
+        bySection = {}
+        for r in results:
+            key = f"{r['document']} {r['section']}"
+            bySection.setdefault(key, set()).update(r.get("sources") or [])
+        for key in sorted(bySection):
+            tiers = {}
+            for s in bySection[key]:
+                tiers.setdefault(provenanceOf(s)[0], []).append(s.split("/")[-1])
+            summary = "  ".join(f"{k}:{len(tiers[k])}" for k in PROVENANCE_ORDER if k in tiers)
+            print(f"  {key}: {summary or 'no sweep sources'}")
+            for tier in PROVENANCE_ORDER:
+                for name in sorted(tiers.get(tier, [])):
+                    print(f"      {tier:<20s} {name}")
 
     if args.coverage:
         print("\n--- coverage: numbers in audited sections that NO claim pins ---")

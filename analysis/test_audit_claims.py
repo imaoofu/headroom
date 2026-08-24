@@ -494,6 +494,127 @@ check(
 for directory in (repository, mutatedData, mutatedProse, noTargets):
     shutil.rmtree(directory, ignore_errors=True)
 
+# The summary and exit live at the very END of this file, deliberately.
+#
+# They used to sit here, in the middle, and a block of tests appended after them on 2026-08-23
+# could report [PASS] lines while being unable to fail the suite: on success execution fell
+# through and ran them, and on failure nothing re-read `failures`, so the process still exited 0.
+# Six deliberate mutations of the code under test all survived. Anything added to this file must
+# come BEFORE the summary; that is why the summary is last.
+
+
+# ---------------------------------------------------------------------------------------------
+# Provenance tracking, added 2026-08-23.
+#
+# The engine verified arithmetic and never provenance, so a claim comparing a clean sweep against
+# a contaminated one passed green forever. Two such comparisons reached the paper and both were
+# found by accident on the same day, not by any check.
+#
+# NOTE A REAL LIMITATION, because these tests would otherwise imply more than the feature does:
+# the tiers describe RECORDED EVIDENCE, not actual conditions. A run taken with Instant Replay on
+# but written by a schema that had no encoder field reads as `declared-unverified`, exactly like a
+# clean run of the same vintage. That is why 5.4.4 - whose entire subject is contaminated versus
+# clean - does NOT trip the mixed-provenance flag. The feature narrows the blind spot; it does not
+# close it, and only a re-measurement can.
+# ---------------------------------------------------------------------------------------------
+
+REAL_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def testProvenanceTiers():
+    """Call provenanceOf for real, against a temp tree laid out the way it expects.
+
+    The first version of this test reimplemented the classification inline and compared the copy
+    against the expectation, which passes no matter what provenanceOf does. That is the mutation
+    -survives-because-the-check-asserts-the-mutation's-own-outcome failure this file already
+    records twice. Do not reintroduce it.
+    """
+    import tempfile, json as _json
+    import audit_claims as ac
+
+    cases = [
+        ("quiet", {"encoder_util_pct": 0, "decoder_util_pct": 0}, ac.QUIET),
+        ("busyenc", {"encoder_util_pct": 21, "decoder_util_pct": 0}, ac.BUSY),
+        ("busydec", {"encoder_util_pct": 0, "decoder_util_pct": 2}, ac.BUSY),
+        ("declared", {"applied_settings": "stock", "applied_settings_declared": True}, ac.DECLARED),
+        ("bare", {"schema_version": "0.1.0"}, ac.UNKNOWN),
+    ]
+    saved = ac.REPO_ROOT
+    with tempfile.TemporaryDirectory() as raw:
+        root = Path(raw)
+        sweeps = root / "data" / "frequency-sweeps"
+        sweeps.mkdir(parents=True)
+        try:
+            ac.REPO_ROOT = root
+            for name, payload, expected in cases:
+                (sweeps / f"{name}_sweep.json").write_text(_json.dumps(payload), encoding="utf-8")
+                ac._provenanceCache.clear()
+                tier, why = ac.provenanceOf(f"{name}_sweep.csv")
+                check(f"{name} classifies as {expected}", tier == expected, f"got {tier} ({why})")
+
+            # A voltage join carries its parent sweep's conditions; it has no session of its own.
+            ac._provenanceCache.clear()
+            tier, _ = ac.provenanceOf("quiet_sweep_voltage.csv")
+            check("a voltage join inherits its parent sweep's tier", tier == ac.QUIET, f"got {tier}")
+
+            # No session JSON at all must not silently read as clean.
+            ac._provenanceCache.clear()
+            tier, _ = ac.provenanceOf("nothing_sweep.csv")
+            check("a sweep with no session JSON is unknown, not quiet", tier == ac.UNKNOWN, f"got {tier}")
+        finally:
+            ac.REPO_ROOT = saved
+            ac._provenanceCache.clear()
+
+
+def testProvenanceReportSeparatesDeclaredFromSilent():
+    import audit_claims as ac
+    silent = {"claimId": "a", "provenanceTiers": [ac.QUIET, ac.UNKNOWN], "mixedProvenance": None}
+    stated = {"claimId": "b", "provenanceTiers": [ac.QUIET, ac.UNKNOWN],
+              "mixedProvenance": "deliberate: the contaminated-versus-clean comparison"}
+    uniform = {"claimId": "c", "provenanceTiers": [ac.QUIET], "mixedProvenance": None}
+    flagged, declared = ac.provenanceReport([silent, stated, uniform])
+    check("a silent mix is flagged", [r["claimId"] for r in flagged] == ["a"],
+          f"got {[r['claimId'] for r in flagged]}")
+    check("a declared mix is not flagged", [r["claimId"] for r in declared] == ["b"],
+          f"got {[r['claimId'] for r in declared]}")
+    check("a uniform claim is neither", "c" not in [r["claimId"] for r in flagged + declared],
+          "uniform claim was reported")
+
+
+def testAuditRecordsEverySourceAClaimTouches():
+    """The flag is only as good as the access log; an unrecorded read is an invisible source.
+
+    REPO_ROOT is restored explicitly because an earlier test in this file repoints it at a
+    fixture and never puts it back. Without that, this test errors on a claim that passes
+    perfectly well on its own - which is how it failed the first time it was written.
+    """
+    import audit_claims as ac
+    saved = ac.REPO_ROOT
+    try:
+        ac.REPO_ROOT = REAL_REPO_ROOT
+        ac._documentCache.clear()
+        ac._sweepCache.clear()
+        import claims_consumer                          # noqa: F401 - registers claims
+        results = ac.audit([c for c in ac.CLAIMS if c["claimId"] == "5.7.4-plateau-comparison"])
+        check("the claim ran", len(results) == 1 and results[0]["status"] == "PASS",
+              f"got {results[0]['detail'] if results else 'nothing'}")
+        sources = results[0].get("sources") or []
+        check("both sweeps it compares were recorded", len(sources) == 2, f"recorded {sources}")
+        check("it recorded the repaired-curve sweep",
+              any("curvefixed-membw" in s for s in sources), f"got {sources}")
+        check("it recorded the tuned sweep",
+              any("oc-membw-stock" in s for s in sources), f"got {sources}")
+    finally:
+        ac.REPO_ROOT = saved
+        ac._documentCache.clear()
+        ac._sweepCache.clear()
+
+
+testProvenanceTiers()
+testProvenanceReportSeparatesDeclaredFromSilent()
+testAuditRecordsEverySourceAClaimTouches()
+
+
 if failures:
     print(f"{len(failures)} check(s) failed.")
     raise SystemExit(1)

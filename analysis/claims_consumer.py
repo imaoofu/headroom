@@ -580,14 +580,16 @@ def tunedRuns():
             + f" | {mean(v):.2f} TFLOP/s |")
 
 
-@claim("5.7.6-split-runs", PAPER, "5.7.6")
+@claim("5.7.6-split-runs", PAPER, "5.7.6",
+       mixedProvenance="two of the three split-curve runs (r3-quiet, r5-instantreplay-off) predate the encoder guard: their settings declare Instant Replay off but nothing verified it. The five tuned runs are all verified-quiet. The risk runs TOWARD the finding, not against it - undetected contamination would depress the split runs and understate the gap - and the one verified-quiet split run agrees at 18.22. Stated rather than silently mixed.")
 def splitRuns():
     v = [_peakTf(p) for p in SPLIT_CLEAN_3]
     return ("| split curve, n=3 | " + " / ".join(f"{x:.2f}" for x in v)
             + f" | {mean(v):.2f} TFLOP/s |")
 
 
-@claim("5.7.6-no-overlap", PAPER, "5.7.6")
+@claim("5.7.6-no-overlap", PAPER, "5.7.6",
+       mixedProvenance="two of the three split-curve runs (r3-quiet, r5-instantreplay-off) predate the encoder guard: their settings declare Instant Replay off but nothing verified it. The five tuned runs are all verified-quiet. The risk runs TOWARD the finding, not against it - undetected contamination would depress the split runs and understate the gap - and the one verified-quiet split run agrees at 18.22. Stated rather than silently mixed.")
 def noOverlap():
     """The section's central claim, and the one that survives a small sample. If the ranges ever
     overlap the sentence is false, so this raises rather than quietly rendering numbers that no
@@ -600,7 +602,8 @@ def noOverlap():
     return f"{min(s):.2f} against\n{max(t):.2f}"
 
 
-@claim("5.7.6-gap", PAPER, "5.7.6")
+@claim("5.7.6-gap", PAPER, "5.7.6",
+       mixedProvenance="two of the three split-curve runs (r3-quiet, r5-instantreplay-off) predate the encoder guard: their settings declare Instant Replay off but nothing verified it. The five tuned runs are all verified-quiet. The risk runs TOWARD the finding, not against it - undetected contamination would depress the split runs and understate the gap - and the one verified-quiet split run agrees at 18.22. Stated rather than silently mixed.")
 def splitGap():
     t = mean(_peakTf(p) for p in TUNED_CLEAN_5)
     s = mean(_peakTf(p) for p in SPLIT_CLEAN_3)
