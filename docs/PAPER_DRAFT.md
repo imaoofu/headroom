@@ -1276,6 +1276,33 @@ silently, so a memory overclock can run for hours without a crash, an artifact o
 entry while being net slower than stock. Measuring throughput continuously is the only way to see
 that, and over thirty minutes there is no sign of it here.
 
+**The original tune was then put through the same test, forty minutes later on the same card, and
+also passed** - 33 iterations, zero aborted, zero driver resets, zero throttled samples, 96.8%
+loaded, drift `gemm` +0.10% and `membw` -0.28%. Two results follow from having both.
+
+**The throughput gap reproduces under a completely different protocol.** Post-soak means over
+eleven unlocked iterations each give `gemm` 18.24 TFLOP/s on the split curve against 17.98 on the
+original tune, a gap of **+1.45%**. The +1.53% of the table above came from peak values in locked
+thirteen-point sweeps. Two measurement designs that share no methodology - locked against unlocked,
+peak-of-sweep against sustained mean, minutes apart against days apart - agree to within 0.08
+percentage points. That is a stronger corroboration of the gap than either measurement alone.
+
+**The `membw` advantage does not appear at all**, and this is the more practically important of
+the two. Under sustained unlocked load the two configurations are indistinguishable on `membw`:
+423.1 GB/s against 424.6, a difference of -0.35% and in the wrong direction to matter. This does
+not contradict 5.7.2, it locates it. The plateau is a property of the **1402-1867 MHz band**,
+where the flattened curve pins voltage and starves the crossbar; a card left to boost freely sits
+at 2968-2993 MHz, above the flattened region entirely, where both curves carry the same voltage.
+The harm is real and reproducible when frequency is locked into that band, and absent when it is
+not. Anyone reading 5.7.2's "-29.6%" as a cost they would pay in ordinary use would be wrong.
+
+**Neither run distinguishes the two configurations on steadiness.** All four drift figures fall
+between -0.28% and +0.16%, in both directions, which is noise. The 4.5x reproducibility advantage
+reported above is a spread across *separate sweeps*, not drift *within* a run, and these are
+different quantities - so this does not overturn it. What it does say is that whatever produces
+the original tune's wider run-to-run spread is not visible as degradation inside a single
+half-hour of sustained load, which narrows where to look for it.
+
 **Limits.** n=1 chip, one curve shape, and **one thirty-minute run**. The correct reading is "no
 failure observed in thirty minutes", not "stable": undervolt failures routinely take hours to
 appear, and a single session says nothing about thermal cycling, cold boots, or the driver updates

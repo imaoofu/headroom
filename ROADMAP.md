@@ -57,9 +57,16 @@ Nothing here is research. It is the difference between "code exists" and "code i
 
   Read it as "no failure observed in thirty minutes", never as "stable".
 
+  **The original tune passed the same test forty minutes later** - 33 iterations, zero aborted,
+  zero resets, zero throttled samples, drift `gemm` +0.10% and `membw` -0.28%. Two results follow:
+  the split curve's `gemm` advantage reproduces at **+1.45%** under sustained unlocked load against
+  the **+1.53%** measured from locked sweep peaks, two protocols sharing no methodology agreeing to
+  0.08 points; and the split curve's `membw` advantage **does not appear at all** at free boost
+  (-0.35%), because the plateau lives at 1402-1867 MHz and a boosting card sits at 2968-2993 MHz,
+  above it. 5.7.2's -29.6% is a locked-frequency cost, not one paid in ordinary use.
+
   **Still open, and most of the work remains:**
-  - The **original tune** and the **repaired curve** have not been tested at all. A single
-    configuration passing says nothing comparative.
+  - The **repaired curve** has not been tested at all.
   - No run longer than thirty minutes. Undervolt failures routinely take hours.
   - The degradation threshold is uncalibrated. It was set at 2% before anyone knew what healthy
     drift looks like; this run's 0.11-0.16% suggests it is loose by roughly an order of magnitude,

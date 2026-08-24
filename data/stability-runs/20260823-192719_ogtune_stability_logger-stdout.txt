@@ -1,0 +1,147 @@
+
+[LOGGER] GPU:      NVIDIA GeForce RTX 5060 Ti (driver 610.88, VBIOS 98.06.4e.40.b4)
+[LOGGER] Limits:   max SM clock 3090 MHz, power limit 200.00 W
+[LOGGER] Settings: ORIGINAL TUNE. PROBED IMMEDIATELY BEFORE STARTING, not assumed: core clock at a locked 3090 target read 2948.1 MHz mean / 2955 max, which is the original-tune signature (split reads ~2977, stock ~2610); memory clock under load read 16301 MHz, confirming the +2500 offset (stock is 13801). Curve shape per section 5.7: core V/F curve pinned flat at ~3010 MHz from ~925 mV upward, raised above stock below that. Power limit 200W. Instant Replay OFF, encoder and decoder 0% at preflight. Second configuration tested under protocol v1.0.0; the split curve passed the same 30-minute test earlier this session (20260823-183256), so these two are directly comparable - same protocol version, same card, same evening, roughly 40 minutes apart.
+[LOGGER] Test:     headroom stability protocol v1.0.0 (gpu_workload.py loop)
+[LOGGER] Sampling every 1 s for 1830 s. Ctrl+C stops early.
+[LOGGER] Writing:  C:\Users\Raymond\Documents\headroom\data\stability-runs\20260823-192719_ogtune_samples.csv
+
+[LOGGER] No interactive console detected - early Ctrl+C detection is unavailable this run. Duration will run to completion; the script still works, it just cannot be told to stop early.
+[LOGGER] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[LOGGER]    15s   2947 MHz  177.96 W   66 C   99% util  GpuIdle
+[LOGGER]    30s   2947 MHz  180.57 W   68 C   99% util  GpuIdle
+[LOGGER]    46s   2940 MHz  177.73 W   69 C   99% util  GpuIdle
+[LOGGER]    61s   2947 MHz  182.00 W   70 C   99% util  None
+[LOGGER]    77s   2947 MHz  184.43 W   71 C   99% util  GpuIdle
+[LOGGER]    92s   2947 MHz  185.64 W   73 C   99% util  GpuIdle
+[LOGGER]   108s   2947 MHz  186.61 W   73 C   99% util  GpuIdle
+[LOGGER]   124s   2947 MHz  186.29 W   73 C   99% util  None
+[LOGGER]   139s   2947 MHz  187.56 W   74 C   99% util  GpuIdle
+[LOGGER]   155s   2947 MHz  188.45 W   74 C   99% util  GpuIdle
+[LOGGER]   170s   2947 MHz  183.43 W   74 C   99% util  GpuIdle
+[LOGGER]   186s   2947 MHz  188.00 W   74 C   99% util  GpuIdle
+[LOGGER]   201s   2947 MHz  188.87 W   75 C   99% util  GpuIdle
+[LOGGER]   217s   2947 MHz  189.03 W   75 C   99% util  GpuIdle
+[LOGGER]   232s   3000 MHz  103.14 W   57 C    3% util  GpuIdle
+[LOGGER]   248s   2947 MHz  189.25 W   75 C   99% util  GpuIdle
+[LOGGER]   264s   2947 MHz  189.50 W   75 C   99% util  GpuIdle
+[LOGGER]   279s   2947 MHz  189.76 W   76 C   99% util  GpuIdle
+[LOGGER]   295s   2947 MHz  183.84 W   75 C   99% util  None
+[LOGGER]   310s   2947 MHz  189.76 W   76 C   99% util  GpuIdle
+[LOGGER]   326s   2947 MHz  190.31 W   76 C   99% util  GpuIdle
+[LOGGER]   341s   2947 MHz  190.04 W   76 C   99% util  GpuIdle
+[LOGGER]   357s   2947 MHz  183.34 W   75 C   99% util  GpuIdle
+[LOGGER]   372s   2947 MHz  183.78 W   76 C   99% util  GpuIdle
+[LOGGER]   388s   2947 MHz  190.36 W   76 C   99% util  GpuIdle
+[LOGGER]   404s   2947 MHz  190.46 W   76 C   99% util  GpuIdle
+[LOGGER]   419s   2947 MHz  184.07 W   76 C   99% util  GpuIdle
+[LOGGER]   435s   2947 MHz  190.73 W   76 C   99% util  GpuIdle
+[LOGGER]   450s   2947 MHz  190.52 W   77 C   99% util  GpuIdle
+[LOGGER]   466s   2947 MHz  158.75 W   74 C   99% util  None
+[LOGGER]   481s   2947 MHz  185.28 W   76 C   99% util  GpuIdle
+[LOGGER]   497s   2947 MHz  190.74 W   76 C   99% util  GpuIdle
+[LOGGER]   513s   2947 MHz  190.99 W   77 C   99% util  GpuIdle
+[LOGGER]   528s   2947 MHz  184.93 W   76 C   99% util  None
+[LOGGER]   544s   2947 MHz  189.89 W   76 C   99% util  GpuIdle
+[LOGGER]   559s   2947 MHz  190.96 W   76 C   99% util  GpuIdle
+[LOGGER]   575s   2940 MHz  190.75 W   76 C   99% util  GpuIdle
+[LOGGER]   590s   2947 MHz  183.96 W   75 C   99% util  GpuIdle
+[LOGGER]   606s   2947 MHz  185.68 W   76 C   99% util  GpuIdle
+[LOGGER]   622s   2947 MHz  191.24 W   77 C   99% util  GpuIdle
+[LOGGER]   637s   2940 MHz  190.78 W   77 C   99% util  GpuIdle
+[LOGGER]   653s   2947 MHz  184.79 W   76 C   99% util  GpuIdle
+[LOGGER]   668s   2947 MHz  186.23 W   77 C   99% util  GpuIdle
+[LOGGER]   684s   2947 MHz  191.12 W   77 C   99% util  GpuIdle
+[LOGGER]   699s   2932 MHz  184.21 W   75 C   99% util  None
+[LOGGER]   715s   2947 MHz  186.03 W   76 C   99% util  GpuIdle
+[LOGGER]   730s   2947 MHz  183.83 W   77 C   99% util  GpuIdle
+[LOGGER]   746s   2947 MHz  191.40 W   77 C   99% util  GpuIdle
+[LOGGER]   762s   2947 MHz  184.49 W   74 C   99% util  GpuIdle
+[LOGGER]   777s   2940 MHz  185.45 W   77 C   99% util  GpuIdle
+[LOGGER]   793s   2947 MHz  185.25 W   77 C   99% util  GpuIdle
+[LOGGER]   808s   2947 MHz  191.96 W   77 C   99% util  GpuIdle
+[LOGGER]   824s   2932 MHz  184.14 W   76 C   99% util  GpuIdle
+[LOGGER]   839s   2947 MHz  184.99 W   77 C   99% util  GpuIdle
+[LOGGER]   855s   2947 MHz  185.49 W   77 C   99% util  GpuIdle
+[LOGGER]   870s   3000 MHz   32.35 W   57 C   20% util  None
+[LOGGER]   886s   2947 MHz  190.49 W   77 C   98% util  GpuIdle
+[LOGGER]   902s   2932 MHz  184.56 W   76 C   99% util  GpuIdle
+[LOGGER]   917s   2947 MHz  184.95 W   77 C   99% util  GpuIdle
+[LOGGER]   933s   2992 MHz   94.98 W   59 C   99% util  None
+[LOGGER]   948s   2992 MHz   95.80 W   56 C   99% util  GpuIdle
+[LOGGER]   964s   2992 MHz   92.30 W   55 C   99% util  GpuIdle
+[LOGGER]   979s   2992 MHz   95.14 W   54 C   99% util  GpuIdle
+[LOGGER]   995s   2992 MHz   93.10 W   52 C   71% util  GpuIdle
+[LOGGER]  1010s   2992 MHz   94.44 W   53 C   99% util  GpuIdle
+[LOGGER]  1026s   2992 MHz   92.65 W   53 C   99% util  GpuIdle
+[LOGGER]  1042s   2992 MHz   91.55 W   52 C   99% util  None
+[LOGGER]  1057s   2992 MHz   92.26 W   52 C   75% util  GpuIdle
+[LOGGER]  1073s   2992 MHz   94.28 W   53 C   99% util  GpuIdle
+[LOGGER]  1088s   2992 MHz   91.32 W   53 C   99% util  GpuIdle
+[LOGGER]  1104s   2992 MHz   93.83 W   52 C   99% util  GpuIdle
+[LOGGER]  1119s   2992 MHz   91.29 W   52 C   99% util  GpuIdle
+[LOGGER]  1135s   2992 MHz   93.46 W   52 C   99% util  GpuIdle
+[LOGGER]  1150s   2992 MHz   82.94 W   50 C    3% util  GpuIdle
+[LOGGER]  1166s   2992 MHz   93.88 W   52 C   99% util  GpuIdle
+[LOGGER]  1182s   2992 MHz   91.82 W   52 C   99% util  GpuIdle
+[LOGGER]  1197s   2992 MHz   93.85 W   52 C   99% util  GpuIdle
+[LOGGER]  1213s   2992 MHz   91.66 W   52 C   99% util  None
+[LOGGER]  1228s   2992 MHz   93.56 W   52 C   99% util  GpuIdle
+[LOGGER]  1244s   2992 MHz   93.72 W   53 C   99% util  GpuIdle
+[LOGGER]  1259s   2992 MHz   91.60 W   53 C   99% util  GpuIdle
+[LOGGER]  1275s   2992 MHz   93.32 W   53 C   99% util  GpuIdle
+[LOGGER]  1290s   2992 MHz   91.65 W   53 C   99% util  GpuIdle
+[LOGGER]  1306s   2992 MHz   93.74 W   53 C   99% util  GpuIdle
+[LOGGER]  1322s   2992 MHz   91.07 W   52 C   99% util  None
+[LOGGER]  1337s   2992 MHz   93.68 W   53 C   99% util  GpuIdle
+[LOGGER]  1353s   2992 MHz   91.40 W   53 C   99% util  GpuIdle
+[LOGGER]  1368s   2992 MHz   93.73 W   53 C   99% util  GpuIdle
+[LOGGER]  1384s   2992 MHz   91.69 W   53 C   99% util  GpuIdle
+[LOGGER]  1399s   2992 MHz   93.75 W   53 C   99% util  GpuIdle
+[LOGGER]  1415s   2992 MHz   91.64 W   53 C   99% util  GpuIdle
+[LOGGER]  1430s   3000 MHz   27.30 W   49 C    3% util  GpuIdle
+[LOGGER]  1446s   2992 MHz   92.14 W   53 C   99% util  GpuIdle
+[LOGGER]  1461s   2992 MHz   91.98 W   53 C   68% util  GpuIdle
+[LOGGER]  1477s   2992 MHz   94.08 W   53 C   99% util  GpuIdle
+[LOGGER]  1492s   2992 MHz   93.91 W   53 C   99% util  GpuIdle
+[LOGGER]  1508s   2992 MHz   93.86 W   53 C   99% util  GpuIdle
+[LOGGER]  1524s   2992 MHz   92.10 W   53 C   99% util  GpuIdle
+[LOGGER]  1539s   2992 MHz   94.03 W   53 C   99% util  GpuIdle
+[LOGGER]  1555s   2992 MHz   91.71 W   53 C   99% util  GpuIdle
+[LOGGER]  1570s   2992 MHz   94.02 W   53 C   99% util  GpuIdle
+[LOGGER]  1586s   2992 MHz   91.55 W   53 C   99% util  GpuIdle
+[LOGGER]  1602s   2992 MHz   93.82 W   53 C   99% util  None
+[LOGGER]  1617s   2992 MHz   91.45 W   53 C   99% util  GpuIdle
+[LOGGER]  1633s   2992 MHz   94.08 W   53 C   99% util  GpuIdle
+[LOGGER]  1648s   2992 MHz   93.96 W   53 C   99% util  GpuIdle
+[LOGGER]  1664s   2992 MHz   93.82 W   53 C   99% util  GpuIdle
+[LOGGER]  1679s   2992 MHz   92.18 W   53 C   99% util  GpuIdle
+[LOGGER]  1695s   2992 MHz   91.15 W   53 C   99% util  GpuIdle
+[LOGGER]  1710s   2992 MHz   93.77 W   53 C   99% util  None
+[LOGGER]  1726s   2992 MHz   92.03 W   53 C   99% util  GpuIdle
+[LOGGER]  1742s   2992 MHz   94.13 W   53 C   99% util  GpuIdle
+[LOGGER]  1757s   2992 MHz   91.89 W   53 C   99% util  GpuIdle
+[LOGGER]  1773s   2992 MHz   93.97 W   53 C   99% util  GpuIdle
+[LOGGER]  1788s   2992 MHz   91.85 W   53 C   99% util  GpuIdle
+[LOGGER]  1804s   2992 MHz   94.25 W   53 C   99% util  GpuIdle
+[LOGGER]  1819s   3000 MHz   41.87 W   50 C    3% util  GpuIdle
+
+[LOGGER] ===================== RESULT =====================
+[LOGGER] Verdict: CLEAN
+[LOGGER] Collected 1765 samples over 1830.7s.
+[LOGGER] SM clock: avg 2967.4 MHz, range 1222-3000 MHz.
+[LOGGER] Power:    avg 136.8 W, peak 193.31 W (limit 200.00 W).
+[LOGGER] Temp:     avg 63.7 C, peak 78 C.
+[LOGGER] GPU util: avg 94.84%.
+[LOGGER] Loaded:   97% of samples above 50% utilisation (1709 of 1765).
+[LOGGER] While actually under load (the numbers that describe the test, not the idle time):
+[LOGGER]   SM clock: avg 2968.41 MHz, range 2925-3000 MHz.
+[LOGGER]   Power:    avg 139.42 W, peak 193.31 W.
+[LOGGER]   Temp:     avg 64.05 C, peak 78 C.
+[LOGGER] Samples: C:\Users\Raymond\Documents\headroom\data\stability-runs\20260823-192719_ogtune_samples.csv
+[LOGGER] Session: C:\Users\Raymond\Documents\headroom\data\stability-runs\20260823-192719_ogtune_session.json
+[LOGGER] ==================================================
+
+[LOGGER] A CLEAN verdict means nothing went visibly wrong during this window. It is
+[LOGGER] not proof of stability - undervolt failures often need hours to show up, and
+[LOGGER] a single clean 10-minute run is weak evidence. Say so when reporting it.

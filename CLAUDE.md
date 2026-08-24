@@ -484,9 +484,19 @@ disagrees with the data directory, the data directory is right.*
   driver resets, zero throttled samples, 96.9% loaded, post-soak drift `gemm` **-0.11%** and
   `membw` **+0.16%**. Peak 196.1 W of a 200 W limit, peak 79 C.
 
-  Say **"no failure observed in thirty minutes"**, never "stable". The original tune and the
-  repaired curve remain untested, so nothing comparative can be said yet, and the 2% degradation
-  threshold this was judged against was set before anyone knew what healthy drift looks like.
+  **The original tune passed the same test forty minutes later**, drift `gemm` +0.10% / `membw`
+  -0.28%. 🔑 **Two things fall out of having both.** First, the `gemm` gap reproduces: +1.45%
+  under sustained unlocked load against +1.53% from locked sweep peaks - different protocols,
+  agreeing to 0.08 points. Second, **the split curve's `membw` advantage vanishes at free boost**
+  (-0.35%), because the plateau is a property of 1402-1867 MHz and a boosting card sits at
+  2968-2993 MHz, above it. Do not quote §5.7.2's -29.6% as a cost paid in normal use; it is a
+  locked-frequency result.
+
+  Say **"no failure observed in thirty minutes"**, never "stable". The repaired curve remains
+  untested, the 2% degradation threshold was set before anyone knew what healthy drift looks like,
+  and all four drift figures land between -0.28% and +0.16% - so these runs do NOT distinguish the
+  two configurations on steadiness, and the 4.5x reproducibility advantage (a between-sweep
+  spread, not within-run drift) is neither confirmed nor overturned by them.
   What was once called a "~2.5% outlier in 1 of 3 runs" is better described by the mid-band
   reproducibility entry above.
 - **27 paper sections are unaudited.** 61 claims are green; `analyze_fine_sweep.py` needs its
