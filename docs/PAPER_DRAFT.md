@@ -1094,6 +1094,15 @@ considerably larger margin.
 
 #### 5.7.4 A repair derived from the mechanism, and confirmed - DRAFT
 
+> ⚠️ **Every measurement in this subsection and in 5.7.5 predates the capture-software finding of
+> 5.4.4 and has no clean counterpart.** All four curve-fixed sweeps were taken on 2026-08-20/21
+> with NVIDIA Instant Replay almost certainly running, while 5.4, 5.4.1, 5.7.1 and 5.7.6 were all
+> re-measured clean on 2026-08-22. The magnitudes below are therefore expected to understate the
+> repair, in the same direction and by roughly the same amount as everywhere else. **The
+> qualitative findings were re-tested on 2026-08-23 and hold - see the confirmation at the end of
+> this subsection.** The specific curve could not be re-measured: it was drawn by hand and never
+> saved to a profile.
+
 If the account in 5.7.3 is correct, the repair follows from it: leave the flattened region above
 ~925 mV intact and restore the stock voltage slope below it. A sixth sweep tested exactly that, on
 the full 13-point grid with the memory overclock retained, with four outcomes stated in advance.
@@ -1118,6 +1127,37 @@ expected to differ in opposite directions.
 flattened region should restore roughly stock power on `gemm`, giving up the 17-28%
 matched-frequency saving of 5.7.1. That prediction was stated before the run and is confirmed in
 5.7.5, which is why this section is titled a repair rather than an improvement.
+
+**Confirmed on a second, independently drawn curve, 2026-08-23.** The original profile was never
+saved, so it was rebuilt by hand from the design rather than restored - stock voltage slope below
+~925 mV, flattened region above it intact, memory +2500 - and deliberately altered slightly. It is
+a different curve: probed at a locked 3090 target it reads 2906.1 MHz on `gemm` against the
+2026-08-20 runs' 2887.1 and 2898.5, and 2947.0 on `membw` against 2909.9.
+
+**That makes it a better test than a replay would have been.** A bit-identical re-measurement
+would only have shown the numbers were reproducible; an independently redrawn curve of the same
+design tests whether the effect belongs to the mechanism or to one particular hand-drawn shape.
+
+Measured on the same 10-point 1400-2100 MHz grid as the clean tuned and split-curve runs, so all
+three are clean-protocol and directly comparable, with achieved clocks matched to **6.6 MHz in the
+worst case and under 3 MHz at most points**:
+
+| | vs full tuned | worst point |
+|---|---|---|
+| `membw` throughput | **+2.3% to +31.4%** | +31.4% at 1867 MHz |
+| `membw` efficiency, 1402-1867 MHz | **+4.0% to +10.4%** | |
+
+The plateau removal reproduces. The contaminated 2026-08-20 measurement gave +30.1% at 1852 MHz;
+the clean, independently drawn curve gives **+31.4% at 1867 MHz** against a clean tuned reference.
+Power behaves as 5.7.3 predicts: at matched clock the repaired curve draws **more** power than the
+tuned one - 66.1 W against 52.4 W at 1867 MHz - because the restored voltage slope is what
+un-starves the crossbar. The trade of 5.7.5 also reproduces: above 2010 MHz the tuned curve is
+back ahead on efficiency, by 4.4% at 2025 and 6.0% at 2100 MHz.
+
+**Against the split curve of 5.7.6, on `membw`, the repair wins throughput at all ten points** by
++1.6% to +7.7%. On efficiency it is closer and mixed - the repair leads at seven of ten points, the
+split curve at 1867 and 1942 MHz. This does not change 5.7.6's conclusion about `gemm`, where the
+split curve remains ahead and the repair gives up the compute advantage entirely.
 
 #### 5.7.5 The repair is a trade, not a win
 
@@ -1255,6 +1295,22 @@ remaining run-to-run variation belongs to the original tune.
 which is the ceiling for this workload because it carries no core curve at all, the split curve
 lands within 0.4% at seven of ten grid points and beats the fully tuned profile everywhere, by
 +3.2% at 1402 MHz rising to +30.0% at 1867 MHz. The plateau of 5.7.2 does not appear.
+
+> ⚠️ **The "ceiling" in that sentence is a contaminated reference, and the agreement with it is
+> probably an artefact.** The memory-only sweep is from 2026-08-20, before the capture-software
+> finding of 5.4.4; the split-curve sweep is clean 2026-08-22 data. Comparing the two flatters the
+> split curve by roughly the size of the contamination. The seven-of-ten figure reproduces exactly
+> as written and is not a transcription error - but on 2026-08-23 the independently rebuilt
+> repaired curve, measured clean on the same grid, **exceeded the same memory-only reference at
+> all ten points, by +1.80% to +5.15%, mean +2.89%.** Nothing should beat a ceiling. That margin
+> sits inside the +4.22% mid-band cost 5.4.4 measured for Instant Replay, so the most economical
+> explanation is that the memory-only reference reads low rather than that two configurations
+> both exceed it.
+>
+> **What this costs the claim:** the split curve is probably somewhat BELOW the true clean ceiling
+> rather than at it, and by an unknown amount. Settling it needs one clean memory-only sweep on
+> the 1400-2100 grid, which is about five minutes plus an Afterburner change. Until then, read
+> "holds the repair" as directional and do not quote the 0.4%.
 
 **What it does not recover.** The tuned curve still wins `gemm` efficiency across 1545-2625 MHz, by
 up to 30.5% at 2010 MHz, which is where that workload's efficiency optimum sits. The split curve
