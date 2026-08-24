@@ -1263,11 +1263,27 @@ advantage, and 5.7.5's conclusion that no single configuration dominates survive
 rather than being overturned by it. What the split curve changes is the *shape* of the trade, not
 its existence.
 
-**Limits.** n=1 chip and one curve shape. Nothing here has been stability-tested, including this
-configuration - a curve that measures well over thirteen points and eight sweeps has not been shown
-to survive sustained load, and the sub-845 mV region was reshaped by hand rather than by any
-principled optimisation. How much of the stock slope can be given back before the crossbar starves
-is unmapped; only the two endpoints have been measured.
+**It survived thirty minutes of sustained load, which is the first such test in this work.** Under
+the protocol of the appendix - fifteen minutes of `gemm` then fifteen of `membw`, unlocked clocks,
+96.9% of one-second samples above 50% utilisation - the configuration recorded no driver reset, no
+throttled sample and no aborted iteration. Post-soak throughput did not fall: `gemm` drifted
+**-0.11%** and `membw` **+0.16%** between the first and last quarter of their post-soak iterations,
+both of which are improvements or noise rather than degradation. Power averaged 140.2 W and peaked
+at 196.1 W against a 200 W limit; temperature peaked at 79 C.
+
+That drift figure is the part that matters, and it is not a crash test. GDDR7 corrects errors
+silently, so a memory overclock can run for hours without a crash, an artifact or an event-log
+entry while being net slower than stock. Measuring throughput continuously is the only way to see
+that, and over thirty minutes there is no sign of it here.
+
+**Limits.** n=1 chip, one curve shape, and **one thirty-minute run**. The correct reading is "no
+failure observed in thirty minutes", not "stable": undervolt failures routinely take hours to
+appear, and a single session says nothing about thermal cycling, cold boots, or the driver updates
+this configuration will meet in normal use. The degradation threshold the run was judged against is
+uncalibrated - it was set at 2% before anybody knew what healthy drift looks like, and this run
+suggests that is loose by an order of magnitude. The sub-845 mV region was also reshaped by hand
+rather than by any principled optimisation. How much of the stock slope can be given back before
+the crossbar starves is unmapped; only the two endpoints have been measured.
 
 #### 5.7.7 Caveats
 

@@ -478,8 +478,17 @@ disagrees with the data directory, the data directory is right.*
   every point (+3.2% to +30.0%) and on `gemm` peak throughput (+2.0%), but **tuned still wins
   `gemm` efficiency from 1545 through 2625 MHz, by up to 30.5% at 2010 MHz** — which is where
   `gemm`'s efficiency optimum sits. The trade is unchanged in character. Do not rewrite §5.7.5.
-- **The applied curves are still stability-untested.** What was called a "~2.5% outlier in 1 of 3
-  runs" is now better described by the mid-band reproducibility entry above.
+- 🟡 **The split curve passed its first stability run, 2026-08-23. The other two configurations
+  have never been tested.** Thirty minutes under protocol v1.0.0
+  (`tools/stability-logger/Invoke-StabilityProtocol.ps1`): 33 iterations, zero aborted, zero
+  driver resets, zero throttled samples, 96.9% loaded, post-soak drift `gemm` **-0.11%** and
+  `membw` **+0.16%**. Peak 196.1 W of a 200 W limit, peak 79 C.
+
+  Say **"no failure observed in thirty minutes"**, never "stable". The original tune and the
+  repaired curve remain untested, so nothing comparative can be said yet, and the 2% degradation
+  threshold this was judged against was set before anyone knew what healthy drift looks like.
+  What was once called a "~2.5% outlier in 1 of 3 runs" is better described by the mid-band
+  reproducibility entry above.
 - **27 paper sections are unaudited.** 61 claims are green; `analyze_fine_sweep.py` needs its
   summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming

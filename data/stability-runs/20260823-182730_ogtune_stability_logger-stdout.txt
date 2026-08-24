@@ -1,0 +1,25 @@
+
+[LOGGER] GPU:      NVIDIA GeForce RTX 5060 Ti (driver 610.88, VBIOS 98.06.4e.40.b4)
+[LOGGER] Limits:   max SM clock 3090 MHz, power limit 200.00 W
+[LOGGER] Settings: ORIGINAL TUNE. Memory +2500 MHz offset, VERIFIED at 16301 MHz under load in the 13:03 and 14:43 kit sweeps. Core V/F curve pinned flat at ~3010 MHz from ~925 mV upward, raised above stock below that, VERIFIED by peak SM clock 2947-2948 MHz across both sweeps. Power limit 200W. Instant Replay OFF, encoder and decoder 0% at preflight. FIRST REAL STABILITY RUN IN THIS PROJECT - nothing here had ever been stability-tested before 2026-08-23.
+[LOGGER] Test:     headroom stability protocol v1.0.0 (gpu_workload.py loop)
+[LOGGER] Sampling every 1 s for 1830 s. Ctrl+C stops early.
+[LOGGER] Writing:  C:\Users\Raymond\Documents\headroom\data\stability-runs\20260823-182730_ogtune_samples.csv
+
+[LOGGER] No interactive console detected - early Ctrl+C detection is unavailable this run. Duration will run to completion; the script still works, it just cannot be told to stop early.
+[LOGGER] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[LOGGER]    15s   2977 MHz  180.28 W   66 C   99% util  GpuIdle
+[LOGGER]    30s   2970 MHz  177.97 W   69 C   99% util  GpuIdle
+[LOGGER]    46s   2977 MHz  180.58 W   71 C   99% util  GpuIdle
+[LOGGER]    61s   2970 MHz  185.32 W   71 C   99% util  None
+[LOGGER]    77s   2970 MHz  181.05 W   72 C   99% util  GpuIdle
+[LOGGER]    92s   2977 MHz  182.59 W   74 C   99% util  GpuIdle
+[LOGGER]   108s   2970 MHz  189.22 W   75 C   99% util  GpuIdle
+[LOGGER]   124s   2970 MHz  184.07 W   74 C   99% util  GpuIdle
+[LOGGER]   139s   2977 MHz  184.41 W   75 C   99% util  GpuIdle
+[LOGGER]   155s   2977 MHz  190.85 W   76 C   99% util  GpuIdle
+[LOGGER]   170s   2962 MHz  185.32 W   75 C   99% util  GpuIdle
+[LOGGER]   186s   2977 MHz  191.15 W   75 C   99% util  GpuIdle
+[LOGGER]   201s   2977 MHz  191.94 W   76 C   99% util  GpuIdle
+[LOGGER]   217s   2962 MHz  185.82 W   76 C   99% util  GpuIdle
+[LOGGER]   233s   2970 MHz  190.15 W   75 C   99% util  None

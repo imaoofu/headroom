@@ -28,3 +28,34 @@ appeared three times in one afternoon, in three different forms:
 Fixed by reading the verdict from the logger's own `session.json`, and by treating `UNKNOWN` as
 `INCONCLUSIVE` rather than as a pass. `Test-ProtocolCatchesDeadLogger.ps1` is the positive control
 that holds all of this in place.
+
+## Correction: these runs were on the SPLIT curve, not the original tune
+
+Every `applied_settings` field in this folder says "original tune, memory +2500, core curve flat
+~3010 MHz above ~925 mV". **That is wrong.** A locked-clock probe at 18:26 measured 2975.9 MHz
+mean / 2977 max at a 3090 target with memory at 16301 — the split-curve signature. The original
+tune reads ~2947 MHz, and that is what the 13:03 and 14:43 collection-kit sweeps actually recorded
+earlier the same day.
+
+So the configuration was changed at some point between 14:43 and 17:58 and the declarations were
+written from a stale assumption rather than from a measurement. The operator corrected it; the
+probe confirmed it.
+
+The fields are left unedited, as everywhere else in this project. What they record is what was
+declared at the time, and that is the point of them.
+
+**This does not affect what these runs were for.** They exist to document a harness defect and a
+duty-cycle measurement, neither of which depends on which V/F curve was loaded. The throughput
+figures in them — gemm at 18.20-18.22 TFLOP/s — should be read as split-curve numbers, and are
+consistent with the 18.22-18.24 that section 5.7.6 reports for that configuration.
+
+**Third wrong configuration declaration in one day**, after `clocks.max.memory` was misread as
+proving the memory offset absent, and after Instant Replay was said to have re-enabled itself.
+Each was caught by measuring rather than by anyone noticing the declaration looked wrong. The
+lesson is not that people are careless — it is that a declaration is a claim, and this project
+already owns cheap probes that settle these in under two minutes:
+
+    core clock at a locked 3090 target : ~2610 stock | ~2947 tuned | ~2977 split
+    memory clock under load            : 13801 stock | 16301 at +2500
+
+Run them before writing the field, not after being contradicted.

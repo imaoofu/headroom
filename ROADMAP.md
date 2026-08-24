@@ -48,11 +48,26 @@ Nothing here is research. It is the difference between "code exists" and "code i
   **Still open:** an actual hard lock. All three cases exercise the load-fraction and event-log
   detectors, not survival of a real crash, which by construction can only be inferred from a
   truncated log.
-- **[CORE] Stability-test the applied curves.** Nothing in this project has been stability-tested.
-  Not the original OC, not the repaired curve, not the split-region curve. The logger is now known
-  to work, so this is cheap and it blocks any honest statement about whether the tuned
-  configurations are sound. Note the GDDR7 trap specifically: error correction retries silently,
-  so a memory overclock can be crash-free while being net slower.
+- 🟡 **[CORE] Stability-test the applied curves.** Started 2026-08-23. **The split-region curve -
+  the configuration section 5.7.6 reports as best - passed a thirty-minute run under protocol
+  v1.0.0**: 33 iterations, zero aborted, zero driver resets, zero throttled samples, 96.9% loaded.
+  Post-soak throughput did not fall - `gemm` **-0.11%**, `membw` **+0.16%** - which is the check
+  that addresses the GDDR7 trap, since silent error correction shows up as lost throughput rather
+  than as a crash. Power averaged 140.2 W, peaked 196.1 W of 200 W; temperature peaked 79 C.
+
+  Read it as "no failure observed in thirty minutes", never as "stable".
+
+  **Still open, and most of the work remains:**
+  - The **original tune** and the **repaired curve** have not been tested at all. A single
+    configuration passing says nothing comparative.
+  - No run longer than thirty minutes. Undervolt failures routinely take hours.
+  - The degradation threshold is uncalibrated. It was set at 2% before anyone knew what healthy
+    drift looks like; this run's 0.11-0.16% suggests it is loose by roughly an order of magnitude,
+    but one run does not calibrate a threshold.
+  - **A configuration declaration was wrong three times on the day this was built**, twice caught
+    only because Raymond contradicted it. Probe before declaring: core clock at a locked 3090
+    target reads ~2610 stock / ~2947 tuned / ~2977 split, and memory under load reads 13801 stock
+    against 16301 at +2500. Both take under two minutes.
 
   **Now has evidence behind it, which it did not when this item was written.** The split-region
   curve produced a ~2.5% low outlier on `gemm` in roughly one run in three, against a 0.06% spread
@@ -144,9 +159,26 @@ Nothing here is research. It is the difference between "code exists" and "code i
 
 The part nobody else can replicate, and the reason the project is worth doing at all.
 
-- **[BLOCKER] Fix one stress-test protocol and never vary it.** Same test, same duration, same
-  ambient conditions, every run. Consistency matters more than which test gets picked. Write the
-  chosen protocol into `tools/stability-logger/README.md` so it survives being forgotten.
+- ✅ **[BLOCKER] Fix one stress-test protocol and never vary it.** Done 2026-08-23,
+  `tools/stability-logger/Invoke-StabilityProtocol.ps1`, protocol v1.0.0, documented in that
+  directory's README.
+
+  **A protocol was already written on 2026-08-14 and had never been executed once.** It specified
+  OCCT GPU:3D Adaptive and required four manual steps in a fixed order - install, start OCCT,
+  start the logger at the right moment, then a separate three-run benchmark comparison to cover a
+  gap it named itself. Nine days, zero runs. The diagnosis is that it asked too much, not that
+  anyone was negligent, and the fix is that the new one is a single command.
+
+  It also closes that fourth step rather than deferring it, which is the substantive change:
+  GDDR7 corrects errors silently, so a memory overclock can pass hours of OCCT with no crash,
+  artifact or event-log entry while being **net slower** than stock. Only continuous throughput
+  measurement catches that, so the protocol loops this project's own fixed-work benchmark and
+  watches post-soak drift.
+
+  **The harness had, three separate times, the exact bug the stability logger exists to catch** -
+  an inability to tell "the telemetry says fine" from "there is no telemetry". Held closed now by
+  `Test-ProtocolCatchesDeadLogger.ps1`, which reintroduces the original defect and asserts the
+  harness refuses without running any load.
 - **[CORE] Log a stock baseline for every machine before touching anything.** A tuned result with
   no stock comparison from the same chip measures nothing. This is the "gap" in
   gap-measurement — without it there is no gap, just a number.
