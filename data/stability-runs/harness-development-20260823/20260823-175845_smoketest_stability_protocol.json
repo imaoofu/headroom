@@ -1,0 +1,30 @@
+{
+    "protocol_version":  "1.0.0",
+    "session_label":  "smoketest",
+    "applied_settings":  "SMOKE TEST of the protocol harness itself, not a stability result. Original tune: memory +2500 (verified 16301 under load), core curve flat ~3010 MHz above ~925 mV (verified by 2947 MHz peak). Instant Replay off.",
+    "duration_minutes":  6,
+    "soak_minutes":  1,
+    "degradation_threshold_pct":  2,
+    "iterations":  37,
+    "aborted_iterations":  0,
+    "telemetry_verdict":  "FLAGGED",
+    "degradation":  [
+                        {
+                            "Workload":  "gemm",
+                            "Samples":  14,
+                            "First":  18188604528820.824,
+                            "Last":  18157822214404.988,
+                            "DropPct":  0.169239560775869
+                        },
+                        {
+                            "Workload":  "membw",
+                            "Samples":  12,
+                            "First":  425264247660.37714,
+                            "Last":  424808753139.07031,
+                            "DropPct":  0.1071085857352827
+                        }
+                    ],
+    "verdict":  "FLAGGED",
+    "iterations_csv":  "20260823-175845_smoketest_stability_iterations.csv",
+    "note":  "A clean run is not proof of stability. Undervolt failures routinely take hours to appear, and the degradation threshold is uncalibrated."
+}

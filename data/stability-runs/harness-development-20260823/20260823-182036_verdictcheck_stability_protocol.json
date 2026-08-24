@@ -1,0 +1,22 @@
+{
+    "protocol_version":  "1.0.0",
+    "session_label":  "verdictcheck",
+    "applied_settings":  "VERDICT PLUMBING CHECK, not a stability result. Original tune, memory +2500, core curve flat above ~925 mV. Instant Replay off.",
+    "duration_minutes":  4,
+    "soak_minutes":  1,
+    "degradation_threshold_pct":  2,
+    "iterations":  6,
+    "aborted_iterations":  0,
+    "telemetry_verdict":  "CLEAN",
+    "telemetry_loaded_fraction":  0.9617,
+    "settings_quotes_substituted":  false,
+    "gemm_iterations":  900,
+    "membw_iterations":  7000,
+    "duty_cycle_note":  "Load is not perfectly continuous. Each benchmark iteration is a separate Python process, so roughly 2 s of torch import and CUDA context creation sits between iterations. At these iteration counts that is about 3% of wall time, against 25% at the tool defaults. Read loaded_fraction in the logger\u0027s session JSON for the measured figure.",
+    "degradation":  [
+
+                    ],
+    "verdict":  "CLEAN",
+    "iterations_csv":  "20260823-182036_verdictcheck_stability_iterations.csv",
+    "note":  "A clean run is not proof of stability. Undervolt failures routinely take hours to appear, and the degradation threshold is uncalibrated."
+}

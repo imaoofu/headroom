@@ -99,30 +99,69 @@ log, which is weaker evidence than a recorded event. The verdict says so when it
 
 ---
 
-## Protocol — locked 2026-08-14, do not vary without a real reason
+## Protocol — v1.0.0, locked 2026-08-23
 
-Consistency across runs matters more than which test was picked. Every logged run should use this
-exact setup; if it ever changes, note the date it changed and don't compare across the boundary.
+**Run it with one command.** `Invoke-StabilityProtocol.ps1` IS the protocol; the steps below
+describe what it does so the description cannot drift away from the code.
 
-- **Stress test:** OCCT, GPU:3D test, **Adaptive** mode, **Error Detection enabled**.
-  Chosen over FurMark because modern NVIDIA/AMD drivers detect FurMark's constant artificial load
-  and can throttle it specifically, making it less representative on current-generation cards.
-  OCCT's Adaptive mode uses a variable, game-like load instead. Error Detection catches outright
-  compute/memory faults - it does **not** expose GDDR7's error-correction retry counter (vendors
-  don't publish it), so it cannot see "silently corrected, just slower." That failure mode still
-  needs a separate benchmark-score comparison (same benchmark, 3 runs, tuned vs. stock) - OCCT
-  answers "is it stable," not "is the memory OC actually faster."
-- **Duration per run:** 10 minutes (600s, the script's default). Enough to reach thermal
-  steady-state; still weaker evidence than an hours-long soak, and the tool says so in its own
-  output. Report it as "no failure observed in 10 minutes," never as "stable."
-- **Warm-up:** start OCCT first, then start the logger once OCCT is actually loading the GPU -
-  a run whose GPU utilisation average comes back low almost always means the logger was sampling
-  before the stress test actually kicked in.
+```powershell
+.\tools\stability-logger\Invoke-StabilityProtocol.ps1 `
+    -SessionLabel "splitcurve" -AppliedSettings "split curve, mem +2500, PL 111%"
+```
+
+| step | what | why this and not something else |
+|---|---|---|
+| 1 | Preflight: refuse on active video engines or a GPU above 10% | Same two checks as the sweep. Instant Replay is invisible to `utilization.gpu` and cost 1.5-4.2% of measured throughput. |
+| 2 | Thermal soak, first 5 min of each phase recorded but excluded | Throughput always falls as a cold card warms. Comparing a cold first sample against a hot last one flags every healthy configuration. |
+| 3 | Phase 1: `gemm` for half the duration | Compute-bound. Loads the SMs and the power budget — where a core undervolt fails. |
+| 4 | Phase 2: `membw` for half | Bandwidth-bound. Loads the memory system — where a memory overclock fails. |
+| 5 | No clock locking | The card runs its own boost behaviour, because that is how the configuration will be used. |
+| 6 | Verdict from three independent signals | Telemetry verdict, aborted iterations, post-soak throughput drift. Any one failing sinks the run. |
+
+Default duration 30 minutes. Report a pass as **"no failure observed in 30 minutes"**, never as
+"stable".
+
+### Why this supersedes the OCCT protocol locked on 2026-08-14
+
+The earlier protocol specified OCCT GPU:3D Adaptive with Error Detection, 10 minutes, started
+before the logger. The reasoning behind that choice was sound and is preserved below. Two things
+went wrong with it.
+
+**It was never executed.** Not once in the nine days it stood. It needed OCCT installed, started
+by hand, the logger started separately at the right moment, and then a *fourth* manual step — a
+three-run benchmark comparison — to cover a gap the section itself identified. Four steps with an
+ordering constraint, none automated. A protocol nobody runs is not a protocol, and the honest
+diagnosis is that it asked too much rather than that anyone was negligent.
+
+**It could not see the failure mode that matters most here.** Its own text says so:
+
+> OCCT answers "is it stable," not "is the memory OC actually faster."
+
+GDDR7 corrects errors silently, so a memory overclock can pass hours of OCCT without a crash,
+an artifact or an event-log entry while being **net slower** than stock, because every corrected
+read costs a retry that nothing reports. The old protocol deferred this to a separate manual
+comparison that was also never run. v1.0.0 folds it into the same command by driving the
+project's own fixed-work benchmark in a loop and watching post-soak throughput directly.
+
+### What carries over unchanged, because it was right
+
 - **Always log a stock baseline for each machine before testing tuned settings.** A tuned result
   with no stock comparison from the same chip measures nothing.
-- **Change one variable at a time** in Afterburner between logged runs (core curve, memory, power
-  limit are three separate variables) - a config that changes all three at once can't tell you
-  which change did what.
+- **Change one variable at a time.** Core curve, memory offset and power limit are three separate
+  variables; a config that changes all three cannot tell you which one did what.
+- **Never report a short clean run as "stable."** Undervolt failures routinely take hours to
+  appear. The tool says this in its own output and so should you.
+- FurMark is still avoided: modern drivers detect its constant artificial load and can throttle it
+  specifically. That reasoning applies equally to any fixed synthetic load, and is why the
+  degradation test looks at drift rather than at absolute throughput.
+
+### The degradation threshold is uncalibrated
+
+`-DegradationPercent` defaults to 2.0 and **that number is a guess.** Nobody has yet measured what
+normal post-soak drift looks like on a healthy configuration on this card. The only nearby evidence
+is the run-to-run spread of the locked sweeps — 0.13% on the split curve, 0.76% on the original
+tune — which is a different quantity measured a different way. Until several known-good runs
+establish a baseline, **read the reported drift figure and do not lean on the flag.**
 
 ---
 

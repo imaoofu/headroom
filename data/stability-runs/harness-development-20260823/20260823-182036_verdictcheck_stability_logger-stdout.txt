@@ -1,0 +1,47 @@
+
+[LOGGER] GPU:      NVIDIA GeForce RTX 5060 Ti (driver 610.88, VBIOS 98.06.4e.40.b4)
+[LOGGER] Limits:   max SM clock 3090 MHz, power limit 200.00 W
+[LOGGER] Settings: VERDICT PLUMBING CHECK, not a stability result. Original tune, memory +2500, core curve flat above ~925 mV. Instant Replay off.
+[LOGGER] Test:     headroom stability protocol v1.0.0 (gpu_workload.py loop)
+[LOGGER] Sampling every 1 s for 270 s. Ctrl+C stops early.
+[LOGGER] Writing:  C:\Users\Raymond\Documents\headroom\data\stability-runs\20260823-182036_verdictcheck_samples.csv
+
+[LOGGER] No interactive console detected - early Ctrl+C detection is unavailable this run. Duration will run to completion; the script still works, it just cannot be told to stop early.
+[LOGGER] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[LOGGER]    15s   2977 MHz  179.58 W   66 C   99% util  GpuIdle
+[LOGGER]    30s   2977 MHz  183.31 W   69 C   99% util  GpuIdle
+[LOGGER]    46s   2977 MHz  179.10 W   71 C   99% util  GpuIdle
+[LOGGER]    61s   2977 MHz  184.82 W   71 C   99% util  None
+[LOGGER]    77s   2977 MHz  187.26 W   73 C   99% util  GpuIdle
+[LOGGER]    92s   2977 MHz  182.95 W   74 C   99% util  GpuIdle
+[LOGGER]   108s   2977 MHz  189.43 W   74 C   99% util  GpuIdle
+[LOGGER]   124s   2970 MHz  183.40 W   74 C   99% util  GpuIdle
+[LOGGER]   139s   2977 MHz  184.94 W   75 C   99% util  GpuIdle
+[LOGGER]   155s   2977 MHz  191.01 W   76 C   99% util  GpuIdle
+[LOGGER]   170s   2977 MHz  192.52 W   76 C   99% util  GpuIdle
+[LOGGER]   186s   3015 MHz   95.84 W   56 C   99% util  GpuIdle
+[LOGGER]   201s   3015 MHz   93.25 W   54 C   99% util  GpuIdle
+[LOGGER]   217s   3015 MHz   92.61 W   53 C   99% util  GpuIdle
+[LOGGER]   232s   3015 MHz   92.49 W   52 C   99% util  None
+[LOGGER]   248s   3015 MHz   94.19 W   52 C   99% util  GpuIdle
+[LOGGER]   264s   3015 MHz   92.21 W   52 C   99% util  GpuIdle
+
+[LOGGER] ===================== RESULT =====================
+[LOGGER] Verdict: CLEAN
+[LOGGER] Collected 261 samples over 270.9s.
+[LOGGER] SM clock: avg 2971.49 MHz, range 1080-3015 MHz.
+[LOGGER] Power:    avg 146.85 W, peak 192.52 W (limit 200.00 W).
+[LOGGER] Temp:     avg 64.63 C, peak 76 C.
+[LOGGER] GPU util: avg 93.75%.
+[LOGGER] Loaded:   96% of samples above 50% utilisation (251 of 261).
+[LOGGER] While actually under load (the numbers that describe the test, not the idle time):
+[LOGGER]   SM clock: avg 2985.12 MHz, range 1830-3015 MHz.
+[LOGGER]   Power:    avg 150.4 W, peak 192.52 W.
+[LOGGER]   Temp:     avg 65.18 C, peak 76 C.
+[LOGGER] Samples: C:\Users\Raymond\Documents\headroom\data\stability-runs\20260823-182036_verdictcheck_samples.csv
+[LOGGER] Session: C:\Users\Raymond\Documents\headroom\data\stability-runs\20260823-182036_verdictcheck_session.json
+[LOGGER] ==================================================
+
+[LOGGER] A CLEAN verdict means nothing went visibly wrong during this window. It is
+[LOGGER] not proof of stability - undervolt failures often need hours to show up, and
+[LOGGER] a single clean 10-minute run is weak evidence. Say so when reporting it.

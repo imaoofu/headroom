@@ -1,0 +1,7 @@
+﻿"iteration","workload","phase_elapsed_s","throughput","unit","duration_s","temp_start_c","temp_peak_c","aborted","in_soak"
+"1","gemm","57.3","18219397131089.617","FLOP/s","54.3136","40.0","72.0","False","True"
+"2","gemm","114.4","18218659107510.61","FLOP/s","54.3158","53.0","75.0","False","False"
+"3","gemm","171.6","18248326640305.74","FLOP/s","54.2275","55.0","76.0","False","False"
+"4","membw","56.2","421012307540.6537","byte/s","53.558","56.0","58.0","False","True"
+"5","membw","112.4","421464336242.0346","byte/s","53.5006","49.0","52.0","False","False"
+"6","membw","168.5","422149184448.15","byte/s","53.4138","48.0","52.0","False","False"

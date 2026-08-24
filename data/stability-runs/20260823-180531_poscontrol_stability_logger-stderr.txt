@@ -1,0 +1,6 @@
+C:\Users\Raymond\Documents\headroom\tools\stability-logger\Log-GpuStability.ps1 : Cannot process argument 
+transformation on parameter 'IntervalSeconds'. Cannot convert value "CONTROL" to type "System.Int32". Error: "Input 
+string was not in a correct format."
+    + CategoryInfo          : InvalidData: (:) [Log-GpuStability.ps1], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ParameterArgumentTransformationError,Log-GpuStability.ps1
+ 
