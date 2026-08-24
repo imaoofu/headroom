@@ -488,6 +488,19 @@ disagrees with the data directory, the data directory is right.*
   **How it was caught matters more than the number.** The tell was that the rebuilt repaired curve
   EXCEEDED the supposed ceiling at all ten points. Nothing beats a ceiling, so the reference was
   suspect - not the measurement.
+
+  🔑 **THE SAME SESSION INDEPENDENTLY REPLICATED 5.4.4's CONTAMINATION MAGNITUDE.** The clean
+  memory-only `gemm` sweep against its contaminated 08-20 counterpart, 13 shared targets, gives
+  **+1.73% above 2010 MHz against the +1.71% 5.4.4 measured** - agreement to 0.02 points, on a
+  DIFFERENT configuration, three days apart, by a different route. Mid-band gives +3.05% against
+  5.4.4's +4.22%: same sign and order, lower. This turns the capture-software finding from a
+  single-session result into a replicated one, which is worth more than the correction that
+  prompted the run.
+
+  **Still unresolved:** "`gemm` gets nothing measurable from the memory overclock, plus or minus
+  1%" cannot be checked clean. The clean memory-only `gemm` run is on the 1237-3090 grid and the
+  clean stock `gemm` run is on the 465-3090 floor15 grid, which share only their top point. One
+  clean stock `gemm` sweep on the 1237-3090 grid would close it.
 - ✅ **"Neither configuration dominates" was tested and SURVIVES.** This entry previously said it
   "may now be false"; the measurement says otherwise. The split curve beats tuned on `membw` at
   every point (+3.2% to +30.0%) and on `gemm` peak throughput (+2.0%), but **tuned still wins
