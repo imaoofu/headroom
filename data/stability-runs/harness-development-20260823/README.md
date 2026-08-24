@@ -59,3 +59,15 @@ already owns cheap probes that settle these in under two minutes:
     memory clock under load            : 13801 stock | 16301 at +2500
 
 Run them before writing the field, not after being contradicted.
+
+## `20260823-182730_ogtune_*` — an aborted run, and the label is wrong
+
+Killed about four minutes in, so there is a partial `_samples.csv` and no `_session.json`, meaning
+no verdict was ever computed. Do not treat it as a result.
+
+**The label is also wrong.** It says `ogtune`; the card had the split curve applied, which is why
+the run was stopped. Filed here rather than deleted so the aborted attempt stays visible, and
+renamed to nothing - a file renamed after the fact is a file that lies about its own history.
+
+The real run on this configuration is `20260823-183256_splitcurve_*`, in the parent directory,
+correctly labelled and probed before it started.
