@@ -473,6 +473,21 @@ disagrees with the data directory, the data directory is right.*
   encode here; its cost during a graphics workload could be larger and this does not bound that.
   Two conditions on one chip on one evening. The wandering `membw` dip is very likely the
   same phenomenon and needs no other explanation.
+- 🔑 **THE MEMORY-ONLY "CEILING" WAS READING LOW, AND 5.7.6's `membw` CLAIM WAS WRONG BECAUSE OF
+  IT (2026-08-23).** That section said the split curve "holds the repair", landing within 0.4% of
+  memory-only at seven of ten points. The reference was contaminated 08-20 data compared against
+  a clean 08-22 split-curve run. Re-measured clean, memory-only rose **+3.30% mean (+1.86% to
+  +6.25%)**, matching 5.4.4's +4.22% mid-band figure.
+
+  **Against the clean ceiling: the repair holds it (-0.39% mean, 5 of 10 within 0.4%); the split
+  curve does not (-3.18% mean, 0 of 10).** Do not quote the 0.4%. The corrected trade is
+  three-way: tuned keeps `gemm` and loses up to 29.6% of `membw`; the repair reaches the
+  bandwidth ceiling and gives up the compute advantage; the split curve keeps most of the compute
+  advantage and pays ~3% of bandwidth for it.
+
+  **How it was caught matters more than the number.** The tell was that the rebuilt repaired curve
+  EXCEEDED the supposed ceiling at all ten points. Nothing beats a ceiling, so the reference was
+  suspect - not the measurement.
 - ✅ **"Neither configuration dominates" was tested and SURVIVES.** This entry previously said it
   "may now be false"; the measurement says otherwise. The split curve beats tuned on `membw` at
   every point (+3.2% to +30.0%) and on `gemm` peak throughput (+2.0%), but **tuned still wins

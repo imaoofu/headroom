@@ -1291,26 +1291,44 @@ had been suspected of instability on the strength of a ~2.5% low outlier appeari
 the configuration producing the best throughput is also the more reproducible one, and the
 remaining run-to-run variation belongs to the original tune.
 
-**On `membw` the split curve holds the repair.** Against the memory-overclock-only configuration,
-which is the ceiling for this workload because it carries no core curve at all, the split curve
-lands within 0.4% at seven of ten grid points and beats the fully tuned profile everywhere, by
-+3.2% at 1402 MHz rising to +30.0% at 1867 MHz. The plateau of 5.7.2 does not appear.
+**On `membw` the split curve does NOT hold the repair - it gives up about 3%.** An earlier
+version of this paragraph said it did, on the strength of landing within 0.4% of the
+memory-overclock-only configuration at seven of ten grid points. **That comparison was against a
+contaminated reference and the conclusion drawn from it was wrong.** The memory-only sweep it used
+dated from 2026-08-20, before the capture-software finding of 5.4.4, while the split-curve sweep
+was clean 2026-08-22 data, so the reference read low and the split curve appeared to reach a
+ceiling that was itself depressed.
 
-> ⚠️ **The "ceiling" in that sentence is a contaminated reference, and the agreement with it is
-> probably an artefact.** The memory-only sweep is from 2026-08-20, before the capture-software
-> finding of 5.4.4; the split-curve sweep is clean 2026-08-22 data. Comparing the two flatters the
-> split curve by roughly the size of the contamination. The seven-of-ten figure reproduces exactly
-> as written and is not a transcription error - but on 2026-08-23 the independently rebuilt
-> repaired curve, measured clean on the same grid, **exceeded the same memory-only reference at
-> all ten points, by +1.80% to +5.15%, mean +2.89%.** Nothing should beat a ceiling. That margin
-> sits inside the +4.22% mid-band cost 5.4.4 measured for Instant Replay, so the most economical
-> explanation is that the memory-only reference reads low rather than that two configurations
-> both exceed it.
->
-> **What this costs the claim:** the split curve is probably somewhat BELOW the true clean ceiling
-> rather than at it, and by an unknown amount. Settling it needs one clean memory-only sweep on
-> the 1400-2100 grid, which is about five minutes plus an Afterburner change. Until then, read
-> "holds the repair" as directional and do not quote the 0.4%.
+The tell was that the ceiling could be beaten. Measured clean on 2026-08-23, an independently
+rebuilt repaired curve exceeded that reference at all ten grid points. Nothing beats a ceiling, so
+the memory-only configuration was re-measured under the clean protocol, and it rose by **+3.30%
+on average, from +1.86% to +6.25%** - squarely in line with the +4.22% mid-band cost 5.4.4
+measured for capture software. It is a ceiling again: nothing now exceeds it by more than 0.93% at
+any point.
+
+Against that clean ceiling, on the same 10-point grid with achieved clocks matched to 8.0 MHz in
+the worst case:
+
+| configuration | vs the clean `membw` ceiling | within 0.4% of it |
+|---|---|---|
+| repaired curve | **-0.39%** mean, -1.79% to +0.93% | **5 of 10 points** |
+| **split curve** | **-3.18%** mean, -7.63% to -1.82% | **0 of 10 points** |
+
+**The repair is what reaches the bandwidth ceiling; the split curve buys its compute advantage by
+giving up roughly 3% of bandwidth.** It still beats the fully tuned profile everywhere, which is
+the claim that survives - the plateau of 5.7.2 does not appear - but "holds the repair" was too
+strong and the 0.4% figure should not be quoted.
+
+**This sharpens the trade rather than dissolving it.** Three configurations, three positions:
+
+| | `gemm` | `membw` |
+|---|---|---|
+| fully tuned | best matched-frequency efficiency | loses up to 29.6% in the plateau band |
+| repaired curve | gives the compute advantage up entirely | reaches the bandwidth ceiling |
+| split curve | keeps most of the compute advantage | about 3% below the ceiling |
+
+That is a more useful statement than 5.7.5's "neither configuration dominates", because it says
+what each configuration costs rather than only that a cost exists.
 
 **What it does not recover.** The tuned curve still wins `gemm` efficiency across 1545-2625 MHz, by
 up to 30.5% at 2010 MHz, which is where that workload's efficiency optimum sits. The split curve
