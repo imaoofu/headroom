@@ -216,7 +216,25 @@ The part nobody else can replicate, and the reason the project is worth doing at
   is quietly worth less than it should be. Fixed by `tools/collection-kit/Sync-Kit.ps1`, which
   copies tooling only, re-hashes every file to prove the copy landed, and prints the sweep schema
   version. Run it before every build.
-- **[CORE] Decide the sampling strategy, and be honest about which question it can answer:**
+- 🟡 **[CORE] Decide the sampling strategy, and be honest about which question it can answer.**
+  **Largely settled by circumstance, 2026-08-23.** Machines reached through the PC-building
+  business are **customer** machines, so their curves cannot be touched - the 3070 Ti build will
+  very likely be **stock only**. That forecloses the same-SKU tuning arm and commits the
+  cross-machine work to *many models, one unit each*.
+
+  **This costs the project less than it sounds, because stock is what that arm needs anyway.**
+  The cross-machine question is "does the efficiency curve shape generalise across
+  architectures?", and it is answered by stock sweeps; the tuning work in 5.7 is a separate
+  single-chip investigation that was never going to scale to customer hardware. What is
+  permanently out of reach on this route is chip-to-chip variance in *tuned* headroom, which
+  needs repeat units of one SKU that the project controls.
+
+  **Watch for factory OC.** A customer card with a vendor-OC BIOS is not stock in the reference
+  sense, and nothing in `nvidia-smi` reports it. The kit already handles this correctly: it
+  records the measured peak SM clock and `machine-info.txt` tells the reader to classify from
+  that number rather than from the operator's claim.
+
+- **[CORE] The original framing of the sampling decision, kept for the reasoning:**
   - *Many different GPU models, one unit each* → answers "does the efficiency curve shape
     generalise across architectures?" Cannot say anything about chip-to-chip variance.
   - *Repeated units of one popular GPU model* → answers "how much does headroom vary between

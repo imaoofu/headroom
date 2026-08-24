@@ -520,6 +520,14 @@ disagrees with the data directory, the data directory is right.*
   four files stale, including a sweep with no video-engine guard. Run
   `.	ools\collection-kit\Sync-Kit.ps1 -KitPath F:\headroom-kit` before every build. A synced kit
   is still not a tested kit — run `RUN-ME.bat` once on a machine you understand first.
-- **Inspirit deliverable format unknown** — asked repeatedly, still unanswered.
+- ✅ **The Inspirit "deliverable format" question is retired, 2026-08-23.** It was carried as an
+  open risk for weeks and the premise was wrong. There is no presentation and no required format:
+  the program's role is to **support Raymond in publishing this research**. Stop asking, and treat
+  publication - not a submission - as the target the work is aimed at.
+
+  **That raises the bar on two things rather than lowering it.** Provenance has to survive a
+  reviewer, which is what makes the clean/contaminated split below the project's main technical
+  problem. And n=1 chip is the weakness any reader will name first, which is what makes stock
+  sweeps on other machines valuable even when nothing can be tuned on them.
 - **Push directly with `git push`.** `gh` is installed but auth never completed; Windows Credential
   Manager already works. Do not route through `gh`.
