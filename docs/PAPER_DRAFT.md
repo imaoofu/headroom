@@ -1295,23 +1295,31 @@ remaining run-to-run variation belongs to the original tune.
 this section is compared against the memory-overclock-only card, which carries the same +2500
 memory offset and a stock core curve, and is therefore the most bandwidth a core-curve change can
 deliver. On the 10-point 1400-2100 MHz grid, achieved clocks matched to 8.0 MHz in the worst case
-and to 1.7 MHz at eighteen of the twenty points:
+and to 1.8 MHz at the other twenty-seven:
 
-| configuration | vs the `membw` ceiling | within 0.4% of it |
+| configuration | sweeps | vs the `membw` ceiling |
 |---|---|---|
-| repaired curve | **-0.39%** mean, -1.79% to +0.93% | **5 of 10 points** |
-| **split curve** | **-0.11%** mean, -0.74% to +0.48% | **7 of 10 points** |
+| repaired curve | 1 | **-0.39%** mean, -1.79% to +0.93% |
+| **split curve** | 2 | **-0.42%** mean, -3.35% to +0.80% |
 
-The two are indistinguishable: head to head the split curve leads by **+0.28%** on average and at
-seven of ten points, inside the run-to-run spread of a single sweep. Neither reading should be
-taken as one configuration beating the other. What both say is that the bandwidth cost of the
-flattened region is gone, and that the split curve gives up nothing measurable to recover it.
+They agree to 0.03 percentage points. Neither should be read as beating the other; what both say
+is that the bandwidth cost of the flattened region is gone, and that the split curve gives up
+nothing measurable to recover it.
 
-Against the fully tuned profile the plateau is removed outright - **+19.2% on average across the
-band, +2.4% to +31.7%**, with the largest gains where 5.7.2 found the deepest losses.
+**The "within 0.4% at N of ten points" statistic that earlier versions of this paragraph quoted
+has been dropped, because it is not stable.** The two split-curve sweeps were taken twenty minutes
+apart with the profile untouched and both verified quiet. They land at seven of ten and two of ten
+respectively. A statistic that moves that far between replicates of the same configuration is
+reporting which run happened to contain a dip, not what the configuration does, and it should not
+have been quoted from a single sweep in the first place.
 
-**This paragraph has now been wrong twice, both times for the same reason, and the sequence is
-worth recording because it is not an arithmetic story.** The first version reported the split
+Against the fully tuned profile the plateau is removed outright - **+18.8% on average across the
+band, +1.5% to +29.6%**, with the largest gains where 5.7.2 found the deepest losses. That range
+is per-point and inherits the dip problem from both sides: the tuned sweep carries one of its own,
+so read the band mean and not the endpoints.
+
+**This paragraph has now been corrected three times, and the sequence is worth recording
+because none of it is an arithmetic story.** The first version reported the split
 curve landing within 0.4% of the ceiling at seven of ten points - the same conclusion as the table
 above - but reached it by comparing a 2026-08-22 split-curve sweep against a 2026-08-20
 memory-only sweep, both taken before the capture-software finding of 5.4.4 and neither verified
@@ -1325,14 +1333,52 @@ opposite direction to the first, and it was **wrong on purpose-built evidence**:
 audit flagged it as a mixed comparison whose risk ran against the finding, and recorded that
 -3.18% was an upper bound on the loss rather than a measurement of it.
 
-Re-measured on 2026-08-24 with both sides verified quiet, the split-curve sweep rose **+3.19%**
-over its 2026-08-22 predecessor. Three things identify that rise as the contaminant rather than a
-change in the applied curve: its magnitude matches the +3.30% the ceiling moved by; it declines
-with frequency, +3.06% across 1402-1710 MHz against +2.24% across 1867-2100, which is the
-direction 5.4.4 measured; and the largest single jump, +7.63% at 1792 MHz, is an isolated point
-flanked by +2.5% and +2.2%. A voltage-curve difference cannot produce a hole at one grid point. A
-transient contaminant can, and that 1792 MHz point is the same "roughly one run in three" outlier
-5.7.6 attributes to capture software elsewhere.
+Re-measured on 2026-08-24 with two verified-quiet sweeps, the split curve reads **+2.88%** above
+its 2026-08-22 predecessor, or **+2.77%** with the one known dip in each run excluded. **The
+withdrawal of the -3.18% rests on those two measurements and not on any diagnosis of the older
+one**, which matters, because the diagnosis turns out to be the weaker half of the argument.
+
+Three reasons were offered for calling that rise capture-software contamination rather than a
+difference in the applied curve. Only one survives.
+
+  1. **Magnitude - stands.** A uniform +2.77% rise, against the +3.30% the memory-only ceiling
+     moved when it was re-measured, and against the **+4.22%** 5.4.4 measured for capture software
+     across 1237-2010 MHz. Same sign, same order, somewhat smaller.
+  2. **Frequency signature - withdrawn as never applicable.** The rise was reported as declining
+     within the band, +3.06% below 1710 MHz against +2.24% above 1867. With both known dips
+     removed it is flat: **+2.89%** against **+2.58%**. More importantly the test was not
+     available here at all. 5.4.4's boundary is at roughly 2010 MHz and this grid runs 1402-2100,
+     so nine of its ten points sit inside 5.4.4's low band, where a *uniform* offset is what that
+     finding predicts. The internal split quoted earlier had no basis in 5.4.4 and was reading
+     structure into noise.
+  3. **An isolated deficit at one grid point - withdrawn.** The 2026-08-22 run's largest single
+     deficit, +7.63% at 1792 MHz, was cited as proof of a transient on the grounds that no voltage
+     curve can produce a hole at one frequency. The premise is true and the conclusion did not
+     follow: the replicate taken twenty minutes after the first, encoder and decoder verified at
+     0%, contains a **-6.91%** hole of its own at 1867 MHz.
+
+What that leaves is a magnitude consistent with contamination and no independent confirmation of
+it. **A slightly different applied profile is not excluded** - the 2026-08-22 curve was not saved,
+and a probe reads clocks rather than voltages. The reading offered here is contamination on
+magnitude alone, and it is offered as the leading explanation rather than an established one.
+
+**Single-point `membw` dips occur in verified-quiet runs, at roughly 6-7%, at a different
+frequency each time.** Of the five verified-quiet `membw` sweeps on this 10-point grid, two carry
+one: the fully tuned sweep of 2026-08-22 drops **5.93%** below its neighbours at 1477 MHz, and the
+second split-curve sweep of 2026-08-24 drops **6.91%** at 1867 MHz. The other three have nothing
+worse than 1.0%. Within the split-curve pair the point at 1867 MHz reads 395.1 GB/s in one sweep
+and 367.1 in the other, twenty minutes apart on an untouched profile, so it is not a property of
+the configuration.
+
+This retires an explanation carried since 2026-08-22, when the "wandering `membw` dip" was
+attributed to the capture software of 5.4.4 on the strength of both being transient and both
+moving between runs. **The dip survives the encoder guard**, so whatever produces it, that is not
+what it is. Its cause is unidentified.
+
+The practical consequence is a floor on what a single `membw` sweep can resolve on this card.
+Two of five clean runs carry a 6-7% single-point error, which is larger than every configuration
+difference this subsection reports. Nothing here should be read from one sweep, and the
+configuration comparisons above are stated as means over the whole band for that reason.
 
 **The lesson is that a comparison is only as clean as its dirtier half.** Correcting one side of a
 pair is not a partial fix; it can be worse than correcting neither, because it converts a symmetric

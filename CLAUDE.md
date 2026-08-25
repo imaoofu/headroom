@@ -466,13 +466,18 @@ disagrees with the data directory, the data directory is right.*
   Fifty-three times tighter at 1545 MHz. **This retires the "mid-band is not reproducible" entry
   that this section previously carried as an open problem** — the mid-band is reproducible to
   better than 1% once Instant Replay is off. It also explains the earlier "~2.5% outlier in roughly
-  1 of 3 runs" and very likely the wandering `membw` dip, neither of which needs another
-  explanation.
+  1 of 3 runs".
+
+  ⛔ **IT DOES NOT EXPLAIN THE WANDERING `membw` DIP. That attribution is retired, 2026-08-24.**
+  Two of the five verified-quiet `membw` sweeps on the 10-point grid carry a single-point dip of
+  6-7%: the tuned sweep drops 5.93% below its neighbours at 1477 MHz, and the second split-curve
+  sweep drops 6.91% at 1867 MHz. Both had encoder and decoder verified at 0%. **The dip survives
+  the encoder guard, so it is something else, and its cause is unidentified.**
 
   **Limits.** `gemm` renders nothing to screen, so Instant Replay has little new frame content to
   encode here; its cost during a graphics workload could be larger and this does not bound that.
-  Two conditions on one chip on one evening. The wandering `membw` dip is very likely the
-  same phenomenon and needs no other explanation.
+  Two conditions on one chip on one evening. The wandering `membw` dip is NOT the same phenomenon
+  - see the retraction above - and still needs an explanation.
 - 🔑 **THE MEMORY-ONLY "CEILING" WAS READING LOW, AND 5.7.6's `membw` CLAIM WAS WRONG BECAUSE OF
   IT (2026-08-23).** That section said the split curve "holds the repair", landing within 0.4% of
   memory-only at seven of ten points. The reference was contaminated 08-20 data compared against
@@ -485,16 +490,25 @@ disagrees with the data directory, the data directory is right.*
 
   ⛔ **AND THEN THAT CORRECTION WAS ITSELF WRONG. 2026-08-24 WITHDREW IT.** The 08-23 fix cleaned
   the ceiling and left the split curve on contaminated 08-22 data, producing an apparent -3.18%
-  deficit and a rewritten "three-way trade". Re-measured verified-quiet on 08-24 the split curve
-  rose **+3.19%** and lands at **-0.11% mean, 7 of 10 within 0.4%** - against the repair's -0.39%
-  and 5 of 10. **The two are indistinguishable and both sit at the ceiling.** Head to head the
-  split leads +0.28% at 7 of 10 points, which is inside one sweep's spread and must NOT be
-  reported as a win.
+  deficit and a rewritten "three-way trade". Re-measured verified-quiet, **n=2**, the split curve
+  sits at **-0.42% mean** against the repair's **-0.39%** - they agree to 0.03 points, and **both
+  sit at the ceiling.**
 
-  Three things identify the 08-22 run as contaminated rather than a different curve: the +3.19%
-  matches the +3.30% the ceiling itself moved; it declines with frequency (+3.06% over 1402-1710
-  against +2.24% over 1867-2100), which is 5.4.4's signature; and its worst point, +7.63% at
-  1792 MHz, is isolated between +2.5% and +2.2% - a hole one voltage curve cannot make.
+  ⚠️ **THE FIRST VERSION OF THIS ENTRY SAID -0.11% AND "7 OF 10 WITHIN 0.4%", FROM ONE SWEEP.**
+  The replicate twenty minutes later, same untouched profile, gave -0.73% and 2 of 10. **Do not
+  quote a per-point "within 0.4% at N of ten" statistic on `membw` at all** - it reports which run
+  happened to contain a dip. Band means only, n>=2.
+
+  **Of the three reasons given for calling the 08-22 run contaminated, only one survives.**
+  MAGNITUDE stands: +2.88% (n=2), or +2.77% excluding the one known dip in each run, against the
+  +3.30% the ceiling itself moved and 5.4.4's +4.22% for this band. FREQUENCY SIGNATURE is
+  withdrawn as never applicable - with the dips removed it is flat (+2.89% vs +2.58%), and 5.4.4's
+  boundary is near 2010 MHz while nine of these ten points sit below it, so a uniform offset is
+  what 5.4.4 actually predicts here. The internal split quoted earlier read structure into noise.
+  THE ISOLATED-POINT ARGUMENT is withdrawn outright: clean runs make those holes too.
+
+  **A different applied profile is not excluded.** The withdrawal of -3.18% rests on the two new
+  measurements, not on the diagnosis of the old one - keep those two things apart.
 
   🔑 **THE PARAGRAPH HAS NOW BEEN WRONG TWICE AND THE SHAPE IS THE SAME BOTH TIMES.** Version one
   compared contaminated against contaminated and was **right by accident**. Version two cleaned

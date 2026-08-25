@@ -1,6 +1,6 @@
 # Split-curve `membw`, clean protocol - 2026-08-24
 
-One sweep. It withdraws a correction that was itself a correction, and the sequence is the
+Two sweeps. It withdraws a correction that was itself a correction, and the sequence is the
 point of this directory.
 
 ## What was measured
@@ -67,3 +67,57 @@ partial fix. It converts a symmetric error into an asymmetric one, and it looks 
 while doing it. The provenance audit had already flagged step 2 as a mixed comparison whose risk
 ran against the finding, and recorded in `analysis/claims_consumer.py` that -3.18% was an upper
 bound rather than a measurement. That note was written the same morning this run confirmed it.
+
+
+---
+
+## The replicate, and what it cost the first run's numbers
+
+`20260824-210054_..._-r2_sweep.csv`, twenty minutes after the first, profile untouched, re-probed
+before starting (2980.9 MHz at a locked 3090 target, memory 16301 MHz), encoder and decoder 0%.
+
+It does not confirm r1. It corrects it.
+
+| | vs the ceiling | within 0.4% |
+|---|---|---|
+| r1 alone | -0.11% | 7 of 10 |
+| r2 alone | -0.73% | 2 of 10 |
+| **mean of both** | **-0.42%** | 4 of 10 |
+
+r2 contains a **-6.91%** single-point dip at 1867 MHz. The same point reads 395.1 GB/s in r1 and
+367.1 GB/s in r2, so it is not a property of the configuration.
+
+**Two consequences.**
+
+1. **"Within 0.4% at N of ten points" is not a usable statistic here.** Two replicates of one
+   configuration give seven and two. It reports which run happened to contain a dip. The paper now
+   quotes band means only, and says so.
+
+2. **The isolated-point argument for contamination is withdrawn.** This directory's original
+   README argued that the 2026-08-22 run's +7.63% hole at 1792 MHz proved a transient contaminant,
+   because no voltage curve can make a hole at one grid point. The premise is true; the conclusion
+   does not follow. A verified-quiet run made one twenty minutes later.
+
+The frequency-signature argument is withdrawn too, and for a worse reason: it was never applicable.
+With both known dips excluded the rise is flat across the band (+2.89% below 1710 MHz against
++2.58% above 1942), and 5.4.4's low/high boundary is near 2010 MHz - nine of these ten points sit
+below it, where 5.4.4 predicts a *uniform* offset. The earlier internal split had no basis in that
+finding.
+
+**What survives is magnitude alone:** a uniform +2.77% rise against the +3.30% the ceiling moved
+and 5.4.4's +4.22% for this band. Contamination remains the leading explanation and is no longer
+a demonstrated one. A slightly different applied profile is not excluded.
+
+**The withdrawal of -3.18% does not depend on any of that.** It rests on two verified-quiet
+sweeps of the current configuration reading -0.42% against a verified-quiet ceiling.
+
+## Single-point dips, separately
+
+Of the five verified-quiet `membw` sweeps on this grid, two carry a 6-7% single-point dip at a
+different frequency each: the tuned sweep of 2026-08-22 at 1477 MHz (-5.93%), and r2 here at
+1867 MHz (-6.91%). The other three have nothing worse than 1.0%.
+
+This retires the standing explanation that the "wandering `membw` dip" was the capture software of
+5.4.4. It survives the encoder guard. Cause unidentified, and it sets a floor on what a single
+`membw` sweep can resolve on this card - larger than any configuration difference this section
+reports.

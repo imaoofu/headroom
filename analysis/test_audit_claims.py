@@ -963,45 +963,53 @@ def _withFakeSweep(mapping, call):
         cc.sweep = real
 
 
-def testSplitVsRepairGuardRejectsAChangedLead():
-    """The sentence says "seven of ten points". If that stops being true the claim must refuse.
+def testSplitCurveIsAveragedOverItsRuns():
+    """The split curve is two sweeps and every claim must read BOTH.
 
-    Rendering a fresh mean under prose that still says seven would pass the audit while the
-    sentence had quietly become false - which is the failure the whole engine exists to prevent,
-    reintroduced one level in.
+    This is the regression guard for the actual defect: reading one sweep gave -0.11% against the
+    ceiling and reading the other gave -0.73%, and the paper quoted the first. If a claim ever
+    silently drops back to a single run, the mean moves and this fails.
     """
-    import audit_claims as ac
     import claims_consumer as cc
 
-    ceiling = _fakeSweepRows(FINE_GRID, [300.0] * 10)
-    repair = _fakeSweepRows(FINE_GRID, [300.0] * 10)
-    # The split curve ahead at nine of ten points rather than seven.
-    split = _fakeSweepRows(FINE_GRID, [301.0] * 9 + [299.0])
+    check("the split curve is measured more than once", len(cc.SPLIT_MEMBW_RUNS) >= 2,
+          f"only {len(cc.SPLIT_MEMBW_RUNS)} sweep(s)")
 
+    ceiling = _fakeSweepRows(FINE_GRID, [300.0] * 10)
+    # Two runs that disagree: reading either alone gives +10% or -10%, reading both gives 0%.
+    runA = _fakeSweepRows(FINE_GRID, [330.0] * 10)
+    runB = _fakeSweepRows(FINE_GRID, [270.0] * 10)
     mapping = {cc.CLEAN_CEILING_MEMBW: ceiling,
-               cc.REPAIR_MEMBW_FINE: repair,
-               cc.SPLIT_MEMBW_FINE: split}
+               cc.SPLIT_MEMBW_RUNS[0]: runA,
+               cc.SPLIT_MEMBW_RUNS[1]: runB}
+    deltas = _withFakeSweep(mapping, lambda: cc._r576vsCeiling(cc.SPLIT_MEMBW_RUNS))
+    check("both runs are averaged, not one picked", abs(deltas[0]) < 0.01,
+          f"got {deltas[0]:+.2f}%, which is one run rather than the mean of two")
+
+
+def testCeilingComparisonRefusesASingleSweepPassedAsAString():
+    """A configuration measured once has to say so, because the count is printed in the table.
+
+    Passing a bare path would work by accident - a string is iterable - and would silently read
+    one character as a filename. Refusing it is what keeps the "sweeps" column honest.
+    """
+    import claims_consumer as cc
+
     raised = False
     try:
-        _withFakeSweep(mapping, cc.splitVsRepair)
-    except ValueError:
+        cc._r576vsCeiling(cc.REPAIR_MEMBW_FINE)
+    except TypeError:
         raised = True
-    check("a changed lead count is refused", raised, "it rendered a number anyway")
-
-    # And the guard must PASS on data that does match, or it would be refusing everything.
-    split7 = _fakeSweepRows(FINE_GRID, [301.0] * 7 + [299.0] * 3)
-    mapping[cc.SPLIT_MEMBW_FINE] = split7
-    text = _withFakeSweep(mapping, cc.splitVsRepair)
-    check("seven of ten still renders", "seven of ten points" in text, f"got {text!r}")
-    assert ac is not None                            # imported for symmetry with its neighbours
+    check("a bare path is refused", raised, "a single sweep was accepted as a sequence")
 
 
-def testContaminationSignatureGuardRejectsAnInvertedRise():
-    """The rise has to shrink with frequency, because that is what makes it 5.4.4's contaminant.
+def testContaminationSignatureExcludesTheDipPoints():
+    """The withdrawn signature figures must exclude the two known dips, or they mean nothing.
 
-    If a future re-measurement showed the difference GROWING with frequency, the same arithmetic
-    would render a tidy pair of percentages under a sentence claiming a signature the data no
-    longer carries. The reading, not just the numbers, has to be able to fail.
+    This test used to assert that the claim REFUSED an inverted signature. That guard is gone
+    along with the argument it protected: with the dips removed the two bands differ by 0.31
+    points, which is flat, and 5.4.4's boundary is not inside this grid anyway. What is left worth
+    testing is that the exclusion happens at all.
     """
     import claims_consumer as cc
 
@@ -1009,19 +1017,21 @@ def testContaminationSignatureGuardRejectsAnInvertedRise():
     old = _fakeSweepRows(FINE_GRID, [100.0] * 10)
     new = _fakeSweepRows(FINE_GRID, [101.0, 101.0, 101.0, 101.0, 101.0,
                                      104.0, 104.0, 104.0, 104.0, 104.0])
-    mapping = {cc.SPLIT_MEMBW_OLD: old, cc.SPLIT_MEMBW_FINE: new}
-    raised = False
-    try:
-        _withFakeSweep(mapping, cc.contaminationSignature)
-    except ValueError:
-        raised = True
-    check("an inverted frequency signature is refused", raised, "it rendered a number anyway")
-
-    # Declining with frequency renders normally.
-    new2 = _fakeSweepRows(FINE_GRID, [104.0] * 5 + [101.0] * 5)
-    mapping[cc.SPLIT_MEMBW_FINE] = new2
+    mapping = {cc.SPLIT_MEMBW_OLD: old}
+    for path in cc.SPLIT_MEMBW_RUNS:
+        mapping[path] = new
     text = _withFakeSweep(mapping, cc.contaminationSignature)
-    check("a declining signature still renders", "across 1402-1710 MHz" in text, f"got {text!r}")
+    check("the withdrawn signature still renders both bands", "against" in text,
+          f"got {text!r}")
+
+    # The dip points are EXCLUDED, so a value planted at 1867 must not reach the output.
+    planted = dict(new)
+    planted[1867] = {"target": 1867, "mhz": 1867.0, "power": 60.0, "throughput": 1.0}
+    for path in cc.SPLIT_MEMBW_RUNS:
+        mapping[path] = planted
+    check("excluding the dip points changes nothing",
+          _withFakeSweep(mapping, cc.contaminationSignature) == text,
+          "a planted value at 1867 MHz reached the rendered figure")
 
 
 def testClockMatchGuardRejectsAChangedGrid():
@@ -1032,8 +1042,9 @@ def testClockMatchGuardRejectsAChangedGrid():
 
     short = [1402, 1477, 1560, 1635, 1710]
     mapping = {cc.CLEAN_CEILING_MEMBW: _fakeSweepRows(short, [300.0] * 5),
-               cc.REPAIR_MEMBW_FINE: _fakeSweepRows(short, [300.0] * 5),
-               cc.SPLIT_MEMBW_FINE: _fakeSweepRows(short, [300.0] * 5)}
+               cc.REPAIR_MEMBW_FINE: _fakeSweepRows(short, [300.0] * 5)}
+    for path in cc.SPLIT_MEMBW_RUNS:
+        mapping[path] = _fakeSweepRows(short, [300.0] * 5)
     raised = False
     try:
         _withFakeSweep(mapping, cc.clockMatch)
@@ -1043,8 +1054,9 @@ def testClockMatchGuardRejectsAChangedGrid():
 
 
 testSustainedComparisonRefusesMismatchedWindows()
-testSplitVsRepairGuardRejectsAChangedLead()
-testContaminationSignatureGuardRejectsAnInvertedRise()
+testSplitCurveIsAveragedOverItsRuns()
+testCeilingComparisonRefusesASingleSweepPassedAsAString()
+testContaminationSignatureExcludesTheDipPoints()
 testClockMatchGuardRejectsAChangedGrid()
 
 
