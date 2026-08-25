@@ -1,3 +1,37 @@
+def testResolutionClaimRefusesConfigurationsThatSeparate():
+    """The subsection says no ranking among the three configurations is supported.
+
+    That sentence is only true while the between-configuration spread stays below the
+    within-configuration spread. Fed data where the configurations genuinely separate, the claim
+    must refuse rather than render a tidy pair of percentages under prose that has become false.
+    """
+    import claims_consumer as cc
+
+    grid = FINE_GRID
+    mapping = {cc.CLEAN_CEILING_MEMBW: _fakeSweepRows(grid, [300.0] * 10)}
+    # Repair tight around 300, split tight around 260: configurations far apart, replicates close.
+    for path in cc.REPAIR_MEMBW_RUNS:
+        mapping[path] = _fakeSweepRows(grid, [300.0] * 10)
+    for path in cc.SPLIT_MEMBW_RUNS:
+        mapping[path] = _fakeSweepRows(grid, [260.0] * 10)
+
+    raised = False
+    try:
+        _withFakeSweep(mapping, cc.resolution)
+    except ValueError:
+        raised = True
+    check("configurations that separate are refused", raised,
+          "it rendered a no-ranking-supported sentence over data that ranks them")
+
+    # And overlapping configurations still render, so the guard discriminates.
+    for i, path in enumerate(cc.REPAIR_MEMBW_RUNS):
+        mapping[path] = _fakeSweepRows(grid, [300.0 + 8 * (1 if i else -1)] * 10)
+    for i, path in enumerate(cc.SPLIT_MEMBW_RUNS):
+        mapping[path] = _fakeSweepRows(grid, [300.0 + 6 * (i - 1)] * 10)
+    text = _withFakeSweep(mapping, cc.resolution)
+    check("overlapping configurations still render", "sweeps together span" in text, f"got {text!r}")
+
+
 """
 Known-answer checks for the claim auditor.
 
@@ -908,6 +942,15 @@ def testSustainedComparisonRefusesMismatchedWindows():
         ac._sweepCache.clear()
 
 
+# EVERY TEST BELOW THIS LINE MAY READ REAL REPOSITORY DATA.
+#
+# The fixture-based tests above call useRepository() to point the engine at a throwaway tree and
+# do not put it back, so by this point REPO_ROOT is a temp directory that no longer exists. Three
+# separate tests have been written since, each of which failed on its first run with a confusing
+# "sweep CSV missing" against a file that is plainly present, and each of which was fixed by
+# adding its own save/restore. Restoring once, here, is the fix for the class.
+useRepository(REAL_REPO_ROOT)
+
 testProvenanceTiers()
 testProvenanceReportSeparatesDeclaredFromSilent()
 testAuditRecordsEverySourceAClaimTouches()
@@ -963,32 +1006,38 @@ def _withFakeSweep(mapping, call):
         cc.sweep = real
 
 
-def testSplitCurveIsAveragedOverItsRuns():
-    """The split curve is two sweeps and every claim must read BOTH.
+def testConfigurationRowAveragesEveryRun():
+    """A configuration's reported mean must read EVERY sweep it has, not the first.
 
-    This is the regression guard for the actual defect: reading one sweep gave -0.11% against the
-    ceiling and reading the other gave -0.73%, and the paper quoted the first. If a claim ever
-    silently drops back to a single run, the mean moves and this fails.
+    This is the regression guard for the actual defect. Read individually the split-curve sweeps
+    give -0.11%, -0.73% and -0.57% against the memory-only reference and the repair sweeps give
+    -0.39% and +0.58%; the paper quoted a single one of them twice, on two different days.
     """
     import claims_consumer as cc
 
-    check("the split curve is measured more than once", len(cc.SPLIT_MEMBW_RUNS) >= 2,
-          f"only {len(cc.SPLIT_MEMBW_RUNS)} sweep(s)")
+    for name, runs in (("split", cc.SPLIT_MEMBW_RUNS), ("repair", cc.REPAIR_MEMBW_RUNS)):
+        check(f"the {name} curve is measured more than once", len(runs) >= 2,
+              f"only {len(runs)} sweep(s)")
 
-    # Runs that disagree by a wide margin but average to exactly the ceiling. Built for however
-    # many sweeps the configuration currently has, so adding a fourth does not silently skip it -
-    # which is what happened when the third was added and this fixture named only two.
+    # Runs that disagree by a wide margin but average to exactly 300 GB/s. Built for however many
+    # sweeps the configuration currently has, so adding a fourth does not silently skip it - which
+    # is what happened when the third was added and this fixture named only two.
     runs = cc.SPLIT_MEMBW_RUNS
     offsets = [(i - (len(runs) - 1) / 2) * 0.1 for i in range(len(runs))]
-    mapping = {cc.CLEAN_CEILING_MEMBW: _fakeSweepRows(FINE_GRID, [300.0] * 10)}
+    mapping = {}
     for path, offset in zip(runs, offsets):
-        mapping[path] = _fakeSweepRows(FINE_GRID, [300.0 * (1 + offset)] * 10)
+        # Bytes per second, because _r576bandMean renders GB/s - a fixture in bare units
+        # renders 0.0 and the check would compare two zeroes and pass.
+        mapping[path] = _fakeSweepRows(FINE_GRID, [300.0e9 * (1 + offset)] * 10)
 
-    deltas = _withFakeSweep(mapping, lambda: cc._r576vsCeiling(runs))
-    check("every run is averaged, not one picked", abs(deltas[0]) < 0.01,
-          f"got {deltas[0]:+.2f}%, which is one run rather than the mean of {len(runs)}")
+    row = _withFakeSweep(mapping, lambda: cc._r576configRow("split curve", runs))
+    # The mean column is bolded when a configuration has more than one sweep, so match that form.
+    # Reading only the first run would render 270.0 here, which is what makes this discriminating.
+    check("every run is averaged, not one picked", "**300.0**" in row,
+          f"got {row!r}, which is one run rather than the mean of {len(runs)}")
+    check("the sweep count is the real count", f"| {len(runs)} |" in row, f"got {row!r}")
 
-    # And the fixture has to be capable of failing: each run alone is far from the ceiling.
+    # And the fixture has to be capable of failing: each run alone is far from the mean.
     check("the fixture would expose a single-run read", abs(offsets[0]) > 0.05,
           "the runs planted were too similar for this check to mean anything")
 
@@ -1003,10 +1052,18 @@ def testCeilingComparisonRefusesASingleSweepPassedAsAString():
 
     raised = False
     try:
-        cc._r576vsCeiling(cc.REPAIR_MEMBW_FINE)
+        cc._r576configRow("repaired curve", cc.REPAIR_MEMBW_FINE)
     except TypeError:
         raised = True
     check("a bare path is refused", raised, "a single sweep was accepted as a sequence")
+
+    # And a one-element LIST is fine - the guard rejects the wrong type, not a small sample.
+    # Against a fabricated sweep rather than the real one, so this does not depend on REPO_ROOT.
+    mapping = {cc.CLEAN_CEILING_MEMBW: _fakeSweepRows(FINE_GRID, [300.0e9] * 10)}
+    row = _withFakeSweep(
+        mapping, lambda: cc._r576configRow("memory-only (stock curve)", [cc.CLEAN_CEILING_MEMBW]))
+    check("a single sweep passed as a list still renders", row.count("|") == 6, f"got {row!r}")
+    check("a single sweep reports no spread", row.rstrip().endswith("| - |"), f"got {row!r}")
 
 
 def testContaminationSignatureExcludesTheDipPoints():
@@ -1047,9 +1104,8 @@ def testClockMatchGuardRejectsAChangedGrid():
     import claims_consumer as cc
 
     short = [1402, 1477, 1560, 1635, 1710]
-    mapping = {cc.CLEAN_CEILING_MEMBW: _fakeSweepRows(short, [300.0] * 5),
-               cc.REPAIR_MEMBW_FINE: _fakeSweepRows(short, [300.0] * 5)}
-    for path in cc.SPLIT_MEMBW_RUNS:
+    mapping = {cc.CLEAN_CEILING_MEMBW: _fakeSweepRows(short, [300.0] * 5)}
+    for path in cc.REPAIR_MEMBW_RUNS + cc.SPLIT_MEMBW_RUNS:
         mapping[path] = _fakeSweepRows(short, [300.0] * 5)
     raised = False
     try:
@@ -1062,12 +1118,13 @@ def testClockMatchGuardRejectsAChangedGrid():
 testSustainedComparisonRefusesMismatchedWindows()
 
 
-def testPerRunReadingsRefusesAChangedRunCount():
-    """The prose names three individual readings. A fourth sweep must break it, not extend it.
+def testPerSweepReadingsRefusesAChangedRunCount():
+    """The prose names three split and two repair readings. Any other count makes it false.
 
-    Without the guard the claim would render four figures into a sentence introduced as three, and
-    the audit would pass because the fragment it pins happens to sit at the start.
+    Without the guard the claim would render four or five figures into a sentence introduced as
+    three and two, and the audit would still pass on the fragment it pins.
     """
+    import audit_claims as ac
     import claims_consumer as cc
 
     saved = cc.SPLIT_MEMBW_RUNS
@@ -1075,26 +1132,24 @@ def testPerRunReadingsRefusesAChangedRunCount():
         cc.SPLIT_MEMBW_RUNS = list(saved[:2])
         raised = False
         try:
-            cc.perRunReadings()
+            cc.perSweepReadings()
         except ValueError:
             raised = True
         check("a changed run count is refused", raised, "it rendered two readings as three")
     finally:
         cc.SPLIT_MEMBW_RUNS = saved
 
-    # The guard must not be refusing everything: the real three-run list still renders. REPO_ROOT
-    # is pinned because an earlier test in this file repoints it at a fixture and leaves it there.
-    import audit_claims as ac
-
+    # The guard must not refuse everything. REPO_ROOT is pinned because an earlier test in this
+    # file repoints it at a fixture and leaves it there.
     savedRoot = ac.REPO_ROOT
     try:
         ac.REPO_ROOT = REAL_REPO_ROOT
         ac._sweepCache.clear()
-        text = cc.perRunReadings()
+        text = cc.perSweepReadings()
     finally:
         ac.REPO_ROOT = savedRoot
         ac._sweepCache.clear()
-    check("three runs still render", "of ten points inside 0.4%" in text, f"got {text!r}")
+    check("the real run lists still render", "the two repair" in text, f"got {text!r}")
 
 
 def testPointSpreadRefusesAChangedNumberOfUnreliablePoints():
@@ -1133,9 +1188,9 @@ def testPointSpreadRefusesAChangedNumberOfUnreliablePoints():
 
 
 
-testSplitCurveIsAveragedOverItsRuns()
-testPerRunReadingsRefusesAChangedRunCount()
-testPointSpreadRefusesAChangedNumberOfUnreliablePoints()
+testConfigurationRowAveragesEveryRun()
+testPerSweepReadingsRefusesAChangedRunCount()
+testResolutionClaimRefusesConfigurationsThatSeparate()
 testCeilingComparisonRefusesASingleSweepPassedAsAString()
 testContaminationSignatureExcludesTheDipPoints()
 testClockMatchGuardRejectsAChangedGrid()

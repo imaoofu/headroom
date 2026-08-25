@@ -469,9 +469,9 @@ disagrees with the data directory, the data directory is right.*
   1 of 3 runs".
 
   ⛔ **IT DOES NOT EXPLAIN THE WANDERING `membw` DIP. That attribution is retired, 2026-08-24.**
-  Every verified-quiet `membw` sweep on the 10-point grid has a worst point, and across the six of
-  them the deepest single-point departure runs **-0.36%, -0.59%, -1.00%, -2.17%, -5.93%, -6.91%**.
-  All six had encoder and decoder verified at 0%. **The variation survives the encoder guard, so
+  Every verified-quiet `membw` sweep on the 10-point grid has a worst point, and across the seven
+  of them the deepest single-point departure runs **-0.36%, -0.59%, -1.00%, -1.15%, -2.17%,
+  -5.93%, -6.91%**. All seven had encoder and decoder verified at 0%. **The variation survives the encoder guard, so
   it is something else, and its cause is unidentified.**
 
   ⚠️ **AN EARLIER VERSION OF THIS ENTRY SAID "TWO OF FIVE RUNS CARRY A 6-7% DIP".** That was a 3%
@@ -495,20 +495,36 @@ disagrees with the data directory, the data directory is right.*
 
   ⛔ **AND THEN THAT CORRECTION WAS ITSELF WRONG. 2026-08-24 WITHDREW IT.** The 08-23 fix cleaned
   the ceiling and left the split curve on contaminated 08-22 data, producing an apparent -3.18%
-  deficit and a rewritten "three-way trade". Re-measured verified-quiet, **n=3**, the split curve
-  sits at **-0.47% mean** against the repair's **-0.39%** - they agree to 0.08 points, and **both
-  sit at the ceiling.** On the eight grid points that replicate to within 1% across the three
-  sweeps it is **-0.14%**; quote both, never the subset alone.
+  deficit and a rewritten "three-way trade". Re-measured verified-quiet with replicates,
+  **the three configurations that keep the memory overclock cannot be told apart, and this
+  measurement is not capable of telling them apart.** Band-mean throughput, GB/s:
 
-  ⚠️ **THE FIRST VERSION OF THIS ENTRY SAID -0.11% AND "7 OF 10 WITHIN 0.4%", FROM ONE SWEEP.**
-  The three sweeps read individually give **-0.11%, -0.73% and -0.57%**, and seven, two and six of
-  ten points inside 0.4%. **Do not quote a per-point "within 0.4% at N of ten" statistic on
-  `membw` at all** - it reports which run happened to contain a bad point. Band means only, n>=3.
+  | configuration | sweeps | per sweep | mean | within-config spread |
+  |---|---|---|---|---|
+  | memory-only (ceiling) | 1 | 368.8 | 368.8 | - |
+  | repaired curve | 2 | 367.5 / 371.1 | 369.3 | 0.98% |
+  | split curve | 3 | 368.5 / 366.2 / 367.0 | 367.2 | 0.61% |
 
-  📐 **PER-POINT RUN-TO-RUN SPREAD ON `membw`, MEASURED: median 0.46%, max 4.19%, eight of ten
-  points inside 1%.** The two that are not are **1477 and 1867 MHz**. That is the resolution floor
-  for a single `membw` sweep on this card, and it is larger than every configuration difference
-  5.7.6 reports.
+  ⛔ **BETWEEN configurations: 0.56%. WITHIN one configuration: up to 0.98%. Across all six
+  sweeps: 1.32%.** The curves are closer together than one curve is to itself. **No ranking among
+  memory-only, repair and split on `membw` is supported** - do not write one, and treat any
+  ordering of them as noise until n is much larger.
+
+  ⚠️ **EVERY POINT ESTIMATE THIS ENTRY HAS EVER CARRIED WAS FROM TOO FEW SWEEPS.** Individually the
+  split sweeps give **-0.11%, -0.73%, -0.57%** against the memory-only reference and the repair
+  sweeps give **-0.39%, +0.58%**. Successive versions of this entry quoted -0.11%, then -0.42%,
+  then -0.47%, then "agrees to 0.03 points", then 0.08. **The number kept moving because n kept
+  being 1 or 2, not because the card changed.**
+
+  🔑 **THE REPAIR EXCEEDS THE "CEILING" IN ONE OF ITS TWO SWEEPS (+0.58%).** The memory-only card
+  is still the right reference in principle, and on 2026-08-23 "nothing beats a ceiling" correctly
+  caught a contaminated reference. But at this precision it is not a hard limit - it is n=1 and
+  carries the same fragility as everything measured against it.
+
+  ✅ **WHAT SURVIVES AT THIS n:** against the FULLY TUNED profile the plateau is removed outright,
+  **+18.7% mean across the band**, which is thirty times the noise. And the repair is dominated -
+  but that rests entirely on `gemm`, where eight sweeps give non-overlapping ranges. On `membw`
+  the honest statement is "gives up nothing measurable", not "matches the repair".
 
   **Of the three reasons given for calling the 08-22 run contaminated, only one survives.**
   MAGNITUDE stands: +2.88% (n=2), or +2.77% excluding the one known dip in each run, against the

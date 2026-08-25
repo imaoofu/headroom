@@ -1291,33 +1291,36 @@ had been suspected of instability on the strength of a ~2.5% low outlier appeari
 the configuration producing the best throughput is also the more reproducible one, and the
 remaining run-to-run variation belongs to the original tune.
 
-**On `membw` the split curve reaches the same ceiling the repair does.** Every configuration in
-this section is compared against the memory-overclock-only card, which carries the same +2500
-memory offset and a stock core curve, and is therefore the most bandwidth a core-curve change can
-deliver. On the 10-point 1400-2100 MHz grid, achieved clocks matched to 8.0 MHz in the worst case
-and to 1.8 MHz at the other thirty-seven:
+**On `membw` the three configurations that keep the memory overclock cannot be told apart, and
+this measurement is not capable of telling them apart.** All three carry the same +2500 memory
+offset and differ only in the core V/F curve. Six verified-quiet sweeps on the 10-point
+1400-2100 MHz grid, achieved clocks matched to 8.0 MHz in the worst case and to 1.8 MHz at the
+other forty-six, band-mean throughput in GB/s:
 
-| configuration | sweeps | vs the `membw` ceiling |
-|---|---|---|
-| repaired curve | 1 | **-0.39%** mean, -1.79% to +0.93% |
-| **split curve** | 3 | **-0.47%** mean, -2.17% to +0.50% |
+| configuration | sweeps | band mean per sweep | mean | within-configuration spread |
+|---|---|---|---|---|
+| memory-only (stock curve) | 1 | 368.8 | 368.8 | - |
+| repaired curve | 2 | 367.5 / 371.1 | **369.3** | **0.98%** |
+| split curve | 3 | 368.5 / 366.2 / 367.0 | **367.2** | **0.61%** |
 
-They agree to 0.08 percentage points. Neither should be read as beating the other; what both say
-is that the bandwidth cost of the flattened region is gone, and that the split curve gives up
-nothing measurable to recover it.
+**The configurations span 0.56%. A single configuration re-measured spans up to 0.98%, and the six
+sweeps together span 1.32%.** The differences between the curves are smaller than the variation
+between replicates of one curve, so no ranking among them is supported. What the six sweeps agree
+on is the thing that matters: **the bandwidth cost of the flattened region is gone in both the
+repair and the split curve.**
 
-**Restricted to the eight grid points that replicate to within 1% across the three split-curve
-sweeps, the figure is -0.14%.** The whole-band -0.47% is dragged down by the two points that do
-not replicate, and both readings are given because neither alone is honest: the first understates
-how close the configurations are, the second is chosen after seeing which points behaved.
+**"The ceiling" is a useful idea and not a hard limit at this precision.** The memory-only card is
+the most bandwidth a core-curve change should be able to deliver, and on 2026-08-23 an
+impossible-looking result - the repair exceeding it at all ten points - correctly identified a
+contaminated reference. But the repaired curve's second sweep also sits **0.58%** above it, and
+that is inside the noise established above rather than a signal. The reference is n=1 and carries
+the same fragility as everything measured against it.
 
-**The "within 0.4% at N of ten points" statistic that earlier versions of this paragraph quoted
-has been dropped, because it is not stable.** The three split-curve sweeps were taken within forty
-minutes with the profile untouched and all verified quiet. Read one at a time they give **-0.11%**,
-**-0.73%** and **-0.57%** against the ceiling, and seven, two and six of ten points inside 0.4%.
-A statistic that moves that far between replicates of one configuration reports which run happened
-to contain a bad point, and it should not have been quoted from a single sweep in the first
-place.
+**Every per-point statistic this paragraph used to quote has been withdrawn**, including "within
+0.4% at seven of ten points" and its successors. Read individually the three split-curve sweeps
+give **-0.11%**, **-0.73%** and **-0.57%** against the memory-only reference, and the two repair
+sweeps give **-0.39%** and **+0.58%**. Point estimates from one sweep moved by up to a full
+percentage point between replicates taken within the hour on an untouched profile.
 
 Against the fully tuned profile the plateau is removed outright - **+18.7% on average across the
 band, +1.6% to +29.5%**, with the largest gains where 5.7.2 found the deepest losses. That range
@@ -1369,14 +1372,15 @@ and a probe reads clocks rather than voltages. The reading offered here is conta
 magnitude alone, and it is offered as the leading explanation rather than an established one.
 
 **Every verified-quiet `membw` sweep on this grid has a worst point, and how bad it is varies
-continuously.** Across the six of them the deepest single-point departure from the local trend
-runs from **-0.36%** to **-6.91%**, with the others at -0.59%, -1.00%, -2.17% and -5.93%. There is
-no clean separation into runs that have a dip and runs that do not.
+continuously.** Across the seven of them the deepest single-point departure from the local trend
+runs from **-0.36%** to **-6.91%**, with the others at -0.59%, -1.00%, -1.15%, -2.17% and -5.93%.
+There is no clean separation into runs that have a dip and runs that do not.
 
 That matters because an earlier version of this subsection drew one. It reported "two of five runs
 carry a 6-7% dip", which was a threshold placed at 3% across a continuous distribution measured on
-five samples. A third split-curve sweep landed at -2.17% - between the two groups - and the
-distinction did not survive it. **The honest statement is a spread, not a count.**
+five samples. A third split-curve sweep landed at -2.17% and a second repair sweep at -1.15%, both
+between the two groups, and the distinction did not survive either. **The honest statement is a
+spread, not a count.**
 
 What the three split-curve sweeps do establish is where the measurement is unreliable. Per-point
 run-to-run standard deviation across them has a median of **0.46%** and a maximum of **4.19%**, and
@@ -1407,8 +1411,11 @@ configurations, and only two of them are on the frontier:
 | **split curve** | keeps most of the compute advantage | at the bandwidth ceiling |
 
 The repaired curve of 5.7.4 did its job, which was to identify the mechanism. As a configuration
-to run, the split curve matches its bandwidth and keeps the compute advantage it gives away, so
-there is no operating point at which the repair is the right choice.
+to run, it is dominated - but the evidence for that is entirely on the `gemm` side, where eight
+sweeps give ranges that do not overlap. On `membw` the two are indistinguishable, and the
+subsection above says why that is a statement about the measurement rather than about the curves.
+The claim is "the split curve gives up nothing measurable in bandwidth to keep its compute
+advantage", not "the split curve matches the repair".
 
 **What it does not recover.** The tuned curve still wins `gemm` efficiency across 1545-2625 MHz, by
 up to 30.5% at 2010 MHz, which is where that workload's efficiency optimum sits. The split curve

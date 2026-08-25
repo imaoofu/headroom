@@ -705,7 +705,16 @@ def peakPower():
 # contaminated reference this section was rewritten to remove.
 CLEAN_CEILING_MEMBW = "memonly-clean-20260823/20260823-205231_5060ti-memonly-clean-membw-fine_sweep.csv"
 DIRTY_CEILING_MEMBW = "membw-anomaly-20260819/20260820-181307_5060ti-memonly-membw-anomaly_sweep.csv"
+# Two sweeps, for the same reason the split curve has three: read individually they give
+# -0.39% and +0.58% against the memory-only reference, so a single one of them is not a
+# measurement of anything. REPAIR_MEMBW_FINE is kept as a name for the first because the
+# 2026-08-23 write-up quotes it specifically as the run that caught the contaminated
+# reference; analytical claims use the list.
 REPAIR_MEMBW_FINE = "curve-rebuild-20260823/20260823-202324_5060ti-curverebuilt-membw-fine_sweep.csv"
+REPAIR_MEMBW_RUNS = [
+    REPAIR_MEMBW_FINE,
+    "repair-clean-20260824/20260824-214928_5060ti-repair-clean-membw-fine-r2_sweep.csv",
+]
 TUNED_MEMBW_CLEAN = "20260822-183112_5060ti-tuned-membw-clean_sweep.csv"
 # TWO sweeps, averaged. n=1 was not enough: the two runs land at -0.11% and -0.73% against
 # the ceiling, because one of them carries a 6.91% single-point dip and the other does not.
@@ -734,22 +743,6 @@ OGTUNE_RUN = "20260823-192719_ogtune"
 def _r576throughput(paths, target):
     """Mean throughput at one target across however many sweeps a configuration has."""
     return mean(sweep(p)[target]["throughput"] for p in paths)
-
-
-def _r576vsCeiling(paths):
-    """Per-point throughput of one configuration against the clean memory-only ceiling."""
-    # Validated before any file is touched: a bare path is iterable, so without this the function
-    # would read single characters as filenames and fail somewhere unhelpful.
-    if isinstance(paths, str):
-        raise TypeError("pass a list of sweeps; a configuration measured once must say so")
-    ceiling = sweep(CLEAN_CEILING_MEMBW)
-    return [(_r576throughput(paths, t) / ceiling[t]["throughput"] - 1) * 100
-            for t in sorted(ceiling)]
-
-
-def _r576ceilingRow(label, paths):
-    d = _r576vsCeiling(paths)
-    return f"| {label} | {len(paths)} | {mean(d):.2f}% mean, {min(d):.2f}% to {max(d):+.2f}% |"
 
 
 @claim("5.7.6-tuned-spread", PAPER, "5.7.6")
@@ -806,44 +799,6 @@ def ceilingRose():
     return f"+{mean(d):.2f}%\non average, from +{min(d):.2f}% to +{max(d):.2f}%"
 
 
-def _r576perRun():
-    """Each split-curve sweep read on its own against the ceiling, worst first in filename order."""
-    ceiling = sweep(CLEAN_CEILING_MEMBW)
-    out = []
-    for path in SPLIT_MEMBW_RUNS:
-        rows = sweep(path)
-        d = [(rows[t]["throughput"] / ceiling[t]["throughput"] - 1) * 100 for t in sorted(ceiling)]
-        out.append((mean(d), sum(1 for v in d if abs(v) <= 0.4)))
-    return out
-
-
-def _r576pointSpread():
-    """Per-point run-to-run standard deviation across the split-curve sweeps, as percentages."""
-    ceiling = sweep(CLEAN_CEILING_MEMBW)
-    spreads = {}
-    for t in sorted(ceiling):
-        values = [sweep(p)[t]["throughput"] for p in SPLIT_MEMBW_RUNS]
-        spreads[t] = 100 * stdev(values) / mean(values)
-    return spreads
-
-
-@claim("5.7.6-per-run-readings", PAPER, "5.7.6")
-def perRunReadings():
-    """The three sweeps read individually - the evidence that a one-sweep reading is not usable.
-
-    Order matters here: this renders them in the order the runs were taken, so a claim that
-    happened to match after a reordering would be pinning different runs than the prose names."""
-    # Checked before any file is read, so the failure names the real problem rather than
-    # surfacing as a missing CSV somewhere downstream.
-    if len(SPLIT_MEMBW_RUNS) != 3:
-        raise ValueError("the prose names three readings; there are "
-                         f"{len(SPLIT_MEMBW_RUNS)} sweeps")
-    runs = _r576perRun()
-    means = ", ".join(f"**{m:.2f}%**" for m, _ in runs[:-1])
-    return (f"they give {means}\nand **{runs[-1][0]:.2f}%** against the ceiling, and "
-            + _r576join(_r576word(c) for _, c in runs) + " of ten points inside 0.4%")
-
-
 def _r576join(items):
     """"a, b and c" - the prose reads as English, so the rendering has to as well."""
     items = list(items)
@@ -852,53 +807,13 @@ def _r576join(items):
 
 def _r576word(n):
     small = {0: "zero", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
-             7: "seven", 8: "eight", 9: "nine", 10: "ten", 20: "twenty", 30: "thirty"}
+             7: "seven", 8: "eight", 9: "nine", 10: "ten", 20: "twenty", 30: "thirty",
+             40: "forty", 50: "fifty", 60: "sixty", 70: "seventy", 80: "eighty", 90: "ninety"}
     if n in small:
         return small[n]
     if 20 < n < 100:
         return small[n // 10 * 10] + "-" + small[n % 10]
     raise ValueError(f"no spelling for {n}; the prose that needs it should be rewritten")
-
-
-@claim("5.7.6-stable-subset", PAPER, "5.7.6")
-def stableSubset():
-    """The band mean restricted to points that actually replicate.
-
-    Reported alongside the whole-band figure and never instead of it: choosing the points after
-    seeing which behaved is a decision the reader has to be able to see."""
-    spreads = _r576pointSpread()
-    ceiling = sweep(CLEAN_CEILING_MEMBW)
-    stable = [t for t, v in spreads.items() if v < 1]
-    d = [(_r576throughput(SPLIT_MEMBW_RUNS, t) / ceiling[t]["throughput"] - 1) * 100
-         for t in stable]
-    return (f"the {_r576word(len(stable))} grid points that replicate to within 1% across the "
-            f"three split-curve\nsweeps, the figure is {mean(d):.2f}%")
-
-
-@claim("5.7.6-point-spread", PAPER, "5.7.6")
-def pointSpread():
-    spreads = _r576pointSpread()
-    stable = sum(1 for v in spreads.values() if v < 1)
-    worst = max(spreads, key=lambda t: spreads[t])
-    noisy = sorted(t for t, v in spreads.items() if v >= 1)
-    if len(noisy) != 2:
-        raise ValueError(f"the prose names two unreliable points; there are {len(noisy)}: {noisy}")
-    return (f"a median of **{median(spreads.values()):.2f}%** and a maximum of "
-            f"**{spreads[worst]:.2f}%**, and\n{_r576word(stable)} of the ten points replicate to "
-            f"within 1%. The two that do not are {noisy[0]} and {noisy[1]} MHz")
-
-
-@claim("5.7.6-split-vs-repair", PAPER, "5.7.6")
-def splitVsRepair():
-    """How closely the two configurations agree against the same reference.
-
-    Deliberately NOT reported as one beating the other. An earlier version of this claim pinned
-    the split curve "leading at seven of ten points"; the replicate taken twenty minutes later put
-    it at two of ten. Per-point statistics on this measurement are dominated by whether a run
-    happens to contain a dip, so what is pinned now is the distance between two band means."""
-    split = mean(_r576vsCeiling(SPLIT_MEMBW_RUNS))
-    repair = mean(_r576vsCeiling([REPAIR_MEMBW_FINE]))
-    return f"agree to {abs(split - repair):.2f} percentage points"
 
 
 @claim("5.7.6-clock-match", PAPER, "5.7.6")
@@ -910,34 +825,113 @@ def clockMatch():
     and the typical case is what makes the -0.11% and -0.39% readable as real."""
     ceiling = sweep(CLEAN_CEILING_MEMBW)
     deltas = []
-    for path in [REPAIR_MEMBW_FINE] + SPLIT_MEMBW_RUNS:
+    for path in REPAIR_MEMBW_RUNS + SPLIT_MEMBW_RUNS:
         rows = sweep(path)
         deltas.extend(abs(rows[t]["mhz"] - ceiling[t]["mhz"]) for t in ceiling)
     deltas.sort(reverse=True)
     # One point per sweep misses by the same amount at the top of the band, so "above the
     # third largest" counts zero. Split on the worst VALUE, not on a rank.
     outliers = sum(1 for d in deltas if d >= deltas[0])
-    sweeps = 1 + len(SPLIT_MEMBW_RUNS)
+    sweeps = len(REPAIR_MEMBW_RUNS) + len(SPLIT_MEMBW_RUNS)
     if len(deltas) != 10 * sweeps:
         raise ValueError(f"expected ten points across {sweeps} sweeps, got {len(deltas)}")
     return (f"achieved clocks matched to {deltas[0]:.1f} MHz in the worst case\n"
             f"and to {deltas[outliers]:.1f} MHz at the other {_r576word(len(deltas) - outliers)}")
 
 
-@claim("5.7.6-repair-vs-ceiling", PAPER, "5.7.6")
-def repairVsCeiling():
-    return _r576ceilingRow("repaired curve", [REPAIR_MEMBW_FINE])
+def _r576bandMean(path):
+    """Mean throughput across the whole 10-point band, in GB/s.
+
+    The band mean rather than a per-point comparison, because 2026-08-24 established that
+    per-point statistics on this measurement move by up to a full percentage point between
+    replicates of one untouched profile. Six sweeps of three configurations span 1.32%; the
+    configurations themselves span 0.56%. Nothing finer than a band mean is supportable.
+    """
+    return mean(r["throughput"] for r in sweep(path).values()) / 1e9
 
 
-@claim("5.7.6-split-vs-ceiling", PAPER, "5.7.6")
-def splitVsCeiling():
-    return _r576ceilingRow("split curve", SPLIT_MEMBW_RUNS)
+def _r576configRow(label, paths):
+    # A bare path is iterable, so without this a single sweep would be read one character at a
+    # time and the "sweeps" column would print its filename length. The count is a number the
+    # reader relies on, so it has to be a real count.
+    if isinstance(paths, str):
+        raise TypeError("pass a list of sweeps; a configuration measured once must say so")
+    values = [_r576bandMean(p) for p in paths]
+    spread = ("-" if len(values) == 1
+              else f"**{100 * (max(values) - min(values)) / mean(values):.2f}%**")
+    each = " / ".join(f"{v:.1f}" for v in values)
+    bold = "" if len(values) == 1 else "**"
+    return f"| {label} | {len(values)} | {each} | {bold}{mean(values):.1f}{bold} | {spread} |"
 
 
-# --- the two thirty-minute protocol runs ------------------------------------------------------
-#
-# EVERY AGGREGATE BELOW NAMES ITS WINDOW. See iterationsIn() in audit_claims.py for why that is
-# a required argument rather than a defaulted one.
+@claim("5.7.6-ceiling-row", PAPER, "5.7.6")
+def ceilingRow():
+    return _r576configRow("memory-only (stock curve)", [CLEAN_CEILING_MEMBW])
+
+
+@claim("5.7.6-repair-row", PAPER, "5.7.6")
+def repairRow():
+    return _r576configRow("repaired curve", REPAIR_MEMBW_RUNS)
+
+
+@claim("5.7.6-split-row", PAPER, "5.7.6")
+def splitRow():
+    return _r576configRow("split curve", SPLIT_MEMBW_RUNS)
+
+
+@claim("5.7.6-resolution", PAPER, "5.7.6")
+def resolution():
+    """The load-bearing claim of the subsection: the configurations are closer than the noise.
+
+    RAISES if that ever stops being true, because the sentence around it says no ranking is
+    supported. A future measurement that separates them would need different prose, not a
+    different number."""
+    groups = [[CLEAN_CEILING_MEMBW], REPAIR_MEMBW_RUNS, SPLIT_MEMBW_RUNS]
+    configMeans = [mean(_r576bandMean(p) for p in g) for g in groups]
+    between = 100 * (max(configMeans) - min(configMeans)) / mean(configMeans)
+    withinEach = [100 * (max(v) - min(v)) / mean(v) for v in
+                  ([_r576bandMean(p) for p in g] for g in groups) if len(v) > 1]
+    everySweep = [_r576bandMean(p) for g in groups for p in g]
+    across = 100 * (max(everySweep) - min(everySweep)) / mean(everySweep)
+    if between >= max(withinEach):
+        raise ValueError(f"the configurations now separate: between {between:.2f}% against a "
+                         f"within-configuration maximum of {max(withinEach):.2f}%. The prose says "
+                         "no ranking is supported and would no longer be true.")
+    return (f"span {between:.2f}%. A single configuration re-measured spans up to "
+            f"{max(withinEach):.2f}%, and the six\nsweeps together span {across:.2f}%")
+
+
+@claim("5.7.6-repair-above-ceiling", PAPER, "5.7.6")
+def repairAboveCeiling():
+    """The reference is exceeded, and the paragraph says why that is noise and not a finding."""
+    ceiling = sweep(CLEAN_CEILING_MEMBW)
+    rows = sweep(REPAIR_MEMBW_RUNS[1])
+    d = [(rows[t]["throughput"] / ceiling[t]["throughput"] - 1) * 100 for t in sorted(ceiling)]
+    return f"also sits **{mean(d):.2f}%** above it"
+
+
+@claim("5.7.6-per-sweep-readings", PAPER, "5.7.6")
+def perSweepReadings():
+    """Every individual reading, on one line, so no future edit can quote one of them alone."""
+    # Counts checked before any file is read, so a changed run list fails saying so rather than
+    # surfacing as a missing CSV. Third time this pattern has been needed in one file - a guard
+    # placed after the I/O reports the wrong problem.
+    if len(SPLIT_MEMBW_RUNS) != 3 or len(REPAIR_MEMBW_RUNS) != 2:
+        raise ValueError("the prose names three split and two repair sweeps; there are "
+                         f"{len(SPLIT_MEMBW_RUNS)} and {len(REPAIR_MEMBW_RUNS)}")
+    ceiling = sweep(CLEAN_CEILING_MEMBW)
+
+    def against(path):
+        rows = sweep(path)
+        return mean((rows[t]["throughput"] / ceiling[t]["throughput"] - 1) * 100
+                    for t in sorted(ceiling))
+
+    split = [against(p) for p in SPLIT_MEMBW_RUNS]
+    repair = [against(p) for p in REPAIR_MEMBW_RUNS]
+    return ("give " + _r576join(f"**{v:.2f}%**" for v in split)
+            + " against the memory-only reference, and the two repair\nsweeps give "
+            + _r576join(f"**{v:+.2f}%**" for v in repair))
+
 
 def _r576loadedFraction(label):
     run = stabilityRun(label)
@@ -1131,7 +1125,8 @@ def splitVsTunedBand():
 # both being transient and both moving between runs. Two of the five verified-quiet sweeps on this
 # grid carry one, so whatever produces it, that is not what it is.
 
-CLEAN_MEMBW_FINE = [CLEAN_CEILING_MEMBW, REPAIR_MEMBW_FINE, TUNED_MEMBW_CLEAN] + SPLIT_MEMBW_RUNS
+CLEAN_MEMBW_FINE = ([CLEAN_CEILING_MEMBW, TUNED_MEMBW_CLEAN]
+                    + REPAIR_MEMBW_RUNS + SPLIT_MEMBW_RUNS)
 
 
 def _r576dip(path):
