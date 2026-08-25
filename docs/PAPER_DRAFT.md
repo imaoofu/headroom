@@ -1282,7 +1282,7 @@ with both axes of the configuration confirmed before measuring:
 The gap is **+1.53%**, and the lowest split-curve run exceeds the highest tuned run — 18.22 against
 18.02 — so the split curve wins on every pairwise comparison the data admits. That statement does
 not depend on averaging, which matters at these sample sizes. All three split runs peaked at 2977.0
-MHz achieved, against the tuned card's 2946-2948 MHz.
+MHz achieved, against the tuned card's 2946.5-2948.1 MHz.
 
 **The split curve is also the steadier of the two**, 0.13% spread against 0.76%, a factor of 4.5 on
 standard deviation. This reverses a concern carried through the earlier sections: the split curve
@@ -1340,7 +1340,10 @@ its existence.
 **It survived thirty minutes of sustained load, which is the first such test in this work.** Under
 the protocol of the appendix - fifteen minutes of `gemm` then fifteen of `membw`, unlocked clocks,
 96.9% of one-second samples above 50% utilisation - the configuration recorded no driver reset, no
-throttled sample and no aborted iteration. Post-soak throughput did not fall: `gemm` drifted
+aborted iteration and no thermal or hardware-slowdown sample. It did brush its power limit: 15 of
+1765 samples reported the software power cap, which the logger classes as normal operation rather
+than as throttling, and which is what a 196.1 W peak against a 200 W limit looks like at one-second
+resolution. Post-soak throughput did not fall: `gemm` drifted
 **-0.11%** and `membw` **+0.16%** between the first and last quarter of their post-soak iterations,
 both of which are improvements or noise rather than degradation. Power averaged 140.2 W and peaked
 at 196.1 W against a 200 W limit; temperature peaked at 79 C.
@@ -1351,24 +1354,37 @@ entry while being net slower than stock. Measuring throughput continuously is th
 that, and over thirty minutes there is no sign of it here.
 
 **The original tune was then put through the same test, forty minutes later on the same card, and
-also passed** - 33 iterations, zero aborted, zero driver resets, zero throttled samples, 96.8%
-loaded, drift `gemm` +0.10% and `membw` -0.28%. Two results follow from having both.
+also passed** - 33 iterations, zero aborted, zero driver resets, zero thermal or hardware-slowdown
+samples, 14 of 1765 at the software power cap, 96.8% loaded, drift `gemm` +0.10% and `membw`
+-0.28%. Two results follow from having both.
 
 **The throughput gap reproduces under a completely different protocol.** Post-soak means over
-eleven unlocked iterations each give `gemm` 18.24 TFLOP/s on the split curve against 17.98 on the
-original tune, a gap of **+1.45%**. The +1.53% of the table above came from peak values in locked
+eleven unlocked iterations each give `gemm` 18.23 TFLOP/s on the split curve against 17.98 on the
+original tune, a gap of **+1.41%**. The +1.53% of the table above came from peak values in locked
 thirteen-point sweeps. Two measurement designs that share no methodology - locked against unlocked,
-peak-of-sweep against sustained mean, minutes apart against days apart - agree to within 0.08
+peak-of-sweep against sustained mean, minutes apart against days apart - agree to within 0.12
 percentage points. That is a stronger corroboration of the gap than either measurement alone.
 
 **The `membw` advantage does not appear at all**, and this is the more practically important of
 the two. Under sustained unlocked load the two configurations are indistinguishable on `membw`:
-423.1 GB/s against 424.6, a difference of -0.35% and in the wrong direction to matter. This does
+422.8 GB/s against 424.6, a difference of -0.44% and in the wrong direction to matter. The
+difference stays small and stays negative whichever window it is read on - -0.08% across the soak
+iterations, -0.33% across all seventeen - which is what indistinguishable looks like. This does
 not contradict 5.7.2, it locates it. The plateau is a property of the **1402-1867 MHz band**,
 where the flattened curve pins voltage and starves the crossbar; a card left to boost freely sits
 at 2968-2993 MHz, above the flattened region entirely, where both curves carry the same voltage.
 The harm is real and reproducible when frequency is locked into that band, and absent when it is
 not. Anyone reading 5.7.2's "-29.6%" as a cost they would pay in ordinary use would be wrong.
+
+**Both of those figures were previously assembled from three different windows.** An earlier
+version gave the split curve's `gemm` mean over all sixteen iterations, its `membw` mean over the
+five soak iterations alone, and the original tune's means over its eleven post-soak iterations,
+beneath prose declaring all of them post-soak. Every number was a real measurement of something and
+the pairing was still wrong. Read on the window the prose declares, the gap is +1.41% rather than
++1.45% and the `membw` difference -0.44% rather than -0.35%, which changes no conclusion here. It
+is recorded because the defect was not the arithmetic: it was an aggregate whose window was
+implicit. The reader that supplies these numbers to the audit now requires the window to be named
+at the call site, so the same mistake cannot be made silently again.
 
 **Neither run distinguishes the two configurations on steadiness.** All four drift figures fall
 between -0.28% and +0.16%, in both directions, which is noise. The 4.5x reproducibility advantage

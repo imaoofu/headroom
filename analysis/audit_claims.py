@@ -101,6 +101,10 @@ def provenanceOf(relativePath):
     Arithmetic was never the weak point. Provenance was, and nothing checked it.
     """
     if relativePath not in _provenanceCache:
+        if relativePath.startswith(STABILITY_PREFIX):
+            _provenanceCache[relativePath] = _stabilityProvenance(
+                relativePath[len(STABILITY_PREFIX):])
+            return _provenanceCache[relativePath]
         csvPath = REPO_ROOT / "data" / "frequency-sweeps" / relativePath
         # Voltage joins are derived artifacts; their conditions are the parent sweep's.
         stem = str(csvPath).replace("_sweep_voltage.csv", "_sweep.csv")
@@ -247,6 +251,156 @@ def voltageJoin(relativePath):
             raise ValueError(f"{relativePath} yielded no rows")
         _sweepCache[key] = rows
     return _sweepCache[key]
+
+
+# --------------------------------------------------------------------------------------
+# Stability protocol runs
+# --------------------------------------------------------------------------------------
+#
+# A protocol run leaves four artifacts sharing one file stem: the harness verdict
+# (_stability_protocol.json), the logger session summary (_session.json), the per-iteration
+# throughputs (_stability_iterations.csv) and the one-second telemetry (_samples.csv). They are
+# read together because no single one of them answers a question about the run on its own.
+
+STABILITY_PREFIX = "stability-runs/"
+
+# The three windows a run divides into. Named constants rather than bare strings so a typo is an
+# AttributeError at import rather than an empty selection at audit time.
+SOAK = "soak"                 # the thermal-soak iterations, EXCLUDED from the degradation test
+POST_SOAK = "post-soak"       # everything after the soak: what the run actually certifies
+WHOLE_RUN = "whole-run"       # both, for claims about the run rather than about the verdict
+
+_WINDOWS = (SOAK, POST_SOAK, WHOLE_RUN)
+
+
+def stabilityRun(label):
+    """Load one stability-protocol run by the file stem its four artifacts share.
+
+    e.g. stabilityRun("20260823-183256_splitcurve")
+    """
+    _accessLog.add(STABILITY_PREFIX + label)
+    key = ("stability", label)
+    if key not in _sweepCache:
+        base = REPO_ROOT / "data" / "stability-runs"
+        protocolPath = base / (label + "_stability_protocol.json")
+        sessionPath = base / (label + "_session.json")
+        iterationsPath = base / (label + "_stability_iterations.csv")
+        samplesPath = base / (label + "_samples.csv")
+        for path in (protocolPath, sessionPath, iterationsPath, samplesPath):
+            if not path.exists():
+                raise FileNotFoundError(f"stability run {label} is missing {path.name}")
+
+        # utf-8-sig throughout: these files predate the BOM fix and every one of them carries a
+        # byte-order mark that json.load and csv.DictReader both mis-read.
+        with open(protocolPath, encoding="utf-8-sig") as handle:
+            protocol = json.load(handle)
+        with open(sessionPath, encoding="utf-8-sig") as handle:
+            session = json.load(handle)
+
+        rows = []
+        with open(iterationsPath, encoding="utf-8-sig") as handle:
+            for raw in csv.DictReader(handle):
+                rows.append({
+                    "iteration": int(raw["iteration"]),
+                    "workload": raw["workload"],
+                    "throughput": float(raw["throughput"]),
+                    "unit": raw["unit"],
+                    "aborted": raw["aborted"] in ("True", "true"),
+                    "inSoak": raw["in_soak"] in ("True", "true"),
+                })
+        if not rows:
+            raise ValueError(f"stability run {label} recorded no iterations")
+
+        samples = []
+        with open(samplesPath, encoding="utf-8-sig") as handle:
+            for raw in csv.DictReader(handle):
+                if not raw.get("sm_clock_mhz"):
+                    continue                          # QUERY_FAILED rows carry no telemetry
+                samples.append({
+                    "smClock": float(raw["sm_clock_mhz"]),
+                    "power": float(raw["power_draw_w"]),
+                    "temperature": float(raw["temperature_c"]),
+                    "utilisation": float(raw["gpu_utilization_pct"]),
+                    "throttleReasons": raw.get("throttle_reasons", ""),
+                })
+        if not samples:
+            raise ValueError(f"stability run {label} recorded no telemetry samples")
+
+        _sweepCache[key] = {"label": label, "protocol": protocol, "session": session,
+                            "iterations": rows, "samples": samples}
+    return _sweepCache[key]
+
+
+def iterationsIn(run, workload, window):
+    """Throughputs from one workload phase of a run, restricted to `window`.
+
+    THE WINDOW ARGUMENT HAS NO DEFAULT, ON PURPOSE. Paper 5.7.6 compared the split curve against
+    the original tune under sustained load and drew three numbers from three different windows
+    inside one sentence - the split curve's `gemm` mean over all sixteen iterations, its `membw`
+    mean over the five SOAK iterations only, and the original tune's mean over its eleven
+    post-soak iterations - beneath prose declaring all of them "post-soak means over eleven
+    unlocked iterations each". Every individual figure was a real measurement of something. The
+    pairing was still wrong, and it read as three tidy numbers.
+
+    Requiring the window at the call site is the structural fix. The corrected numbers are the
+    symptom; an aggregate whose window is implicit is the defect.
+    """
+    if window not in _WINDOWS:
+        raise ValueError(f"window must be one of {_WINDOWS}, got {window!r}")
+    values = []
+    for row in run["iterations"]:
+        if row["workload"] != workload or row["aborted"]:
+            continue
+        if window == SOAK and not row["inSoak"]:
+            continue
+        if window == POST_SOAK and row["inSoak"]:
+            continue
+        values.append(row["throughput"])
+    if not values:
+        raise ValueError(f"{run['label']} has no {workload} iterations in the {window} window")
+    return values
+
+
+def loadedSamples(run):
+    """Telemetry samples the logger counted as loaded, by its own recorded threshold.
+
+    The threshold is read from the session rather than assumed, and the GpuIdle throttle bit is
+    deliberately not used for this: the driver reports it on every sample of a compute-only
+    workload running at 98% utilisation. The logger documents that at length; this only has to
+    avoid re-deriving it differently.
+    """
+    threshold = float(run["session"].get("loaded_threshold_pct", 50))
+    return [s for s in run["samples"] if s["utilisation"] > threshold]
+
+
+def _stabilityProvenance(label):
+    """What a stability run recorded about its own measurement conditions.
+
+    The protocol REFUSES TO START when the encoder or decoder reads above zero, so a completed
+    run was quiet at preflight by construction - but until protocol 1.1.0 it did not write the
+    readings down, and a guarantee that leaves no evidence behind cannot be audited. Runs
+    predating that field are DECLARED, not QUIET, and that is the honest tier for them.
+    """
+    base = REPO_ROOT / "data" / "stability-runs"
+    protocolPath = base / (label + "_stability_protocol.json")
+    if not protocolPath.exists():
+        return UNKNOWN, "no protocol JSON for this run"
+    try:
+        with open(protocolPath, encoding="utf-8-sig") as handle:
+            protocol = json.load(handle)
+    except Exception as error:                        # noqa: BLE001 - reported, not raised
+        return UNKNOWN, f"protocol JSON unreadable: {type(error).__name__}"
+    enc = protocol.get("encoder_util_pct")
+    dec = protocol.get("decoder_util_pct")
+    if enc is not None and dec is not None:
+        if enc == 0 and dec == 0:
+            return QUIET, "encoder 0%, decoder 0% at protocol preflight"
+        return BUSY, f"encoder {enc}%, decoder {dec}% at protocol preflight"
+    if protocol.get("applied_settings"):
+        version = protocol.get("protocol_version", "?")
+        return DECLARED, ("protocol " + str(version) + " refused to start on a busy video engine "
+                          "but recorded no reading")
+    return UNKNOWN, "protocol JSON records neither settings nor video-engine telemetry"
 
 
 def signedPct(ratio, minus="-"):

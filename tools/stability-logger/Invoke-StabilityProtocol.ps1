@@ -73,7 +73,7 @@ $ErrorActionPreference = "Stop"
 
 # Bump this whenever a step above changes. A run's record carries it, so two runs can be compared
 # only when their protocol versions match - which is the entire point of fixing the protocol.
-$PROTOCOL_VERSION = "1.0.0"
+$PROTOCOL_VERSION = "1.1.0"
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $workloadPy = Join-Path $repoRoot "tools\frequency-sweep\gpu_workload.py"
@@ -399,6 +399,15 @@ $summary = [ordered]@{
     protocol_version    = $PROTOCOL_VERSION
     session_label       = $SessionLabel
     applied_settings    = $AppliedSettings
+    # WHAT THE PREFLIGHT SAW, not merely that it ran. Added in 1.1.0 because the claims auditor
+    # classifies a run by the evidence its artifacts carry, and 1.0.0 carried none: its runs read
+    # as "declared-unverified" - indistinguishable from a run taken before the guard existed -
+    # even though the guard demonstrably refuses to start on a busy engine. A guarantee that
+    # leaves no record behind cannot be audited, which is this project's recurring defect one
+    # level up. Non-zero here is only possible via -AllowVideoEngines.
+    encoder_util_pct    = $encMax
+    decoder_util_pct    = $decMax
+    video_engines_allowed = [bool]$AllowVideoEngines
     duration_minutes    = $DurationMinutes
     soak_minutes        = $SoakMinutes
     degradation_threshold_pct = $DegradationPercent

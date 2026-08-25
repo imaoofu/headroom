@@ -311,7 +311,7 @@ module then does `from audit_claims import claim`, which imports a *second copy*
 its own empty registry — claims register into one copy and the runner reads the other, reporting
 "0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
 
-Coverage as of 2026-08-22: **61 claims green, 27 sections unaudited.**
+Coverage as of 2026-08-24: **87 claims green, 26 sections unaudited.**
 
 ---
 
@@ -509,14 +509,18 @@ disagrees with the data directory, the data directory is right.*
 - 🟡 **The split curve passed its first stability run, 2026-08-23. The other two configurations
   have never been tested.** Thirty minutes under protocol v1.0.0
   (`tools/stability-logger/Invoke-StabilityProtocol.ps1`): 33 iterations, zero aborted, zero
-  driver resets, zero throttled samples, 96.9% loaded, post-soak drift `gemm` **-0.11%** and
-  `membw` **+0.16%**. Peak 196.1 W of a 200 W limit, peak 79 C.
+  driver resets, zero thermal or hardware-slowdown samples, 96.9% loaded, post-soak drift `gemm`
+  **-0.11%** and `membw` **+0.16%**. Peak 196.1 W of a 200 W limit, peak 79 C.
+
+  **Not "zero throttled samples" without qualification** - 15 of 1765 hit the software power cap,
+  which the logger classes as normal rather than as throttling. The paper said the unqualified
+  version until 2026-08-24.
 
   **The original tune passed the same test forty minutes later**, drift `gemm` +0.10% / `membw`
-  -0.28%. 🔑 **Two things fall out of having both.** First, the `gemm` gap reproduces: +1.45%
+  -0.28%. 🔑 **Two things fall out of having both.** First, the `gemm` gap reproduces: +1.41%
   under sustained unlocked load against +1.53% from locked sweep peaks - different protocols,
-  agreeing to 0.08 points. Second, **the split curve's `membw` advantage vanishes at free boost**
-  (-0.35%), because the plateau is a property of 1402-1867 MHz and a boosting card sits at
+  agreeing to 0.12 points. Second, **the split curve's `membw` advantage vanishes at free boost**
+  (-0.44%), because the plateau is a property of 1402-1867 MHz and a boosting card sits at
   2968-2993 MHz, above it. Do not quote §5.7.2's -29.6% as a cost paid in normal use; it is a
   locked-frequency result.
 
@@ -527,7 +531,20 @@ disagrees with the data directory, the data directory is right.*
   spread, not within-run drift) is neither confirmed nor overturned by them.
   What was once called a "~2.5% outlier in 1 of 3 runs" is better described by the mid-band
   reproducibility entry above.
-- **27 paper sections are unaudited.** 61 claims are green; `analyze_fine_sweep.py` needs its
+
+  ⚠️ **THE +1.41% AND -0.44% ABOVE WERE +1.45% AND -0.35% UNTIL 2026-08-24, AND BOTH WERE WRONG
+  FOR THE SAME REASON.** The paragraph declared "post-soak means over eleven unlocked iterations
+  each" and then drew its three numbers from three different windows: the split curve's `gemm`
+  mean over all sixteen iterations, its `membw` mean over the five SOAK iterations alone, and the
+  original tune's over its eleven post-soak ones. Every figure was a real measurement of
+  something. The pairing was not, and it read as three tidy numbers.
+
+  No conclusion changed - the gap still corroborates, the `membw` difference is still noise in the
+  wrong direction - but the defect was structural, not arithmetic. `iterationsIn()` in
+  `analysis/audit_claims.py` now REQUIRES the window at the call site, and §5.7.6 went from 4
+  pinned numbers to 23. **The lesson is the one this project keeps relearning: an aggregate whose
+  window is implicit is a claim nobody can check.**
+- **26 paper sections are unaudited.** 87 claims are green; `analyze_fine_sweep.py` needs its
   summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
 - **The failure detector has never seen a failure.** Deliberately crashing something and confirming
   the logger catches it is still the highest-value single hour available.

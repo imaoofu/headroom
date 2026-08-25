@@ -80,9 +80,13 @@ try {
     # an -ArgumentList ARRAY and hit the very bug it exists to detect: the settings string split
     # and "with" landed on the harness's own -DegradationPercent, so the harness died on parameter
     # binding and never reached the code under test. Two levels of the same mistake in one file.
+    # -AllowVideoEngines because this control is about the LOGGER refusing to start, and without
+    # it the run depends on whether a browser tab happens to be decoding video: the harness would
+    # exit 5 at the preflight instead of exit 2 at the logger, and the test would report a failure
+    # that says nothing about the code. The video guard has its own coverage.
     $childArgs = ('-NoProfile -ExecutionPolicy Bypass -File "{0}" -SessionLabel "deadloggercontrol" ' +
                   '-AppliedSettings "POSITIVE CONTROL with spaces that will split" ' +
-                  '-DurationMinutes 2 -SoakMinutes 1') -f $copy
+                  '-DurationMinutes 2 -SoakMinutes 1 -AllowVideoEngines') -f $copy
     $child = Start-Process -FilePath "powershell.exe" -PassThru -Wait -NoNewWindow `
                            -RedirectStandardOutput $capture -RedirectStandardError $captureErr `
                            -ArgumentList $childArgs

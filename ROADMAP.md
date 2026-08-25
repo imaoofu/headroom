@@ -50,7 +50,8 @@ Nothing here is research. It is the difference between "code exists" and "code i
   truncated log.
 - 🟡 **[CORE] Stability-test the applied curves.** Started 2026-08-23. **The split-region curve -
   the configuration section 5.7.6 reports as best - passed a thirty-minute run under protocol
-  v1.0.0**: 33 iterations, zero aborted, zero driver resets, zero throttled samples, 96.9% loaded.
+  v1.0.0**: 33 iterations, zero aborted, zero driver resets, zero thermal or hardware-slowdown
+  samples (15 of 1765 at the software power cap, which is normal), 96.9% loaded.
   Post-soak throughput did not fall - `gemm` **-0.11%**, `membw` **+0.16%** - which is the check
   that addresses the GDDR7 trap, since silent error correction shows up as lost throughput rather
   than as a crash. Power averaged 140.2 W, peaked 196.1 W of 200 W; temperature peaked 79 C.
@@ -58,12 +59,17 @@ Nothing here is research. It is the difference between "code exists" and "code i
   Read it as "no failure observed in thirty minutes", never as "stable".
 
   **The original tune passed the same test forty minutes later** - 33 iterations, zero aborted,
-  zero resets, zero throttled samples, drift `gemm` +0.10% and `membw` -0.28%. Two results follow:
-  the split curve's `gemm` advantage reproduces at **+1.45%** under sustained unlocked load against
-  the **+1.53%** measured from locked sweep peaks, two protocols sharing no methodology agreeing to
-  0.08 points; and the split curve's `membw` advantage **does not appear at all** at free boost
-  (-0.35%), because the plateau lives at 1402-1867 MHz and a boosting card sits at 2968-2993 MHz,
-  above it. 5.7.2's -29.6% is a locked-frequency cost, not one paid in ordinary use.
+  zero resets, zero thermal or hardware-slowdown samples, drift `gemm` +0.10% and `membw` -0.28%.
+  Two results follow: the split curve's `gemm` advantage reproduces at **+1.41%** under sustained
+  unlocked load against the **+1.53%** measured from locked sweep peaks, two protocols sharing no
+  methodology agreeing to 0.12 points; and the split curve's `membw` advantage **does not appear
+  at all** at free boost (-0.44%), because the plateau lives at 1402-1867 MHz and a boosting card
+  sits at 2968-2993 MHz, above it. 5.7.2's -29.6% is a locked-frequency cost, not one paid in
+  ordinary use.
+
+  Both of those figures were +1.45% and -0.35% until 2026-08-24, when re-deriving them found the
+  paragraph had drawn three numbers from three different aggregation windows while declaring one.
+  Corrected, pinned, and the reader now requires the window to be named - see 5.7.6.
 
   **Still open, and most of the work remains:**
   - The **repaired curve** has not been tested at all.
@@ -402,7 +408,7 @@ Turning two separate models into one project with a single research question.
   the rendering stops matching the prose; edit the prose and it stops matching the rendering.
   Matching twice is reported AMBIGUOUS rather than passing, because a claim that appears in two
   places is not pinning the line anyone thinks it is.
-  61 claims over §5.4, §5.4.1, §5.4.3, §5.4.4, §5.7.1, §5.7.2, §5.7.5 and §5.7.6, all green. `--coverage` lists
+  87 claims over §5.4, §5.4.1, §5.4.3, §5.4.4, §5.7.1, §5.7.2, §5.7.4, §5.7.5 and §5.7.6, all green. `--coverage` lists
   every number in an audited section that no claim pins, and every numbered section with no claims
   at all, so the gap is visible instead of assumed: 27 of the paper's numbered sections have none.
   **It found a real error on its first run**, in a section written days earlier: §5.7.1's

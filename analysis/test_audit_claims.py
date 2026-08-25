@@ -610,9 +610,314 @@ def testAuditRecordsEverySourceAClaimTouches():
         ac._sweepCache.clear()
 
 
+
+
+# ---------------------------------------------------------------------------------------------
+# Stability-run readers, added 2026-08-24.
+#
+# WHY THEY EXIST. Section 5.7.6 quoted two sustained-load comparisons whose numbers came from
+# three different aggregation windows inside one sentence - the split curve's gemm mean over all
+# sixteen iterations, its membw mean over the five SOAK iterations alone, and the original tune's
+# means over its eleven post-soak iterations - beneath prose declaring all of them post-soak.
+# Every figure was a real measurement. The pairing was not, and nothing could see it, because the
+# whole paragraph was unpinned prose.
+#
+# So `iterationsIn` takes the window as a required argument. These tests exist to keep it that
+# way: if the window ever acquires a default, several of them stop being able to fail.
+# ---------------------------------------------------------------------------------------------
+
+
+def _writeStabilityRun(root, label, iterationRows, samples=None, session=None, protocol=None):
+    """Lay out the four artifacts a protocol run leaves, under a temp REPO_ROOT."""
+    import json as _json
+
+    base = root / "data" / "stability-runs"
+    base.mkdir(parents=True, exist_ok=True)
+    (base / f"{label}_stability_protocol.json").write_text(
+        _json.dumps(protocol if protocol is not None else {"protocol_version": "1.0.0"}),
+        encoding="utf-8")
+    (base / f"{label}_session.json").write_text(
+        _json.dumps(session if session is not None else {"loaded_threshold_pct": 50}),
+        encoding="utf-8")
+
+    header = ("iteration,workload,phase_elapsed_s,throughput,unit,duration_s,temp_start_c,"
+              "temp_peak_c,aborted,in_soak")
+    lines = [header]
+    for i, (workload, value, aborted, inSoak) in enumerate(iterationRows, start=1):
+        lines.append(f'"{i}","{workload}","0","{value}","FLOP/s","1","40","50","{aborted}","{inSoak}"')
+    (base / f"{label}_stability_iterations.csv").write_text("\n".join(lines) + "\n",
+                                                            encoding="utf-8")
+
+    sampleHeader = ("timestamp_iso,elapsed_seconds,sm_clock_mhz,memory_clock_mhz,power_draw_w,"
+                    "temperature_c,gpu_utilization_pct,memory_utilization_pct,fan_speed_pct,"
+                    "memory_used_mb,throttle_bitmask,throttle_reasons")
+    rows = [sampleHeader]
+    for clock, util, reasons in (samples if samples is not None else [(3000, 99, "None")]):
+        rows.append(f"2026-08-24T00:00:00,1,{clock},14001,150,60,{util},50,40,1000,0x0,{reasons}")
+    (base / f"{label}_samples.csv").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    return base
+
+
+def testIterationWindowsPartitionTheRun():
+    """soak and post-soak must be disjoint, cover the run, and give DIFFERENT answers.
+
+    The last part is what makes the rest meaningful. A window argument that is accepted and then
+    ignored would satisfy "disjoint" and "covers" trivially - both windows would return the same
+    list - so the test asserts the three windows disagree on data built to make them disagree.
+    """
+    import audit_claims as ac
+
+    saved = ac.REPO_ROOT
+    with tempfile.TemporaryDirectory() as raw:
+        root = Path(raw)
+        _writeStabilityRun(root, "windowtest", [
+            ("gemm", 100.0, "False", "True"),        # soak
+            ("gemm", 100.0, "False", "True"),        # soak
+            ("gemm", 200.0, "False", "False"),       # post-soak
+            ("gemm", 200.0, "False", "False"),       # post-soak
+        ])
+        try:
+            ac.REPO_ROOT = root
+            ac._sweepCache.clear()
+            run = ac.stabilityRun("windowtest")
+            soak = ac.iterationsIn(run, "gemm", ac.SOAK)
+            post = ac.iterationsIn(run, "gemm", ac.POST_SOAK)
+            whole = ac.iterationsIn(run, "gemm", ac.WHOLE_RUN)
+            check("soak selects only the soak iterations", soak == [100.0, 100.0], f"got {soak}")
+            check("post-soak selects only the rest", post == [200.0, 200.0], f"got {post}")
+            check("whole-run is both", sorted(whole) == [100.0, 100.0, 200.0, 200.0], f"got {whole}")
+            check("the windows do not agree with each other",
+                  len({tuple(soak), tuple(post), tuple(whole)}) == 3,
+                  "two windows returned the same selection")
+        finally:
+            ac.REPO_ROOT = saved
+            ac._sweepCache.clear()
+
+
+def testIterationWindowMustBeNamed():
+    """A misspelt window has to raise, not return nothing.
+
+    An unknown window that quietly selected zero rows would surface as a mean() of an empty
+    sequence somewhere far from the mistake, which is the shape of bug this whole file is about.
+    """
+    import audit_claims as ac
+
+    saved = ac.REPO_ROOT
+    with tempfile.TemporaryDirectory() as raw:
+        root = Path(raw)
+        _writeStabilityRun(root, "guardtest", [("gemm", 1.0, "False", "False")])
+        try:
+            ac.REPO_ROOT = root
+            ac._sweepCache.clear()
+            run = ac.stabilityRun("guardtest")
+            raised = False
+            try:
+                ac.iterationsIn(run, "gemm", "postsoak")
+            except ValueError:
+                raised = True
+            check("an unrecognised window raises", raised, "it was accepted silently")
+
+            # And a window that is valid but empty for this workload must also raise rather than
+            # hand back [] for someone to average.
+            emptyRaised = False
+            try:
+                ac.iterationsIn(run, "gemm", ac.SOAK)
+            except ValueError:
+                emptyRaised = True
+            check("a valid but empty window raises", emptyRaised, "an empty list was returned")
+        finally:
+            ac.REPO_ROOT = saved
+            ac._sweepCache.clear()
+
+
+def testAbortedIterationsAreExcluded():
+    import audit_claims as ac
+
+    saved = ac.REPO_ROOT
+    with tempfile.TemporaryDirectory() as raw:
+        root = Path(raw)
+        _writeStabilityRun(root, "abortedtest", [
+            ("gemm", 100.0, "False", "False"),
+            ("gemm", 0.5, "True", "False"),          # a failed iteration, not a slow one
+        ])
+        try:
+            ac.REPO_ROOT = root
+            ac._sweepCache.clear()
+            values = ac.iterationsIn(ac.stabilityRun("abortedtest"), "gemm", ac.POST_SOAK)
+            check("an aborted iteration is not a data point", values == [100.0], f"got {values}")
+        finally:
+            ac.REPO_ROOT = saved
+            ac._sweepCache.clear()
+
+
+def testLoadedSamplesUsesTheRunsOwnThreshold():
+    """Read the threshold the logger recorded rather than assuming its default.
+
+    The logger's threshold is configurable and its value is the difference between "the card was
+    busy for 96.9% of the run" and a number that means nothing. Hardcoding 50 here would agree
+    with every run taken so far and silently disagree with the first one that changed it.
+    """
+    import audit_claims as ac
+
+    saved = ac.REPO_ROOT
+    with tempfile.TemporaryDirectory() as raw:
+        root = Path(raw)
+        _writeStabilityRun(root, "threshtest", [("gemm", 1.0, "False", "False")],
+                           samples=[(3000, 95, "None"), (3000, 70, "None"), (800, 5, "GpuIdle")],
+                           session={"loaded_threshold_pct": 80})
+        try:
+            ac.REPO_ROOT = root
+            ac._sweepCache.clear()
+            loaded = ac.loadedSamples(ac.stabilityRun("threshtest"))
+            check("only samples above the recorded threshold count", len(loaded) == 1,
+                  f"got {len(loaded)} at a threshold of 80")
+        finally:
+            ac.REPO_ROOT = saved
+            ac._sweepCache.clear()
+
+
+def testStabilityRunRefusesAnIncompleteRun():
+    """All four artifacts are checked BEFORE any of them is parsed.
+
+    Asserting only "it raises FileNotFoundError" would not test anything: open() raises that by
+    itself when it reaches the missing file, so the check could be deleted and the test would
+    still pass. That is the assert-an-outcome-the-mutation-also-produces failure recorded twice
+    above, and a mutation run caught this test committing it.
+
+    So the fixture makes the iterations CSV unparseable AND removes the telemetry. With the
+    upfront check the reader reports the missing file; without it, it parses its way into a
+    KeyError on the malformed CSV first and never mentions what is actually absent.
+    """
+    import audit_claims as ac
+
+    saved = ac.REPO_ROOT
+    with tempfile.TemporaryDirectory() as raw:
+        root = Path(raw)
+        base = _writeStabilityRun(root, "partialtest", [("gemm", 1.0, "False", "False")])
+        (base / "partialtest_samples.csv").unlink()
+        (base / "partialtest_stability_iterations.csv").write_text(
+            'iteration,workload,aborted,in_soak\n"1","gemm","False","False"\n',
+            encoding="utf-8")
+        try:
+            ac.REPO_ROOT = root
+            ac._sweepCache.clear()
+            error = None
+            try:
+                ac.stabilityRun("partialtest")
+            except Exception as caught:                 # noqa: BLE001 - the type is the assertion
+                error = caught
+            check("a run missing an artifact is refused", error is not None, "it loaded anyway")
+            check("it names the missing artifact rather than failing on a later one",
+                  isinstance(error, FileNotFoundError) and "partialtest_samples.csv" in str(error),
+                  f"got {type(error).__name__}: {error}")
+        finally:
+            ac.REPO_ROOT = saved
+            ac._sweepCache.clear()
+
+
+def testStabilityProvenanceTiers():
+    """A protocol run that refuses to start on a busy encoder still has to WRITE DOWN what it saw.
+
+    Protocol 1.0.0 did not, so its runs are declared-unverified rather than verified-quiet even
+    though the guard demonstrably ran. That is the honest tier: the guarantee exists but the
+    evidence does not, and this project has already recorded what happens when a tool cannot tell
+    "verified fine" from "not verified at all".
+    """
+    import json as _json
+    import audit_claims as ac
+
+    cases = [
+        ("quiet", {"encoder_util_pct": 0, "decoder_util_pct": 0, "applied_settings": "x"}, ac.QUIET),
+        ("busy", {"encoder_util_pct": 14, "decoder_util_pct": 0, "applied_settings": "x"}, ac.BUSY),
+        ("v100", {"protocol_version": "1.0.0", "applied_settings": "x"}, ac.DECLARED),
+        ("bare", {"protocol_version": "1.0.0"}, ac.UNKNOWN),
+    ]
+    saved = ac.REPO_ROOT
+    with tempfile.TemporaryDirectory() as raw:
+        root = Path(raw)
+        base = root / "data" / "stability-runs"
+        base.mkdir(parents=True)
+        try:
+            ac.REPO_ROOT = root
+            for label, payload, expected in cases:
+                (base / f"{label}_stability_protocol.json").write_text(_json.dumps(payload),
+                                                                       encoding="utf-8")
+                ac._provenanceCache.clear()
+                tier, why = ac.provenanceOf(ac.STABILITY_PREFIX + label)
+                check(f"a {label} protocol run classifies as {expected}", tier == expected,
+                      f"got {tier} ({why})")
+
+            ac._provenanceCache.clear()
+            tier, _ = ac.provenanceOf(ac.STABILITY_PREFIX + "missing")
+            check("a run with no protocol JSON is unknown, not quiet", tier == ac.UNKNOWN,
+                  f"got {tier}")
+        finally:
+            ac.REPO_ROOT = saved
+            ac._provenanceCache.clear()
+
+
+def testSustainedComparisonRefusesMismatchedWindows():
+    """The regression guard for the actual 5.7.6 defect.
+
+    5.7.6-sustained-gemm compares two runs' post-soak means and raises if the two windows hold
+    different numbers of iterations. That check is what would have caught the original sentence,
+    where one side had eleven iterations and the other sixteen.
+    """
+    import audit_claims as ac
+
+    saved = ac.REPO_ROOT
+    try:
+        ac.REPO_ROOT = REAL_REPO_ROOT
+        ac._documentCache.clear()
+        ac._sweepCache.clear()
+        import claims_consumer as cc
+
+        run = ac.stabilityRun(cc.SPLIT_RUN)
+        post = len(ac.iterationsIn(run, "gemm", ac.POST_SOAK))
+        whole = len(ac.iterationsIn(run, "gemm", ac.WHOLE_RUN))
+        check("the two windows really do differ on the run 5.7.6 quotes", post != whole,
+              f"both windows hold {post} iterations, so the mismatch guard cannot fire")
+
+        # Force the mismatch the prose used to contain - one side short by an iteration - and
+        # require the claim to refuse rather than average across unequal windows.
+        original = list(run["iterations"])
+        raised = False
+        try:
+            dropped = False
+            trimmed = []
+            for row in original:
+                if not dropped and row["workload"] == "gemm" and not row["inSoak"]:
+                    dropped = True
+                    continue
+                trimmed.append(row)
+            run["iterations"] = trimmed
+            check("the mutation actually shortened the window",
+                  len(ac.iterationsIn(run, "gemm", ac.POST_SOAK)) == post - 1,
+                  "the row was not removed, so the next check cannot fail")
+            try:
+                cc.sustainedGemm()
+            except ValueError:
+                raised = True
+        finally:
+            run["iterations"] = original
+        check("comparing unequal post-soak counts raises", raised,
+              "the claim rendered a number from mismatched windows")
+    finally:
+        ac.REPO_ROOT = saved
+        ac._documentCache.clear()
+        ac._sweepCache.clear()
+
+
 testProvenanceTiers()
 testProvenanceReportSeparatesDeclaredFromSilent()
 testAuditRecordsEverySourceAClaimTouches()
+testIterationWindowsPartitionTheRun()
+testIterationWindowMustBeNamed()
+testAbortedIterationsAreExcluded()
+testLoadedSamplesUsesTheRunsOwnThreshold()
+testStabilityRunRefusesAnIncompleteRun()
+testStabilityProvenanceTiers()
+testSustainedComparisonRefusesMismatchedWindows()
 
 
 if failures:

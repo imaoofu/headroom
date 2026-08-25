@@ -34,8 +34,10 @@ WHY SOME CLAIMS PIN A SENTENCE FRAGMENT
     claim; changing a number will.
 """
 
-from statistics import fmean as mean
-from audit_claims import claim, deltaPct, signedPct, sweep, sweepRaw, voltageJoin
+from statistics import fmean as mean, stdev
+from audit_claims import (POST_SOAK, SOAK, WHOLE_RUN, claim, deltaPct, iterationsIn,
+                          loadedSamples, signedPct, stabilityRun, sweep, sweepRaw,
+                          voltageJoin)
 
 PAPER = "docs/PAPER_DRAFT.md"
 ANOMALY_README = "data/frequency-sweeps/membw-anomaly-20260819/README.md"
@@ -562,6 +564,11 @@ def optimumOff():
 # means and RAISES rather than rendering if the ranges ever start to overlap.
 # ---------------------------------------------------------------------------------------------
 
+# The three split-curve gemm runs are not all verified-quiet, and four claims below
+# compare them against five runs that are. Written once here rather than repeated at
+# each call site, because a reason pasted four times is a reason nobody re-reads.
+SPLIT_GEMM_MIX = ("two of the three split-curve runs (r3-quiet, r5-instantreplay-off) predate the encoder guard: their settings declare Instant Replay off but nothing verified it. The five tuned runs are all verified-quiet. The risk runs TOWARD the finding, not against it - undetected contamination would depress the split runs and understate the gap - and the one verified-quiet split run agrees at 18.22. Stated rather than silently mixed.")
+
 TUNED_CLEAN_5 = [f"20260822-{s}_5060ti-tuned-gemm-clean-r{i}_sweep.csv" for i, s in
                  zip((1, 2, 3, 4, 5), ("182129", "182619", "213750", "215317", "215811"))]
 SPLIT_CLEAN_3 = ["20260822-163705_5060ti-splitcurve-gemm-r3-quiet_sweep.csv",
@@ -581,7 +588,7 @@ def tunedRuns():
 
 
 @claim("5.7.6-split-runs", PAPER, "5.7.6",
-       mixedProvenance="two of the three split-curve runs (r3-quiet, r5-instantreplay-off) predate the encoder guard: their settings declare Instant Replay off but nothing verified it. The five tuned runs are all verified-quiet. The risk runs TOWARD the finding, not against it - undetected contamination would depress the split runs and understate the gap - and the one verified-quiet split run agrees at 18.22. Stated rather than silently mixed.")
+       mixedProvenance=SPLIT_GEMM_MIX)
 def splitRuns():
     v = [_peakTf(p) for p in SPLIT_CLEAN_3]
     return ("| split curve, n=3 | " + " / ".join(f"{x:.2f}" for x in v)
@@ -589,7 +596,7 @@ def splitRuns():
 
 
 @claim("5.7.6-no-overlap", PAPER, "5.7.6",
-       mixedProvenance="two of the three split-curve runs (r3-quiet, r5-instantreplay-off) predate the encoder guard: their settings declare Instant Replay off but nothing verified it. The five tuned runs are all verified-quiet. The risk runs TOWARD the finding, not against it - undetected contamination would depress the split runs and understate the gap - and the one verified-quiet split run agrees at 18.22. Stated rather than silently mixed.")
+       mixedProvenance=SPLIT_GEMM_MIX)
 def noOverlap():
     """The section's central claim, and the one that survives a small sample. If the ranges ever
     overlap the sentence is false, so this raises rather than quietly rendering numbers that no
@@ -603,7 +610,7 @@ def noOverlap():
 
 
 @claim("5.7.6-gap", PAPER, "5.7.6",
-       mixedProvenance="two of the three split-curve runs (r3-quiet, r5-instantreplay-off) predate the encoder guard: their settings declare Instant Replay off but nothing verified it. The five tuned runs are all verified-quiet. The risk runs TOWARD the finding, not against it - undetected contamination would depress the split runs and understate the gap - and the one verified-quiet split run agrees at 18.22. Stated rather than silently mixed.")
+       mixedProvenance=SPLIT_GEMM_MIX)
 def splitGap():
     t = mean(_peakTf(p) for p in TUNED_CLEAN_5)
     s = mean(_peakTf(p) for p in SPLIT_CLEAN_3)
@@ -677,3 +684,264 @@ def peakPower():
     fixedW = sweep(FIXED_MEMBW)[2932]["power"]
     tunedW = sweep(TUNED_MEMBW_13PT)[2932]["power"]
     return f"{fixedW:.1f} W against {tunedW:.1f} W at 2932 MHz"
+
+
+# ---------------------------------------------------------------------------------------------
+# 5.7.6 continued - the clean bandwidth ceiling, and the two sustained-load runs
+#
+# This block exists because of what 2026-08-24 found in the prose above it. Section 5.7.6 was
+# rewritten twice on 2026-08-23 and both rewrites landed as UNPINNED prose, which the audit
+# cannot see. Re-deriving every number in it by hand turned up two sentences that quoted three
+# different aggregation windows as though they were one, and one unqualified "no throttled
+# sample" that was true only of the logger's narrower definition.
+#
+# Nothing here was wrong arithmetic. Every figure was a real measurement of something. What was
+# missing was a machine that would have noticed the pairing, which is what these claims are.
+# ---------------------------------------------------------------------------------------------
+
+# The three membw sweeps that share the 10-point 1402-2100 fine grid, all measured under the
+# clean protocol of 5.4.4. Do not substitute the 2026-08-21 split-curve membw sweep or the
+# 2026-08-20 memory-only one: both predate the encoder guard, and the second of them is the
+# contaminated reference this section was rewritten to remove.
+CLEAN_CEILING_MEMBW = "memonly-clean-20260823/20260823-205231_5060ti-memonly-clean-membw-fine_sweep.csv"
+DIRTY_CEILING_MEMBW = "membw-anomaly-20260819/20260820-181307_5060ti-memonly-membw-anomaly_sweep.csv"
+REPAIR_MEMBW_FINE = "curve-rebuild-20260823/20260823-202324_5060ti-curverebuilt-membw-fine_sweep.csv"
+SPLIT_MEMBW_FINE = "20260822-161921_5060ti-splitcurve-membw-r2_sweep.csv"
+
+# UNLIKE the gemm case above, the risk here runs AGAINST the finding rather than toward it.
+# The split curve's membw sweep is 2026-08-22 data that predates the encoder guard, so if it
+# was contaminated its throughput reads low and the -3.18% deficit below is an UPPER BOUND on
+# what the split curve actually gives up. A six-minute clean re-measurement would settle it,
+# and until then the section should not be read as having pinned that figure exactly.
+SPLIT_MEMBW_MIX = ("the split curve's membw sweep predates the encoder guard and declares "
+                   "rather than verifies its conditions, while both references are "
+                   "verified-quiet. The risk runs AGAINST the finding: undetected "
+                   "contamination would depress the split curve and overstate its deficit, "
+                   "so -3.18% is an upper bound on the loss, not a measurement of it. "
+                   "A clean re-measurement is outstanding.")
+
+SPLIT_RUN = "20260823-183256_splitcurve"
+OGTUNE_RUN = "20260823-192719_ogtune"
+
+
+def _r576vsCeiling(path):
+    """Per-point throughput of one configuration against the clean memory-only ceiling."""
+    ceiling = sweep(CLEAN_CEILING_MEMBW)
+    other = sweep(path)
+    return [(other[t]["throughput"] / ceiling[t]["throughput"] - 1) * 100 for t in sorted(ceiling)]
+
+
+def _r576ceilingRow(label, path):
+    d = _r576vsCeiling(path)
+    within = sum(1 for v in d if abs(v) <= 0.4)
+    return (f"| {label} | {mean(d):.2f}% mean, {min(d):.2f}% to {max(d):+.2f}% | "
+            f"{within} of {len(d)} points |")
+
+
+@claim("5.7.6-tuned-spread", PAPER, "5.7.6")
+def tunedSpread():
+    """The table's spread column is the RANGE over the mean, not a standard deviation. The
+    sentence below the table quotes a standard deviation ratio instead, and the two are pinned
+    separately because they are different statistics that happen to sit two lines apart."""
+    v = [_peakTf(p) for p in TUNED_CLEAN_5]
+    return f"| {mean(v):.2f} TFLOP/s | {100 * (max(v) - min(v)) / mean(v):.2f}% |"
+
+
+@claim("5.7.6-split-spread", PAPER, "5.7.6", mixedProvenance=SPLIT_GEMM_MIX)
+def splitSpread():
+    v = [_peakTf(p) for p in SPLIT_CLEAN_3]
+    return f"| {mean(v):.2f} TFLOP/s | {100 * (max(v) - min(v)) / mean(v):.2f}% |"
+
+
+@claim("5.7.6-spread-factor", PAPER, "5.7.6", mixedProvenance=SPLIT_GEMM_MIX)
+def spreadFactor():
+    """Raw standard deviations, not coefficients of variation. The two differ here - 4.5 against
+    4.6 - and the sentence says "on standard deviation", so the raw ratio is what it means."""
+    t = [_peakTf(p) for p in TUNED_CLEAN_5]
+    s = [_peakTf(p) for p in SPLIT_CLEAN_3]
+    tSpread = 100 * (max(t) - min(t)) / mean(t)
+    sSpread = 100 * (max(s) - min(s)) / mean(s)
+    return (f"{sSpread:.2f}% spread against {tSpread:.2f}%, "
+            f"a factor of {stdev(t) / stdev(s):.1f} on")
+
+
+@claim("5.7.6-peak-clocks", PAPER, "5.7.6",
+       mixedProvenance="the split runs are mixed provenance, but this claim is about achieved CLOCK, and 5.4.4 measured that capture software does not move it - 2975.9 / 2976.5 / 2977.1 MHz with it enabled against 2977.0 disabled. The contaminant depresses throughput at a given clock; it does not change the clock reached.")
+def peakClocks():
+    def clockAtPeak(path):
+        return max(sweep(path).values(), key=lambda r: r["throughput"])["mhz"]
+    s = [clockAtPeak(p) for p in SPLIT_CLEAN_3]
+    t = [clockAtPeak(p) for p in TUNED_CLEAN_5]
+    if len({round(x, 1) for x in s}) != 1:
+        raise ValueError(f"the three split runs no longer share one peak clock: {s}")
+    return (f"All three split runs peaked at {s[0]:.1f} MHz achieved, against the tuned card's "
+            f"{min(t):.1f}-{max(t):.1f} MHz.")
+
+
+@claim("5.7.6-ceiling-rose", PAPER, "5.7.6",
+       mixedProvenance="deliberately clean against contaminated - that difference is the quantity being measured. The 2026-08-20 memory-only sweep is schema 0.1.0 and recorded no video-engine telemetry at all, which is why it reads as unknown rather than merely unverified.")
+def ceilingRose():
+    """The correction that prompted the rewrite: the memory-only reference was contaminated, and
+    re-measuring it clean moved it by roughly the amount 5.4.4 attributes to capture software."""
+    clean = sweep(CLEAN_CEILING_MEMBW)
+    dirty = sweep(DIRTY_CEILING_MEMBW)
+    shared = sorted(set(clean) & set(dirty))
+    if len(shared) != len(clean):
+        raise ValueError(f"grids no longer match: {len(shared)} shared of {len(clean)}")
+    d = [(clean[t]["throughput"] / dirty[t]["throughput"] - 1) * 100 for t in shared]
+    return f"+{mean(d):.2f}%\non average, from +{min(d):.2f}% to +{max(d):.2f}%"
+
+
+@claim("5.7.6-ceiling-holds", PAPER, "5.7.6", mixedProvenance=SPLIT_MEMBW_MIX)
+def ceilingHolds():
+    """A ceiling nothing exceeds by more than this much is still a ceiling. If either
+    configuration ever clears it by more than the prose allows, the reference is suspect again -
+    which is exactly how the contaminated one was caught."""
+    best = max(max(_r576vsCeiling(REPAIR_MEMBW_FINE)), max(_r576vsCeiling(SPLIT_MEMBW_FINE)))
+    return f"nothing now exceeds it by more than {best:.2f}% at"
+
+
+@claim("5.7.6-clock-match", PAPER, "5.7.6", mixedProvenance=SPLIT_MEMBW_MIX)
+def clockMatch():
+    """The comparison is only meaningful if the three configurations reached the same clocks."""
+    ceiling = sweep(CLEAN_CEILING_MEMBW)
+    worst = 0.0
+    for path in (REPAIR_MEMBW_FINE, SPLIT_MEMBW_FINE):
+        rows = sweep(path)
+        worst = max(worst, max(abs(rows[t]["mhz"] - ceiling[t]["mhz"]) for t in ceiling))
+    return f"achieved clocks matched to {worst:.1f} MHz in"
+
+
+@claim("5.7.6-repair-vs-ceiling", PAPER, "5.7.6")
+def repairVsCeiling():
+    return _r576ceilingRow("repaired curve", REPAIR_MEMBW_FINE)
+
+
+@claim("5.7.6-split-vs-ceiling", PAPER, "5.7.6", mixedProvenance=SPLIT_MEMBW_MIX)
+def splitVsCeiling():
+    return _r576ceilingRow("split curve", SPLIT_MEMBW_FINE)
+
+
+# --- the two thirty-minute protocol runs ------------------------------------------------------
+#
+# EVERY AGGREGATE BELOW NAMES ITS WINDOW. See iterationsIn() in audit_claims.py for why that is
+# a required argument rather than a defaulted one.
+
+def _r576loadedFraction(label):
+    run = stabilityRun(label)
+    return 100 * run["session"]["loaded_fraction"]
+
+
+def _r576powerCapped(label):
+    run = stabilityRun(label)
+    return sum(1 for s in run["samples"] if "SwPowerCap" in s["throttleReasons"])
+
+
+@claim("5.7.6-split-loaded", PAPER, "5.7.6")
+def splitLoaded():
+    run = stabilityRun(SPLIT_RUN)
+    return (f"{_r576loadedFraction(SPLIT_RUN):.1f}% of one-second samples above "
+            f"{run['session']['loaded_threshold_pct']:.0f}% utilisation")
+
+
+@claim("5.7.6-split-powercap", PAPER, "5.7.6")
+def splitPowerCap():
+    """The logger reports zero throttled samples because it counts only hardware slowdown and
+    thermal events - the software power cap is normal operation and it says so at length. The
+    paper used to repeat the zero without the qualification, which reads as a stronger claim
+    than the telemetry supports."""
+    run = stabilityRun(SPLIT_RUN)
+    return f"{_r576powerCapped(SPLIT_RUN)} of\n{len(run['samples'])} samples reported the software power cap"
+
+
+@claim("5.7.6-split-power-temp", PAPER, "5.7.6")
+def splitPowerTemp():
+    run = stabilityRun(SPLIT_RUN)
+    loaded = loadedSamples(run)
+    return (f"Power averaged {mean(s['power'] for s in loaded):.1f} W and peaked\n"
+            f"at {max(s['power'] for s in run['samples']):.1f} W against a "
+            f"{float(run['session']['power_limit_w']):.0f} W limit; temperature peaked at "
+            f"{max(s['temperature'] for s in run['samples']):.0f} C.")
+
+
+def _r576drift(label, workload):
+    """The harness's own post-soak degradation figure, positive meaning a fall."""
+    for entry in stabilityRun(label)["protocol"]["degradation"]:
+        if entry["Workload"] == workload:
+            return entry["DropPct"]
+    raise ValueError(f"{label} has no {workload} degradation entry")
+
+
+@claim("5.7.6-split-drift", PAPER, "5.7.6")
+def splitDrift():
+    return (f"`gemm` drifted\n{_r576drift(SPLIT_RUN, 'gemm'):.2f}% and `membw` "
+            f"+{_r576drift(SPLIT_RUN, 'membw'):.2f}%")
+
+
+@claim("5.7.6-ogtune-summary", PAPER, "5.7.6")
+def ogtuneSummary():
+    run = stabilityRun(OGTUNE_RUN)
+    return (f"{run['protocol']['iterations']} iterations, zero aborted, zero driver resets, zero "
+            f"thermal or hardware-slowdown\nsamples, {_r576powerCapped(OGTUNE_RUN)} of "
+            f"{len(run['samples'])} at the software power cap, "
+            f"{_r576loadedFraction(OGTUNE_RUN):.1f}%\nloaded, drift `gemm` "
+            f"+{_r576drift(OGTUNE_RUN, 'gemm'):.2f}% and `membw`\n"
+            f"{_r576drift(OGTUNE_RUN, 'membw'):.2f}%.")
+
+
+@claim("5.7.6-sustained-gemm", PAPER, "5.7.6")
+def sustainedGemm():
+    """POST-SOAK, on both sides. The earlier version of this sentence took the split curve's
+    figure from all sixteen iterations and the original tune's from its eleven post-soak ones,
+    under prose declaring both post-soak."""
+    s = iterationsIn(stabilityRun(SPLIT_RUN), "gemm", POST_SOAK)
+    o = iterationsIn(stabilityRun(OGTUNE_RUN), "gemm", POST_SOAK)
+    if len(s) != len(o):
+        raise ValueError(f"the two runs no longer have matching post-soak counts: {len(s)}, {len(o)}")
+    return (f"`gemm` {mean(s) / 1e12:.2f} TFLOP/s on the split curve against {mean(o) / 1e12:.2f} on the\n"
+            f"original tune, a gap of +{100 * (mean(s) / mean(o) - 1):.2f}%.")
+
+
+@claim("5.7.6-sustained-corroboration", PAPER, "5.7.6", mixedProvenance=SPLIT_GEMM_MIX)
+def sustainedCorroboration():
+    """The whole point of the paragraph: two designs sharing no methodology land in the same
+    place. Both halves are computed, so neither can drift away from the other unnoticed."""
+    lockedGap = 100 * (mean(_peakTf(p) for p in SPLIT_CLEAN_3)
+                       / mean(_peakTf(p) for p in TUNED_CLEAN_5) - 1)
+    sustainedGap = 100 * (mean(iterationsIn(stabilityRun(SPLIT_RUN), "gemm", POST_SOAK))
+                          / mean(iterationsIn(stabilityRun(OGTUNE_RUN), "gemm", POST_SOAK)) - 1)
+    return f"agree to within {abs(lockedGap - sustainedGap):.2f}\npercentage points"
+
+
+def _r576membwGap(window):
+    s = iterationsIn(stabilityRun(SPLIT_RUN), "membw", window)
+    o = iterationsIn(stabilityRun(OGTUNE_RUN), "membw", window)
+    return mean(s), mean(o), 100 * (mean(s) / mean(o) - 1)
+
+
+@claim("5.7.6-sustained-membw", PAPER, "5.7.6")
+def sustainedMembw():
+    s, o, gap = _r576membwGap(POST_SOAK)
+    return f"{s / 1e9:.1f} GB/s against {o / 1e9:.1f}, a difference of {gap:.2f}%"
+
+
+@claim("5.7.6-membw-windows", PAPER, "5.7.6")
+def membwWindows():
+    """Reading the same comparison on all three windows is what makes "indistinguishable"
+    a measurement rather than a hope: it is small and negative on each of them."""
+    soakGap = _r576membwGap(SOAK)[2]
+    wholeGap = _r576membwGap(WHOLE_RUN)[2]
+    whole = iterationsIn(stabilityRun(SPLIT_RUN), "membw", WHOLE_RUN)
+    if len(whole) != 17:
+        raise ValueError(f"the whole-run window is no longer seventeen iterations: {len(whole)}")
+    return f"{soakGap:.2f}% across the soak\niterations, {wholeGap:.2f}% across all seventeen"
+
+
+@claim("5.7.6-boost-band", PAPER, "5.7.6")
+def boostBand():
+    """Where an unlocked card actually sits, which is what makes 5.7.2's locked-frequency
+    plateau a laboratory result rather than a cost paid in ordinary use. Mean loaded clock of
+    each run, so the range is across configurations rather than within one."""
+    means = sorted(mean(s["smClock"] for s in loadedSamples(stabilityRun(label)))
+                   for label in (SPLIT_RUN, OGTUNE_RUN))
+    return f"at {means[0]:.0f}-{means[1]:.0f} MHz, above the flattened region entirely"
