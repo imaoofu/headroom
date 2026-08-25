@@ -706,19 +706,18 @@ def peakPower():
 CLEAN_CEILING_MEMBW = "memonly-clean-20260823/20260823-205231_5060ti-memonly-clean-membw-fine_sweep.csv"
 DIRTY_CEILING_MEMBW = "membw-anomaly-20260819/20260820-181307_5060ti-memonly-membw-anomaly_sweep.csv"
 REPAIR_MEMBW_FINE = "curve-rebuild-20260823/20260823-202324_5060ti-curverebuilt-membw-fine_sweep.csv"
-SPLIT_MEMBW_FINE = "20260822-161921_5060ti-splitcurve-membw-r2_sweep.csv"
+TUNED_MEMBW_CLEAN = "20260822-183112_5060ti-tuned-membw-clean_sweep.csv"
+SPLIT_MEMBW_FINE = "splitcurve-clean-20260824/20260824-203810_5060ti-splitcurve-clean-membw-fine_sweep.csv"
 
-# UNLIKE the gemm case above, the risk here runs AGAINST the finding rather than toward it.
-# The split curve's membw sweep is 2026-08-22 data that predates the encoder guard, so if it
-# was contaminated its throughput reads low and the -3.18% deficit below is an UPPER BOUND on
-# what the split curve actually gives up. A six-minute clean re-measurement would settle it,
-# and until then the section should not be read as having pinned that figure exactly.
-SPLIT_MEMBW_MIX = ("the split curve's membw sweep predates the encoder guard and declares "
-                   "rather than verifies its conditions, while both references are "
-                   "verified-quiet. The risk runs AGAINST the finding: undetected "
-                   "contamination would depress the split curve and overstate its deficit, "
-                   "so -3.18% is an upper bound on the loss, not a measurement of it. "
-                   "A clean re-measurement is outstanding.")
+# RESOLVED 2026-08-24. This constant used to carry a mixed-provenance caveat saying that the
+# split curve's -3.18% deficit was an upper bound rather than a measurement, because its membw
+# sweep predated the encoder guard while both references were verified-quiet. The clean
+# re-measurement below settled it: the split curve rose 3.19% and the deficit was almost entirely
+# the contaminant. The caveat is gone because the run it described is no longer used.
+#
+# Keep the old sweep in the repository and do NOT delete it - it is the evidence for the
+# withdrawal, and two claims below quote the difference between the two runs.
+SPLIT_MEMBW_OLD = "20260822-161921_5060ti-splitcurve-membw-r2_sweep.csv"
 
 SPLIT_RUN = "20260823-183256_splitcurve"
 OGTUNE_RUN = "20260823-192719_ogtune"
@@ -792,24 +791,43 @@ def ceilingRose():
     return f"+{mean(d):.2f}%\non average, from +{min(d):.2f}% to +{max(d):.2f}%"
 
 
-@claim("5.7.6-ceiling-holds", PAPER, "5.7.6", mixedProvenance=SPLIT_MEMBW_MIX)
-def ceilingHolds():
-    """A ceiling nothing exceeds by more than this much is still a ceiling. If either
-    configuration ever clears it by more than the prose allows, the reference is suspect again -
-    which is exactly how the contaminated one was caught."""
-    best = max(max(_r576vsCeiling(REPAIR_MEMBW_FINE)), max(_r576vsCeiling(SPLIT_MEMBW_FINE)))
-    return f"nothing now exceeds it by more than {best:.2f}% at"
+@claim("5.7.6-split-vs-repair", PAPER, "5.7.6")
+def splitVsRepair():
+    """Head to head, and deliberately NOT reported as one configuration winning.
 
-
-@claim("5.7.6-clock-match", PAPER, "5.7.6", mixedProvenance=SPLIT_MEMBW_MIX)
-def clockMatch():
-    """The comparison is only meaningful if the three configurations reached the same clocks."""
+    Both sit at the ceiling; the gap between them is smaller than a single sweep's run-to-run
+    spread, and with one sweep each there is nothing here to call a difference. The claim exists
+    so that if a future measurement moves them apart, the sentence saying they are the same stops
+    matching rather than quietly staying in the paper."""
     ceiling = sweep(CLEAN_CEILING_MEMBW)
-    worst = 0.0
+    split = sweep(SPLIT_MEMBW_FINE)
+    repair = sweep(REPAIR_MEMBW_FINE)
+    d = [(split[t]["throughput"] / repair[t]["throughput"] - 1) * 100 for t in sorted(ceiling)]
+    ahead = sum(1 for v in d if v > 0)
+    if ahead != 7:
+        raise ValueError(f"the split curve now leads at {ahead} of 10 points, not seven")
+    return f"leads by +{mean(d):.2f}% on average and at\nseven of ten points"
+
+
+@claim("5.7.6-clock-match", PAPER, "5.7.6")
+def clockMatch():
+    """The comparison is only meaningful if the three configurations reached the same clocks.
+
+    Both halves are computed: the worst mismatch, and the tolerance that covers all but the two
+    top-of-band points. Pinning only the worst case would let the typical case drift silently,
+    and the typical case is what makes the -0.11% and -0.39% readable as real."""
+    ceiling = sweep(CLEAN_CEILING_MEMBW)
+    deltas = []
     for path in (REPAIR_MEMBW_FINE, SPLIT_MEMBW_FINE):
         rows = sweep(path)
-        worst = max(worst, max(abs(rows[t]["mhz"] - ceiling[t]["mhz"]) for t in ceiling))
-    return f"achieved clocks matched to {worst:.1f} MHz in"
+        deltas.extend(abs(rows[t]["mhz"] - ceiling[t]["mhz"]) for t in ceiling)
+    deltas.sort(reverse=True)
+    outliers = sum(1 for d in deltas if d > deltas[2])
+    if len(deltas) != 20 or outliers != 2:
+        raise ValueError("the grid is no longer twenty points with two clock outliers: "
+                         f"{len(deltas)} points, {outliers} above the rest")
+    return (f"achieved clocks matched to {deltas[0]:.1f} MHz in the worst case\n"
+            f"and to {deltas[outliers]:.1f} MHz at eighteen of the twenty points")
 
 
 @claim("5.7.6-repair-vs-ceiling", PAPER, "5.7.6")
@@ -817,7 +835,7 @@ def repairVsCeiling():
     return _r576ceilingRow("repaired curve", REPAIR_MEMBW_FINE)
 
 
-@claim("5.7.6-split-vs-ceiling", PAPER, "5.7.6", mixedProvenance=SPLIT_MEMBW_MIX)
+@claim("5.7.6-split-vs-ceiling", PAPER, "5.7.6")
 def splitVsCeiling():
     return _r576ceilingRow("split curve", SPLIT_MEMBW_FINE)
 
@@ -945,3 +963,66 @@ def boostBand():
     means = sorted(mean(s["smClock"] for s in loadedSamples(stabilityRun(label)))
                    for label in (SPLIT_RUN, OGTUNE_RUN))
     return f"at {means[0]:.0f}-{means[1]:.0f} MHz, above the flattened region entirely"
+
+
+# --- the withdrawal, and the evidence that identifies it as contamination ---------------------
+#
+# These pin the numbers that make the second correction of this paragraph auditable. Without them
+# the withdrawal is an assertion, which is precisely the shape the two withdrawn versions had.
+
+def _r576oldVsNew():
+    old = sweep(SPLIT_MEMBW_OLD)
+    new = sweep(SPLIT_MEMBW_FINE)
+    return {t: (new[t]["throughput"] / old[t]["throughput"] - 1) * 100 for t in sorted(old)}
+
+
+@claim("5.7.6-split-rose", PAPER, "5.7.6",
+       mixedProvenance="deliberately verified-quiet against declared-unverified - that difference "
+                       "is the quantity being measured, and it is what withdrew the -3.18%.")
+def splitRose():
+    return f"rose **+{mean(_r576oldVsNew().values()):.2f}%**"
+
+
+@claim("5.7.6-contamination-signature", PAPER, "5.7.6",
+       mixedProvenance="deliberately verified-quiet against declared-unverified, for the same "
+                       "reason as 5.7.6-split-rose.")
+def contaminationSignature():
+    """The frequency dependence is what separates a contaminant from a curve change.
+
+    5.4.4 measured the same software costing more at low frequency than high. If this ever
+    inverts, the contamination reading is wrong and the paragraph has to be rewritten a third
+    time - so the direction is asserted rather than assumed."""
+    d = _r576oldVsNew()
+    low = [v for t, v in d.items() if t <= 1710]
+    high = [v for t, v in d.items() if t >= 1867]
+    if mean(low) <= mean(high):
+        raise ValueError("the rise no longer declines with frequency, so it does not carry "
+                         f"5.4.4's signature: low {mean(low):.2f}%, high {mean(high):.2f}%")
+    return (f"+{mean(low):.2f}% across 1402-1710 MHz against +{mean(high):.2f}% across "
+            f"1867-2100")
+
+
+@claim("5.7.6-outlier-point", PAPER, "5.7.6",
+       mixedProvenance="deliberately verified-quiet against declared-unverified, for the same "
+                       "reason as 5.7.6-split-rose.")
+def outlierPoint():
+    """One grid point moved far more than its neighbours, which no voltage curve can do."""
+    d = _r576oldVsNew()
+    worst = max(d, key=lambda t: d[t])
+    order = sorted(d)
+    i = order.index(worst)
+    before, after = d[order[i - 1]], d[order[i + 1]]
+    return (f"+{d[worst]:.2f}% at {worst} MHz, is an isolated point\n"
+            f"flanked by +{before:.1f}% and +{after:.1f}%")
+
+
+@claim("5.7.6-vs-tuned-band", PAPER, "5.7.6")
+def splitVsTunedBand():
+    """The claim that survived every rewrite: against the fully tuned profile the plateau is gone.
+
+    Both sweeps are verified-quiet, so unlike the ceiling comparison this one has never rested on
+    mixed evidence."""
+    tuned = sweep(TUNED_MEMBW_CLEAN)
+    split = sweep(SPLIT_MEMBW_FINE)
+    d = [(split[t] ["throughput"] / tuned[t]["throughput"] - 1) * 100 for t in sorted(tuned)]
+    return f"+{mean(d):.1f}% on average across the\nband, +{min(d):.1f}% to +{max(d):.1f}%"

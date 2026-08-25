@@ -408,14 +408,27 @@ Turning two separate models into one project with a single research question.
   the rendering stops matching the prose; edit the prose and it stops matching the rendering.
   Matching twice is reported AMBIGUOUS rather than passing, because a claim that appears in two
   places is not pinning the line anyone thinks it is.
-  87 claims over §5.4, §5.4.1, §5.4.3, §5.4.4, §5.7.1, §5.7.2, §5.7.4, §5.7.5 and §5.7.6, all green. `--coverage` lists
+  91 claims over §5.4, §5.4.1, §5.4.3, §5.4.4, §5.7.1, §5.7.2, §5.7.4, §5.7.5 and §5.7.6, all green. `--coverage` lists
   every number in an audited section that no claim pins, and every numbered section with no claims
-  at all, so the gap is visible instead of assumed: 27 of the paper's numbered sections have none.
+  at all, so the gap is visible instead of assumed: 26 of the paper's numbered sections have none.
   **It found a real error on its first run**, in a section written days earlier: §5.7.1's
   "+12.3% sustainable ceiling" is measured against stock's LAST grid point (15.68 TFLOP/s at
   2588 MHz) rather than its peak (15.71 at 2598), and the sentence did not say which. Corrected
   to +12.1% with the denominator stated.
-  Engine tests in `analysis/test_audit_claims.py`, 42 checks, mutation-gated 11/11 then 5/5 on
+  **2026-08-23 gave it provenance tracking**, which classifies each run by what its session JSON
+  recorded about measurement conditions and flags any claim whose numbers were computed across
+  runs of different tiers. **2026-08-24 gave it stability-run readers**, whose `iterationsIn()`
+  takes the aggregation window as a REQUIRED argument - §5.7.6 had quoted three different windows
+  in one sentence while declaring one, and no default is the structural fix.
+
+  🔑 **The provenance flag then predicted a result before it was measured.** On the morning of
+  2026-08-24 it marked §5.7.6's split-curve bandwidth comparison as mixed, with the note that the
+  risk ran AGAINST the finding and that the -3.18% deficit was an upper bound rather than a
+  measurement. The clean re-measurement that afternoon returned -0.11%. A flag that says which
+  DIRECTION an unverified comparison is likely wrong in is worth more than one that only says it
+  is unverified.
+
+  Engine tests in `analysis/test_audit_claims.py`, mutation-gated 11/11, then 5/5 and 9/9 on
   later behaviour. Two
   mutations survived the first pass — both because the check asserted an outcome the mutation
   also produced — and both are written up in that file rather than quietly fixed.

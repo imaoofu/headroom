@@ -1291,51 +1291,77 @@ had been suspected of instability on the strength of a ~2.5% low outlier appeari
 the configuration producing the best throughput is also the more reproducible one, and the
 remaining run-to-run variation belongs to the original tune.
 
-**On `membw` the split curve does NOT hold the repair - it gives up about 3%.** An earlier
-version of this paragraph said it did, on the strength of landing within 0.4% of the
-memory-overclock-only configuration at seven of ten grid points. **That comparison was against a
-contaminated reference and the conclusion drawn from it was wrong.** The memory-only sweep it used
-dated from 2026-08-20, before the capture-software finding of 5.4.4, while the split-curve sweep
-was clean 2026-08-22 data, so the reference read low and the split curve appeared to reach a
-ceiling that was itself depressed.
+**On `membw` the split curve reaches the same ceiling the repair does.** Every configuration in
+this section is compared against the memory-overclock-only card, which carries the same +2500
+memory offset and a stock core curve, and is therefore the most bandwidth a core-curve change can
+deliver. On the 10-point 1400-2100 MHz grid, achieved clocks matched to 8.0 MHz in the worst case
+and to 1.7 MHz at eighteen of the twenty points:
 
-The tell was that the ceiling could be beaten. Measured clean on 2026-08-23, an independently
-rebuilt repaired curve exceeded that reference at all ten grid points. Nothing beats a ceiling, so
-the memory-only configuration was re-measured under the clean protocol, and it rose by **+3.30%
-on average, from +1.86% to +6.25%** - squarely in line with the +4.22% mid-band cost 5.4.4
-measured for capture software. It is a ceiling again: nothing now exceeds it by more than 0.93% at
-any point.
-
-Against that clean ceiling, on the same 10-point grid with achieved clocks matched to 8.0 MHz in
-the worst case:
-
-| configuration | vs the clean `membw` ceiling | within 0.4% of it |
+| configuration | vs the `membw` ceiling | within 0.4% of it |
 |---|---|---|
 | repaired curve | **-0.39%** mean, -1.79% to +0.93% | **5 of 10 points** |
-| **split curve** | **-3.18%** mean, -7.63% to -1.82% | **0 of 10 points** |
+| **split curve** | **-0.11%** mean, -0.74% to +0.48% | **7 of 10 points** |
 
-**The repair is what reaches the bandwidth ceiling; the split curve buys its compute advantage by
-giving up roughly 3% of bandwidth.** It still beats the fully tuned profile everywhere, which is
-the claim that survives - the plateau of 5.7.2 does not appear - but "holds the repair" was too
-strong and the 0.4% figure should not be quoted.
+The two are indistinguishable: head to head the split curve leads by **+0.28%** on average and at
+seven of ten points, inside the run-to-run spread of a single sweep. Neither reading should be
+taken as one configuration beating the other. What both say is that the bandwidth cost of the
+flattened region is gone, and that the split curve gives up nothing measurable to recover it.
 
-**This sharpens the trade rather than dissolving it.** Three configurations, three positions:
+Against the fully tuned profile the plateau is removed outright - **+19.2% on average across the
+band, +2.4% to +31.7%**, with the largest gains where 5.7.2 found the deepest losses.
+
+**This paragraph has now been wrong twice, both times for the same reason, and the sequence is
+worth recording because it is not an arithmetic story.** The first version reported the split
+curve landing within 0.4% of the ceiling at seven of ten points - the same conclusion as the table
+above - but reached it by comparing a 2026-08-22 split-curve sweep against a 2026-08-20
+memory-only sweep, both taken before the capture-software finding of 5.4.4 and neither verified
+quiet. It was **right by accident**: two similarly contaminated runs cancelled.
+
+The second version corrected only one side. Re-measuring the ceiling clean on 2026-08-23 raised it
+by **+3.30% on average, from +1.86% to +6.25%**, in line with the +4.22% mid-band cost 5.4.4
+attributes to capture software - so the section reported the split curve falling **3.18%** short
+and rewrote the trade around that number. That comparison was clean against contaminated, in the
+opposite direction to the first, and it was **wrong on purpose-built evidence**: the provenance
+audit flagged it as a mixed comparison whose risk ran against the finding, and recorded that
+-3.18% was an upper bound on the loss rather than a measurement of it.
+
+Re-measured on 2026-08-24 with both sides verified quiet, the split-curve sweep rose **+3.19%**
+over its 2026-08-22 predecessor. Three things identify that rise as the contaminant rather than a
+change in the applied curve: its magnitude matches the +3.30% the ceiling moved by; it declines
+with frequency, +3.06% across 1402-1710 MHz against +2.24% across 1867-2100, which is the
+direction 5.4.4 measured; and the largest single jump, +7.63% at 1792 MHz, is an isolated point
+flanked by +2.5% and +2.2%. A voltage-curve difference cannot produce a hole at one grid point. A
+transient contaminant can, and that 1792 MHz point is the same "roughly one run in three" outlier
+5.7.6 attributes to capture software elsewhere.
+
+**The lesson is that a comparison is only as clean as its dirtier half.** Correcting one side of a
+pair is not a partial fix; it can be worse than correcting neither, because it converts a symmetric
+error into an asymmetric one while looking like diligence.
+
+**The trade is between the tuned curve and the split curve, and the repair is dominated.** Three
+configurations, and only two of them are on the frontier:
 
 | | `gemm` | `membw` |
 |---|---|---|
 | fully tuned | best matched-frequency efficiency | loses up to 29.6% in the plateau band |
-| repaired curve | gives the compute advantage up entirely | reaches the bandwidth ceiling |
-| split curve | keeps most of the compute advantage | about 3% below the ceiling |
+| repaired curve | gives the compute advantage up entirely | at the bandwidth ceiling |
+| **split curve** | keeps most of the compute advantage | at the bandwidth ceiling |
 
-That is a more useful statement than 5.7.5's "neither configuration dominates", because it says
-what each configuration costs rather than only that a cost exists.
+The repaired curve of 5.7.4 did its job, which was to identify the mechanism. As a configuration
+to run, the split curve matches its bandwidth and keeps the compute advantage it gives away, so
+there is no operating point at which the repair is the right choice.
 
 **What it does not recover.** The tuned curve still wins `gemm` efficiency across 1545-2625 MHz, by
 up to 30.5% at 2010 MHz, which is where that workload's efficiency optimum sits. The split curve
 buys peak throughput and bandwidth scaling; it does not buy back the matched-frequency power
-advantage, and 5.7.5's conclusion that no single configuration dominates survives this section
-rather than being overturned by it. What the split curve changes is the *shape* of the trade, not
-its existence.
+advantage, and 5.7.5's conclusion that no single configuration dominates survives as a statement
+about tuned versus split. What the split curve changes is the *shape* of that trade, not its
+existence.
+
+**Sample sizes.** Every `membw` figure in this subsection is one sweep per configuration. The
+`gemm` results above rest on eight sweeps; these rest on four, one each. The three-way agreement
+between the ceiling, the repair and the split curve is the only replication here, and a second
+split-curve sweep is the cheapest thing that would strengthen it.
 
 **It survived thirty minutes of sustained load, which is the first such test in this work.** Under
 the protocol of the appendix - fifteen minutes of `gemm` then fifteen of `membw`, unlocked clocks,

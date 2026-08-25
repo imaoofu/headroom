@@ -479,15 +479,38 @@ disagrees with the data directory, the data directory is right.*
   a clean 08-22 split-curve run. Re-measured clean, memory-only rose **+3.30% mean (+1.86% to
   +6.25%)**, matching 5.4.4's +4.22% mid-band figure.
 
-  **Against the clean ceiling: the repair holds it (-0.39% mean, 5 of 10 within 0.4%); the split
-  curve does not (-3.18% mean, 0 of 10).** Do not quote the 0.4%. The corrected trade is
-  three-way: tuned keeps `gemm` and loses up to 29.6% of `membw`; the repair reaches the
-  bandwidth ceiling and gives up the compute advantage; the split curve keeps most of the compute
-  advantage and pays ~3% of bandwidth for it.
-
   **How it was caught matters more than the number.** The tell was that the rebuilt repaired curve
   EXCEEDED the supposed ceiling at all ten points. Nothing beats a ceiling, so the reference was
   suspect - not the measurement.
+
+  ⛔ **AND THEN THAT CORRECTION WAS ITSELF WRONG. 2026-08-24 WITHDREW IT.** The 08-23 fix cleaned
+  the ceiling and left the split curve on contaminated 08-22 data, producing an apparent -3.18%
+  deficit and a rewritten "three-way trade". Re-measured verified-quiet on 08-24 the split curve
+  rose **+3.19%** and lands at **-0.11% mean, 7 of 10 within 0.4%** - against the repair's -0.39%
+  and 5 of 10. **The two are indistinguishable and both sit at the ceiling.** Head to head the
+  split leads +0.28% at 7 of 10 points, which is inside one sweep's spread and must NOT be
+  reported as a win.
+
+  Three things identify the 08-22 run as contaminated rather than a different curve: the +3.19%
+  matches the +3.30% the ceiling itself moved; it declines with frequency (+3.06% over 1402-1710
+  against +2.24% over 1867-2100), which is 5.4.4's signature; and its worst point, +7.63% at
+  1792 MHz, is isolated between +2.5% and +2.2% - a hole one voltage curve cannot make.
+
+  🔑 **THE PARAGRAPH HAS NOW BEEN WRONG TWICE AND THE SHAPE IS THE SAME BOTH TIMES.** Version one
+  compared contaminated against contaminated and was **right by accident**. Version two cleaned
+  ONE side and was wrong on evidence that already existed - the provenance audit had flagged it
+  that morning and recorded that -3.18% was an upper bound, not a measurement. **Correcting one
+  half of a pair is not a partial fix; it converts a symmetric error into an asymmetric one while
+  looking like diligence.** Before "correcting" any comparison, check the provenance of BOTH sides.
+
+  **The current statement: the repaired curve is dominated.** The split curve matches its
+  bandwidth and keeps the compute advantage the repair gives away, so there is no operating point
+  where the repair is the right choice. The live trade is tuned versus split, unchanged: tuned
+  still wins `gemm` efficiency 1545-2625 MHz by up to 30.5%. Against the fully tuned profile the
+  split curve removes the plateau outright, +19.2% mean across the band (+2.4% to +31.7%).
+
+  **Every `membw` figure here is n=1 per configuration.** A second split-curve sweep is the
+  cheapest thing that would strengthen any of it.
 
   🔑 **THE SAME SESSION INDEPENDENTLY REPLICATED 5.4.4's CONTAMINATION MAGNITUDE.** The clean
   memory-only `gemm` sweep against its contaminated 08-20 counterpart, 13 shared targets, gives

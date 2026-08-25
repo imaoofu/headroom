@@ -1,0 +1,19 @@
+WITHDRAWN AS A REFERENCE - 2026-08-24
+
+20260822-161921_5060ti-splitcurve-membw-r2_sweep.csv
+
+This sweep is schema 0.2.0. It predates the video-engine guard, so its settings DECLARE that
+capture software was off and nothing verified it. Re-measured verified-quiet on 2026-08-24, the
+same configuration read +3.19% higher on average - a rise that matches the +3.30% the memory-only
+ceiling moved for the same reason, declines with frequency the way 5.4.4 says the contaminant
+does, and includes an isolated +7.63% jump at 1792 MHz that no voltage curve can produce.
+
+Paper 5.7.6 used this run to report the split curve falling 3.18% short of the bandwidth ceiling.
+That figure is withdrawn. The clean measurement is -0.11%.
+
+USE INSTEAD:
+    data/frequency-sweeps/splitcurve-clean-20260824/
+        20260824-203810_5060ti-splitcurve-clean-membw-fine_sweep.csv
+
+DO NOT DELETE THIS FILE. It is the evidence for the withdrawal, and two claims in
+analysis/claims_consumer.py quote the difference between the two runs.
