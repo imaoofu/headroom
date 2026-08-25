@@ -1295,26 +1295,32 @@ remaining run-to-run variation belongs to the original tune.
 this section is compared against the memory-overclock-only card, which carries the same +2500
 memory offset and a stock core curve, and is therefore the most bandwidth a core-curve change can
 deliver. On the 10-point 1400-2100 MHz grid, achieved clocks matched to 8.0 MHz in the worst case
-and to 1.8 MHz at the other twenty-seven:
+and to 1.8 MHz at the other thirty-seven:
 
 | configuration | sweeps | vs the `membw` ceiling |
 |---|---|---|
 | repaired curve | 1 | **-0.39%** mean, -1.79% to +0.93% |
-| **split curve** | 2 | **-0.42%** mean, -3.35% to +0.80% |
+| **split curve** | 3 | **-0.47%** mean, -2.17% to +0.50% |
 
-They agree to 0.03 percentage points. Neither should be read as beating the other; what both say
+They agree to 0.08 percentage points. Neither should be read as beating the other; what both say
 is that the bandwidth cost of the flattened region is gone, and that the split curve gives up
 nothing measurable to recover it.
 
-**The "within 0.4% at N of ten points" statistic that earlier versions of this paragraph quoted
-has been dropped, because it is not stable.** The two split-curve sweeps were taken twenty minutes
-apart with the profile untouched and both verified quiet. They land at seven of ten and two of ten
-respectively. A statistic that moves that far between replicates of the same configuration is
-reporting which run happened to contain a dip, not what the configuration does, and it should not
-have been quoted from a single sweep in the first place.
+**Restricted to the eight grid points that replicate to within 1% across the three split-curve
+sweeps, the figure is -0.14%.** The whole-band -0.47% is dragged down by the two points that do
+not replicate, and both readings are given because neither alone is honest: the first understates
+how close the configurations are, the second is chosen after seeing which points behaved.
 
-Against the fully tuned profile the plateau is removed outright - **+18.8% on average across the
-band, +1.5% to +29.6%**, with the largest gains where 5.7.2 found the deepest losses. That range
+**The "within 0.4% at N of ten points" statistic that earlier versions of this paragraph quoted
+has been dropped, because it is not stable.** The three split-curve sweeps were taken within forty
+minutes with the profile untouched and all verified quiet. Read one at a time they give **-0.11%**,
+**-0.73%** and **-0.57%** against the ceiling, and seven, two and six of ten points inside 0.4%.
+A statistic that moves that far between replicates of one configuration reports which run happened
+to contain a bad point, and it should not have been quoted from a single sweep in the first
+place.
+
+Against the fully tuned profile the plateau is removed outright - **+18.7% on average across the
+band, +1.6% to +29.5%**, with the largest gains where 5.7.2 found the deepest losses. That range
 is per-point and inherits the dip problem from both sides: the tuned sweep carries one of its own,
 so read the band mean and not the endpoints.
 
@@ -1333,8 +1339,8 @@ opposite direction to the first, and it was **wrong on purpose-built evidence**:
 audit flagged it as a mixed comparison whose risk ran against the finding, and recorded that
 -3.18% was an upper bound on the loss rather than a measurement of it.
 
-Re-measured on 2026-08-24 with two verified-quiet sweeps, the split curve reads **+2.88%** above
-its 2026-08-22 predecessor, or **+2.77%** with the one known dip in each run excluded. **The
+Re-measured on 2026-08-24 with two verified-quiet sweeps, the split curve reads **+2.83%** above
+its 2026-08-22 predecessor, or **+2.54%** with the one known dip in each run excluded. **The
 withdrawal of the -3.18% rests on those two measurements and not on any diagnosis of the older
 one**, which matters, because the diagnosis turns out to be the weaker half of the argument.
 
@@ -1346,7 +1352,7 @@ difference in the applied curve. Only one survives.
      across 1237-2010 MHz. Same sign, same order, somewhat smaller.
   2. **Frequency signature - withdrawn as never applicable.** The rise was reported as declining
      within the band, +3.06% below 1710 MHz against +2.24% above 1867. With both known dips
-     removed it is flat: **+2.89%** against **+2.58%**. More importantly the test was not
+     removed it is flat: **+2.63%** against **+2.39%**. More importantly the test was not
      available here at all. 5.4.4's boundary is at roughly 2010 MHz and this grid runs 1402-2100,
      so nine of its ten points sit inside 5.4.4's low band, where a *uniform* offset is what that
      finding predicts. The internal split quoted earlier had no basis in 5.4.4 and was reading
@@ -1362,23 +1368,30 @@ it. **A slightly different applied profile is not excluded** - the 2026-08-22 cu
 and a probe reads clocks rather than voltages. The reading offered here is contamination on
 magnitude alone, and it is offered as the leading explanation rather than an established one.
 
-**Single-point `membw` dips occur in verified-quiet runs, at roughly 6-7%, at a different
-frequency each time.** Of the five verified-quiet `membw` sweeps on this 10-point grid, two carry
-one: the fully tuned sweep of 2026-08-22 drops **5.93%** below its neighbours at 1477 MHz, and the
-second split-curve sweep of 2026-08-24 drops **6.91%** at 1867 MHz. The other three have nothing
-worse than 1.0%. Within the split-curve pair the point at 1867 MHz reads 395.1 GB/s in one sweep
-and 367.1 in the other, twenty minutes apart on an untouched profile, so it is not a property of
-the configuration.
+**Every verified-quiet `membw` sweep on this grid has a worst point, and how bad it is varies
+continuously.** Across the six of them the deepest single-point departure from the local trend
+runs from **-0.36%** to **-6.91%**, with the others at -0.59%, -1.00%, -2.17% and -5.93%. There is
+no clean separation into runs that have a dip and runs that do not.
+
+That matters because an earlier version of this subsection drew one. It reported "two of five runs
+carry a 6-7% dip", which was a threshold placed at 3% across a continuous distribution measured on
+five samples. A third split-curve sweep landed at -2.17% - between the two groups - and the
+distinction did not survive it. **The honest statement is a spread, not a count.**
+
+What the three split-curve sweeps do establish is where the measurement is unreliable. Per-point
+run-to-run standard deviation across them has a median of **0.46%** and a maximum of **4.19%**, and
+eight of the ten points replicate to within 1%. The two that do not are 1477 and 1867 MHz. At
+1867 MHz the same point reads 395.1 GB/s in one sweep and 367.1 in another taken twenty minutes
+later on an untouched profile, so it is not a property of the configuration.
 
 This retires an explanation carried since 2026-08-22, when the "wandering `membw` dip" was
 attributed to the capture software of 5.4.4 on the strength of both being transient and both
-moving between runs. **The dip survives the encoder guard**, so whatever produces it, that is not
-what it is. Its cause is unidentified.
+moving between runs. **The variation survives the encoder guard**, so whatever produces it, that
+is not what it is. Its cause is unidentified.
 
-The practical consequence is a floor on what a single `membw` sweep can resolve on this card.
-Two of five clean runs carry a 6-7% single-point error, which is larger than every configuration
-difference this subsection reports. Nothing here should be read from one sweep, and the
-configuration comparisons above are stated as means over the whole band for that reason.
+The practical consequence is a floor on what a single `membw` sweep resolves on this card. A worst
+point of several percent is routine, and that is larger than every configuration difference this
+subsection reports. Nothing here should be read from one sweep.
 
 **The lesson is that a comparison is only as clean as its dirtier half.** Correcting one side of a
 pair is not a partial fix; it can be worse than correcting neither, because it converts a symmetric

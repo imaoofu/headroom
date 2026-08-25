@@ -975,16 +975,22 @@ def testSplitCurveIsAveragedOverItsRuns():
     check("the split curve is measured more than once", len(cc.SPLIT_MEMBW_RUNS) >= 2,
           f"only {len(cc.SPLIT_MEMBW_RUNS)} sweep(s)")
 
-    ceiling = _fakeSweepRows(FINE_GRID, [300.0] * 10)
-    # Two runs that disagree: reading either alone gives +10% or -10%, reading both gives 0%.
-    runA = _fakeSweepRows(FINE_GRID, [330.0] * 10)
-    runB = _fakeSweepRows(FINE_GRID, [270.0] * 10)
-    mapping = {cc.CLEAN_CEILING_MEMBW: ceiling,
-               cc.SPLIT_MEMBW_RUNS[0]: runA,
-               cc.SPLIT_MEMBW_RUNS[1]: runB}
-    deltas = _withFakeSweep(mapping, lambda: cc._r576vsCeiling(cc.SPLIT_MEMBW_RUNS))
-    check("both runs are averaged, not one picked", abs(deltas[0]) < 0.01,
-          f"got {deltas[0]:+.2f}%, which is one run rather than the mean of two")
+    # Runs that disagree by a wide margin but average to exactly the ceiling. Built for however
+    # many sweeps the configuration currently has, so adding a fourth does not silently skip it -
+    # which is what happened when the third was added and this fixture named only two.
+    runs = cc.SPLIT_MEMBW_RUNS
+    offsets = [(i - (len(runs) - 1) / 2) * 0.1 for i in range(len(runs))]
+    mapping = {cc.CLEAN_CEILING_MEMBW: _fakeSweepRows(FINE_GRID, [300.0] * 10)}
+    for path, offset in zip(runs, offsets):
+        mapping[path] = _fakeSweepRows(FINE_GRID, [300.0 * (1 + offset)] * 10)
+
+    deltas = _withFakeSweep(mapping, lambda: cc._r576vsCeiling(runs))
+    check("every run is averaged, not one picked", abs(deltas[0]) < 0.01,
+          f"got {deltas[0]:+.2f}%, which is one run rather than the mean of {len(runs)}")
+
+    # And the fixture has to be capable of failing: each run alone is far from the ceiling.
+    check("the fixture would expose a single-run read", abs(offsets[0]) > 0.05,
+          "the runs planted were too similar for this check to mean anything")
 
 
 def testCeilingComparisonRefusesASingleSweepPassedAsAString():
@@ -1054,7 +1060,82 @@ def testClockMatchGuardRejectsAChangedGrid():
 
 
 testSustainedComparisonRefusesMismatchedWindows()
+
+
+def testPerRunReadingsRefusesAChangedRunCount():
+    """The prose names three individual readings. A fourth sweep must break it, not extend it.
+
+    Without the guard the claim would render four figures into a sentence introduced as three, and
+    the audit would pass because the fragment it pins happens to sit at the start.
+    """
+    import claims_consumer as cc
+
+    saved = cc.SPLIT_MEMBW_RUNS
+    try:
+        cc.SPLIT_MEMBW_RUNS = list(saved[:2])
+        raised = False
+        try:
+            cc.perRunReadings()
+        except ValueError:
+            raised = True
+        check("a changed run count is refused", raised, "it rendered two readings as three")
+    finally:
+        cc.SPLIT_MEMBW_RUNS = saved
+
+    # The guard must not be refusing everything: the real three-run list still renders. REPO_ROOT
+    # is pinned because an earlier test in this file repoints it at a fixture and leaves it there.
+    import audit_claims as ac
+
+    savedRoot = ac.REPO_ROOT
+    try:
+        ac.REPO_ROOT = REAL_REPO_ROOT
+        ac._sweepCache.clear()
+        text = cc.perRunReadings()
+    finally:
+        ac.REPO_ROOT = savedRoot
+        ac._sweepCache.clear()
+    check("three runs still render", "of ten points inside 0.4%" in text, f"got {text!r}")
+
+
+def testPointSpreadRefusesAChangedNumberOfUnreliablePoints():
+    """The sentence names exactly two points that do not replicate. If a third appears it is false.
+
+    Fed three noisy points, the claim must raise rather than print two of them and drop the rest,
+    which is the shape of the "seven of ten" error this section already made once.
+    """
+    import claims_consumer as cc
+
+    grid = FINE_GRID
+    ceiling = _fakeSweepRows(grid, [300.0] * 10)
+    # Three runs that agree everywhere except at three grid points.
+    values = [[300.0] * 10 for _ in cc.SPLIT_MEMBW_RUNS]
+    for column in (1, 5, 8):
+        values[0][column] = 260.0
+    mapping = {cc.CLEAN_CEILING_MEMBW: ceiling}
+    for path, series in zip(cc.SPLIT_MEMBW_RUNS, values):
+        mapping[path] = _fakeSweepRows(grid, series)
+
+    raised = False
+    try:
+        _withFakeSweep(mapping, cc.pointSpread)
+    except ValueError:
+        raised = True
+    check("three unreliable points are refused", raised, "it rendered a sentence naming two")
+
+    # Two noisy points render, so the guard is discriminating rather than always raising.
+    values = [[300.0] * 10 for _ in cc.SPLIT_MEMBW_RUNS]
+    for column in (1, 5):
+        values[0][column] = 260.0
+    for path, series in zip(cc.SPLIT_MEMBW_RUNS, values):
+        mapping[path] = _fakeSweepRows(grid, series)
+    text = _withFakeSweep(mapping, cc.pointSpread)
+    check("two unreliable points still render", "The two that do not are" in text, f"got {text!r}")
+
+
+
 testSplitCurveIsAveragedOverItsRuns()
+testPerRunReadingsRefusesAChangedRunCount()
+testPointSpreadRefusesAChangedNumberOfUnreliablePoints()
 testCeilingComparisonRefusesASingleSweepPassedAsAString()
 testContaminationSignatureExcludesTheDipPoints()
 testClockMatchGuardRejectsAChangedGrid()

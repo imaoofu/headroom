@@ -469,10 +469,15 @@ disagrees with the data directory, the data directory is right.*
   1 of 3 runs".
 
   ⛔ **IT DOES NOT EXPLAIN THE WANDERING `membw` DIP. That attribution is retired, 2026-08-24.**
-  Two of the five verified-quiet `membw` sweeps on the 10-point grid carry a single-point dip of
-  6-7%: the tuned sweep drops 5.93% below its neighbours at 1477 MHz, and the second split-curve
-  sweep drops 6.91% at 1867 MHz. Both had encoder and decoder verified at 0%. **The dip survives
-  the encoder guard, so it is something else, and its cause is unidentified.**
+  Every verified-quiet `membw` sweep on the 10-point grid has a worst point, and across the six of
+  them the deepest single-point departure runs **-0.36%, -0.59%, -1.00%, -2.17%, -5.93%, -6.91%**.
+  All six had encoder and decoder verified at 0%. **The variation survives the encoder guard, so
+  it is something else, and its cause is unidentified.**
+
+  ⚠️ **AN EARLIER VERSION OF THIS ENTRY SAID "TWO OF FIVE RUNS CARRY A 6-7% DIP".** That was a 3%
+  threshold laid across a continuous distribution of five samples; the sixth sweep landed at
+  -2.17%, between the two groups it had invented. **Report the spread, not a count** - and be
+  suspicious of any bimodal split drawn from single-digit n.
 
   **Limits.** `gemm` renders nothing to screen, so Instant Replay has little new frame content to
   encode here; its cost during a graphics workload could be larger and this does not bound that.
@@ -490,14 +495,20 @@ disagrees with the data directory, the data directory is right.*
 
   ⛔ **AND THEN THAT CORRECTION WAS ITSELF WRONG. 2026-08-24 WITHDREW IT.** The 08-23 fix cleaned
   the ceiling and left the split curve on contaminated 08-22 data, producing an apparent -3.18%
-  deficit and a rewritten "three-way trade". Re-measured verified-quiet, **n=2**, the split curve
-  sits at **-0.42% mean** against the repair's **-0.39%** - they agree to 0.03 points, and **both
-  sit at the ceiling.**
+  deficit and a rewritten "three-way trade". Re-measured verified-quiet, **n=3**, the split curve
+  sits at **-0.47% mean** against the repair's **-0.39%** - they agree to 0.08 points, and **both
+  sit at the ceiling.** On the eight grid points that replicate to within 1% across the three
+  sweeps it is **-0.14%**; quote both, never the subset alone.
 
   ⚠️ **THE FIRST VERSION OF THIS ENTRY SAID -0.11% AND "7 OF 10 WITHIN 0.4%", FROM ONE SWEEP.**
-  The replicate twenty minutes later, same untouched profile, gave -0.73% and 2 of 10. **Do not
-  quote a per-point "within 0.4% at N of ten" statistic on `membw` at all** - it reports which run
-  happened to contain a dip. Band means only, n>=2.
+  The three sweeps read individually give **-0.11%, -0.73% and -0.57%**, and seven, two and six of
+  ten points inside 0.4%. **Do not quote a per-point "within 0.4% at N of ten" statistic on
+  `membw` at all** - it reports which run happened to contain a bad point. Band means only, n>=3.
+
+  📐 **PER-POINT RUN-TO-RUN SPREAD ON `membw`, MEASURED: median 0.46%, max 4.19%, eight of ten
+  points inside 1%.** The two that are not are **1477 and 1867 MHz**. That is the resolution floor
+  for a single `membw` sweep on this card, and it is larger than every configuration difference
+  5.7.6 reports.
 
   **Of the three reasons given for calling the 08-22 run contaminated, only one survives.**
   MAGNITUDE stands: +2.88% (n=2), or +2.77% excluding the one known dip in each run, against the

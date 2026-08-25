@@ -34,7 +34,7 @@ WHY SOME CLAIMS PIN A SENTENCE FRAGMENT
     claim; changing a number will.
 """
 
-from statistics import fmean as mean, stdev
+from statistics import fmean as mean, median, stdev
 from audit_claims import (POST_SOAK, SOAK, WHOLE_RUN, claim, deltaPct, iterationsIn,
                           loadedSamples, signedPct, stabilityRun, sweep, sweepRaw,
                           voltageJoin)
@@ -714,6 +714,7 @@ TUNED_MEMBW_CLEAN = "20260822-183112_5060ti-tuned-membw-clean_sweep.csv"
 SPLIT_MEMBW_RUNS = [
     "splitcurve-clean-20260824/20260824-203810_5060ti-splitcurve-clean-membw-fine_sweep.csv",
     "splitcurve-clean-20260824/20260824-210054_5060ti-splitcurve-clean-membw-fine-r2_sweep.csv",
+    "splitcurve-clean-20260824/20260824-211535_5060ti-splitcurve-clean-membw-fine-r3_sweep.csv",
 ]
 
 # RESOLVED 2026-08-24. This constant used to carry a mixed-provenance caveat saying that the
@@ -805,6 +806,88 @@ def ceilingRose():
     return f"+{mean(d):.2f}%\non average, from +{min(d):.2f}% to +{max(d):.2f}%"
 
 
+def _r576perRun():
+    """Each split-curve sweep read on its own against the ceiling, worst first in filename order."""
+    ceiling = sweep(CLEAN_CEILING_MEMBW)
+    out = []
+    for path in SPLIT_MEMBW_RUNS:
+        rows = sweep(path)
+        d = [(rows[t]["throughput"] / ceiling[t]["throughput"] - 1) * 100 for t in sorted(ceiling)]
+        out.append((mean(d), sum(1 for v in d if abs(v) <= 0.4)))
+    return out
+
+
+def _r576pointSpread():
+    """Per-point run-to-run standard deviation across the split-curve sweeps, as percentages."""
+    ceiling = sweep(CLEAN_CEILING_MEMBW)
+    spreads = {}
+    for t in sorted(ceiling):
+        values = [sweep(p)[t]["throughput"] for p in SPLIT_MEMBW_RUNS]
+        spreads[t] = 100 * stdev(values) / mean(values)
+    return spreads
+
+
+@claim("5.7.6-per-run-readings", PAPER, "5.7.6")
+def perRunReadings():
+    """The three sweeps read individually - the evidence that a one-sweep reading is not usable.
+
+    Order matters here: this renders them in the order the runs were taken, so a claim that
+    happened to match after a reordering would be pinning different runs than the prose names."""
+    # Checked before any file is read, so the failure names the real problem rather than
+    # surfacing as a missing CSV somewhere downstream.
+    if len(SPLIT_MEMBW_RUNS) != 3:
+        raise ValueError("the prose names three readings; there are "
+                         f"{len(SPLIT_MEMBW_RUNS)} sweeps")
+    runs = _r576perRun()
+    means = ", ".join(f"**{m:.2f}%**" for m, _ in runs[:-1])
+    return (f"they give {means}\nand **{runs[-1][0]:.2f}%** against the ceiling, and "
+            + _r576join(_r576word(c) for _, c in runs) + " of ten points inside 0.4%")
+
+
+def _r576join(items):
+    """"a, b and c" - the prose reads as English, so the rendering has to as well."""
+    items = list(items)
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def _r576word(n):
+    small = {0: "zero", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+             7: "seven", 8: "eight", 9: "nine", 10: "ten", 20: "twenty", 30: "thirty"}
+    if n in small:
+        return small[n]
+    if 20 < n < 100:
+        return small[n // 10 * 10] + "-" + small[n % 10]
+    raise ValueError(f"no spelling for {n}; the prose that needs it should be rewritten")
+
+
+@claim("5.7.6-stable-subset", PAPER, "5.7.6")
+def stableSubset():
+    """The band mean restricted to points that actually replicate.
+
+    Reported alongside the whole-band figure and never instead of it: choosing the points after
+    seeing which behaved is a decision the reader has to be able to see."""
+    spreads = _r576pointSpread()
+    ceiling = sweep(CLEAN_CEILING_MEMBW)
+    stable = [t for t, v in spreads.items() if v < 1]
+    d = [(_r576throughput(SPLIT_MEMBW_RUNS, t) / ceiling[t]["throughput"] - 1) * 100
+         for t in stable]
+    return (f"the {_r576word(len(stable))} grid points that replicate to within 1% across the "
+            f"three split-curve\nsweeps, the figure is {mean(d):.2f}%")
+
+
+@claim("5.7.6-point-spread", PAPER, "5.7.6")
+def pointSpread():
+    spreads = _r576pointSpread()
+    stable = sum(1 for v in spreads.values() if v < 1)
+    worst = max(spreads, key=lambda t: spreads[t])
+    noisy = sorted(t for t, v in spreads.items() if v >= 1)
+    if len(noisy) != 2:
+        raise ValueError(f"the prose names two unreliable points; there are {len(noisy)}: {noisy}")
+    return (f"a median of **{median(spreads.values()):.2f}%** and a maximum of "
+            f"**{spreads[worst]:.2f}%**, and\n{_r576word(stable)} of the ten points replicate to "
+            f"within 1%. The two that do not are {noisy[0]} and {noisy[1]} MHz")
+
+
 @claim("5.7.6-split-vs-repair", PAPER, "5.7.6")
 def splitVsRepair():
     """How closely the two configurations agree against the same reference.
@@ -834,11 +917,11 @@ def clockMatch():
     # One point per sweep misses by the same amount at the top of the band, so "above the
     # third largest" counts zero. Split on the worst VALUE, not on a rank.
     outliers = sum(1 for d in deltas if d >= deltas[0])
-    if len(deltas) != 30 or outliers != 3:  # ten points, three sweeps, one top-of-band miss each
-        raise ValueError("the grid is no longer ten points across three sweeps with one "
-                         f"clock outlier each: {len(deltas)} points, {outliers} above")
+    sweeps = 1 + len(SPLIT_MEMBW_RUNS)
+    if len(deltas) != 10 * sweeps:
+        raise ValueError(f"expected ten points across {sweeps} sweeps, got {len(deltas)}")
     return (f"achieved clocks matched to {deltas[0]:.1f} MHz in the worst case\n"
-            f"and to {deltas[outliers]:.1f} MHz at the other twenty-seven")
+            f"and to {deltas[outliers]:.1f} MHz at the other {_r576word(len(deltas) - outliers)}")
 
 
 @claim("5.7.6-repair-vs-ceiling", PAPER, "5.7.6")
@@ -1067,25 +1150,17 @@ def _r576dip(path):
     return min(residuals, key=lambda entry: entry[1])
 
 
-@claim("5.7.6-dip-count", PAPER, "5.7.6")
-def dipCount():
-    """How many clean runs carry one, and how deep the rest go.
+@claim("5.7.6-dip-spread", PAPER, "5.7.6")
+def dipSpread():
+    """The worst-point departure of every verified-quiet sweep, as a CONTINUUM.
 
-    The count is asserted rather than rendered: if a third run develops a dip, or one of the two
-    stops having one, the sentence saying "two of five" is false and this must fail rather than
-    quietly print a new number under old prose."""
-    deep = [p for p in CLEAN_MEMBW_FINE if _r576dip(p)[1] < -3]
-    shallow = [_r576dip(p)[1] for p in CLEAN_MEMBW_FINE if p not in deep]
-    if len(deep) != 2 or len(CLEAN_MEMBW_FINE) != 5:
-        raise ValueError(f"no longer two of five: {len(deep)} deep dips in "
-                         f"{len(CLEAN_MEMBW_FINE)} verified-quiet sweeps")
-    return f"The other three have nothing\nworse than {abs(min(shallow)):.1f}%."
-
-
-@claim("5.7.6-dip-tuned", PAPER, "5.7.6")
-def dipInTuned():
-    target, pct = _r576dip(TUNED_MEMBW_CLEAN)
-    return f"drops **{abs(pct):.2f}%**\nbelow its neighbours at {target} MHz"
+    This replaces a claim that counted "two of five runs with a 6-7% dip". That count was a 3%
+    threshold laid across a continuous distribution of five samples, and the sixth sweep landed
+    at -2.17%, between the two groups it had invented. A spread cannot be discretised into a
+    finding the way a count invites."""
+    worst = sorted((_r576dip(p)[1] for p in CLEAN_MEMBW_FINE), reverse=True)
+    return (f"runs from **{worst[0]:.2f}%** to **{worst[-1]:.2f}%**, with the others at "
+            + _r576join(f"{v:.2f}%" for v in worst[1:-1]))
 
 
 @claim("5.7.6-dip-pair", PAPER, "5.7.6")
@@ -1095,5 +1170,8 @@ def dipPair():
     This is the claim that makes the dip a measurement property rather than a configuration
     property, so it is pinned separately from the depth figures."""
     target = _r576dip(SPLIT_MEMBW_RUNS[1])[0]
-    a, b = (sweep(p)[target]["throughput"] / 1e9 for p in SPLIT_MEMBW_RUNS)
-    return f"reads {a:.1f} GB/s in one sweep\nand {b:.1f} in the other"
+    # The pair the prose names: the run WITHOUT the bad point and the run with it. Indexing two
+    # specific runs rather than unpacking the list, which silently broke when a third was added.
+    a = sweep(SPLIT_MEMBW_RUNS[0])[target]["throughput"] / 1e9
+    b = sweep(SPLIT_MEMBW_RUNS[1])[target]["throughput"] / 1e9
+    return f"reads {a:.1f} GB/s in one sweep\nand {b:.1f} in another"

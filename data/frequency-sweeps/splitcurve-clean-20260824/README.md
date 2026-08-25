@@ -1,6 +1,6 @@
 # Split-curve `membw`, clean protocol - 2026-08-24
 
-Two sweeps. It withdraws a correction that was itself a correction, and the sequence is the
+Three sweeps. It withdraws a correction that was itself a correction, and the sequence is the
 point of this directory.
 
 ## What was measured
@@ -121,3 +121,36 @@ This retires the standing explanation that the "wandering `membw` dip" was the c
 5.4.4. It survives the encoder guard. Cause unidentified, and it sets a floor on what a single
 `membw` sweep can resolve on this card - larger than any configuration difference this section
 reports.
+
+
+---
+
+## r3, and what it cost the dip framing
+
+`20260824-211535_..._-r3_sweep.csv`, forty minutes after r1, profile untouched, re-probed
+(2976.5 MHz at a locked 3090 target, card warmer at 60.5 C), encoder and decoder 0%.
+
+| | vs the ceiling | within 0.4% |
+|---|---|---|
+| r1 | -0.11% | 7 of 10 |
+| r2 | -0.73% | 2 of 10 |
+| r3 | -0.57% | 6 of 10 |
+| **mean of three** | **-0.47%** | - |
+
+Against the repaired curve's -0.39%: they agree to **0.08 percentage points**. Conclusion
+unchanged - both configurations sit at the bandwidth ceiling, and the repair is dominated.
+
+**What r3 broke was this directory's own framing from an hour earlier.** The r2 write-up said
+"two of five verified-quiet runs carry a 6-7% dip, the other three have nothing worse than 1.0%".
+r3's worst point is **-2.17%**, which sits between those two groups. With six runs the worst-point
+departures are -0.36%, -0.59%, -1.00%, -2.17%, -5.93%, -6.91%: a continuum. The "two of five" was
+a 3% threshold laid across a continuous distribution measured on five samples, and it did not
+survive the sixth.
+
+**The useful statistic is the per-point run-to-run spread**, which three sweeps of one
+configuration can actually measure: median **0.46%**, max **4.19%**, and eight of ten points
+replicate to within 1%. The two that do not are 1477 and 1867 MHz. Restricted to the eight that
+do, the split curve is **-0.14%** from the ceiling rather than -0.47%.
+
+Both figures belong in the paper. The whole-band mean is dragged down by points that do not
+replicate; the subset is chosen after seeing which points behaved. Neither alone is honest.
