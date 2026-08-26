@@ -311,7 +311,7 @@ module then does `from audit_claims import claim`, which imports a *second copy*
 its own empty registry — claims register into one copy and the runner reads the other, reporting
 "0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
 
-Coverage as of 2026-08-24: **87 claims green, 26 sections unaudited.**
+Coverage as of 2026-08-25: **110 claims green, 24 sections unaudited.** Claims live in TWO modules now - `claims_consumer.py` for the 5060 Ti and `claims_crosschip.py` for the 3070 Ti. Keep them apart; a shared constant is how a cross-chip claim would silently read the wrong card.
 
 ---
 

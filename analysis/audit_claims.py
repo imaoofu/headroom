@@ -607,6 +607,7 @@ def main():
     args = parser.parse_args()
 
     import claims_consumer                             # noqa: F401 - registers claims
+    import claims_crosschip                            # noqa: F401 - registers claims
 
     selected = [c for c in CLAIMS if args.filter in c["claimId"]]
     if not selected:

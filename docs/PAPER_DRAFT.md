@@ -162,6 +162,14 @@ confidence level for a discovered curve.
 closed — they return a curve, not an explanation. This work targets the efficiency objective and
 publishes its method.
 
+**Vendor tuning also ships in firmware, and 5.5.1 measures an instance of it.** A board partner's
+factory-overclocked SKU carries a voltage-frequency curve chosen by the manufacturer, and on a card
+with a dual-BIOS switch two such curves can be compared on the same silicon. Measured that way, the
+overclocked BIOS did identical work at matched frequency for **23.11%** more power, and returned
+**0.56%** of peak compute and nothing measurable on bandwidth. The objective those tools optimise
+for is not the one a buyer running below peak would choose, and the gap between the two is large
+enough to measure on shipping hardware without modifying anything.
+
 ### 2.7 Existing public datasets, and why they are insufficient
 
 | Dataset | Hardware | Core sweep (% of rated boost) | Suitable for efficiency-optimum questions? |
@@ -854,7 +862,119 @@ sweeps are being repeated under the corrected protocol.
 
 ### 5.5 Cross-chip variation
 
-`[PENDING — requires multiple units]`
+Every result before this section was measured on one RTX 5060 Ti. This section adds a second chip
+of a different architecture, and - because that card carries a dual-BIOS switch - a controlled
+comparison of two vendor-authored voltage-frequency curves on identical silicon.
+
+**The card.** A Gigabyte RTX 3070 Ti GAMING OC rev2.0: Ampere, 8 GB of GDDR6X, measured on a
+third party's machine with the collection kit of 3.4 and returned to the state it was found in.
+It shares nothing with the reference card but the measurement protocol.
+
+| | RTX 5060 Ti | RTX 3070 Ti |
+|---|---|---|
+| architecture | Blackwell | Ampere |
+| memory | 16 GB GDDR7 | 8 GB GDDR6X |
+| clock ladder | 389 bins, 180-3090 MHz | **116-120 bins, 405-2190 MHz** |
+| default power limit | 180 W | **290-310 W** |
+
+The clock ladder is the difference that matters for this method: the older card exposes roughly a
+third as many discrete frequencies over a range half as wide, so a 13-point sweep steps 105 MHz at
+a time rather than 154 MHz over a much longer span.
+
+**The central result reproduces.** Running the compute workload at its efficiency optimum rather
+than at its peak-throughput point costs **21.7%** of throughput and saves **37.3%** of power on
+this card, against 44.4% and 62% on the reference dataset and comparable figures on the 5060 Ti.
+The magnitude differs; the shape does not. A second architecture, a different memory technology
+and a different vendor board reach the same qualitative conclusion.
+
+**Neither BIOS reaches its own clock ceiling.** Both peak near **1765 MHz achieved** - 1765.0 in
+one position and 1772.0 in the other - against ceilings of 2130 and 2190 MHz. Above roughly
+1710 MHz the commanded clock stops being reached and throughput flattens. That is the same
+power-limited-not-clock-limited behaviour 5.4 reports for the 5060 Ti, now on hardware that shares
+none of its design decisions, which makes it a property of how these cards are configured rather
+than of one board.
+
+#### 5.5.1 Two vendor BIOSes on one chip: the overclock is almost entirely voltage
+
+The card was found with its BIOS switch in the **SILENT** position, which is not the factory
+default. Both positions were measured in one session, minutes apart, on the same silicon in the
+same case at the same ambient.
+
+| | SILENT (as found) | OC |
+|---|---|---|
+| VBIOS | `94.04.5a.00.91` | `94.05.5a.00.bd` |
+| top supported clock | 2130 MHz | 2190 MHz |
+| power limit, default, maximum | 290 / 290 / 320 W | 310 / 310 / 350 W |
+
+The OC position raises the clock ceiling and the power envelope together, which is worth noting on
+its own: 5.7 spends its length separating those two knobs, and the vendor ships them coupled.
+
+**At matched frequency the two BIOSes do identical work and the OC position draws a quarter more
+power.** Seven grid points from 855 to 1485 MHz, with achieved clocks equal to 0.0 MHz at every
+one of them and the memory clock unchanged:
+
+| | mean | range |
+|---|---|---|
+| throughput, OC against SILENT | **-0.00%** | -0.15% to +0.07% |
+| power, OC against SILENT | **+23.11%** | +19.37% to +27.53% |
+
+**The thermal explanation runs backwards.** Silicon leaks more when it is hot, so if temperature
+were driving this the hotter run should draw more power. The SILENT run was the hotter of the two
+at five of the seven points, 55.8-58.8 C against 51.8-54.0 C, and it drew less. Whatever separates
+the two curves is not thermal, and correcting for temperature would widen the gap rather than
+close it.
+
+No voltage telemetry was available - the machine belonged to somebody else and the kit installs
+nothing - so the mechanism is inferred rather than measured. At fixed frequency and fixed work,
+dynamic power scales with the square of voltage, and +23% implies roughly 11% more of it.
+
+**What the extra voltage returns.**
+
+| | SILENT | OC | difference |
+|---|---|---|---|
+| peak `gemm` | 16.96 TFLOP/s at 273.1 W | 17.05 TFLOP/s at 289.1 W | **+0.56%** |
+| peak `membw` | 550.9 GB/s | 551.1 GB/s | **+0.04%** |
+| band-mean `membw` power | 149.7 W | 202.2 W | **+35.1%** |
+| best `gemm` efficiency | 77.51 GFLOP/J at 1380 MHz | 64.47 GFLOP/J at 1425 MHz | **-16.82%** |
+
+Half a percent of peak compute, nothing measurable on bandwidth, and a sixth of the card's best
+efficiency given away to get it. On the bandwidth-bound workload the two positions deliver the
+same throughput for 35% more power, because that workload never approaches the frequency where the
+higher ceiling could matter.
+
+**This is the clearest evidence in this work that the shipped voltage is not the required
+voltage.** Section 5.7 reaches the same conclusion by hand-tuning one card downward; this reaches
+it from the opposite direction, by measuring what a vendor's own upward tune costs when the extra
+frequency it enables is not being used. The two are independent, and the second was authored by
+the manufacturer.
+
+#### 5.5.2 The measurement is tighter on this card than on the reference one
+
+The two `membw` sweeps taken on the OC BIOS agree to **+0.30%** on average across all thirteen
+shared targets, from +0.24% to +0.39%. The 5060 Ti needed three sweeps of one configuration to
+establish that its own `membw` figures carry a run-to-run spread near 1%, with single points
+moving by up to 7%.
+
+That difference is not explained here, and it matters for reading both sections: the sub-percent
+comparisons 5.7 declines to make on the 5060 Ti might be available on this card, and the
+1% resolution floor established there should not be assumed to transfer.
+
+#### 5.5.3 Limits
+
+Two chips is not a sample. The BIOS comparison is one sweep per position on the compute workload
+and one against two on the bandwidth workload, on a card measured once, in one case, at one
+ambient, in a single session. The +23% matched-frequency power gap is far outside anything
+run-to-run variation in this project has produced; the +0.56% peak difference is not, and should
+be read as "no measurable gain" rather than as a small one.
+
+The matched-frequency comparison covers seven of thirteen grid points, 855-1485 MHz. The two
+BIOSes build their sweep grids from their own maxima and therefore share no targets at all; the
+seven come from an additional sweep run specifically to create an overlap, which was given the
+wrong ceiling and produced half the intended match. The upper half of the band, including the
+region where both cards flatten out, has no matched-frequency measurement.
+
+Nothing about the tuning of 5.7 was applied to this card. It is a customer machine, and only the
+configurations the vendor shipped were measured.
 
 ### 5.6 The performance-constrained optimum
 
