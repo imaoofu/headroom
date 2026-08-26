@@ -231,6 +231,9 @@ def theWidestEfficiencyGap():
 TUNED_MEMBW = "membw-anomaly-20260819/20260819-204233_5060ti-oc-membw-anomaly_sweep.csv"
 MEMONLY_MEMBW = "membw-anomaly-20260819/20260820-181307_5060ti-memonly-membw-anomaly_sweep.csv"
 STOCK_MEMBW_13PT = "oc-comparison-20260819/20260819-143337_5060ti-kittest-stock-membw-stock_sweep.csv"
+# The only stock membw sweep on the 10-point grid the memory-only runs use. The 13-point
+# file above shares NO targets with them, so it cannot serve a matched comparison.
+STOCK_MEMBW_VOLT = "membw-anomaly-20260819/20260820-211630_5060ti-stock-volt-membw_sweep.csv"
 
 # --------------------------------------------------------------------------------------
 # 5.7.2 - the core curve costs a bandwidth-bound workload up to 29.6%
@@ -1170,3 +1173,30 @@ def dipPair():
     a = sweep(SPLIT_MEMBW_RUNS[0])[target]["throughput"] / 1e9
     b = sweep(SPLIT_MEMBW_RUNS[1])[target]["throughput"] / 1e9
     return f"reads {a:.1f} GB/s in one sweep\nand {b:.1f} in another"
+
+
+# --------------------------------------------------------------------------------------
+# 5.5.3 - the 5060 Ti half of the cross-chip bus-saturation comparison
+# --------------------------------------------------------------------------------------
+# This claim renders into 5.5.3, which is otherwise served by claims_crosschip.py. It lives here
+# because it reads 5060 Ti sweeps and that module is forbidden from doing so. Splitting on data
+# ownership rather than section number is what keeps a cross-chip claim from quietly reaching a
+# 5060 Ti file through a shared constant.
+
+# 128-bit bus, double-pumped, at the memory clock each configuration actually ran. Computed per
+# configuration rather than from one nominal figure: the memory overclock changes the denominator,
+# and dividing an overclocked throughput by the stock bus is how "173% of theoretical peak" got
+# into a README once already.
+def _r553bus(memoryClockMhz):
+    return memoryClockMhz * 2 * 16 / 1000
+
+
+@claim("5.5.3-5060ti-bus", PAPER, "5.5.3",
+       mixedProvenance="two of the three runs are schema 0.1.0 and record no video-engine telemetry. Capture contamination DEPRESSES throughput, so a contaminated run understates bus efficiency and would exaggerate the shortfall this claim reports. The direction therefore runs toward the finding - and the single verified-quiet run gives 78.3%, the HIGHEST of the three, so the best-provenance number is still 12 points below the 3070 Ti's 90.4%.")
+def bus5060ti():
+    stock = max(r["throughput"] for r in sweep(STOCK_MEMBW_VOLT).values()) / 1e9
+    ocPeaks = [max(r["throughput"] for r in sweep(p).values()) / 1e9
+               for p in (MEMONLY_MEMBW, CLEAN_CEILING_MEMBW)]
+    fractions = ([100 * stock / _r553bus(13801)]
+                 + [100 * p / _r553bus(16301) for p in ocPeaks])
+    return f"**{min(fractions):.1f}-{max(fractions):.1f}%** of its own bus"

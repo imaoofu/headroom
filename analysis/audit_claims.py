@@ -225,6 +225,62 @@ def sweepRaw(relativePath):
     return _sweepCache[key]
 
 
+# NVML clocks_throttle_reasons bits. Only the ones this project has actually observed or would
+# need to recognise are named; an unknown bit is reported as its hex value rather than dropped,
+# because a mask nobody has seen before is information, not noise.
+THROTTLE_REASONS = {
+    0x0001: "GpuIdle",
+    0x0002: "ApplicationsClocksSetting",
+    0x0004: "SwPowerCap",
+    0x0008: "HwSlowdown",
+    0x0010: "SyncBoost",
+    0x0020: "SwThermalSlowdown",
+    0x0040: "HwThermalSlowdown",
+    0x0080: "HwPowerBrakeSlowdown",
+    0x0100: "DisplayClockSetting",
+}
+
+
+def throttleReasons(relativePath):
+    """Per-target set of decoded NVML throttle reasons, from a sweep CSV's throttle_masks_seen.
+
+    Separate from sweep() because the column is not a per-point aggregate like the others: it is
+    the SET of distinct masks seen while that point ran, semicolon-joined, so it does not reduce
+    to one number and cannot share sweep()'s row shape.
+
+    GpuIdle is kept rather than filtered. It appears at almost every point because the sampler
+    catches the gap between the lock being set and the workload starting, so its presence means
+    nothing - but its ABSENCE at the top targets of a power-limited run is a real observation,
+    and a reader that silently dropped it would hide that.
+    """
+    _accessLog.add(relativePath)
+    key = ("throttle", relativePath)
+    if key not in _sweepCache:
+        path = REPO_ROOT / "data" / "frequency-sweeps" / relativePath
+        if not path.exists():
+            raise FileNotFoundError(f"sweep missing: {relativePath}")
+        rows = {}
+        with open(path, encoding="utf-8-sig") as handle:
+            for raw in csv.DictReader(handle):
+                masks = [m for m in (raw.get("throttle_masks_seen") or "").split(";") if m.strip()]
+                names = set()
+                for mask in masks:
+                    value = int(mask, 16)
+                    if value == 0:
+                        continue
+                    for bit, name in THROTTLE_REASONS.items():
+                        if value & bit:
+                            names.add(name)
+                    unknown = value & ~sum(THROTTLE_REASONS)
+                    if unknown:
+                        names.add(hex(unknown))
+                rows[int(float(raw["target_frequency_mhz"]))] = names
+        if not rows:
+            raise ValueError(f"{relativePath} yielded no rows")
+        _sweepCache[key] = rows
+    return _sweepCache[key]
+
+
 def voltageJoin(relativePath):
     """Load a *_voltage.csv produced by tools/frequency-sweep/join_hwinfo_voltage.py.
 

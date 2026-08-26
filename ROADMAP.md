@@ -472,6 +472,17 @@ Turning two separate models into one project with a single research question.
 
 ---
 
+- **[CORE] Record the ENFORCED power limit, not just the maximum settable one.** The sweep
+  tool queries `power.max_limit` and stores it as `power_limit_w`, so every session JSON in this
+  repository reports what a user *could* set rather than what the board was enforcing - 350 W on
+  the 3070 Ti OC BIOS, where the enforced figure was 310 W. Found 2026-08-26 while writing 5.5.3,
+  which wanted to say a power cap engaged at its limit and could not source the limit from any
+  committed file. Add `power.limit` to the identity query alongside it; both are one field each
+  and the pair is what makes a `SwPowerCap` observation interpretable. Runs already collected
+  cannot be repaired, and the 3070 Ti is a borrowed card.
+
+---
+
 ## Known limitations to keep stating
 
 Not a to-do list — things that stay true and should never quietly disappear from the write-up.

@@ -33,7 +33,7 @@ WHAT THESE RUNS ARE
 
 from statistics import fmean as mean
 
-from audit_claims import claim, sweep
+from audit_claims import claim, sweep, throttleReasons, voltageJoin
 
 PAPER = "docs/PAPER_DRAFT.md"
 
@@ -235,6 +235,124 @@ def membwReplicates():
         raise ValueError(f"the two OC membw sweeps now share {len(shared)} targets, not thirteen")
     return (f"agree to **+{mean(d):.2f}%** on average across all thirteen\nshared targets, from "
             f"+{min(d):.2f}% to +{max(d):.2f}%")
+
+
+# --------------------------------------------------------------------------------------
+# 5.5.3 - the voltage session: what the OC BIOS actually spends its extra power on
+# --------------------------------------------------------------------------------------
+
+HW = ROOT + "hwinfo-oc/"
+OC_GEMM_FINE = HW + "20260825-160418_rtx3070ti-oc-gemm-fine_sweep.csv"
+OC_GEMM_V = HW + "20260825-154606_rtx3070ti-oc-gemm-matched2130-hwinfo_sweep.csv"
+OC_MEMBW_V = HW + "20260825-155312_rtx3070ti-oc-membw-matched2130-hwinfo_sweep.csv"
+VOLTS = lambda path: path.replace("_sweep.csv", "_sweep_voltage.csv")
+
+# 256-bit GDDR6X at 19 Gbps. A published specification, not a measurement, and named as a constant
+# so a claim reading it cannot be mistaken for one that measured it.
+BUS_GBS_3070TI = 19.0 * 256 / 8
+
+
+@claim("5.5.3-voltage-floor", PAPER, "5.5.3")
+def voltageFloor():
+    """The floor is flat to the resolution HWiNFO reports, not merely low.
+
+    RAISES if it ever stops being flat, because the sentence around it says the OC BIOS holds one
+    voltage across the band. A spread of even a millivolt would need different prose.
+    """
+    rows = voltageJoin(VOLTS(OC_GEMM_FINE))
+    volts = sorted(r["voltage"] for r in rows.values())
+    if volts[0] != volts[-1]:
+        raise ValueError(f"the fine-sweep floor is no longer flat: {volts[0]:.3f}-{volts[-1]:.3f} V")
+    clocks = sorted(r["mhz"] for r in rows.values())
+    return (f"**{volts[0]:.3f} V** at all {len(rows)} points from {clocks[0]:.0f} to "
+            f"{clocks[-1]:.0f} MHz")
+
+
+@claim("5.5.3-voltage-floor-power", PAPER, "5.5.3")
+def voltageFloorPower():
+    rows = sweep(OC_GEMM_FINE)
+    power = sorted(r["power"] for r in rows.values())
+    return f"power rises {power[0]:.1f} to {power[-1]:.1f} W ({100 * (power[-1] / power[0] - 1):+.1f}%)"
+
+
+@claim("5.5.3-crossbar-floor", PAPER, "5.5.3")
+def crossbarFloor():
+    """The crossbar has a floor of its own, and the RATIO is the quantity 5.7.4 cares about."""
+    rows = voltageJoin(VOLTS(OC_GEMM_V))
+    ratios = [r["crossbar"] / r["mhz"] for r in rows.values()]
+    floor = min(r["crossbar"] for r in rows.values())
+    pinned = [t for t, r in rows.items() if r["crossbar"] == floor]
+    return (f"pinned at **{floor:.0f} MHz** across {len(pinned)} of {len(rows)} targets, so the "
+            f"crossbar-to-core ratio\nfalls from {max(ratios):.3f} to {min(ratios):.3f}")
+
+
+@claim("5.5.3-membw-flat", PAPER, "5.5.3")
+def membwFlat():
+    """The load-bearing claim: core clock does nothing for bandwidth on this chip.
+
+    RAISES if the band ever spreads past 1%, because the sentence says the workload is
+    memory-bound at every core frequency tested and would no longer be supported.
+    """
+    rows = voltageJoin(VOLTS(OC_MEMBW_V))
+    tp = sweep(OC_MEMBW_V)
+    values = [tp[t]["throughput"] / 1e9 for t in sorted(tp)]
+    clocks = [rows[t]["mhz"] for t in sorted(rows)]
+    span = 100 * (max(values) - min(values)) / mean(values)
+    if span > 1.0:
+        raise ValueError(f"membw now spans {span:.2f}% across the band; it is no longer flat")
+    return (f"span **{max(values) - min(values):.1f} GB/s ({span:.2f}%)** while core clock rises "
+            f"{clocks[0]:.0f} to {clocks[-1]:.0f} MHz\n({100 * (clocks[-1] / clocks[0] - 1):+.1f}%)")
+
+
+@claim("5.5.3-membw-cost", PAPER, "5.5.3")
+def membwCost():
+    tp, volts = sweep(OC_MEMBW_V), voltageJoin(VOLTS(OC_MEMBW_V))
+    targets = sorted(tp)
+    lo, hi = tp[targets[0]], tp[targets[-1]]
+    return (f"**{100 * (hi['power'] / lo['power'] - 1):+.1f}% power** for "
+            f"**{100 * (hi['throughput'] / lo['throughput'] - 1):+.2f}% bandwidth**, with core "
+            f"voltage rising\n{volts[targets[0]]['voltage']:.3f} to "
+            f"{volts[targets[-1]]['voltage']:.3f} V")
+
+
+@claim("5.5.3-membw-saturated", PAPER, "5.5.3")
+def membwSaturated():
+    """Why the flatness is a control for 5.7.3 rather than an oddity of this card."""
+    peak = max(r["throughput"] for r in sweep(OC_MEMBW_V).values()) / 1e9
+    return f"**{100 * peak / BUS_GBS_3070TI:.1f}%** of its {BUS_GBS_3070TI:.0f} GB/s bus"
+
+
+@claim("5.5.3-gemm-ceiling", PAPER, "5.5.3")
+def gemmCeiling():
+    rows = sweep(OC_GEMM_V)
+    held = {t: r for t, r in rows.items() if abs(r["mhz"] - t) < 5}
+    missed = {t: r for t, r in rows.items() if abs(r["mhz"] - t) >= 5}
+    clocks = sorted(r["mhz"] for r in missed.values())
+    return (f"the top {len(missed)} targets, {min(missed)} to {max(missed)} MHz, all collapse to "
+            f"{clocks[0]:.0f}-{clocks[-1]:.0f} MHz,\nwhile the {len(held)} below them hold their "
+            f"lock exactly")
+
+
+@claim("5.5.3-gemm-powercap", PAPER, "5.5.3")
+def gemmPowerCap():
+    """The mask decides between silicon ceiling and board limit, so it is read, not inferred.
+
+    RAISES if SwPowerCap ever appears at a target that held its lock: the section's whole argument
+    is that the cap and the collapse coincide exactly, and a single counterexample breaks it.
+    """
+    reasons = throttleReasons(OC_GEMM_V)
+    rows = sweep(OC_GEMM_V)
+    capped = sorted(t for t, names in reasons.items() if "SwPowerCap" in names)
+    missed = sorted(t for t, r in rows.items() if abs(r["mhz"] - t) >= 5)
+    if capped != missed:
+        raise ValueError(f"SwPowerCap no longer coincides with the collapse: capped {capped}, "
+                         f"collapsed {missed}")
+    thermal = {n for names in reasons.values() for n in names if "Thermal" in n or "HwSlowdown" in n}
+    if thermal:
+        raise ValueError(f"a thermal or hardware slowdown appears in this run: {sorted(thermal)}")
+    peak = max(r["power"] for r in rows.values())
+    return (f"**SwPowerCap** at exactly those {len(capped)} targets and at none of the "
+            f"{len(rows) - len(capped)} below,\nwith power peaking at {peak:.1f} W")
 
 
 # --------------------------------------------------------------------------------------

@@ -959,7 +959,83 @@ That difference is not explained here, and it matters for reading both sections:
 comparisons 5.7 declines to make on the 5060 Ti might be available on this card, and the
 1% resolution floor established there should not be assumed to transfer.
 
-#### 5.5.3 Limits
+#### 5.5.3 What the OC BIOS spends its extra power on
+
+> **Draft, 2026-08-26.** Written from the HWiNFO joins, which arrived four days after the sweeps
+> themselves. NVML exposes neither core voltage nor crossbar clock; HWiNFO 8.52-6060 portable
+> exposes both on this device, and the two were joined on timestamp by
+> `tools/frequency-sweep/join_hwinfo_voltage.py`.
+
+Section 5.5.1 measured the OC BIOS drawing 23.11% more power at matched frequency for no
+throughput. It could not say what the power bought, because voltage was not observed. It is now.
+
+**The OC BIOS holds a hard voltage floor.** Across a ten-point fine sweep from 1200 to 1590 MHz,
+HWiNFO reports **0.819 V** at all 10 points from 1200 to 1590 MHz - no movement at all - while
+power rises 195.1 to 227.0 W (+16.4%). Voltage is constant while the core clock rises by a third
+and the board draws 16% more.
+
+The join threshold is part of that measurement and is stated rather than buried. At the tool's
+30 W default an idle-gap sample - taken between sweep points, where the card sits at boost voltage
+- drags the reported floor to 0.822 V. At `--min-power 120`, which is below every loaded reading
+on a 310 W card and above every idle one, the floor is flat to the last millivolt HWiNFO reports.
+
+**The crossbar has a floor of its own.** On the matched-grid sweep it is pinned at **1410 MHz**
+across 7 of 13 targets, so the crossbar-to-core ratio falls from 1.649 to 0.947 before tracking
+the core again above it. That is the same shape §5.7.4 found on the 5060 Ti, reached from the
+opposite direction: there the ratio was driven down by flattening the curve, here it is a stock
+vendor BIOS doing it unprompted.
+
+##### The bandwidth workload is flat, and that is a control rather than a curiosity
+
+Across the whole 855-2130 MHz band, `membw` throughput on this card does not move. The thirteen
+points span **1.5 GB/s (0.28%)** while core clock rises 855 to 2024 MHz (+136.7%). Running the
+top of the band instead of the bottom costs **+41.5% power** for **+0.28% bandwidth**, with core
+voltage rising 0.819 to 1.081 V.
+
+This matters because §5.7.3 argues that the 5060 Ti's bandwidth workload responds to core clock
+because the *interconnect* - which shares the core voltage domain, unlike the DRAM devices - is
+the limiter there. That argument predicts that a chip whose DRAM is genuinely saturated should
+show no core-clock sensitivity at all, because there is nothing left for a faster interconnect to
+unlock. The 3070 Ti reaches **90.4%** of its 608 GB/s bus. The 5060 Ti, across its stock and
+memory-overclocked configurations, reaches **76.8-78.3%** of its own bus - each measured against
+the memory clock that configuration actually ran, since the overclock moves the denominator. The
+3070 Ti's core-clock sensitivity is 0.28%; the 5060 Ti's is the whole subject of 5.7.2.
+
+Two chips with opposite bus saturation and opposite core-clock sensitivity, in the direction the
+mechanism predicts, is stronger evidence for §5.7.3 than anything measurable on one card. It is
+still two chips.
+
+##### The compute ceiling is the board power limit, not the silicon
+
+The matched-grid `gemm` sweep stops scaling partway up: the top 4 targets, 1815 to 2130 MHz, all
+collapse to 1769-1780 MHz, while the 9 below them hold their lock exactly. Read alone that looks
+like a clock ceiling, and it is not one. Decoding `clocks_throttle_reasons.active` gives
+**SwPowerCap** at exactly those 4 targets and at none of the 9 below, with power peaking at
+296.4 W. No thermal or hardware slowdown appears anywhere in the run, and the hottest sample is
+61 C. So the OC BIOS's advertised 2190 MHz is not reachable under a compute load here, and what
+stops it is a power limit rather than the part.
+
+**Which power limit cannot be cited from a committed file.** The sweep tool queries
+`power.max_limit` - the maximum a user could *set*, 350 W on this card - and never `power.limit`,
+the value actually enforced. The vendor BIOS table read at collection time gives 310/310/350 W for
+this position, and the per-point maximum power samples do pin against roughly 310 W, but that
+table is a hand-recorded note in the run README rather than instrument output. No sweep in this
+repository records its enforced power limit. That is a collection gap, not an analysis one, and it
+is listed in the roadmap.
+
+##### A prediction recorded before the measurement that tests it
+
+If the 23.11% matched-frequency power gap of §5.5.1 is voltage and nothing else, then at equal
+clock and equal work, power scales with V-squared, and the Silent BIOS should hold its own floor
+near 0.819 / sqrt(1.2311) = **0.738 V**.
+
+That sweep has not been run. The number is committed here before it is measured, because a
+prediction registered in advance is worth more than the same number produced afterwards, and
+because the honest outcome of this section is that it is testable and untested. If Silent reads
+near 0.738 V the mechanism is established; if it reads near 0.819 V the two BIOSes differ in
+something other than voltage and §5.5.1 needs a different explanation.
+
+#### 5.5.4 Limits
 
 Two chips is not a sample. The BIOS comparison is one sweep per position on the compute workload
 and one against two on the bandwidth workload, on a card measured once, in one case, at one

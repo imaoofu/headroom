@@ -3,10 +3,15 @@
 Three HWiNFO sensor logs taken alongside three sweeps on the Gigabyte RTX 3070 Ti GAMING OC, with
 the dual-BIOS switch in the **OC** position (VBIOS `94.05.5a.00.bd`, 310 W).
 
-**The paired sweep CSVs are not here yet.** They are on the collection machine under
-`results\session-oc\` and will be imported when the USB comes back. These logs are committed on
-their own because losing them would mean repeating the session, and because the finding below does
-not depend on the join.
+**The paired sweep CSVs arrived 2026-08-26** and sit alongside these logs, with the joins
+produced by `tools/frequency-sweep/join_hwinfo_voltage.py --min-power 120` as `*_voltage.csv`.
+The findings below are now pinned as claims in `analysis/claims_crosschip.py` and written up in
+paper 5.5.3.
+
+**Use `--min-power 120`, not the 30 W default.** The gaps between sweep points sit at boost
+voltage, and on a 310 W card the default threshold is permissive enough to let one through: it
+reports the fine sweep's floor as 0.819-0.822 V. Every loaded reading here is above 164 W, so 120
+excludes the idle samples without discarding a single real one.
 
 | log | sweep it accompanies |
 |---|---|
@@ -33,9 +38,11 @@ with the load running:
     1455      0.819    1410              224.1
     1500      0.819    1440              229.0
     1545      0.819    1470              238.5
-    1590      0.822    1515              197.3
+    1590      0.819    1515              225.8
 
-Voltage does not move across the whole band while power rises 22%. The coarse sweep extends the
+Voltage does not move at all across the whole band - spread 0.000 V - while power rises 16.4%.
+An earlier version of this file reported 0.822 V and 197.3 W at 1590 MHz, both from samples the
+30 W threshold admitted; the joined figures above supersede them. The coarse sweep extends the
 same floor down to 855 MHz and up to 1605, after which voltage climbs - 0.869 V at 1710, 0.925 at
 1815, 0.988 at 1920, 1.075 at 2025.
 

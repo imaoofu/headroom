@@ -56,10 +56,12 @@ COLUMNS = [
 ]
 
 
-def writeSweep(path, points, unit="FLOP/s"):
+def writeSweep(path, points, unit="FLOP/s", masks=None):
     """Write a sweep CSV the real loader will accept.
 
     `points` is a list of (target, achievedMhz, watts, throughput, tempAvg).
+    `masks` optionally maps a target to its throttle_masks_seen string; anything absent gets
+    "0x1", the idle mask, which is what a healthy point actually records.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="") as handle:
@@ -69,7 +71,8 @@ def writeSweep(path, points, unit="FLOP/s"):
             writer.writerow([
                 target, mhz, mhz, mhz, 9251, 9251, 9251, "True", 0, "",
                 watts, watts, watts, temp, temp + 2,
-                98.0, watts, "True", 20, 20, 20, 20, throughput, unit, "True", 20, 20, "0x0",
+                98.0, watts, "True", 20, 20, 20, 20, throughput, unit, "True", 20, 20,
+                (masks or {}).get(target, "0x0000000000000001"),
             ])
 
 
@@ -199,6 +202,133 @@ testMatchedPowerGuardRejectsALostDirection()
 testThermalGuardRejectsAReversedTemperature()
 testPeakClockGuardRejectsABiosThatReachesItsCeiling()
 testReplicateGuardRejectsAChangedTargetCount()
+
+
+# --------------------------------------------------------------------------------------
+# The 5.5.3 guards - voltage floor, flat bandwidth band, power-capped ceiling
+# --------------------------------------------------------------------------------------
+
+VOLT_COLUMNS = ["target", "achieved", "throughputGbs", "powerW", "sampleCount", "voltage",
+                "crossbar", "memoryMhz"]
+
+
+def writeVoltage(path, points):
+    """Write a *_voltage.csv the real voltageJoin() will accept.
+
+    `points` is a list of (target, achievedMhz, volts, crossbarMhz).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(VOLT_COLUMNS)
+        for target, mhz, volts, crossbar in points:
+            writer.writerow([target, mhz, 500.0, 200.0, 6, volts, crossbar, 9251])
+
+
+def testVoltageFloorGuardRejectsANonFlatFloor():
+    """The sentence says the OC BIOS holds ONE voltage across the band.
+
+    A floor that drifts by a millivolt still formats as a range and would render under prose that
+    has stopped being true, so flatness is asserted rather than described.
+    """
+    def drifting(root):
+        writeVoltage(root / cc.VOLTS(cc.OC_GEMM_FINE),
+                     [(t, float(t), 0.819 if t < 1500 else 0.822, 1410.0)
+                      for t in (1200, 1290, 1380, 1500, 1590)])
+    raised = False
+    try:
+        withFixture(drifting, cc.voltageFloor)
+    except ValueError:
+        raised = True
+    check("a floor that drifts by 3 mV is refused", raised, "it rendered a range anyway")
+
+    def flat(root):
+        writeVoltage(root / cc.VOLTS(cc.OC_GEMM_FINE),
+                     [(t, float(t), 0.819, 1410.0) for t in (1200, 1290, 1380, 1500, 1590)])
+    text = withFixture(flat, cc.voltageFloor)
+    check("a genuinely flat floor still renders", "0.819 V" in text and "5 points" in text,
+          f"got {text!r}")
+
+
+def testMembwFlatGuardRejectsARespondingWorkload():
+    """The claim's whole point is that core clock buys no bandwidth on this chip.
+
+    If a future card's membw DOES scale, the span still computes and the sentence would be false
+    rather than merely differently-numbered.
+    """
+    grid = [855, 1275, 1710, 2130]
+
+    def responding(root):
+        # 10% across the band: a workload that is not memory-bound.
+        writeSweep(root / cc.OC_MEMBW_V,
+                   [(t, float(t), 200.0, 500e9 * (1 + 0.10 * i / 3), 50.0)
+                    for i, t in enumerate(grid)], unit="B/s")
+        writeVoltage(root / cc.VOLTS(cc.OC_MEMBW_V),
+                     [(t, float(t), 0.819, 1410.0) for t in grid])
+    raised = False
+    try:
+        withFixture(responding, cc.membwFlat)
+    except ValueError:
+        raised = True
+    check("a bandwidth band that spans 10% is refused", raised, "it rendered a span anyway")
+
+    def flat(root):
+        writeSweep(root / cc.OC_MEMBW_V,
+                   [(t, float(t), 200.0, 500e9 * (1 + 0.001 * i / 3), 50.0)
+                    for i, t in enumerate(grid)], unit="B/s")
+        writeVoltage(root / cc.VOLTS(cc.OC_MEMBW_V),
+                     [(t, float(t), 0.819, 1410.0) for t in grid])
+    text = withFixture(flat, cc.membwFlat)
+    check("a genuinely flat band still renders", "0.10%" in text, f"got {text!r}")
+
+
+def testPowerCapGuardRejectsACapAwayFromTheCollapse():
+    """The section argues the cap and the collapse coincide EXACTLY.
+
+    One capped point that held its lock, or one collapsed point with no cap, and the causal
+    reading is gone while the counts would still format.
+    """
+    held = [(t, float(t)) for t in (855, 1275, 1710)]
+    collapsed = [(t, 1775.0) for t in (1815, 2130)]
+
+    def misaligned(root):
+        # SwPowerCap on a point that held its lock: cap and collapse no longer coincide.
+        masks = {1275: "0x0000000000000004", 1815: "0x0000000000000004",
+                 2130: "0x0000000000000004"}
+        writeSweep(root / cc.OC_GEMM_V,
+                   [(t, mhz, 250.0, 1e10 * t, 50.0) for t, mhz in held + collapsed], masks=masks)
+    raised = False
+    try:
+        withFixture(misaligned, cc.gemmPowerCap)
+    except ValueError:
+        raised = True
+    check("a power cap on a point that held its lock is refused", raised,
+          "it rendered counts anyway")
+
+    def thermal(root):
+        masks = {1815: "0x0000000000000044", 2130: "0x0000000000000004"}
+        writeSweep(root / cc.OC_GEMM_V,
+                   [(t, mhz, 250.0, 1e10 * t, 50.0) for t, mhz in held + collapsed], masks=masks)
+    raised = False
+    try:
+        withFixture(thermal, cc.gemmPowerCap)
+    except ValueError:
+        raised = True
+    check("a hardware thermal slowdown anywhere in the run is refused", raised,
+          "the section says the ceiling is power, not heat")
+
+    def aligned(root):
+        masks = {1815: "0x0000000000000004", 2130: "0x0000000000000004"}
+        writeSweep(root / cc.OC_GEMM_V,
+                   [(t, mhz, 250.0, 1e10 * t, 50.0) for t, mhz in held + collapsed], masks=masks)
+    text = withFixture(aligned, cc.gemmPowerCap)
+    check("a cap that coincides with the collapse still renders",
+          "2 targets" in text and "3 below" in text, f"got {text!r}")
+
+
+testVoltageFloorGuardRejectsANonFlatFloor()
+testMembwFlatGuardRejectsARespondingWorkload()
+testPowerCapGuardRejectsACapAwayFromTheCollapse()
 
 
 if failures:
