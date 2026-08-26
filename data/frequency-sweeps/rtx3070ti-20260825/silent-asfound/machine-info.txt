@@ -1,0 +1,38 @@
+label            : rtx3070ti-gaming-oc-bios-silent-asfound
+collected_at     : 2026-08-25T13:08:17.9229872-07:00
+collected_by     : kit v2
+applied_settings : gigabyte rtx3070ti gaming oc rev2.0, dual-BIOS switch found in SILENT position - note this is NOT the factory default, which is OC mode; somebody has flipped it. MEASURED in this position: VBIOS 94.04.5a.00.91, max clock bin 2115 MHz, power limit 290 W with default 290 W and max 320 W - limit at default, nothing applied by hand. Vendor spec claims silent BIOS boosts to ~1785 MHz against 1830 in OC mode and 1770 reference; NOT verified. No user overclock, no Afterburner profile, Afterburner not installed.
+                       ASSERTED BY THE OPERATOR, NOT VERIFIED.
+                       Nothing in nvidia-smi reports whether an Afterburner or
+                       vendor profile is applied, so this kit cannot check it.
+                       See measured_peak_sm_clock_mhz at the end of this file -
+                       that IS measured, and is the field to trust.
+
+--- GPU (nvidia-smi) ---
+name, driver_version, vbios_version, memory.total [MiB], power.limit [W], power.max_limit [W], pcie.link.gen.max, pcie.link.width.max
+NVIDIA GeForce RTX 3070 Ti, 610.88, 94.04.5a.00.91, 8192 MiB, 290.00 W, 320.00 W, 4, 16
+
+--- CPU / RAM / OS ---
+cpu              : AMD Ryzen 5 5600X 6-Core Processor
+cpu_cores        : 6 cores / 12 threads
+ram_gb           : 15.9
+os               : Microsoft Windows 11 Pro 10.0.26200
+
+--- NOTE ---
+The tuning_state_claimed line above is what the operator was SUPPOSED to do, not
+something this kit confirmed. If a profile was applied and nobody noticed, that
+line is wrong and nothing in it would reveal the mistake.
+The measured peak clock appended below is the actual evidence. On a known GPU
+model, stock and tuned sustained clocks differ far more than run-to-run noise -
+measured on an RTX 5060 Ti: 2588 MHz stock against ~2950 MHz tuned, a 360 MHz
+gap. Classify the run from that number, not from the claim.
+
+--- MEASURED (this is evidence, unlike tuning_state_claimed) ---
+peak_sm_clock_mhz[20260825-130824_rtx3070ti-gaming-oc-bios-silent-asfound-gemm_sweep] : 1,765
+peak_sm_clock_mhz[20260825-131304_rtx3070ti-gaming-oc-bios-silent-asfound-membw_sweep] : 1,950
+  Highest sustained SM clock reached in each sweep. Compare EACH against the same
+  workload's known stock figure for this GPU model - never against the other
+  workload's. Materially above stock means a profile was applied and this is NOT a
+  stock baseline, whatever tuning_state_claimed says.
+  RTX 5060 Ti reference, measured: gemm 2588 stock / ~2950 tuned;
+  membw 2753 stock. Other models need their own reference before comparing.

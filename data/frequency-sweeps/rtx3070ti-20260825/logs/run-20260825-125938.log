@@ -1,0 +1,43 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260825125939
+Username: DESKTOP-B5NPFQJ\user
+RunAs User: DESKTOP-B5NPFQJ\user
+Configuration Name: 
+Machine: DESKTOP-B5NPFQJ (Microsoft Windows NT 10.0.26200.0)
+Host Application: powershell -NoProfile -ExecutionPolicy Bypass -File C:\headroom-kit\Collect.ps1
+Process ID: 3964
+PSVersion: 5.1.26100.8972
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8972
+BuildVersion: 10.0.26100.8972
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+  [ok] compute capability: sm_86
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 3070 Ti
+  [ok] VRAM free: 7.4 GB
+  [ok] GPU is idle (4% used)
+
+Name this machine. Use the GPU model, no spaces.
+Examples:  rtx4070-super   rx7800xt   rtx3060ti-build12
+
+What is applied to this GPU right now?
+If nothing has been touched, type:  stock
+Otherwise describe it - core offset, memory offset, power limit, V/F curve,
+vendor profile, fan curve. Whatever you type is stored with the data and is
+the only record of it that will exist.

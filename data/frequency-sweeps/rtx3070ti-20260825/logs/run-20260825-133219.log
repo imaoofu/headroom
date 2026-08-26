@@ -1,0 +1,195 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260825133219
+Username: DESKTOP-B5NPFQJ\user
+RunAs User: DESKTOP-B5NPFQJ\user
+Configuration Name: 
+Machine: DESKTOP-B5NPFQJ (Microsoft Windows NT 10.0.26200.0)
+Host Application: powershell -NoProfile -ExecutionPolicy Bypass -File C:\headroom-kit\Collect.ps1
+Process ID: 11684
+PSVersion: 5.1.26100.8972
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8972
+BuildVersion: 10.0.26100.8972
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+  [ok] compute capability: sm_86
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 3070 Ti
+  [ok] VRAM free: 7.4 GB
+  [ok] GPU is idle (0% used)
+
+Name this machine. Use the GPU model, no spaces.
+Examples:  rtx4070-super   rx7800xt   rtx3060ti-build12
+
+What is applied to this GPU right now?
+If nothing has been touched, type:  stock
+Otherwise describe it - core offset, memory offset, power limit, V/F curve,
+vendor profile, fan curve. Whatever you type is stored with the data and is
+the only record of it that will exist.
+
+Recording machine details...
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 2: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 610.88)
+[SWEEP] Max clock:  2190 MHz | power limit 350.00 W
+[SWEEP] Supported:  120 discrete graphics clocks, 405-2190 MHz
+[SWEEP] Sweep floor: 876 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 885, 990, 1095, 1215, 1320, 1425, 1545, 1650, 1755, 1860, 1965, 2085, 2190 MHz
+[SWEEP] Workload:   C:\HEADRO~1\python\python.exe C:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: gigabyte rtx3070ti gaming oc rev2.0, dual-BIOS switch moved to OC position for this run; the card was FOUND in SILENT and will be returned to SILENT. Same physical card, cooler, case, ambient and session as the silent-asfound run - only the BIOS differs. MEASURED in this position: VBIOS 94.05.5a.00.bd, max clock bin 2190 MHz, power limit 310 W with default 310 W and max 350 W. The silent BIOS read VBIOS 94.04.5a.00.91, 2115 MHz, 290/290/320 W - so this BIOS raises BOTH the clock bin (+3.5%) and the power envelope (+6.9%), coupled. No user overclock, no Afterburner profile, Afterburner not installed.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Baseline utilisation 1.2% - clear to start.
+[SWEEP] --> locking 885 MHz
+[SWEEP]       885 MHz -> achieved    885 MHz (held), 171.85 W [29 in-window of 35], 53.3 C, util 99.3%
+[SWEEP] --> locking 990 MHz
+[SWEEP]       990 MHz -> achieved    990 MHz (held), 175.35 W [26 in-window of 31], 51.4 C, util 98.9%
+[SWEEP] --> locking 1095 MHz
+[SWEEP]      1095 MHz -> achieved   1095 MHz (held), 182.76 W [24 in-window of 29], 52.2 C, util 97.1%
+[SWEEP] --> locking 1215 MHz
+[SWEEP]      1215 MHz -> achieved   1215 MHz (held), 195.43 W [22 in-window of 26], 52.5 C, util 99.8%
+[SWEEP] --> locking 1320 MHz
+[SWEEP]      1320 MHz -> achieved   1320 MHz (held), 205.33 W [19 in-window of 24], 53.2 C, util 100%
+[SWEEP] --> locking 1425 MHz
+[SWEEP]      1425 MHz -> achieved   1425 MHz (held), 212.64 W [18 in-window of 23], 53.6 C, util 100%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved   1545 MHz (held), 230.44 W [17 in-window of 22], 54.4 C, util 98.5%
+[SWEEP] --> locking 1650 MHz
+[SWEEP]      1650 MHz -> achieved   1650 MHz (held), 249.16 W [16 in-window of 20], 55.1 C, util 96.9%
+[SWEEP] --> locking 1755 MHz
+[SWEEP]      1755 MHz -> achieved   1755 MHz (held),  280.6 W [15 in-window of 19], 57.9 C, util 97.3%
+[SWEEP] --> locking 1860 MHz
+[SWEEP]      1860 MHz -> achieved   1764 MHz (UNDERSHOT -96), 290.28 W [15 in-window of 19], 58.2 C, util 97.8%
+[SWEEP] --> locking 1965 MHz
+[SWEEP]      1965 MHz -> achieved   1764 MHz (UNDERSHOT -201),  289.1 W [15 in-window of 19], 58.8 C, util  97%
+[SWEEP] --> locking 2085 MHz
+[SWEEP]      2085 MHz -> achieved   1765 MHz (UNDERSHOT -320), 298.65 W [15 in-window of 19], 58.9 C, util 99.7%
+[SWEEP] --> locking 2190 MHz
+[SWEEP]      2190 MHz -> achieved   1772 MHz (UNDERSHOT -418),  289.1 W [15 in-window of 19], 58.9 C, util 97.5%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 2025 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: gigabyte rtx3070ti gaming oc rev2.0, dual-BIOS switch moved to OC position for this run; the card was FOUND in SILENT and will be returned to SILENT. Same physical card, cooler, case, ambient and session as the silent-asfound run - only the BIOS differs. MEASURED in this position: VBIOS 94.05.5a.00.bd, max clock bin 2190 MHz, power limit 310 W with default 310 W and max 350 W. The silent BIOS read VBIOS 94.04.5a.00.91, 2115 MHz, 290/290/320 W - so this BIOS raises BOTH the clock bin (+3.5%) and the power envelope (+6.9%), coupled. No user overclock, no Afterburner profile, Afterburner not installed.
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-kit\results\20260825-133234_rtx3070ti-gaming-oc-bios-oc\20260825-133241_rtx3070ti-gaming-oc-bios-oc-gemm_sweep.csv
+[SWEEP] JSON: C:\headroom-kit\results\20260825-133234_rtx3070ti-gaming-oc-bios-oc\20260825-133241_rtx3070ti-gaming-oc-bios-oc-gemm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 2: membw
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 610.88)
+[SWEEP] Max clock:  2190 MHz | power limit 350.00 W
+[SWEEP] Supported:  120 discrete graphics clocks, 405-2190 MHz
+[SWEEP] Sweep floor: 876 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 885, 990, 1095, 1215, 1320, 1425, 1545, 1650, 1755, 1860, 1965, 2085, 2190 MHz
+[SWEEP] Workload:   C:\HEADRO~1\python\python.exe C:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload membw --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: gigabyte rtx3070ti gaming oc rev2.0, dual-BIOS switch moved to OC position for this run; the card was FOUND in SILENT and will be returned to SILENT. Same physical card, cooler, case, ambient and session as the silent-asfound run - only the BIOS differs. MEASURED in this position: VBIOS 94.05.5a.00.bd, max clock bin 2190 MHz, power limit 310 W with default 310 W and max 350 W. The silent BIOS read VBIOS 94.04.5a.00.91, 2115 MHz, 290/290/320 W - so this BIOS raises BOTH the clock bin (+3.5%) and the power envelope (+6.9%), coupled. No user overclock, no Afterburner profile, Afterburner not installed.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Baseline utilisation 0% - clear to start.
+[SWEEP] --> locking 885 MHz
+[SWEEP]       885 MHz -> achieved    885 MHz (held), 179.75 W [14 in-window of 17], 46.4 C, util 90.2%
+[SWEEP] --> locking 990 MHz
+[SWEEP]       990 MHz -> achieved    990 MHz (held), 182.56 W [14 in-window of 17], 48.9 C, util 93.8%
+[SWEEP] --> locking 1095 MHz
+[SWEEP]      1095 MHz -> achieved   1095 MHz (held), 190.23 W [13 in-window of 17], 51.4 C, util 94.9%
+[SWEEP] --> locking 1215 MHz
+[SWEEP]      1215 MHz -> achieved   1215 MHz (held), 182.36 W [14 in-window of 17], 52.6 C, util 91.6%
+[SWEEP] --> locking 1320 MHz
+[SWEEP]      1320 MHz -> achieved   1320 MHz (held),  194.9 W [13 in-window of 17], 50.8 C, util 98.3%
+[SWEEP] --> locking 1425 MHz
+[SWEEP]      1425 MHz -> achieved   1425 MHz (held), 190.34 W [13 in-window of 17], 48.5 C, util  97%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved   1545 MHz (held), 196.24 W [13 in-window of 17], 48.2 C, util 100%
+[SWEEP] --> locking 1650 MHz
+[SWEEP]      1650 MHz -> achieved   1650 MHz (held), 182.91 W [14 in-window of 17], 50.2 C, util 91.4%
+[SWEEP] --> locking 1755 MHz
+[SWEEP]      1755 MHz -> achieved   1755 MHz (held), 198.19 W [14 in-window of 17], 53.3 C, util 92.9%
+[SWEEP] --> locking 1860 MHz
+[SWEEP]      1860 MHz -> achieved   1860 MHz (held), 204.65 W [14 in-window of 17], 51.9 C, util 87.6%
+[SWEEP] --> locking 1965 MHz
+[SWEEP]      1965 MHz -> achieved   1965 MHz (held), 228.54 W [14 in-window of 17], 51.9 C, util 95.6%
+[SWEEP] --> locking 2085 MHz
+[SWEEP]      2085 MHz -> achieved 2022.9 MHz (UNDERSHOT -62.1), 238.56 W [14 in-window of 17], 52.4 C, util 90.5%
+[SWEEP] --> locking 2190 MHz
+[SWEEP]      2190 MHz -> achieved 2023.9 MHz (UNDERSHOT -166.1),  248.1 W [14 in-window of 17], 52.4 C, util 91.7%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 2025 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: gigabyte rtx3070ti gaming oc rev2.0, dual-BIOS switch moved to OC position for this run; the card was FOUND in SILENT and will be returned to SILENT. Same physical card, cooler, case, ambient and session as the silent-asfound run - only the BIOS differs. MEASURED in this position: VBIOS 94.05.5a.00.bd, max clock bin 2190 MHz, power limit 310 W with default 310 W and max 350 W. The silent BIOS read VBIOS 94.04.5a.00.91, 2115 MHz, 290/290/320 W - so this BIOS raises BOTH the clock bin (+3.5%) and the power envelope (+6.9%), coupled. No user overclock, no Afterburner profile, Afterburner not installed.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-kit\results\20260825-133234_rtx3070ti-gaming-oc-bios-oc\20260825-133716_rtx3070ti-gaming-oc-bios-oc-membw_sweep.csv
+[SWEEP] JSON: C:\headroom-kit\results\20260825-133234_rtx3070ti-gaming-oc-bios-oc\20260825-133716_rtx3070ti-gaming-oc-bios-oc-membw_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+=======================================================
+  Checking what was collected
+=======================================================
+  [ok] 20260825-133241_rtx3070ti-gaming-oc-bios-oc-gemm_sweep.csv: 13 points, 13 with performance data, 9 locks held
+  [ok] 20260825-133716_rtx3070ti-gaming-oc-bios-oc-membw_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] peak SM clock, 20260825-133241_rtx3070ti-gaming-oc-bios-oc-gemm_sweep: 1,772 MHz (provenance evidence)
+  [ok] peak SM clock, 20260825-133716_rtx3070ti-gaming-oc-bios-oc-membw_sweep: 2,024 MHz (provenance evidence)
+
+  COLLECTION SUCCEEDED
+
+  Results are in:
+    C:\headroom-kit\results\20260825-133234_rtx3070ti-gaming-oc-bios-oc
+
+  Copy that whole folder off this machine, then delete the kit.
+
+  GPU clocks have been reset to normal automatically.
+  Verify with:  nvidia-smi -q -d CLOCK
+
+**********************
+Windows PowerShell transcript end
+End time: 20260825134100
+**********************
