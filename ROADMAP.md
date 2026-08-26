@@ -435,6 +435,31 @@ Turning two separate models into one project with a single research question.
   **Still open:** claims cover six subsections. Everything else in the paper is unaudited, and
   a green run says nothing about it.
 
+- ✅ **[SUPPORT] Move the local-model delegation onto llama.cpp.** Done 2026-08-25. The 27B model
+  ships a multi-token-prediction head (`nextn_predict_layers = 1`, tensors at `blk.64.nextn.*`)
+  that Ollama cannot use on this machine at all — its MTP implementation is in the MLX runner and
+  runs only on Apple Silicon, while the CUDA runner has no speculative path. On llama.cpp with
+  `--spec-type draft-mtp` the same model gives **40.0 tok/s against 28.9**, n=5 each, spreads 3.1%
+  and 0.9%, draft acceptance 0.978 at mean length 1.96, and **byte-identical greedy output** —
+  which is the check that matters, because speculative decoding is only free if it is lossless.
+
+  🔑 **The measurement nearly went the other way, and the reason is worth keeping.** The first A/B
+  showed MTP *slower*: 15.0 tok/s against 28.1. Acceptance was 0.957, so the draft head was working
+  — the card had run out of memory. `llama-server` defaults to four slots and allocates compute
+  buffers per slot; at 64K context that pushed past 16 GB and the driver **spilled to system RAM
+  without failing**. `nvidia-smi` reported ~400 MiB free throughout, because spilled memory is not
+  counted. The honest tell was prefill collapsing 190 → 29 tok/s, on a stage speculative decoding
+  does not touch. `-np 1` recovered it. **VRAM-used is not a fit check near the limit** — watch a
+  throughput number that should not have moved.
+
+  Quantisation was chosen the same way: `UD-IQ4_XS` is not a preference, it is the largest quant
+  that fits at 64K on 16 GB. Graded on `specs/paper-5.7.4-claims.md`, it beats the smaller
+  `UD-Q3_K_XL` 87/91 against 71/91, p = 0.0057 — **but only at n=13 per model.** At n=3 it read
+  20/21 against 17/21 with overlapping ranges and did not support a ranking. Note the standard
+  changes with the measurement: worst-of-A-beats-best-of-B is right for tight repeated readings
+  like the tok/s above, and wrong for a coarse discrete score, where it would have discarded a
+  real effect. `test_ask_local.py` is mutation-gated over the new two-backend normalisation.
+
 - **[CORE] State plainly which results are validated and which are exploratory.** Public-dataset
   results have a real train/test split. Collected-data results, at small N, do not. Say which is
   which in the same breath as the number.

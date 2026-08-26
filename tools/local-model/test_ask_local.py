@@ -66,6 +66,7 @@ PROVENANCE
     while the source on disk reads correct.
 """
 
+import json
 import importlib.util
 import tempfile
 from pathlib import Path
@@ -314,6 +315,118 @@ check("a single wrapping fence is NOT reported, it is the normal case",
       not askLocal.looksLikeProseAndCode(FENCE + "python\nx = 1\n" + FENCE))
 check("bare code with no fence at all is NOT reported",
       not askLocal.looksLikeProseAndCode("x = 1\n"))
+
+# ---------------------------------------------------------------------------------------------
+# Two backends, one normalised result. Added when llama.cpp replaced Ollama as the default.
+#
+# WHAT THESE ARE FOR. ask() is the only place that knows a backend exists; everything downstream
+# reads one shape. So the risk is not that a field is missing - it is that a field is present and
+# WRONG, because both backends return plausible-looking numbers for the same request. A stop
+# reason read from the wrong key comes back None, and None is not "length", so a truncated reply
+# would be reported as a clean run - which is failure 2 in ask_local's docstring returning by a
+# different door.
+#
+# THE BUG THESE WERE WRITTEN FOR. The llama.cpp payload was first written with "temperature": 0
+# while the Ollama models carry temperature 0.7 / top_k 20 / top_p 0.8 in their Modelfiles.
+# Switching backend then silently changed the sampler. Nothing in the output would have shown it:
+# greedy code and sampled code both look like code. The sampling checks below fail against that
+# version and pass against the fix.
+
+captured = {}
+
+
+def fakeUrlopen(request, timeout=None):
+    """Capture the outgoing request and return a canned response for the backend under test."""
+    captured["url"] = request.full_url
+    captured["payload"] = json.loads(request.data.decode())
+
+    if "/v1/chat/completions" in request.full_url:
+        body = {"choices": [{"finish_reason": "length",
+                             "message": {"content": "x = 1", "reasoning_content": "hmm"}}],
+                "usage": {"prompt_tokens": 11, "completion_tokens": 22},
+                "timings": {"prompt_per_second": 900.0, "predicted_per_second": 40.0}}
+    else:
+        body = {"message": {"content": "x = 1", "thinking": "hmm"},
+                "done_reason": "length",
+                "prompt_eval_count": 11, "prompt_eval_duration": 2_000_000_000,
+                "eval_count": 22, "eval_duration": 2_000_000_000}
+
+    class Fake:
+        def read(self):
+            return json.dumps(body).encode()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return False
+
+    return Fake()
+
+
+def callAsk(backend):
+    captured.clear()
+    askLocal.BACKEND = backend
+    askLocal.HOST = askLocal.BACKENDS[backend]
+    real = askLocal.urllib.request.urlopen
+    askLocal.urllib.request.urlopen = fakeUrlopen
+    try:
+        result, _ = askLocal.ask("m", "sys", "usr", False, 500, 60,
+                                 {"temperature": 0.7, "top_k": 20, "top_p": 0.8}, 1234)
+    finally:
+        askLocal.urllib.request.urlopen = real
+        askLocal.BACKEND = "llamacpp"
+        askLocal.HOST = askLocal.BACKENDS["llamacpp"]
+    return result, dict(captured)
+
+
+llamaResult, llamaSent = callAsk("llamacpp")
+ollamaResult, ollamaSent = callAsk("ollama")
+
+check("llama.cpp content is read from choices[0].message, not from a top-level message key",
+      llamaResult["content"] == "x = 1")
+check("llama.cpp reasoning goes to its own field and stays OUT of content",
+      llamaResult["reasoning"] == "hmm" and "hmm" not in llamaResult["content"])
+check("llama.cpp truncation is read from finish_reason",
+      llamaResult["stopReason"] == "length",
+      "read from the wrong key this comes back None, None != 'length', and a truncated reply "
+      "is reported as a clean run")
+check("llama.cpp rates are taken from timings, not recomputed from durations it does not send",
+      llamaResult["outputRate"] == 40.0 and llamaResult["promptRate"] == 900.0)
+check("llama.cpp token counts come from usage",
+      (llamaResult["promptTokens"], llamaResult["outputTokens"]) == (11, 22))
+
+check("Ollama truncation is read from done_reason",
+      ollamaResult["stopReason"] == "length")
+check("Ollama rates are computed from nanosecond durations",
+      abs(ollamaResult["outputRate"] - 11.0) < 1e-9,
+      "22 tokens in 2e9 ns is 11 tok/s; reading the field as seconds would give 11e9")
+
+check("both backends return the SAME keys, so nothing downstream branches on backend",
+      set(llamaResult) == set(ollamaResult))
+
+# The actual bug. Sampling must be sent explicitly and identically, not left to a default that
+# differs between a Modelfile and a bare GGUF.
+for name, sent, where in (("llama.cpp", llamaSent, llamaSent["payload"]),
+                          ("Ollama", ollamaSent, ollamaSent["payload"].get("options", {}))):
+    check(f"{name} is sent the temperature it was given, not a hardcoded one",
+          where.get("temperature") == 0.7,
+          "hardcoding 0 here changes the sampler when the backend changes, and both settings "
+          "produce plausible code so the output does not show it")
+    check(f"{name} is sent top_k and top_p as well",
+          where.get("top_k") == 20 and where.get("top_p") == 0.8)
+    check(f"{name} is sent the seed, so a repeat can be made reproducible on purpose",
+          where.get("seed") == 1234)
+
+check("llama.cpp is asked for the chat endpoint, never the completion one",
+      llamaSent["url"].endswith("/v1/chat/completions"))
+check("Ollama is asked for /api/chat, because only a chat turn overrides a baked-in system block",
+      ollamaSent["url"].endswith("/api/chat"))
+check("thinking off is sent to llama.cpp as a template kwarg, since it has no think flag",
+      llamaSent["payload"]["chat_template_kwargs"]["enable_thinking"] is False)
+
+check("rate returns nan rather than dividing by zero when a duration is missing",
+      askLocal.rate(100, 0) != askLocal.rate(100, 0))
 
 if failures:
     print(f"{len(failures)} check(s) failed.")

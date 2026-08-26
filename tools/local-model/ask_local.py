@@ -1,5 +1,14 @@
 """
-Send a task specification to a local Ollama model and save the code it returns.
+Send a task specification to a local model and save the code it returns.
+
+BACKENDS
+    llama.cpp (default) and Ollama. llama.cpp is the default because it is the only one of
+    the two that can use the MTP self-draft head this model ships with: measured 2026-08-25
+    on the 5060 Ti, 40.0 tok/s with --spec-type draft-mtp against 28.9 without, n=5 each,
+    spreads 3.1% and 0.9%, byte-identical greedy output. Ollama's CUDA runner has no
+    speculative path at all - its MTP code lives in the MLX runner and runs only on Apple
+    Silicon. Ollama stays reachable via --backend ollama because qwen3-coder lives there
+    and has no llama.cpp counterpart on this machine.
 
 WHY THIS EXISTS
     Delegating a mechanical task to a local model is fiddly in four specific ways, and all four
@@ -14,7 +23,11 @@ WHY THIS EXISTS
        harmful for Qwen3.8, which has tool-calling capability and reads it as an instruction to
        go and read the CSVs. Through /api/generate it emitted tool calls instead of code twice,
        including once after the task text explicitly said no tools were available: a line in a
-       user message loses to a system prompt. This script always uses /api/chat.
+       user message loses to a system prompt. This script always uses a chat endpoint.
+
+       On llama.cpp the trap does not exist: a bare GGUF carries no baked-in system block, so
+       the system turn sent below is the only one there is. Behaviour is unchanged either way,
+       because this script has always sent an explicit system turn and thereby overridden it.
 
     2. RUNNING OUT OF CONTEXT LOOKS LIKE A BAD ANSWER. A first attempt at the 5.7.2 claims
        spent 10,846 tokens deliberating and stopped mid-sentence, having produced no answer -
@@ -22,9 +35,12 @@ WHY THIS EXISTS
        output read like a model that could not do the task. It was a model that was not given
        room to finish. The budget is checked before sending and `done_reason` after.
 
-    3. THINKING MODE IS NOT ALWAYS SEPARATED. On this GGUF the reasoning arrives in the ordinary
-       response field with no <think> tags to strip, so it lands in the middle of what is
-       supposed to be a file. Thinking is therefore off unless asked for.
+    3. THINKING MODE IS NOT ALWAYS SEPARATED. Through Ollama the reasoning arrives in the
+       ordinary response field with no <think> tags to strip, so it lands in the middle of what
+       is supposed to be a file. llama.cpp does not have this problem - it routes reasoning to a
+       separate reasoning_content field, verified on this model. Thinking is off unless asked
+       for on both regardless, because either way it is charged against the same output budget
+       as the answer, which is failure 2.
 
     4. TOOL CALLS COME BACK AS PROSE. When a model decides to call a tool that was never
        offered, the call arrives as text that looks vaguely like an answer. Output is scanned
@@ -39,8 +55,10 @@ WHAT THIS DELIBERATELY DOES NOT DO
 
 USAGE
     python tools/local-model/ask_local.py spec.md --context analysis/claims_consumer.py
-    python tools/local-model/ask_local.py spec.md --model coder --out draft.py
+    python tools/local-model/ask_local.py spec.md --backend ollama --model coder --out draft.py
     python tools/local-model/ask_local.py spec.md --think --num-predict 4000
+
+    llama-server must already be running; see SERVER_COMMAND below.
 """
 
 import argparse
@@ -52,7 +70,24 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-HOST = "http://localhost:11434"
+BACKENDS = {"llamacpp": "http://localhost:8099", "ollama": "http://localhost:11434"}
+
+# Set from --backend in main(). Module level rather than threaded through every function
+# because one run only ever talks to one backend.
+BACKEND = "llamacpp"
+HOST = BACKENDS[BACKEND]
+
+SERVER_COMMAND = (
+    r"C:\Users\Raymond\llamacpp\llama-server.exe "
+    r"-m C:\Users\Raymond\models\Qwen3.8-27B-UD-IQ4_XS.gguf "
+    r"-c 65536 -ngl 99 --flash-attn on -ctk q4_0 -ctv q4_0 -np 1 "
+    r"--spec-type draft-mtp --spec-draft-n-max 1"
+)
+# -np 1 is not a tidiness flag. llama-server defaults to four slots and allocates compute
+# buffers per slot; at 64K that pushed the total past 16 GB, the driver spilled to system
+# memory WITHOUT failing, and decode fell to 14.6 tok/s while prefill fell 6x. nvidia-smi
+# still reported free VRAM throughout, because spilled memory is not counted. One slot is
+# what makes 64K fit.
 
 # Short names for the models configured on this machine, so a caller does not have to remember
 # which tag carries the Headroom system prompt and which is the stock upstream one.
@@ -79,13 +114,31 @@ TOOL_CALL_MARKERS = ("<tool_call>", "<function=", "<|tool_call", "```tool_code")
 # under-estimating the prompt is the failure that silently truncates the answer.
 CHARS_PER_TOKEN = 3.2
 
+# Sampling, sent explicitly on BOTH backends rather than left to whatever each one defaults to.
+# These are the values the Ollama Modelfiles bake in, so results stay comparable with every
+# spec-suite run recorded before the llama.cpp switch. A bare GGUF under llama.cpp would
+# otherwise sample at the server's defaults and quietly stop being the same experiment.
+SAMPLING = {"temperature": 0.7, "top_k": 20, "top_p": 0.8}
+
 
 def readModelContext(model):
-    """The num_ctx the model will actually load with, from its own configuration.
+    """The context the model was actually loaded with, read from the server rather than assumed.
 
-    Read rather than assumed: this is the number that decides whether a long deliberation has
-    room to reach an answer, and it is set per-model in the Modelfile.
+    This is the number that decides whether a long deliberation has room to reach an answer. On
+    Ollama it comes from the Modelfile; on llama.cpp it is fixed at launch by -c, so a caller
+    cannot raise it without restarting the server.
     """
+    if BACKEND == "llamacpp":
+        try:
+            props = json.load(urllib.request.urlopen(f"{HOST}/props", timeout=60))
+        except urllib.error.URLError as error:
+            raise SystemExit(f"Cannot reach llama-server at {HOST}: {error}\n\n"
+                             f"Start it with:\n  {SERVER_COMMAND}")
+        context = (props.get("default_generation_settings") or {}).get("n_ctx")
+        if not context:
+            raise SystemExit(f"{HOST}/props reported no n_ctx. Is that really llama-server?")
+        return int(context)
+
     try:
         body = json.dumps({"model": model}).encode()
         request = urllib.request.Request(f"{HOST}/api/show", data=body,
@@ -178,28 +231,77 @@ def appendReply(target, reply):
         handle.write(existing.rstrip() + ending * 3 + body + ending)
 
 
-def ask(model, system, user, think, numPredict, timeout):
-    payload = {
-        "model": model,
-        "messages": [{"role": "system", "content": system},
-                     {"role": "user", "content": user}],
-        "stream": False,
-        "think": think,
-        "keep_alive": "30m",
-        "options": {"num_predict": numPredict},
-    }
-    request = urllib.request.Request(f"{HOST}/api/chat", data=json.dumps(payload).encode(),
+def rate(count, durationNs):
+    """Tokens per second from a count and a nanosecond duration.
+
+    Ollama reports durations; llama.cpp reports rates directly, so this is only used on the
+    Ollama path. It stays at module level because it is pure and has its own tests.
+    """
+    return count / (durationNs / 1e9) if durationNs else float("nan")
+
+
+def ask(model, system, user, think, numPredict, timeout, sampling, seed):
+    """Send the task and return a backend-independent result dict.
+
+    The two backends disagree on every field that matters - content, stop reason, token counts,
+    rates - so they are normalised here rather than at each use site. Everything downstream then
+    reads one shape, and a third backend would touch only this function.
+    """
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    if BACKEND == "llamacpp":
+        endpoint = "/v1/chat/completions"
+        payload = {"model": model, "messages": messages, "max_tokens": numPredict,
+                   "stream": False, "seed": seed,
+                   # Qwen3.8 reasons by default. llama.cpp puts that in reasoning_content rather
+                   # than in content so it cannot corrupt the file, but it is still charged
+                   # against max_tokens, so it stays off unless asked for.
+                   "chat_template_kwargs": {"enable_thinking": bool(think)},
+                   **sampling}
+    else:
+        endpoint = "/api/chat"
+        payload = {"model": model, "messages": messages, "stream": False, "think": think,
+                   "keep_alive": "30m",
+                   "options": {"num_predict": numPredict, "seed": seed, **sampling}}
+
+    request = urllib.request.Request(f"{HOST}{endpoint}", data=json.dumps(payload).encode(),
                                      headers={"Content-Type": "application/json"})
     started = time.time()
     try:
         response = json.load(urllib.request.urlopen(request, timeout=timeout))
     except urllib.error.URLError as error:
-        raise SystemExit(f"Request to {HOST}/api/chat failed: {error}")
-    return response, time.time() - started
+        raise SystemExit(f"Request to {HOST}{endpoint} failed: {error}")
+    wall = time.time() - started
 
+    if BACKEND == "llamacpp":
+        choice = response["choices"][0]
+        message = choice.get("message", {})
+        usage = response.get("usage", {})
+        timings = response.get("timings", {})
+        return {
+            "content": message.get("content") or "",
+            "reasoning": message.get("reasoning_content") or "",
+            # llama.cpp reports "length" for the token cap exactly as Ollama does, so the
+            # truncation check downstream needs no backend branch.
+            "stopReason": choice.get("finish_reason"),
+            "toolCalls": message.get("tool_calls"),
+            "promptTokens": usage.get("prompt_tokens"),
+            "outputTokens": usage.get("completion_tokens"),
+            "promptRate": timings.get("prompt_per_second", float("nan")),
+            "outputRate": timings.get("predicted_per_second", float("nan")),
+        }, wall
 
-def rate(count, durationNs):
-    return count / (durationNs / 1e9) if durationNs else float("nan")
+    message = response.get("message", {})
+    return {
+        "content": message.get("content") or "",
+        "reasoning": message.get("thinking") or "",
+        "stopReason": response.get("done_reason"),
+        "toolCalls": message.get("tool_calls"),
+        "promptTokens": response.get("prompt_eval_count"),
+        "outputTokens": response.get("eval_count"),
+        "promptRate": rate(response.get("prompt_eval_count", 0),
+                           response.get("prompt_eval_duration", 0)),
+        "outputRate": rate(response.get("eval_count", 0), response.get("eval_duration", 0)),
+    }, wall
 
 
 def main():
@@ -207,8 +309,13 @@ def main():
     parser.add_argument("spec", help="Path to the task specification.")
     parser.add_argument("--context", action="append", default=[],
                         help="File to include before the spec. Repeatable.")
+    parser.add_argument("--backend", default="llamacpp", choices=sorted(BACKENDS),
+                        help="Which local server to talk to. Default llamacpp.")
+    parser.add_argument("--host", help="Override the backend's default URL.")
     parser.add_argument("--model", default="qwen38",
-                        help=f"Short name {sorted(MODELS)} or a full Ollama tag.")
+                        help=f"Ollama only: short name {sorted(MODELS)} or a full tag. "
+                             f"llama-server serves whichever GGUF it was launched with, so this "
+                             f"is ignored there.")
     parser.add_argument("--out", help="Where to write the reply. Default: <spec>.out.py")
     parser.add_argument("--system", help="Replace the default no-tools system message.")
     parser.add_argument("--think", action="store_true",
@@ -216,6 +323,14 @@ def main():
     parser.add_argument("--num-predict", type=int, default=2000,
                         help="Output token cap.")
     parser.add_argument("--timeout", type=int, default=1800, help="Seconds.")
+    parser.add_argument("--temperature", type=float, default=SAMPLING["temperature"],
+                        help="Sent explicitly to both backends so the backend cannot change it.")
+    parser.add_argument("--top-k", type=int, default=SAMPLING["top_k"])
+    parser.add_argument("--top-p", type=float, default=SAMPLING["top_p"])
+    parser.add_argument("--seed", type=int, default=-1,
+                        help="-1 for a random draw. Set it to make one run reproducible; do NOT "
+                             "set it across repeats, or every repeat returns the same sample and "
+                             "n=3 measures nothing.")
     parser.add_argument("--raw", action="store_true", help="Do not strip a wrapping code fence.")
     parser.add_argument("--force", action="store_true",
                         help="Send even when the context budget check says it will not fit.")
@@ -224,13 +339,18 @@ def main():
                              "run had problems.")
     args = parser.parse_args()
 
+    global BACKEND, HOST
+    BACKEND = args.backend
+    HOST = args.host or BACKENDS[BACKEND]
+
     model = MODELS.get(args.model, args.model)
     system = args.system or DEFAULT_SYSTEM
     user = buildUserMessage(args.spec, args.context)
 
     contextLimit = readModelContext(model)
     estimated = int((len(system) + len(user)) / CHARS_PER_TOKEN)
-    print(f"model            {model}")
+    print(f"backend          {BACKEND} at {HOST}")
+    print(f"model            {model if BACKEND == 'ollama' else 'as loaded by llama-server'}")
     print(f"context limit    {contextLimit} tokens")
     print(f"prompt           ~{estimated} tokens (estimated)")
     print(f"output cap       {args.num_predict} tokens")
@@ -248,24 +368,27 @@ def main():
             raise SystemExit(message + "\nUse --force to send anyway.")
         print(message + "\nSending anyway because --force was given.")
 
-    response, wall = ask(model, system, user, args.think, args.num_predict, args.timeout)
-    message = response.get("message", {})
-    reply = message.get("content", "")
+    sampling = {"temperature": args.temperature, "top_k": args.top_k, "top_p": args.top_p}
+    print(f"sampling         temp {args.temperature} top_k {args.top_k} top_p {args.top_p} "
+          f"seed {args.seed}")
+    result, wall = ask(model, system, user, args.think, args.num_predict, args.timeout,
+                       sampling, args.seed)
+    reply = result["content"]
 
     print(f"\nwall             {wall:.1f}s")
-    print(f"prompt           {response.get('prompt_eval_count')} tokens @ "
-          f"{rate(response.get('prompt_eval_count', 0), response.get('prompt_eval_duration', 0)):.0f} tok/s")
-    print(f"output           {response.get('eval_count')} tokens @ "
-          f"{rate(response.get('eval_count', 0), response.get('eval_duration', 0)):.1f} tok/s")
-    print(f"done_reason      {response.get('done_reason')}")
+    print(f"prompt           {result['promptTokens']} tokens @ {result['promptRate']:.0f} tok/s")
+    print(f"output           {result['outputTokens']} tokens @ {result['outputRate']:.1f} tok/s")
+    print(f"stop reason      {result['stopReason']}")
+    if result["reasoning"]:
+        print(f"reasoning        {len(result['reasoning'])} chars, kept out of the file")
 
     problems = []
     # "length" means the cap or the context ran out, so the tail of the answer does not exist.
     # Reported as a failure rather than a note: a truncated file is not a shorter file.
-    if response.get("done_reason") == "length":
+    if result["stopReason"] == "length":
         problems.append("TRUNCATED: hit the output cap or the context limit. The reply is "
                         "incomplete - raise --num-predict or shorten the prompt.")
-    if message.get("tool_calls"):
+    if result["toolCalls"]:
         problems.append("The model returned structured tool_calls instead of an answer.")
     marker = findToolCall(reply)
     if marker:

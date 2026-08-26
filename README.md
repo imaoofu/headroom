@@ -55,24 +55,56 @@ Not "we built a better GPU Boost."
 
 ```
 headroom/
-├── analysis/                     Python — modelling on the public dataset
+├── analysis/                     Python — modelling, and the audit that checks the paper
 │   ├── load_data.py              loading + a validation check against the published files
 │   ├── characterize.py           measures the stock-vs-optimum gap directly, before any model
 │   ├── analyze_constrained.py    best efficiency subject to a performance floor — the useful form
-│   └── predict_optimal_frequency.py   the model, and the baselines built to embarrass it
+│   ├── predict_optimal_frequency.py   the model, and the baselines built to embarrass it
+│   ├── analyze_sweep.py          frequency sweeps; analyze_fine_sweep.py for the dense grids
+│   ├── curve_model.py            the fitted curve the sweeps are read against
+│   ├── audit_claims.py           asserts every pinned number in the paper against the CSVs
+│   ├── claims_consumer.py        the 5060 Ti claims
+│   └── claims_crosschip.py       the 3070 Ti claims, kept SEPARATE on purpose — see below
 ├── tools/
-│   └── stability-logger/         PowerShell — original data collection
-│       └── Log-GpuStability.ps1  records GPU telemetry during a stress test, reports a verdict
+│   ├── stability-logger/         PowerShell — original data collection
+│   ├── frequency-sweep/          PowerShell — the sweep harness
+│   ├── collection-kit/           what goes on the USB stick for a machine that is not this one
+│   └── local-model/              delegating mechanical work to a local LLM, and grading it
 ├── scripts/
 │   └── Get-Dataset.ps1           downloads the public dataset (not redistributed here)
 └── data/
     ├── raw/                      the downloaded public CSVs (gitignored)
+    ├── frequency-sweeps/         sweep output, one directory per collection session
     └── stability-runs/           output from the logger — this becomes the original dataset
 ```
+
+`claims_crosschip.py` is a separate module rather than a section of `claims_consumer.py` so that a
+cross-chip claim **cannot** reach a 5060 Ti sweep through a shared constant. Same-file would have
+made that a one-character mistake.
 
 Two languages on purpose. The modelling is Python because that is the ecosystem for it. The logger
 is PowerShell because it has to run on a shop machine with **no setup at all** — no interpreter, no
 package install, no virtualenv. It calls `nvidia-smi`, which ships with the driver.
+
+### Delegating to a local model
+
+`tools/local-model/ask_local.py` sends a specification to a local LLM and saves what comes back.
+Nothing it returns is ever committed without being run — for claims work that means `audit_claims.py`,
+for a test file it means the mutation gate. Two of the specifications written for it turned out to
+contain errors of their own, so the checking catches both sides.
+
+It talks to **llama.cpp** by default and Ollama with `--backend ollama`. llama.cpp is the default
+because it is the only one of the two that can use the multi-token-prediction head the model ships
+with: **40.0 tok/s against 28.9** on one RTX 5060 Ti, n=5 each, spreads 3.1% and 0.9%, and
+byte-identical greedy output, so the speedup is free. Sampling is sent explicitly to both backends
+from one constant — a bare GGUF has no baked-in Modelfile, so leaving it to the backend's default
+would have quietly changed the sampler and nothing in the output would have shown it.
+
+The same delegation is what the 27B model is graded by, and the grading needed **n=13 per model**
+before it separated: two quantisations of one model read as 20/21 against 17/21 with overlapping
+ranges at n=3, and only at n=13 did it resolve to 87/91 against 71/91, p = 0.0057 by permutation
+test. That is the same lesson as §5.7.6 in a different domain, and it is why the harness runs
+repeats by default.
 
 ---
 
