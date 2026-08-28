@@ -64,17 +64,18 @@ Not "we built a better GPU Boost."
 
 ```
 headroom/
-├── analysis/                     Python — modelling, and the audit that checks the paper
+├── analysis/                     Python — measurement, and the audit that checks the paper
 │   ├── load_data.py              loading + a validation check against the published files
 │   ├── characterize.py           measures the stock-vs-optimum gap directly, before any model
 │   ├── analyze_constrained.py    best efficiency subject to a performance floor — the useful form
-│   ├── predict_optimal_frequency.py   the model, and the baselines built to embarrass it
-│   ├── predict_constrained_frequency.py  the same question under a performance floor
 │   ├── analyze_sweep.py          frequency sweeps; analyze_fine_sweep.py for the dense grids
-│   ├── curve_model.py            the fitted curve the sweeps are read against
 │   ├── audit_claims.py           asserts every pinned number in the paper against the CSVs
 │   ├── claims_consumer.py        the 5060 Ti claims
-│   └── claims_crosschip.py       the 3070 Ti claims, kept SEPARATE on purpose — see below
+│   ├── claims_crosschip.py       the 3070 Ti claims, kept SEPARATE on purpose — see below
+│   └── models/                   everything that PREDICTS rather than measures — see its README
+│       ├── predict_optimal_frequency.py      which frequency is most efficient?
+│       ├── predict_constrained_frequency.py  the same, subject to a performance floor
+│       └── curve_model.py                    reconstruct a whole curve from a few probes
 ├── tools/
 │   ├── stability-logger/         PowerShell — original data collection
 │   ├── frequency-sweep/          PowerShell — the sweep harness
@@ -142,7 +143,7 @@ python analysis/characterize.py
 ```
 
 ```bash
-python analysis/predict_optimal_frequency.py
+python analysis/models/predict_optimal_frequency.py
 ```
 
 "Best efficiency at any cost" is rarely the objective anyone actually has. This asks the constrained
@@ -247,7 +248,7 @@ serves almost everything. Add a floor and the picture reverses, because a fixed 
 its guarantee on **every** workload it might meet and is therefore pinned by the most sensitive one
 (`BiCG` needs 1462 MHz; `ViT_t` would be fine at 757).
 
-Leave-one-workload-out, at a **95% performance floor** (`analysis/predict_constrained_frequency.py`):
+Leave-one-workload-out, at a **95% performance floor** (`analysis/models/predict_constrained_frequency.py`):
 
 | Strategy | Mean efficiency gain | Floor violations |
 |---|---|---|

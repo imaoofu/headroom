@@ -39,7 +39,13 @@ REPO_ROOT = Path(__file__).resolve().parent
 
 # Directories that hold suites. Listed rather than globbed from the repo root so that a stray
 # test_*.py in a scratch directory or a virtualenv cannot silently join the run.
-SUITE_DIRS = ["analysis", "tools/frequency-sweep", "tools/local-model"]
+#
+# The allowlist has a failure mode in the other direction: glob() does not recurse, so moving
+# suites into a NEW subdirectory drops them from every future run while the output still reads
+# "All suites passed". That is what would have happened when the model suites moved into
+# analysis/models/. findOrphanSuites() below is the guard - the list stays an allowlist, it just
+# refuses to stay quiet about a suite it can see and is not running.
+SUITE_DIRS = ["analysis", "analysis/models", "tools/frequency-sweep", "tools/local-model"]
 
 
 def findSuites(nameFilter):
@@ -53,6 +59,27 @@ def findSuites(nameFilter):
                 continue
             suites.append(path)
     return suites
+
+
+def findOrphanSuites():
+    """test_*.py files under a listed directory that no listed directory actually runs.
+
+    Walks each SUITE_DIRS entry recursively and subtracts what findSuites() would pick up. A hit
+    means someone added a subdirectory of suites and did not add it here, which is invisible in a
+    green run - the count just gets smaller.
+    """
+    collected = {path.resolve() for path in findSuites("")}
+    orphans = []
+    for relative in SUITE_DIRS:
+        directory = REPO_ROOT / relative
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.rglob("test_*.py")):
+            if "__pycache__" in path.parts:
+                continue
+            if path.resolve() not in collected:
+                orphans.append(path)
+    return sorted(set(orphans))
 
 
 def runSuite(path):
@@ -77,6 +104,15 @@ def main():
     parser.add_argument("--quiet", action="store_true",
                         help="Suppress per-suite output for suites that pass.")
     args = parser.parse_args()
+
+    # Checked before anything runs, so an unlisted directory is reported even if every suite
+    # that DID run passes.
+    orphans = findOrphanSuites()
+    if orphans:
+        print("Suites found but NOT run - their directory is not in SUITE_DIRS:")
+        for path in orphans:
+            print(f"  {path.relative_to(REPO_ROOT).as_posix()}")
+        print("Add the directory to SUITE_DIRS in run_tests.py, or delete the file.\n")
 
     suites = findSuites(args.filter)
     if not suites:
@@ -112,8 +148,11 @@ def main():
             relative = result["path"].relative_to(REPO_ROOT).as_posix()
             print(f"  SILENT: {relative} exited cleanly but asserted nothing.")
 
-    if broken or silent:
-        print(f"FAILED: {len(broken)} suite(s) failing, {len(silent)} asserting nothing.")
+    if broken or silent or orphans:
+        print(
+            f"FAILED: {len(broken)} suite(s) failing, {len(silent)} asserting nothing, "
+            f"{len(orphans)} not run at all."
+        )
         return 1
     print("All suites passed. This means every assertion written passed, not that the code is "
           "correct - see the note on mutation testing at the top of this file.")

@@ -57,7 +57,7 @@ Should report a **44.4%** mean headroom gap. If it doesn't, something is wrong w
 stop and fix that before doing anything else.
 
 ```powershell
-python analysis/curve_model.py --probes 4
+python analysis/models/curve_model.py --probes 4
 ```
 
 Should select probe frequencies `[757, 825, 885, 1530]` MHz with held-out curve MAE **0.0261**, and
@@ -129,15 +129,17 @@ holds the tables, and `CLAUDE.md` for the short version.
 3. **Two results exist only in working notes** — the split-region curve's `gemm` peak and a tuned
    control re-run were taken as ad-hoc single points and never written to disk. Re-measure before
    citing either.
-4. **Specs conditioning is stubbed.** `loadSpecFeatures()` in `curve_model.py` returns `None` on
+4. **Specs conditioning is stubbed.** `loadSpecFeatures()` in `analysis/models/curve_model.py` returns `None` on
    purpose. The specs table now exists (`data/external/all-gpus.json`), but fitting specs → curve
    needs ~10+ distinct GPU models. Validate leave-one-*model*-out when activating, or two cards of
    the same model leak across the split.
-5. **Only one chip.** A second card (3070 Ti) is staged at `F:\headroom-kit` and has not been run.
+5. **Two chips, one unit each.** The 3070 Ti was collected 2026-08-25 and is written up in
+   paper 5.5 — the central result reproduces (21.7% throughput for 37.3% power). Every *tuning*
+   result is still 5060 Ti only; the 3070 Ti was a customer machine whose curves were untouched.
 6. **Inspirit deliverable format still unknown** — paper, poster, journal, or symposium.
 
-**To check the repo is sound on a fresh machine**, `python run_tests.py` runs every suite (276
-checks across 11) and `python analysis/audit_claims.py` recomputes all 50 pinned paper numbers
+**To check the repo is sound on a fresh machine**, `python run_tests.py` runs every suite (394
+checks across 13) and `python analysis/audit_claims.py` recomputes all 119 pinned paper numbers
 from the CSVs.
 
 **To run a sweep**, from an elevated shell on a quiet GPU (close games, browsers, Discord — the

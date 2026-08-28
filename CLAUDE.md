@@ -319,10 +319,11 @@ Coverage as of 2026-08-25: **110 claims green, 24 sections unaudited.** Claims l
 
 ```
 run_tests.py       runs every suite, one verdict - `python run_tests.py`
-analysis/          Python modelling on the public V100 dataset
+analysis/          Python measurement + audit on the public V100 dataset
   audit_claims.py     mechanical paper auditor — see "The claims auditor" above
   claims_consumer.py  the claims themselves, one function per sentence of the paper
-  test_*.py           11 suites, 276 checks total (plus tools/frequency-sweep)
+  models/             everything that PREDICTS rather than measures — has its own README
+  test_*.py           13 suites, 394 checks total (models/ suites included via run_tests.py)
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset

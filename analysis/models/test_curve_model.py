@@ -57,6 +57,9 @@ Run: python analysis/test_curve_model.py
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# analysis/ too, for load_data. The module under test bootstraps this itself, but relying on that
+# would make these imports order-dependent for no reason.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from curve_model import (
     reconstructionErrorForProbes, selectProbeFrequencies, CurvePredictor, regretPercent,
 )

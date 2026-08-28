@@ -390,8 +390,8 @@ Turning two separate models into one project with a single research question.
   when the failure mode is an unstable machine.
 - ✅ **[CORE] Re-run the probe model under the performance constraint. The null was measured on
   the version of the problem with nothing in it.** Done 2026-08-27,
-  `analysis/predict_constrained_frequency.py`, with known-answer tests and an 11-mutation gate in
-  `analysis/test_predict_constrained_frequency.py`. It landed as **two results with opposite
+  `analysis/models/predict_constrained_frequency.py`, with known-answer tests and an 11-mutation gate in
+  `analysis/models/test_predict_constrained_frequency.py`. It landed as **two results with opposite
   signs**, and they must be reported together.
 
   🔑 **Probing wins under a constraint.** At a 95% floor, leave-one-workload-out, a probe-based

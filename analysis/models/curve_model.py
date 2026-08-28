@@ -43,9 +43,21 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
 
+import sys
+from pathlib import Path
+
+# analysis/ holds load_data.py. Added explicitly because Python puts only THIS file's directory
+# (analysis/models/) on the path, and every module here is run as a script rather than imported
+# as a package - see analysis/models/README.md for why it is not a package.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from load_data import REFERENCE_FREQUENCY_MHZ, loadDataset
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+# THREE levels: analysis/models/ -> analysis/ -> repo root. This was parent.parent while
+# the file lived in analysis/, and moving it would otherwise have pointed SWEEP_DIR at
+# analysis/data/ - a directory that does not exist, which glob reports as zero sweeps
+# rather than as an error.
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SWEEP_DIR = REPO_ROOT / "data" / "frequency-sweeps"
 
 

@@ -44,6 +44,9 @@ from pathlib import Path
 
 import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# analysis/ too, for load_data. The module under test bootstraps this itself, but relying on that
+# would make these imports order-dependent for no reason.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from predict_optimal_frequency import (
     regretFor, evaluateStrategy, chooseByStock, chooseByBestFixedFrequency,
     REFERENCE_FREQUENCY_MHZ,

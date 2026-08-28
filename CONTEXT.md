@@ -71,7 +71,7 @@ governing document enforced, after repeat corrections:
 - **Separate measured from inferred, in the same breath.**
 
 Those standards are why this repo's tools state their own limitations in their own output, and why
-`predict_optimal_frequency.py` prints a verdict against itself.
+`analysis/models/predict_optimal_frequency.py` prints a verdict against itself.
 
 **He can handle real technical depth** — dataset schemas, validation methodology, API-level
 tradeoffs. He has shipped real code, including security fixes on the BeSMART repo. Do not
