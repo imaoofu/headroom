@@ -472,14 +472,28 @@ Turning two separate models into one project with a single research question.
 
 ---
 
-- **[CORE] Record the ENFORCED power limit, not just the maximum settable one.** The sweep
-  tool queries `power.max_limit` and stores it as `power_limit_w`, so every session JSON in this
-  repository reports what a user *could* set rather than what the board was enforcing - 350 W on
-  the 3070 Ti OC BIOS, where the enforced figure was 310 W. Found 2026-08-26 while writing 5.5.3,
-  which wanted to say a power cap engaged at its limit and could not source the limit from any
-  committed file. Add `power.limit` to the identity query alongside it; both are one field each
-  and the pair is what makes a `SwPowerCap` observation interpretable. Runs already collected
-  cannot be repaired, and the 3070 Ti is a borrowed card.
+- ✅ **[CORE] Record the ENFORCED power limit, not just the maximum settable one.** Done
+  2026-08-27. The identity query now asks for `power.limit` and `power.default_limit` alongside
+  `power.max_limit`, written as `power_limit_enforced_w` and `power_limit_default_w`.
+  `power_limit_w` keeps its old meaning - it has always been `power.max_limit` and redefining the
+  key would make every historical session JSON silently wrong. A driver returning `[N/A]` is
+  stored as `[N/A]` rather than coerced to 0, because a silent zero reads as a real measurement of
+  zero watts. Verified by a two-point sweep, not by inspection: `-DryRun` exits before the JSON is
+  written, so it could not have caught a missing key.
+
+  Found 2026-08-26 writing 5.5.3, which wanted to say a `SwPowerCap` engaged at its limit and
+  could not source that limit from any committed file - the 3070 Ti OC BIOS reports 350 W max
+  against a 310 W enforced figure that exists only in a hand-read note. **Runs already collected
+  cannot be repaired.** The updated tool is on the collection USB so a Silent-BIOS session would
+  record what the OC session could not.
+
+  🔑 **Verifying it turned up a third tuning knob.** The 5060 Ti enforces **200 W against a 180 W
+  default** - the "power limit 111%" this repository's own sweep-tool docstring names as part of
+  the standard tune. Paper 5.7 decomposes "tuned" into two knobs, a memory overclock and a core
+  V/F curve, and separates them with three sweeps. The power limit is a third, it is part of the
+  documented tune, and **no sweep in the repository records it**, so it cannot be ruled in or out
+  as a confound in any existing comparison. Whether 5.7's decomposition needs re-stating is a
+  paper question and is not answered here.
 
 ---
 

@@ -307,12 +307,22 @@ function Reset-GpuClocks {
 $nvidiaSmi = Resolve-NvidiaSmi
 $elevated = Test-Elevated
 
-$identityRaw = & $nvidiaSmi --query-gpu=name,driver_version,clocks.max.sm,power.max_limit --format=csv,noheader,nounits -i 0
+# power.limit is the ENFORCED cap; power.max_limit is only the most a user could set. Asking
+# for max_limit alone is what left 5.5.3 unable to cite the limit a SwPowerCap was hitting - the
+# 3070 Ti OC BIOS reports 350 W max against 310 W enforced. default_limit comes along because the
+# ratio of enforced to default IS the power-limit tuning knob, and on the 5060 Ti that is 200 W
+# against a 180 W default: a third setting the paper's "tuned is two knobs" framing does not count.
+$identityRaw = & $nvidiaSmi --query-gpu=name,driver_version,clocks.max.sm,power.max_limit,power.limit,power.default_limit --format=csv,noheader,nounits -i 0
 $identityParts = ("$identityRaw") -split "\s*,\s*"
 $gpuName = $identityParts[0]
 $driverVersion = $identityParts[1]
 $maxClock = $identityParts[2]
 $powerLimit = $identityParts[3]
+# Older drivers can report [N/A] for these. Kept as whatever came back rather than coerced to a
+# number: "[N/A]" in the JSON says the query ran and the driver declined, which is information.
+# A silent 0 would read as a real measurement of zero watts.
+$powerLimitEnforced = if ($identityParts.Count -gt 4) { $identityParts[4] } else { "[N/A]" }
+$powerLimitDefault  = if ($identityParts.Count -gt 5) { $identityParts[5] } else { "[N/A]" }
 
 $supported = Get-SupportedGraphicsClocks -Smi $nvidiaSmi
 if ($supported.Count -eq 0) {
@@ -351,7 +361,7 @@ $targets = Select-SweepFrequencies -Supported $inRange -Count $FrequencyCount
 
 Write-Host ""
 Write-Host "[SWEEP] GPU:        $gpuName (driver $driverVersion)"
-Write-Host "[SWEEP] Max clock:  $maxClock MHz | power limit $powerLimit W"
+Write-Host "[SWEEP] Max clock:  $maxClock MHz | power limit $powerLimitEnforced W enforced ($powerLimitDefault W default, $powerLimit W max)"
 Write-Host "[SWEEP] Supported:  $($supported.Count) discrete graphics clocks, $($supported[-1])-$($supported[0]) MHz"
 if ($explicitBand) {
     $stepMhz = if ($targets.Count -gt 1) { [int][math]::Round(($targets[-1] - $targets[0]) / ($targets.Count - 1)) } else { 0 }
@@ -751,7 +761,11 @@ $session = [ordered]@{
     gpu_name             = $gpuName
     driver_version       = $driverVersion
     max_clock_mhz        = $maxClock
+    # UNCHANGED MEANING: this has always been power.max_limit and every historical session JSON
+    # reports it that way. Redefining the key would make old files silently wrong.
     power_limit_w        = $powerLimit
+    power_limit_enforced_w = $powerLimitEnforced
+    power_limit_default_w  = $powerLimitDefault
     workload_command     = $WorkloadCommand
     # The one field nothing else can reconstruct. Absent means the operator was not asked or did
     # not answer - NOT that the card was at stock. Do not read it as stock.
