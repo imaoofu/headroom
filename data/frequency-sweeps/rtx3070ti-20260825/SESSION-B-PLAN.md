@@ -57,8 +57,16 @@ Portable HWiNFO 8.52-6060 from the kit folder. **Sensors-only mode, nothing inst
       5–10 loaded samples per grid point — enough for a median, thin for anything else. 500 ms
       gives ~4× that. The two sessions will differ in sample density; that does not affect a
       median but must be stated when they are compared.
-- [ ] Start logging to CSV **before** the sweep and stop it **after**. One log per sweep, named to
-      match — `hwinfo-silent-gemm-matched2130.csv`, etc.
+- [ ] Start logging to CSV **before** the sweep and stop it **after**. One log per sweep, saved
+      into the same `C:\headroom-kit\results\session-silent\` folder as the sweeps.
+
+      **The one naming rule.** Everything else can be sorted out on import, but which HWiNFO log
+      pairs with which sweep cannot be recovered if it is lost, so give them these three names and
+      nothing fancier:
+
+          hwinfo-gemm-matched.csv
+          hwinfo-membw-matched.csv
+          hwinfo-gemm-fine.csv
 - [ ] Confirm all four columns are present, by name, in the NVIDIA sensor block:
       `GPU Core Voltage [V]`, `GPU Clock [MHz]`, `GPU Crossbar Clock [MHz]`, `GPU Power [W]`.
       They were all present on this machine in Session A, crossbar included.
@@ -70,24 +78,31 @@ Portable HWiNFO 8.52-6060 from the kit folder. **Sensors-only mode, nothing inst
 Elevated PowerShell. **Sweep 3 is the one that tests the prediction** — if time runs short,
 protect that one.
 
-Common workload path (as used in Session A):
+Set these two once per session, then the three commands below are copy-paste:
 
 ```powershell
-$WL = "C:\headroom-kit\python\python.exe C:\headroom-kit\tools\frequency-sweep\gpu_workload.py"
+$WL  = "C:\headroom-kit\python\python.exe C:\headroom-kit\tools\frequency-sweep\gpu_workload.py"
+$OUT = "C:\headroom-kit\results\session-silent"
 ```
+
+**`-OutputDirectory $OUT` matters.** Without it the sweep writes to
+`$PSScriptRoot\..\..\data\frequency-sweeps`, which from the kit resolves to
+`C:\headroom-kit\data\` — a different place from the HWiNFO logs, in a session whose entire
+value is the pairing between them. Session A's files came back from `results\session-oc\`;
+this keeps that convention.
 
 ### Sweep 1 — `gemm`, matched grid (~15 min)
 
 Same band and point count as the OC `matched2130` run, so the two are directly comparable.
 
 ```powershell
-.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx3070ti-silent-gemm-matched2130-hwinfo" -WorkloadCommand "$WL --workload gemm --json" -MinFrequencyMhz 852 -MaxFrequencyMhz 2130 -FrequencyCount 13 -AppliedSettings "gigabyte rtx3070ti gaming oc rev2.0, SILENT BIOS (VBIOS 94.04.5a.00.91, 2115 MHz bin, 290 W enforced). Grid 852-2130 matching the OC matched2130 runs. HWiNFO running at 500 ms for voltage capture."
+.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx3070ti-silent-gemm-matched2130-hwinfo" -OutputDirectory $OUT -WorkloadCommand "$WL --workload gemm --json" -MinFrequencyMhz 852 -MaxFrequencyMhz 2130 -FrequencyCount 13 -AppliedSettings "gigabyte rtx3070ti gaming oc rev2.0, SILENT BIOS (VBIOS 94.04.5a.00.91, 2115 MHz bin, 290 W enforced). Grid 852-2130 matching the OC matched2130 runs. HWiNFO running at 500 ms for voltage capture."
 ```
 
 ### Sweep 2 — `membw`, same grid (~15 min)
 
 ```powershell
-.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx3070ti-silent-membw-matched2130-hwinfo" -WorkloadCommand "$WL --workload membw --json" -MinFrequencyMhz 852 -MaxFrequencyMhz 2130 -FrequencyCount 13 -AppliedSettings "gigabyte rtx3070ti gaming oc rev2.0, SILENT BIOS (VBIOS 94.04.5a.00.91, 290 W enforced). Grid 852-2130 matching the OC matched2130 runs. HWiNFO running at 500 ms."
+.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx3070ti-silent-membw-matched2130-hwinfo" -OutputDirectory $OUT -WorkloadCommand "$WL --workload membw --json" -MinFrequencyMhz 852 -MaxFrequencyMhz 2130 -FrequencyCount 13 -AppliedSettings "gigabyte rtx3070ti gaming oc rev2.0, SILENT BIOS (VBIOS 94.04.5a.00.91, 290 W enforced). Grid 852-2130 matching the OC matched2130 runs. HWiNFO running at 500 ms."
 ```
 
 ### Sweep 3 — `gemm` fine, 1200–1600 MHz ⭐ **the prediction test**
@@ -97,7 +112,7 @@ this is the directly comparable measurement. (SILENT's own coarse efficiency opt
 inside this band, so it brackets correctly.)
 
 ```powershell
-.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx3070ti-silent-gemm-fine" -WorkloadCommand "$WL --workload gemm --json" -MinFrequencyMhz 1200 -MaxFrequencyMhz 1600 -FrequencyCount 10 -AppliedSettings "gigabyte rtx3070ti gaming oc rev2.0, SILENT BIOS (VBIOS 94.04.5a.00.91, 290 W enforced). FINE sweep 1200-1600 MHz, same band as the OC fine sweep, to read the voltage floor. HWiNFO running at 500 ms."
+.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx3070ti-silent-gemm-fine" -OutputDirectory $OUT -WorkloadCommand "$WL --workload gemm --json" -MinFrequencyMhz 1200 -MaxFrequencyMhz 1600 -FrequencyCount 10 -AppliedSettings "gigabyte rtx3070ti gaming oc rev2.0, SILENT BIOS (VBIOS 94.04.5a.00.91, 290 W enforced). FINE sweep 1200-1600 MHz, same band as the OC fine sweep, to read the voltage floor. HWiNFO running at 500 ms."
 ```
 
 **New this session:** the tool now records `power_limit_enforced_w` and `power_limit_default_w`.
@@ -137,16 +152,28 @@ Fix the threshold on the idle/loaded separation, write down why, then read the a
 
 ## 4. What to bring back
 
-Into `data/frequency-sweeps/rtx3070ti-20260825/hwinfo-silent/`:
+**Everything flat in `C:\headroom-kit\results\session-silent\`.** Do not build a directory
+structure on the build machine — that is the wrong moment for tidiness, and it gets reorganised
+into `data/frequency-sweeps/rtx3070ti-20260825/hwinfo-silent/` on import anyway.
 
-- 3 × `*_sweep.csv` + 3 × `*_sweep.json`
-- 3 × HWiNFO logs
-- 3 × `*_sweep_voltage.csv` from the join
-- The console transcript of each run, into `logs/`
-- A `README.md` recording: the VBIOS confirmed, the polling interval used, the `--min-power`
-  chosen **and why**, and the measured floor — before any interpretation.
+Copy the whole folder back. It should contain:
 
-Then:
+- 3 × `*_sweep.csv` + 3 × `*_sweep.json` (written there by `-OutputDirectory`)
+- 3 × HWiNFO logs, under the three names above
+- The console transcript of each run, however you can capture it
+
+**Write down four things while still at the machine**, in a text file in the same folder — they
+are the ones nobody can reconstruct afterwards:
+
+1. The `vbios_version` line you confirmed, pasted verbatim.
+2. The HWiNFO polling interval you actually used.
+3. Whether Instant Replay was verified off before **each** of the three runs.
+4. Anything unusual — a run that aborted, a machine that was touched mid-sweep, a browser that
+   opened. Session A's `--FAILED RUN--` folder turned out to contain a perfectly good `membw`
+   sweep, and that only came out because the console log survived.
+
+The join, the `*_voltage.csv` files, and the session README all happen on the analysis machine
+afterwards. Then:
 
 ```bash
 python run_tests.py && python analysis/audit_claims.py
