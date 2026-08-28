@@ -388,6 +388,34 @@ Turning two separate models into one project with a single research question.
 - **[CORE] Report uncertainty, not just point estimates.** Leave-one-workload-out gives 33 regret
   values — report the distribution, not only the mean. The worst case matters more than the average
   when the failure mode is an unstable machine.
+- **[CORE] Re-run the probe model under the performance constraint. The null was measured on the
+  version of the problem with nothing in it.** §5.2 reports the probe model tying a fixed frequency
+  at 0.883% against 0.837% mean regret, and that result is honest — but it is the *unconstrained*
+  problem, where 952 MHz is optimal for 24 of 33 workloads and there is almost no per-workload
+  variation left to exploit. The model tied because the answer is nearly constant, not because
+  probing carries no information.
+
+  §5.6.1 then measured the same comparison under a 95% floor and got **28.5% against 4.9%** — a
+  **23.6-point gap, 83% of all available gain** — because a fixed policy is pinned by its most
+  sensitive workload (`BiCG` needs 1462 MHz; `ViT_t` would be fine at 757). That gap is the
+  headroom a predictor could compete for, and **nothing has competed for it.** Neither
+  `predict_optimal_frequency.py` nor `curve_model.py` contains any notion of a performance floor;
+  both optimise unconstrained efficiency. Confirmed 2026-08-27 by grep, not by memory.
+
+  So the honest current statement is narrower than §5.2's headline: *probing does not beat a
+  constant when the objective is unconstrained efficiency.* Whether it beats one under a
+  constraint is **unmeasured**, and it is the version of the question the project's own premise
+  cares about.
+
+  What the run needs: predict each held-out workload's constrained optimum from the same 4 probes,
+  score against `analyze_constrained.py`'s oracle, and compare to the best fixed frequency **that
+  also holds the floor on every workload** — not to the unconstrained 952 MHz, which would be a
+  baseline that fails the constraint and therefore an easy one to beat. Report it whichever way it
+  lands; a second null here is a stronger result than the first, because it would mean probing
+  fails even where the signal demonstrably exists.
+
+  ⚠️ **This does not license re-framing §5.2.** The unconstrained null stands as measured and stays
+  in the paper. This adds a second measurement beside it; it does not retire the first.
 - **[STRETCH] Try a non-linear model** (small tree ensemble, or a shape-constrained fit) and compare
   honestly against the Ridge baseline. Only after the linear version's result is known — a fancier
   model that beats an unrun baseline proves nothing.
