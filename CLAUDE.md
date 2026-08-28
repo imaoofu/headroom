@@ -311,7 +311,7 @@ module then does `from audit_claims import claim`, which imports a *second copy*
 its own empty registry — claims register into one copy and the runner reads the other, reporting
 "0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
 
-Coverage as of 2026-08-25: **110 claims green, 24 sections unaudited.** Claims live in TWO modules now - `claims_consumer.py` for the 5060 Ti and `claims_crosschip.py` for the 3070 Ti. Keep them apart; a shared constant is how a cross-chip claim would silently read the wrong card.
+Coverage as of 2026-08-27: **119 claims green, 0 failures, 25 numbered sections still unaudited.** Green means every claim that EXISTS passes, not that the paper is covered - run `--coverage` for the sections and the loose numbers inside audited ones. Claims live in TWO modules now - `claims_consumer.py` for the 5060 Ti and `claims_crosschip.py` for the 3070 Ti. Keep them apart; a shared constant is how a cross-chip claim would silently read the wrong card.
 
 ---
 
@@ -328,7 +328,8 @@ tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset
     gpu_workload.py   fixed-work benchmark (gemm = compute, membw = bandwidth)
-  local-model/        delegate spec'd work to Ollama; specs/ holds reusable task specs
+  local-model/        delegate spec'd work to a local LLM - llama.cpp by default, Ollama
+                      via --backend ollama; specs/ holds reusable task specs
 scripts/           dataset download
 docs/
   PAPER_DRAFT.md      the write-up the auditor checks
