@@ -388,8 +388,53 @@ Turning two separate models into one project with a single research question.
 - **[CORE] Report uncertainty, not just point estimates.** Leave-one-workload-out gives 33 regret
   values — report the distribution, not only the mean. The worst case matters more than the average
   when the failure mode is an unstable machine.
-- **[CORE] Re-run the probe model under the performance constraint. The null was measured on the
-  version of the problem with nothing in it.** §5.2 reports the probe model tying a fixed frequency
+- ✅ **[CORE] Re-run the probe model under the performance constraint. The null was measured on
+  the version of the problem with nothing in it.** Done 2026-08-27,
+  `analysis/predict_constrained_frequency.py`, with known-answer tests and an 11-mutation gate in
+  `analysis/test_predict_constrained_frequency.py`. It landed as **two results with opposite
+  signs**, and they must be reported together.
+
+  🔑 **Probing wins under a constraint.** At a 95% floor, leave-one-workload-out, a probe-based
+  strategy reaches **25.4% mean efficiency gain against the fixed policy's 4.9%** - **87% of the
+  23.6-point gap** 5.6.1 identified - **with zero floor violations**. It holds at a 90% floor
+  (94% of the gap) and an 85% floor (91%). 5.2's null is therefore a statement about the
+  *unconstrained* problem and does not survive the constraint. The module cross-checks itself
+  against `analyze_constrained.py` at run time, reproducing 28.5% and 4.9% at 1462 MHz before
+  reporting anything.
+
+  🔑 **The FITTING still earns nothing, and this is the stronger half.** The strategy that wins is
+  **straight-line interpolation between the four probes** - no model, no training workloads,
+  nothing fitted. Ridge *appears* to beat it, 28.1% and 98% of the gap, but does so by **breaking
+  the floor on 8 of 33 workloads**, worst by 3.81 points. Efficiency collected below the floor is
+  not efficiency the constraint permits, so that number is disqualified rather than ranked; the
+  giveaway is negative regret, which at a 90% floor is exactly what it produces. Calibrated with
+  a safety margin fitted by inner leave-one-out on the training workloads only, ridge respects the
+  floor and drops to **19.6%** - worse than four line segments. **A model that ties a lookup table
+  had not earned a slide; one that loses to linear interpolation has earned less.**
+
+  **The mechanism is measured, not asserted**, because "interpolate the probes" would otherwise
+  be carried away as a recommendation when it is a consequence of curve shape. Performance is
+  predominantly **concave** - 64.1% of second differences curve downward - so a straight line
+  between probes sits below the true curve; interpolated performance is an under-estimate **88% of
+  the time** by a mean 0.90 points, which biases every choice upward. Under a floor that bias is
+  free safety. **On a convex performance curve the sign flips and interpolation would violate the
+  floor more often than the fitted model, not less** - asserted against a convex fixture in the
+  tests rather than left in prose. The diagnostic prints on every run.
+
+  ⚠️ **The fixed policy is not automatically safe either.** At a 90% floor, chosen leave-one-out,
+  it broke the floor on 1 of 33 workloads by 1.37 points - the cost of picking a frequency without
+  measuring the workload it will meet. A guarantee learned from 32 workloads is not a guarantee.
+
+  **A hardcoded V100 constant was caught by the mutation gate**, not by review: the infeasible-set
+  fallback returned `REFERENCE_FREQUENCY_MHZ` (1530), which is this grid's maximum only by
+  coincidence. On a consumer sweep it would have returned a frequency the card never ran. Now the
+  grid's own maximum everywhere, so the module carries no V100 number at all.
+
+  **Still to do:** none of this is in the paper. 5.2 currently reports the unconstrained null with
+  no indication that it inverts under a constraint, and the README repeats it. Both need the
+  second half or they overstate a null.
+
+- **[SUPERSEDED - see above] Original filing:** §5.2 reports the probe model tying a fixed frequency
   at 0.883% against 0.837% mean regret, and that result is honest — but it is the *unconstrained*
   problem, where 952 MHz is optimal for 24 of 33 workloads and there is almost no per-workload
   variation left to exploit. The model tied because the answer is nearly constant, not because

@@ -69,6 +69,7 @@ headroom/
 │   ├── characterize.py           measures the stock-vs-optimum gap directly, before any model
 │   ├── analyze_constrained.py    best efficiency subject to a performance floor — the useful form
 │   ├── predict_optimal_frequency.py   the model, and the baselines built to embarrass it
+│   ├── predict_constrained_frequency.py  the same question under a performance floor
 │   ├── analyze_sweep.py          frequency sweeps; analyze_fine_sweep.py for the dense grids
 │   ├── curve_model.py            the fitted curve the sweeps are read against
 │   ├── audit_claims.py           asserts every pinned number in the paper against the CSVs
@@ -219,7 +220,7 @@ up a mean of **44.4% efficiency** (median 45.7%, range 15.1%–62.8%). Those opt
 
 Measured directly from the published data. No model involved.
 
-### 2. Per-workload prediction does not beat a fixed frequency — reporting this as a null
+### 2. Unconstrained, per-workload prediction does not beat a fixed frequency — a null
 
 | Strategy | Mean regret | Exact-match rate |
 |---|---|---|
@@ -238,6 +239,47 @@ is very little per-workload variation left for a model to exploit. Workload sens
 behaves as the literature predicts — the correlation between performance retained at the lowest
 frequency and the optimal frequency is **−0.666**, meaning memory-bound workloads prefer lower
 clocks — but that signal is not strong enough to beat the constant.
+
+### 3. Under a performance floor it inverts — and the model still loses
+
+The null above is about the *unconstrained* problem, where the curve is flat and one frequency
+serves almost everything. Add a floor and the picture reverses, because a fixed policy must hold
+its guarantee on **every** workload it might meet and is therefore pinned by the most sensitive one
+(`BiCG` needs 1462 MHz; `ViT_t` would be fine at 757).
+
+Leave-one-workload-out, at a **95% performance floor** (`analysis/predict_constrained_frequency.py`):
+
+| Strategy | Mean efficiency gain | Floor violations |
+|---|---|---|
+| stock — do nothing | 0.0% | 0 |
+| best fixed frequency | 4.9% | 0 |
+| **interpolation between 4 probes (no model)** | **25.4%** | **0** |
+| probe model (Ridge) | 28.1% | **8 of 33** — disqualified |
+| probe model (Ridge, calibrated to respect the floor) | 19.6% | 0 |
+| oracle (upper bound) | 28.5% | 0 |
+
+So **probing is worth its cost under a constraint** — 25.4% against 4.9% is 87% of the gap between
+the fixed policy and the oracle, and it holds at 90% and 85% floors too. But **the fitting is not
+what earns it.** Straight lines between the same four probes beat every fitted variant. Ridge only
+appears to win by breaking the floor it was supposed to respect; made to respect it, it does worse
+than the interpolation.
+
+Efficiency collected below the floor is not efficiency the constraint permits, so those rows are
+disqualified rather than ranked — the giveaway is *negative* regret against the oracle, which at a
+90% floor is exactly what Ridge produces.
+
+**Why interpolation is the safe one is measured, not assumed.** Performance is predominantly
+concave (64.1% of second differences curve downward), so a straight line between probes sits below
+the true curve and under-estimates performance 88% of the time. That biases every choice upward,
+and under a floor an upward bias is free safety. **On a convex performance curve the sign flips and
+interpolation would violate the floor more often than the fitted model** — so "interpolate the
+probes" is a consequence of curve shape here, not a general recommendation. The diagnostic prints
+on every run.
+
+Taken together: the project's premise survives — knowing the workload is worth most of the
+available gain once anyone attaches a performance guarantee to it — while its *modelling* result
+gets stronger rather than weaker. A model that ties a lookup table has not earned a slide; one that
+loses to linear interpolation has earned less.
 
 **This makes the collected consumer-GPU data more important, not less.** The open question becomes
 whether one frequency is similarly dominant on consumer silicon, or whether chip-to-chip variance
