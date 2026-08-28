@@ -37,20 +37,69 @@ Matched frequency, `gemm`, SILENT (today) against OC (2026-08-25). Both verified
 - **Voltage gap: +0.003 V mean, exactly 0.000 at four of seven points.**
 - **Memory clock is identical at 9251 MHz** in every position.
 
-### What that leaves
+### Why the prediction failed: the gap is ADDITIVE, not multiplicative
 
-Same voltage, same clock, same work, same memory clock — and 22% more power. Since P = V·I, the
-honest restatement is that **the OC BIOS draws ~21.8% more current at the same voltage**, not that
-it runs at a higher voltage.
+The prediction needed the whole gap to be core dynamic power, which scales as V²·f. Then a
++23.11% power ratio at matched f gives a voltage ratio of √1.2311 and the SILENT floor follows.
 
-The one systematic difference this session can see: **the crossbar clock floor is 1335 MHz on
-SILENT and 1410 MHz on OC**, +5.6%, at every point below 1485 MHz where the two converge.
+**The gap does not behave that way.** A constant +23.11% predicts the absolute difference *grows*
+across the band as total power grows. It does not:
 
-**That is a candidate, not a conclusion.** A +5.6% interconnect clock explaining a +22% power gap
-is not something this data establishes, and it should not be written up as if it were. What is
-established is the negative: it is not voltage, and it is not memory clock. Anything further needs
-a measurement that separates the crossbar from whatever else the BIOS changes, and no such
-measurement exists yet.
+| MHz | SILENT W | OC W | actual offset | offset a +23.11% model predicts |
+|---|---|---|---|---|
+| 855 | 130.3 | 164.3 | 34.0 W | 30.1 W |
+| 1065 | 145.7 | 184.0 | 38.2 W | 33.7 W |
+| 1275 | 161.4 | 196.6 | 35.2 W | 37.3 W |
+| 1380 | 172.6 | 201.6 | 29.0 W | 39.9 W |
+| 1485 | 188.3 | 218.7 | 30.4 W | **43.5 W** |
+
+Described as an **offset** the gap is **34.1 ± 3.4 W — 9.9% relative spread**. Described as a
+**percentage** it is 22.3 ± 4.2% — **19.0%**. The additive description fits twice as tightly, and
+the multiplicative one overshoots by 43% at the top of the band.
+
+**A fixed offset cannot be core dynamic power**, because core dynamic power scales with frequency.
+The core clock rises 74% across this band and the extra draw does not grow at all. Whatever is
+consuming those ~34 W is not the core switching harder — so there was never a core-voltage ratio
+to recover from it, and √1.2311 was being applied to a quantity that does not contain one.
+
+### It is not even all die power
+
+**SILENT draws 34 W less and runs 5 °C hotter**, at every matched point, in both sessions
+independently (SILENT 51.6–58.7 °C against OC 46.6–53.6 °C today; §5.5.1's
+`thermal-runs-backwards` claim asserts the same direction from Session A).
+
+Same die, same heatsink, same clock, same work — and the card drawing *more* power is the *cooler*
+one. That means the cooling system is doing more work in the OC position, which is precisely what
+distinguishes a "SILENT" BIOS from an "OC" one, and fan power sits inside the board power figure
+`nvidia-smi` reports.
+
+It also **rules out leakage** as the driver, in the useful direction: leakage rises with
+temperature, so it would make the hotter card draw more. The hotter card draws less.
+
+### The crossbar candidate is withdrawn
+
+An earlier version of this file called the crossbar floor — 1335 MHz on SILENT against 1410 on OC —
+"the one systematic difference this session can see". **The data does not support it.**
+
+At **1485 MHz both BIOSes hold the same crossbar clock, 1410 MHz, and the offset there is 30.4 W** —
+larger than the 29.0 W at 1380 MHz where the crossbar clocks differ by 75 MHz. The offset does not
+collapse when the crossbar converges, so the crossbar is not what is drawing the power.
+
+### What is actually established
+
+A roughly constant **~34 W** that is:
+
+- **not core voltage** — the floors are identical within one sensor step
+- **not core dynamic power** — it does not scale with core clock at all
+- **not memory clock** — identical at 9251 MHz in both positions
+- **not crossbar clock** — survives unchanged where the crossbar clocks converge
+- **not leakage** — the card drawing it is the cooler one
+- **partly board-level rather than die-level** — the thermal inversion requires more cooling work
+  in the OC position, and fan power is inside this measurement
+
+That is a much sharper constraint than §5.5.1 had, and it is a set of exclusions rather than a
+mechanism. **No mechanism is claimed here.** Separating a fan-curve contribution from the rest
+needs fan RPM logged alongside power, which HWiNFO can report and this session did not capture.
 
 ## Fine sweep — where the floor was read
 
