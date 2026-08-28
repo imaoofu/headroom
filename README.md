@@ -7,9 +7,18 @@
 > Original data now exists and the central mechanism has been measured. What follows is what that
 > does and does not license.
 >
-> - **N = 1 chip.** Every consumer result comes from one RTX 5060 Ti. Chip-to-chip variation on
->   this class of part is published at roughly 11%, so nothing here is a statement about the model
->   line, let alone about GPUs. A second card is in the roadmap and has not been run.
+> - **Two chips, one unit each — which is not a sample.** Most consumer results come from one
+>   RTX 5060 Ti (Blackwell). A Gigabyte RTX 3070 Ti GAMING OC (Ampere) was measured on 2026-08-25
+>   on a third party's machine and returned; the central result reproduces there — running the
+>   compute workload at its efficiency optimum rather than its peak-throughput point costs **21.7%**
+>   throughput and saves **37.3%** power. The magnitude differs from the 5060 Ti's; the shape does
+>   not. That is one unit of each of two architectures, so it says the *effect* is not an artifact
+>   of one board and says nothing about either model line. Chip-to-chip variation on this class of
+>   part is published at roughly 11% and remains unmeasured here, because it needs repeat units of
+>   one SKU that the project controls.
+> - **Everything about *tuning* is still one chip.** §5.7's two-knob decomposition, the split-region
+>   curve, and every overclocked measurement are 5060 Ti only. The 3070 Ti was a customer machine:
+>   its curves were never touched, only its two vendor BIOS positions compared.
 > - **The V100 analysis is a separate dataset** — 33 workloads, one chip, published by others.
 >   It is never pooled with the consumer data, and the two are reported side by side rather than
 >   merged.
@@ -70,6 +79,8 @@ headroom/
 │   ├── frequency-sweep/          PowerShell — the sweep harness
 │   ├── collection-kit/           what goes on the USB stick for a machine that is not this one
 │   └── local-model/              delegating mechanical work to a local LLM, and grading it
+├── docs/
+│   └── PAPER_DRAFT.md            the write-up — every consumer measurement lives here, not below
 ├── scripts/
 │   └── Get-Dataset.ps1           downloads the public dataset (not redistributed here)
 └── data/
@@ -189,6 +200,7 @@ Being explicit, because "it's written" and "it's known to work" are different th
 |---|---|
 | Stability logger | **Tested** on an RTX 5060 Ti (driver 610.88). Two 8–12 s idle runs, CSV + JSON output confirmed well-formed. Two bugs found and fixed this way: an `[ordered]`-dictionary positional-lookup bug that mislabelled every throttle reason, and a `Select-Object` pipeline-stop that killed `nvidia-smi` and produced spurious exit 255. |
 | Logger under real load | **Not tested.** Only idle. Verdict logic for thermal throttling and driver crashes has never fired against a real event. |
+| Frequency-sweep harness | **Tested on two machines and two architectures** — 64 committed sweeps across an RTX 5060 Ti and an RTX 3070 Ti. It refuses to start when another process is using the GPU, and that guard has fired on a real run (an idle browser at 11%). Its session JSON records the enforced power limit as of 2026-08-27; runs collected before that date record only the maximum settable one and cannot be repaired. |
 | Dataset loading + validation | **Schema verified** against the real downloaded files. The efficiency identity (`performance / power`, normalised to 1530 MHz) was confirmed by hand on one row before the check was written into code. |
 | Python analysis scripts | **Run** on Python 3.12.10 / pandas 3.0.5 / numpy 2.5.2 / scikit-learn 1.9.0. Both scripts execute clean. Results below. |
 
