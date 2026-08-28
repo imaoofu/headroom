@@ -243,6 +243,13 @@ def membwReplicates():
 
 HW = ROOT + "hwinfo-oc/"
 OC_GEMM_FINE = HW + "20260825-160418_rtx3070ti-oc-gemm-fine_sweep.csv"
+
+# Session B, 2026-08-27: the SILENT position with voltage telemetry. Two gemm matched runs were
+# collected; this is the SECOND, and it is the one with usable voltage data - the first ran while
+# HWiNFO was not logging. See hwinfo-silent/README.md for how that was established.
+HWS = ROOT + "hwinfo-silent/"
+SILENT_README = "data/frequency-sweeps/rtx3070ti-20260825/hwinfo-silent/README.md"
+SILENT_GEMM_V = HWS + "20260827-170331_rtx3070ti-silent-gemm-matched2130-hwinfo_sweep.csv"
 OC_GEMM_V = HW + "20260825-154606_rtx3070ti-oc-gemm-matched2130-hwinfo_sweep.csv"
 OC_MEMBW_V = HW + "20260825-155312_rtx3070ti-oc-membw-matched2130-hwinfo_sweep.csv"
 VOLTS = lambda path: path.replace("_sweep.csv", "_sweep_voltage.csv")
@@ -371,3 +378,89 @@ def vendorCost():
     gain = 100 * (o["throughput"] / s["throughput"] - 1)
     return (f"for **{power:.2f}%** more power, and returned\n**{gain:.2f}%** of peak compute and "
             f"nothing measurable on bandwidth")
+
+
+# --------------------------------------------------------------------------------------
+# Session B - the refutation, and what replaced the refuted model
+# --------------------------------------------------------------------------------------
+# 5.5.3 predicted a SILENT voltage floor of 0.738 V on the assumption that the whole matched-
+# frequency power gap was core dynamic power. It is not: the gap is a roughly constant offset that
+# does not scale with core clock, so there was no core-voltage ratio inside it to recover.
+#
+# These claims are pinned against the session README rather than the paper because the paper still
+# carries the refuted account. When 5.5.1 is rewritten they move.
+
+
+def _hwinfoMatchedTargets():
+    """Grid points shared by the two HWiNFO-paired matched sweeps, computed rather than assumed."""
+    return sorted(set(sweep(SILENT_GEMM_V)) & set(sweep(OC_GEMM_V)))
+
+
+def _looPredictionErrors():
+    """Leave-one-out mean absolute error of two models for OC power given SILENT power.
+
+    Multiplicative: OC = SILENT x r, r fitted on the other points. This is what 5.5.1 assumed when
+    it read a voltage ratio out of a power ratio.
+    Additive: OC = SILENT + d, d fitted the same way.
+
+    Leave-one-out rather than in-sample because both models have one free parameter and an
+    in-sample comparison of two one-parameter fits on seven points would mostly measure which
+    functional form can absorb the spread, not which one predicts.
+    """
+    targets = _hwinfoMatchedTargets()
+    silent, oc = sweep(SILENT_GEMM_V), sweep(OC_GEMM_V)
+    ratioErrors, offsetErrors = [], []
+    for held in targets:
+        rest = [t for t in targets if t != held]
+        ratio = mean(oc[t]["power"] / silent[t]["power"] for t in rest)
+        offset = mean(oc[t]["power"] - silent[t]["power"] for t in rest)
+        ratioErrors.append(abs(oc[held]["power"] - silent[held]["power"] * ratio))
+        offsetErrors.append(abs(oc[held]["power"] - (silent[held]["power"] + offset)))
+    return mean(ratioErrors), mean(offsetErrors)
+
+
+@claim("5.5.1-additive-beats-ratio", SILENT_README)
+def additiveBeatsRatio():
+    """The number that makes "the model improved" a measurement rather than an impression.
+
+    RAISES if the ratio model ever predicts as well or better, because the surrounding text is an
+    argument that the functional form was wrong. A number alone would not report that collapse.
+    """
+    ratioError, offsetError = _looPredictionErrors()
+    if offsetError >= ratioError:
+        raise ValueError(
+            f"the additive model no longer predicts better: {offsetError:.2f} W against "
+            f"{ratioError:.2f} W for the ratio model"
+        )
+    reduction = 100 * (1 - offsetError / ratioError)
+    return (f"**{offsetError:.2f} W** against **{ratioError:.2f} W** for the ratio model, a "
+            f"**{reduction:.0f}%** reduction")
+
+
+@claim("5.5.1-gap-is-an-offset", SILENT_README)
+def gapIsAnOffset():
+    """The offset description is tighter than the percentage one - stated as both spreads.
+
+    This is the claim that actually carries the finding: 5.5.1 reported the gap as a percentage,
+    and a percentage with a 19% relative spread reads as noise around a constant rather than as
+    the wrong functional form.
+    """
+    # SAMPLE standard deviation, matching the "34.1 +/- 3.4 W" already written beside it in the
+    # README. Population sd would give 9.2% and 17.6% instead of 9.9% and 17.6%-> the conclusion
+    # is the same either way, but two spreads computed differently in one paragraph is how a
+    # reader loses trust in both.
+    from statistics import stdev
+
+    targets = _hwinfoMatchedTargets()
+    silent, oc = sweep(SILENT_GEMM_V), sweep(OC_GEMM_V)
+    offsets = [oc[t]["power"] - silent[t]["power"] for t in targets]
+    percents = [100 * (oc[t]["power"] / silent[t]["power"] - 1) for t in targets]
+    offsetSpread = 100 * stdev(offsets) / mean(offsets)
+    percentSpread = 100 * stdev(percents) / mean(percents)
+    if offsetSpread >= percentSpread:
+        raise ValueError(
+            f"the offset description is no longer the tighter one: {offsetSpread:.1f}% against "
+            f"{percentSpread:.1f}%"
+        )
+    return (f"**{mean(offsets):.1f} W**, relative spread **{offsetSpread:.1f}%**, against "
+            f"**{mean(percents):.1f}%** at **{percentSpread:.1f}%**")

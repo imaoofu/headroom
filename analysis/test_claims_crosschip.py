@@ -331,6 +331,75 @@ testMembwFlatGuardRejectsARespondingWorkload()
 testPowerCapGuardRejectsACapAwayFromTheCollapse()
 
 
+# --------------------------------------------------------------------------------------
+# The Session B guards - the additive model, and the offset description
+# --------------------------------------------------------------------------------------
+#
+# These two claims do not report a measurement, they report a COMPARISON between two descriptions
+# of the same data. That makes their guards load-bearing in a way the others' are not: if the
+# comparison ever inverts, both claims can still render a perfectly well-formed number under prose
+# that has become false.
+
+
+def buildHwinfoPair(silentWatts, ocWatts):
+    """A SILENT and an OC matched sweep on the shared grid, differing only in power."""
+    def build(root):
+        writeSweep(root / cc.SILENT_GEMM_V,
+                   [(t, float(t), silentWatts(t), 1e10 * t, 50.0) for t in GRID])
+        writeSweep(root / cc.OC_GEMM_V,
+                   [(t, float(t), ocWatts(t), 1e10 * t, 50.0) for t in GRID])
+    return build
+
+
+def testAdditiveGuardRejectsAMultiplicativeWorld():
+    """The claim exists to say the additive form predicts better. It must refuse to say it if not.
+
+    A world where the gap really IS a constant ratio is the honest counter-case: there the ratio
+    model wins on leave-one-out and the sentence "the additive model reduces error by N%" is
+    simply wrong. The guard has to fire on exactly that.
+    """
+    # Purely multiplicative: OC is always 1.25x SILENT, and SILENT varies a lot across the band
+    # so the two models genuinely diverge. The ratio model should win outright.
+    multiplicative = buildHwinfoPair(lambda t: 50.0 + t / 10.0,
+                                     lambda t: (50.0 + t / 10.0) * 1.25)
+    raised = False
+    try:
+        withFixture(multiplicative, cc.additiveBeatsRatio)
+    except ValueError:
+        raised = True
+    check("a genuinely multiplicative gap is refused by the additive claim", raised,
+          "it rendered a reduction anyway")
+
+    # Purely additive: a fixed 40 W offset. The claim should render.
+    additive = buildHwinfoPair(lambda t: 50.0 + t / 10.0,
+                               lambda t: 50.0 + t / 10.0 + 40.0)
+    text = withFixture(additive, cc.additiveBeatsRatio)
+    check("a genuinely additive gap still renders", "reduction" in text, f"got {text!r}")
+
+
+def testOffsetSpreadGuardRejectsAWorseDescription():
+    """Same test from the other direction, on the spread rather than the prediction error."""
+    multiplicative = buildHwinfoPair(lambda t: 50.0 + t / 10.0,
+                                     lambda t: (50.0 + t / 10.0) * 1.25)
+    raised = False
+    try:
+        withFixture(multiplicative, cc.gapIsAnOffset)
+    except ValueError:
+        raised = True
+    check("an offset description that is NOT the tighter one is refused", raised,
+          "it rendered a spread anyway")
+
+    additive = buildHwinfoPair(lambda t: 50.0 + t / 10.0,
+                               lambda t: 50.0 + t / 10.0 + 40.0)
+    text = withFixture(additive, cc.gapIsAnOffset)
+    check("an offset description that IS tighter renders", "relative spread" in text,
+          f"got {text!r}")
+
+
+testAdditiveGuardRejectsAMultiplicativeWorld()
+testOffsetSpreadGuardRejectsAWorseDescription()
+
+
 if failures:
     print(f"{len(failures)} check(s) failed.")
     raise SystemExit(1)

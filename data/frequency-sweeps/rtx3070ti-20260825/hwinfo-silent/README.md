@@ -53,9 +53,12 @@ across the band as total power grows. It does not:
 | 1380 | 172.6 | 201.6 | 29.0 W | 39.9 W |
 | 1485 | 188.3 | 218.7 | 30.4 W | **43.5 W** |
 
-Described as an **offset** the gap is **34.1 ± 3.4 W — 9.9% relative spread**. Described as a
-**percentage** it is 22.3 ± 4.2% — **19.0%**. The additive description fits twice as tightly, and
-the multiplicative one overshoots by 43% at the top of the band.
+As an offset the gap is **34.1 W**, relative spread **9.9%**, against **22.3%** at **19.0%**
+as a percentage. The additive description fits twice as tightly, and the multiplicative one
+overshoots by 43% at the top of the band.
+
+*Pinned as `5.5.1-gap-is-an-offset`, which raises if the offset ever stops being the tighter
+description.*
 
 **A fixed offset cannot be core dynamic power**, because core dynamic power scales with frequency.
 The core clock rises 74% across this band and the extra draw does not grow at all. Whatever is
@@ -86,6 +89,39 @@ That is the whole failure, stated exactly. §5.5.1 wrote:
 `V²·f` is a statement about the **slope**. The +23.11% was measured on **total board power**, and
 it lives entirely in the **intercept**. The inference fed a whole-quantity ratio into a law that
 governs only one term of it, and that term had not changed.
+
+⚠️ **43.9 W is not the same number as 34.1 W, and neither one changed between sessions.**
+34.1 W is the *measured* mean offset across the seven matched points. 43.9 W is the difference
+between the two fits' *intercepts* — an extrapolation to zero frequency, which no measurement
+reaches. They differ because the slopes differ slightly, so the two lines converge as frequency
+rises. **The number that describes the card is 34.1 W**; 43.9 W only ever appears inside the
+decomposition.
+
+### Does the replacement model actually predict better?
+
+Yes, and by how much is pinned rather than asserted. Leave-one-out across the seven matched
+points — fit each model's single parameter on six, predict the seventh:
+
+| | mean absolute error |
+|---|---|
+| multiplicative, `OC = SILENT × r` | 6.43 W |
+| additive, `OC = SILENT + d` | **2.95 W** |
+
+The additive model predicts to **2.95 W** against **6.43 W** for the ratio model, a **54%**
+reduction. Leave-one-out rather than in-sample because both models have exactly one free
+parameter, and comparing two one-parameter fits in-sample on seven points would mostly measure
+which functional form absorbs the spread.
+
+The ratio model's errors are also *structured* — it overshoots at the bottom of the band (+5.8 W
+at 855 MHz) and undershoots at the top (−13.4 W at 1485), which is the signature of a wrong
+functional form rather than noise. The additive model's residuals show no such trend.
+
+*Pinned as `5.5.1-additive-beats-ratio`, which raises if the ratio model ever predicts as well or
+better — the sentence around it is an argument about functional form, and a number alone would not
+report that collapse.*
+
+**This is an improvement in description, not in explanation.** It predicts the OC position's power
+from the SILENT position's on this card. It still does not say what draws the 34 W.
 
 Applied correctly — V² to the slope alone — the same data gives a voltage ratio of √0.904 = 0.951,
 which would put the SILENT floor at 0.819 / 0.951 = **0.861 V**, *above* the OC floor rather than
