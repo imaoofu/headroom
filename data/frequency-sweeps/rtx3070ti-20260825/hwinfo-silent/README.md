@@ -62,6 +62,36 @@ The core clock rises 74% across this band and the extra draw does not grow at al
 consuming those ~34 W is not the core switching harder — so there was never a core-voltage ratio
 to recover from it, and √1.2311 was being applied to a quantity that does not contain one.
 
+### The specific error, in one decomposition
+
+Fit each BIOS's matched-band power as `P(f) = intercept + slope·f`. The slope is the part that
+scales with core frequency — the term `P = C·V²·f` actually governs. The intercept is everything
+that does not scale with core clock.
+
+| | SILENT | OC | difference |
+|---|---|---|---|
+| slope (frequency-scaling) | 87.7 ± 5.4 W/GHz | 79.3 ± 6.4 W/GHz | **−8.4 ± 8.4 — consistent with zero** |
+| intercept (constant) | 53.6 ± 6.4 W | 97.5 ± 7.6 W | **+43.9 ± 9.9 W — 4.4σ** |
+
+R² = 0.981 and 0.968.
+
+**The frequency-scaling term is the same in both BIOSes within error. All of the resolvable
+difference is in the constant.**
+
+That is the whole failure, stated exactly. §5.5.1 wrote:
+
+> *"At fixed frequency and fixed work, dynamic power scales with the square of voltage, and +23%
+> implies roughly 11% more of it."*
+
+`V²·f` is a statement about the **slope**. The +23.11% was measured on **total board power**, and
+it lives entirely in the **intercept**. The inference fed a whole-quantity ratio into a law that
+governs only one term of it, and that term had not changed.
+
+Applied correctly — V² to the slope alone — the same data gives a voltage ratio of √0.904 = 0.951,
+which would put the SILENT floor at 0.819 / 0.951 = **0.861 V**, *above* the OC floor rather than
+below it. The measured 0.812–0.819 V says the slope difference is noise, as its error bar already
+says. Either way the sign of the original inference came entirely from the misattributed constant.
+
 ### It is not even all die power
 
 **SILENT draws 34 W less and runs 5 °C hotter**, at every matched point, in both sessions
