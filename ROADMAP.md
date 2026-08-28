@@ -545,6 +545,30 @@ Turning two separate models into one project with a single research question.
 
 ---
 
+- **[CORE] The preflight guard cannot see VRAM, and an idle model walks straight past it.**
+  `Get-BaselineUtilization` reads `utilization.gpu`, and the separate encoder check reads
+  `utilization.encoder` / `utilization.decoder`. **Neither reports memory, and `memory.used` is
+  queried nowhere in the script** - the only `memory` fields anywhere in it are memory *clock*.
+  Confirmed 2026-08-27 by grep, while correcting CONTEXT.md.
+
+  The guard was built to catch a BUSY GPU and it does that well: a run during a gaming session
+  showed 79% baseline utilisation and 8.03 -> 4.84 TFLOP/s. But a **loaded and idle** model is the
+  opposite shape - ~0% utilisation, ~14 GiB held. On this machine that is the normal state, since
+  `llama-server` serves a 27B on the same card the research measures, so the failure is not
+  hypothetical.
+
+  What it would do to a run: ~2.3 GiB remains on a 16.3 GiB card. `gpu_workload.py`'s `gemm`
+  allocates ~768 MB and **would run to completion** under memory pressure, producing a number that
+  looks like every other number. `membw` allocates ~3 GB and would not fit - failing outright, or
+  falling back to system memory the way this driver already demonstrably does, where throughput
+  collapses and nothing errors. **A `membw` sweep measuring spilled memory is plausible and wrong**,
+  which is the exact failure class this project keeps finding.
+
+  The fix is one field: add `memory.used` to the preflight and refuse above a threshold, naming the
+  process the way the encoder check already names its offender. Cheap, and it closes the last
+  contamination route the guard does not cover. **Runs already collected cannot be re-checked** -
+  no session JSON records VRAM occupancy either, so there is no way to audit past sweeps for this.
+
 - ✅ **[CORE] Record the ENFORCED power limit, not just the maximum settable one.** Done
   2026-08-27. The identity query now asks for `power.limit` and `power.default_limit` alongside
   `power.max_limit`, written as `power_limit_enforced_w` and `power_limit_default_w`.

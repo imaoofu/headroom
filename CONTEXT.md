@@ -47,12 +47,29 @@ variance does not fit the window — size analyses to small-N reality and say N 
 reputation one. Prove protocols on his own hardware first, and only ever ship a build at settings
 that would have shipped anyway.
 
-**⚠️ The GPU serves double duty.** Raymond runs **Ollama** (`qwen3:14b`, ~9.3 GB) locally on the
-same RTX 5060 Ti that is the subject of this research, paired with OpenCode Desktop for bulk work.
-**Ollama must be closed before any sweep or stability run.** A loaded model competes for the card,
-and the frequency sweep's baseline-utilisation guard will refuse to start (correctly). This has
-already caused one contaminated measurement — a test run during a gaming session showed 79%
-baseline utilisation and throughput dropping from 8.03 to 4.84 TFLOP/s from contention alone.
+**⚠️ The GPU serves double duty, and the sweep guard does NOT protect against it.** Raymond runs
+a local LLM on the same RTX 5060 Ti that is the subject of this research. As of 2026-08-27 that is
+**llama.cpp serving Qwen3.8-27B UD-IQ4_XS on port 8099** — 13.27 GiB of weights plus about 1.2 GiB
+of KV cache at 64K, so roughly **14 GiB of a 16.3 GiB card**. Ollama is still installed and holds
+`qwen3-coder:30b` (18 GB), reachable via `--backend ollama`. The older `qwen3:14b` is gone.
+
+**Both must be stopped before any sweep or stability run, and stopping Ollama is not enough** —
+`llama-server.exe` is a separate process and closing the Ollama app does not touch it. Check
+`nvidia-smi` shows the card near idle in *memory*, not just in utilisation.
+
+**Why the guard will not save you here.** The sweep's preflight reads `utilization.gpu` plus the
+encoder and decoder engines. **None of them report VRAM.** A model sitting loaded and idle draws
+~0% utilisation while holding ~14 GiB, so it walks straight past a guard that was built to catch a
+*busy* GPU. That leaves ~2.3 GiB: `gpu_workload.py`'s `gemm` allocates ~768 MB and would run to
+completion under memory pressure, while `membw` allocates ~3 GB and would not fit — failing
+outright, or falling back to system memory in the way already documented for this driver, where
+throughput collapses and nothing errors. A `membw` sweep measuring spilled memory produces
+plausible, wrong bandwidth numbers.
+
+The guard is still worth having for the case it was built for. A test run during a gaming session
+showed **79% baseline utilisation and throughput dropping from 8.03 to 4.84 TFLOP/s** from
+contention alone, and that is exactly what it catches. It just cannot see an idle model, so that
+check is yours to make.
 
 ---
 
