@@ -54,6 +54,40 @@ into Step 2 and must then be held constant across every frequency in a sweep.
 suite, open **PowerShell as Administrator** and call `Collect.ps1` directly. It keeps the preflight,
 the machine-info capture and the video-engine guard; only the workload list changes.
 
+### ⚠️ Execution policy — do this, and do NOT change the machine's setting
+
+Windows defaults to `Restricted`, so a freshly opened PowerShell will refuse to run `.\Collect.ps1`
+with "running scripts is disabled on this system". `RUN-ME.bat` never hits this because it launches
+with `-ExecutionPolicy Bypass -File`; the direct call the suite needs does.
+
+**Start the elevated window this way** — right-click Start, *Terminal (Admin)* or *PowerShell
+(Admin)*, then:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+`-Scope Process` applies to **that window only** and is gone when it closes. Nothing is written to
+the registry and the machine's stored policy is untouched.
+
+Equivalently, launch a already-bypassed window in one step:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass
+```
+
+🛑 **Never run `Set-ExecutionPolicy` with `-Scope LocalMachine` or `-Scope CurrentUser` on a
+customer's machine.** That is a persistent change to somebody else's system security settings, it
+survives after the machine leaves, and it is exactly the kind of thing the "leave it as you found
+it" rule exists for. The process scope does the same job for the length of the session.
+
+If a script is still refused after that with a *"not digitally signed"* message, the files picked up
+a mark-of-the-web on copy. Clear it for the kit only:
+
+```powershell
+Get-ChildItem -Path F:\headroom-kit -Recurse -Include *.ps1,*.bat | Unblock-File
+```
+
 Substitute the counts from Step 1 for the placeholders. **Order matters — `-Iterations` is matched
 to `-Workloads` positionally, and the script refuses to start if the lengths differ.**
 
