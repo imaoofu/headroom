@@ -89,3 +89,56 @@ jobs:
       # instead of being assumed closed by a green tick above it.
       - name: Claims coverage (informational)
         run: python analysis/audit_claims.py --coverage
+
+  # The half the job above cannot reach. claims_reference.py needs the public V100 set, which is
+  # gitignored and fetched rather than committed, so the checks job skips section 5.1 entirely.
+  # This job fetches it and audits it.
+  #
+  # It is deliberately a SEPARATE job rather than a fetch step bolted onto the one above. Both
+  # gate, but the Actions page then shows two named results: a red here beside a green there says
+  # the upstream dataset moved, not that the repo broke. That distinction is the whole point -
+  # this job is the only one that depends on something outside this repository.
+  #
+  # Runs on Windows PowerShell 5.1, which is the interpreter HANDOFF.md documents and the one the
+  # script was written against, so this also checks that the documented onboarding step still
+  # works rather than only that the data still exists.
+  reference:
+    name: V100 reference claims
+    runs-on: windows-latest
+
+    steps:
+      - name: Enable long paths
+        run: git config --global core.longpaths true
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+
+      # -Only v100 fetches the three CSVs of data/raw (about 16 KB) and nothing else. The 6.6 MB
+      # specs and consumer sets under data/external are not needed by any claim, so they are not
+      # pulled. Nothing is cached: these datasets state no license, which under default copyright
+      # means all rights reserved, so they are fetched transiently and never stored on CI.
+      - name: Fetch the public V100 dataset
+        shell: powershell
+        run: .\scripts\Get-Dataset.ps1 -Only v100
+
+      # LOAD-BEARING, do not fold into the step above. Get-Dataset.ps1 catches a failed download,
+      # prints FAIL, and still exits 0 - so a fetch that silently returned nothing would leave
+      # claims_reference.py registering nothing, the audit reporting 121 of 121, and this job
+      # green while having checked exactly none of what it exists to check.
+      #
+      # audit_claims.py exits 1 when a --filter matches no claims. Filtering on one exact claim id
+      # therefore proves the dataset arrived AND the module registered against it. Do not shorten
+      # this to --filter 5.1- : that substring also matches every 5.5.1-* claim, which register
+      # with or without the dataset, and the guard would pass while proving nothing.
+      - name: Verify the fetch actually landed
+        run: python analysis/audit_claims.py --filter 5.1-workload-count
+
+      - name: Full audit, reference data included
+        run: python analysis/audit_claims.py
