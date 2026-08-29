@@ -1,0 +1,84 @@
+# Runs the two gates this project already has, on every push, so that drift is caught by a
+# machine instead of by someone remembering to look.
+#
+# WHAT THIS CHECKS
+#   run_tests.py             396 checks across 13 suites - every assertion written, nothing more.
+#   audit_claims.py          121 claims recomputed from the committed CSVs and asserted present
+#                            in the documents verbatim and exactly once. A failure here means the
+#                            prose and the data disagree, which is a finding, not a broken script.
+#
+# WHAT THIS DOES NOT CHECK - stated here for the same reason every tool in this repo states its
+# own limits in its own output:
+#
+#   - Nothing that needs a GPU. gpu_workload.py, the sweep harness, the stability logger and the
+#     probe_* scripts are never executed here. CI cannot tell you a sweep is valid.
+#   - Nothing that needs the downloaded datasets. data/raw/ and data/external/ are gitignored and
+#     are NOT fetched, so characterize.py (the 44.4% figure), curve_model.py and the models/
+#     predictions do not run. That the audit is green without them is a fact about claim coverage,
+#     not a sign the reference results were verified - as of 2026-08-28 no claim targets the V100
+#     data at all. If claims_reference.py is ever added, this workflow needs a fetch step and the
+#     licensing note in scripts/Get-Dataset.ps1 applies to it.
+#   - Green means every claim that EXISTS passes, not that the paper is covered. The coverage step
+#     below prints the sections with no claims; it is informational and never fails the build.
+#   - The audit pins numbers, not assertions. A heading or a sentence can state a mechanism the
+#     data has refuted and still pass, because no number in it is wrong.
+#
+# No paths filter, deliberately: a data README can carry pinned claims (two currently do), so
+# there is no file in this repo whose edit is guaranteed not to move the audit.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# A newer push supersedes an older run on the same ref. Keeps minutes down on a private repo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: tests + claims audit (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Both legs always run. One platform failing is a result worth seeing next to the other,
+      # not a reason to hide it.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      # Five tracked paths run to 126-129 characters. The runner checks out to a short root so
+      # they fit, but core.longpaths costs one line and removes the failure mode entirely - and
+      # that failure is a silent one: the clone reports success, the checkout is short several
+      # files, run_tests.py still passes, and only the audit notices.
+      - name: Enable long paths on Windows
+        if: runner.os == 'Windows'
+        run: git config --global core.longpaths true
+
+      - uses: actions/checkout@v4
+
+      # 3.12 is the documented floor and 3.12.10 is what the results were produced on.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Tests
+        run: python run_tests.py
+
+      - name: Claims audit
+        run: python analysis/audit_claims.py
+
+      # Never a gate. It reports which numbered sections carry no claims and which numbers inside
+      # audited sections nothing pins, so the coverage gap stays visible in every run's log
+      # instead of being assumed closed by a green tick above it.
+      - name: Claims coverage (informational)
+        run: python analysis/audit_claims.py --coverage
