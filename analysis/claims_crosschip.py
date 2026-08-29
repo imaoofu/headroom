@@ -546,16 +546,17 @@ def fanBinnedOffset():
 # collected. It breaks the "roughly constant 34 W" description - the offset is 67% larger on the
 # bandwidth-bound workload, on the same band and the same points.
 
-SILENT_MEMBW = (ROOT + "hwinfo-silent-membw-20260829/"
+# NOT SILENT_MEMBW - that name is taken at the top of this file by Session A's as-found run.
+# Reusing it redefined the module-level constant and silently redirected 5.5.1-peak-membw and
+# 5.5.1-membw-power to this file instead, which is the shared-constant failure this module's
+# docstring exists to warn about. The audit caught it; the suffix keeps it caught.
+SILENT_MEMBW_C = (ROOT + "hwinfo-silent-membw-20260829/"
                 "20260829-145431_rtx3070ti-silent-membw-matched2130-membw_sweep.csv")
-SILENT_MEMBW_README = ("data/frequency-sweeps/rtx3070ti-20260825/"
-                       "hwinfo-silent-membw-20260829/README.md")
-
 
 @claim("5.5.1.2-membw-trade", PAPER, "5.5.1.2")
 def membwTrade():
     """What the OC position costs on the bandwidth-bound workload, across its whole band."""
-    silent, oc = sweep(SILENT_MEMBW), sweep(OC_MEMBW_V)
+    silent, oc = sweep(SILENT_MEMBW_C), sweep(OC_MEMBW_V)
     shared = sorted(set(silent) & set(oc))
     power = mean(oc[t]["power"] - silent[t]["power"] for t in shared)
     throughput = mean(100 * (oc[t]["throughput"] / silent[t]["throughput"] - 1) for t in shared)
@@ -571,7 +572,7 @@ def offsetScalesWithTraffic():
     paragraph needs rewriting rather than the number updating.
     """
     band = lambda a, b: [t for t in sorted(set(a) & set(b)) if 855 <= t <= 1485]
-    silentM, ocM = sweep(SILENT_MEMBW), sweep(OC_MEMBW_V)
+    silentM, ocM = sweep(SILENT_MEMBW_C), sweep(OC_MEMBW_V)
     silentG, ocG = sweep(SILENT_GEMM_V), sweep(OC_GEMM_V)
     membwOffset = mean(ocM[t]["power"] - silentM[t]["power"] for t in band(silentM, ocM))
     gemmOffset = mean(ocG[t]["power"] - silentG[t]["power"] for t in band(silentG, ocG))
