@@ -64,7 +64,7 @@ with `-ExecutionPolicy Bypass -File`; the direct call the suite needs does.
 (Admin)*, then:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 ```
 
 `-Scope Process` applies to **that window only** and is gone when it closes. Nothing is written to

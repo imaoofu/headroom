@@ -108,6 +108,56 @@ RUNNING IT
 7. Delete the kit folder from the machine.
 
 
+RUNNING THE EXTENDED SUITE (not RUN-ME.bat)
+-------------------------------------------
+RUN-ME.bat passes no arguments, so it always collects the original two workloads,
+gemm and membw. The extended suite - the eleven workloads spanning arithmetic
+intensity - needs Collect.ps1 called directly with -Workloads and -Iterations.
+
+That means opening PowerShell yourself, and Windows will refuse to run the script
+until you say otherwise. THIS IS THE COMMAND:
+
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+
+  -Scope Process   applies to THAT WINDOW ONLY and is gone when you close it.
+                   Nothing is written to the registry. The machine is untouched.
+  -Force           skips the yes/no confirmation prompt. Without it the command
+                   stops and waits for an answer, which hangs anything scripted.
+
+*** NEVER use -Scope LocalMachine or -Scope CurrentUser on a machine that is not
+yours. *** Those persist after the machine leaves you. It is somebody else's
+system security setting and it is not ours to change. The process scope does the
+same job for the length of one session.
+
+Then, in that same Administrator window:
+
+  1. Find the drive letter - it is not always F:
+
+        Get-Volume | Select-Object DriveLetter,FileSystemLabel,SizeRemaining
+
+  2. Calibrate on THIS card. Iteration counts do not transfer between cards, and
+     a suite workload refuses to start without one.
+
+        cd F:\headroom-kit
+        foreach ($w in @("bgemm32","bgemm64","bgemm128","bgemm256","bgemm1024",
+                         "copy","reduce","softmax","layernorm","conv","attention")) {
+          .\python\python.exe .\tools\frequency-sweep\gpu_workload.py --workload $w --calibrate
+        }
+
+     Write the numbers down. Each prints a "--iterations N" recommendation.
+
+  3. Collect. -Iterations is matched to -Workloads BY POSITION, and the script
+     refuses to start if the two lists are different lengths.
+
+        .\Collect.ps1 -Label "<card>-stock-suite" `
+                      -Workloads copy,bgemm128,bgemm1024,conv `
+                      -Iterations <N>,<N>,<N>,<N> `
+                      -AppliedSettings "stock"
+
+Everything else on this page still applies - Instant Replay, the console-click
+freeze, copying results off, deleting the folder.
+
+
 HOW TO TELL IT WORKED
 ---------------------
 The kit checks itself and prints one line per sweep, like:
@@ -148,6 +198,15 @@ It refuses to start and says why. The message tells you what to fix. Common ones
         3. Xbox Game Bar background recording - Settings > Gaming > Captures
         4. A browser tab or media player with video open
       Turn it off and retry. Do not work around this one - the run is not usable.
+
+  "running scripts is disabled on this system"
+      You launched Collect.ps1 directly without allowing scripts first. In that
+      same window run:
+          Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+      Process scope only - never LocalMachine or CurrentUser on a machine that is
+      not yours. If it then says a file is "not digitally signed", the files
+      picked up a download mark on copy; clear it for the kit only:
+          Get-ChildItem -Path F:\headroom-kit -Recurse -Include *.ps1,*.bat | Unblock-File
 
   "This kit is in a folder whose path contains a space"
       Move the folder to C:\headroom-kit and retry.
