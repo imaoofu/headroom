@@ -480,3 +480,62 @@ def paperGapIsAnOffset():
 @claim("5.5.1-paper-additive-beats-ratio", PAPER, "5.5.1.1")
 def paperAdditiveBeatsRatio():
     return additiveBeatsRatio()
+
+
+# ---------------------------------------------------------------------------------------------
+# The fan candidate, refuted 2026-08-29 from data collected on 2026-08-25 and 2026-08-27. Fan RPM
+# was in the raw HWiNFO logs all along and was dropped during distillation, so the measurement
+# needed no further access to the card. Extracts committed beside the voltage ones.
+
+FAN_SILENT = HWS + "fan-silent-gemm-matched.csv"
+FAN_OC = HW + "fan-oc-gemm-matched.csv"
+
+
+def _fanRows(relativePath):
+    """Loaded samples from a distilled fan extract, binned into 15 MHz clock bins.
+
+    15 MHz because that is the card's own clock step; finer bins split one operating point across
+    two keys and coarser ones merge neighbouring sweep targets.
+    """
+    import csv
+    from audit_claims import REPO_ROOT
+    binned = {}
+    path = REPO_ROOT / "data" / "frequency-sweeps" / relativePath
+    with open(path, newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            key = round(float(row["clock_mhz"]) / 15) * 15
+            binned.setdefault(key, []).append({
+                "power": float(row["power_w"]),
+                "fan": (float(row["fan1_rpm"]) + float(row["fan2_rpm"])) / 2.0,
+            })
+    return {k: v for k, v in binned.items() if len(v) >= 5}
+
+
+@claim("5.5.1-fans-stopped-gap-remains", SILENT_README)
+def fansStoppedGapRemains():
+    """RAISES if the fans were not actually stopped at those two points.
+
+    The whole refutation rests on the fans reading zero on BOTH sides while the offset persists.
+    If a future re-extraction shows them spinning, the sentence around this number is wrong and
+    must fail rather than render a new pair of watts.
+    """
+    silent, oc = _fanRows(FAN_SILENT), _fanRows(FAN_OC)
+    quiet = sorted(k for k in set(silent) & set(oc)
+                   if all(r["fan"] == 0 for r in silent[k]) and all(r["fan"] == 0 for r in oc[k]))
+    if len(quiet) < 2:
+        raise ValueError(f"expected at least two bins with both fans stopped, found {quiet}")
+    gaps = [mean(r["power"] for r in oc[k]) - mean(r["power"] for r in silent[k]) for k in quiet[:2]]
+    return (f"+{gaps[0]:.1f} W** and **+{gaps[1]:.1f} W")
+
+
+@claim("5.5.1-fan-binned-offset", SILENT_README)
+def fanBinnedOffset():
+    """The offset re-derived from HWiNFO board power rather than from the sweep CSVs.
+
+    Independent corroboration of 34.1 W by a different instrument, which is worth more than the
+    third decimal place of either.
+    """
+    silent, oc = _fanRows(FAN_SILENT), _fanRows(FAN_OC)
+    shared = sorted(set(silent) & set(oc))
+    gaps = [mean(r["power"] for r in oc[k]) - mean(r["power"] for r in silent[k]) for k in shared]
+    return f"**+{mean(gaps):.1f} W**, against the **34.1 W**"

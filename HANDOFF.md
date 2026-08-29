@@ -9,7 +9,7 @@ and knowing the current state. `docs/PAPER_DRAFT.md` is the write-up; every numb
 sections is pinned by `analysis/audit_claims.py` and must not be edited by hand without re-running
 that.
 
-Last updated **2026-08-27**.
+Last updated **2026-08-29**.
 
 ---
 
@@ -65,7 +65,7 @@ proceed.
 python run_tests.py
 ```
 
-**`394 checks across 13 suite(s).`** then `All suites passed.` The runner also fails if it finds a
+**`444 checks across 14 suite(s).`** then `All suites passed.` The runner also fails if it finds a
 `test_*.py` under a directory it is not running — that guard exists because moving the model suites
 into `analysis/models/` would otherwise have silently dropped three suites while still printing a
 green result.
@@ -74,7 +74,7 @@ green result.
 python analysis/audit_claims.py
 ```
 
-**119 claims, 0 failures.** Every pinned number in the paper, recomputed from the CSVs and asserted
+**149 claims, 0 failures** (fewer if `data/raw/` was not fetched - `claims_reference.py` registers nothing and says so). Every pinned number in the paper, recomputed from the CSVs and asserted
 present verbatim and exactly once. If a claim fails, the paper and the data disagree — that is the
 whole point of the tool, so read it as a real finding, not a broken script.
 
@@ -169,9 +169,9 @@ utilisation and names the offending process.
 
 ---
 
-## State as of 2026-08-27
+## State as of 2026-08-29
 
-**Data.** 64 committed sweep CSVs across **two chips**: 55 on the RTX 5060 Ti (Blackwell) and 9 on
+**Data.** 67 committed sweep CSVs across **two chips**: 55 on the RTX 5060 Ti (Blackwell) and 9 on
 a Gigabyte RTX 3070 Ti GAMING OC (Ampere), collected 2026-08-25 on a third party's machine and
 returned to the state it was found in. Plus the stability logger's runs and the V100 public
 dataset, which is never pooled with either.
@@ -203,7 +203,7 @@ and the audit.
 
 ## Not done — roughly in order of value
 
-1. **A fan-RPM log on the 3070 Ti, while the machine is still reachable.** Session B ran
+1. ~~A fan-RPM log on the 3070 Ti~~ **DONE 2026-08-29 without the card** - the RPM was already in the raw HWiNFO logs and cooling is now excluded (§5.5.1.1). The remaining 3070 Ti item is the never-collected `membw` matched-2130 sweep. Session B ran
    2026-08-27 and refuted its own registered prediction: the two BIOSes hold the same voltage
    floor, and the ~34 W gap is an additive offset excluded from voltage, core dynamic power,
    memory clock, crossbar and leakage (§5.5.1.1). The one live candidate is board-level — the

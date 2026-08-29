@@ -1082,12 +1082,33 @@ differ because the slopes differ slightly, so the two lines converge as frequenc
   30.4 W, larger than the 29.0 W at 1380 MHz where the crossbar clocks differ by 75 MHz
 - **not leakage** - leakage rises with temperature, and the card drawing *less* power is the
   *hotter* one by about 5 C at every matched point, in both sessions independently
-- **partly board-level rather than die-level** - that same thermal inversion requires more cooling
-  work in the OC position, and fan power sits inside the board power figure `nvidia-smi` reports,
-  which is exactly what distinguishes a "SILENT" BIOS from an "OC" one
+- **not cooling** - see below
 
-**No mechanism is claimed.** Separating a fan-curve contribution from the rest needs fan RPM logged
-alongside power, which HWiNFO can report and this session did not capture.
+**Cooling was the last live candidate and it is now excluded.** An earlier version of this list
+kept it open, on the reasoning that the thermal inversion requires more cooling work in the OC
+position and fan power sits inside the board figure `nvidia-smi` reports. It also said separating
+that contribution needed fan RPM logged alongside power, "which HWiNFO can report and this session
+did not capture." **That was wrong: the session did capture it.** The raw logs carry 327 columns
+including both GPU fan tachometers; fan RPM was dropped when the logs were distilled, not when they
+were recorded, so the measurement existed already and needed no further access to the card.
+
+Binned by core clock across eight bins shared by both positions, **the two lowest bins have both
+fans reading exactly zero in both BIOS positions** - the card's zero-RPM mode holding through
+130-175 W of load, 62 of 62 samples on one side and 16 of 16 on the other - **and the offset there
+is still +32.7 W and +36.3 W.** Across the rest of the band fan speed ranges from 0 to 1453 rpm
+while the offset stays between 30.5 and 43.8 W with no relationship to it. That bounds any fan
+contribution at roughly 3 W of a 35 W gap, and two axial fans at those speeds cannot draw more than
+a couple of watts in any case.
+
+The same binning re-derives the offset itself as **+35.5 W**, against the **34.1 W** measured from
+the sweep CSVs - two instruments, `nvidia-smi` per sweep point against HWiNFO board power binned by
+clock, agreeing to 1.4 W by different routes.
+
+**No mechanism is claimed, and the exclusion list is now longer rather than shorter.** What remains
+unexplained is not only where the power goes but why the OC position is 5-7 C *cooler* at every
+matched point while drawing more of it - at the two lowest points, with both fans stopped. Either
+heat is moving differently or the extra power is dissipated somewhere that is not the die. Neither
+is established here.
 
 #### 5.5.2 The measurement is tighter on this card than on the reference one
 

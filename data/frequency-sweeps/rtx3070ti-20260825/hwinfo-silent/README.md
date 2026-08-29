@@ -231,3 +231,58 @@ where the 310 W figure existed only in a hand-read note.
 3. Anything above ~125 W would begin discarding the real 855 MHz point.
 
 Every point retained n ≥ 19. The threshold was not revisited after the voltages were read.
+
+---
+
+## The fan candidate is refuted, from data already collected (2026-08-29)
+
+The exclusion list above left one live candidate: *"partly board-level rather than die-level — the
+thermal inversion requires more cooling work in the OC position, and fan power sits inside this
+measurement."* It also said separating it "needs fan RPM logged alongside power, which HWiNFO can
+report and this session did not capture."
+
+**That was wrong. This session did capture it.** The raw HWiNFO logs carry 327 columns including
+`GPU Fan1 [RPM]` and `GPU Fan2 [RPM]`. Fan RPM was dropped during distillation, not during
+collection, so the measurement existed on the USB the whole time and no further access to the card
+was needed. Distilled extracts are now committed beside the voltage ones as
+`fan-silent-gemm-matched.csv` and `fan-oc-gemm-matched.csv`.
+
+Binned by GPU core clock into 15 MHz bins, loaded samples only, eight bins shared by both
+positions:
+
+| MHz | SILENT fan | OC fan | Δfan | SILENT W | OC W | ΔW | SILENT °C | OC °C |
+|---|---|---|---|---|---|---|---|---|
+| 855 | **0** | **0** | +0 | 131.9 | 164.6 | **+32.7** | 51.7 | 46.1 |
+| 960 | **0** | **0** | +0 | 139.1 | 175.4 | **+36.3** | 55.8 | 51.0 |
+| 1065 | 750 | 646 | −105 | 148.1 | 178.7 | +30.5 | 58.6 | 52.2 |
+| 1170 | 1133 | 1347 | +215 | 157.9 | 188.5 | +30.6 | 57.0 | 50.9 |
+| 1275 | 511 | 727 | +216 | 164.8 | 203.7 | +38.9 | 57.4 | 53.5 |
+| 1380 | 1082 | 1354 | +272 | 173.6 | 209.1 | +35.5 | 57.5 | 52.7 |
+| 1485 | 643 | 714 | +71 | 185.1 | 228.9 | +43.8 | 58.3 | 54.0 |
+| 1785 | 1142 | 1453 | +311 | 235.7 | 271.8 | +36.1 | 63.4 | 58.8 |
+
+**The decisive rows are the first two. At 855 and 960 MHz both fans read exactly zero in both BIOS
+positions — 62 of 62 samples on the SILENT side and 16 of 16 on the OC side, literal `0`, the
+card's zero-RPM idle mode holding through 130–175 W of load — and the offset there is still
++32.7 W and +36.3 W.** Fan power contributes exactly nothing at those points and the gap is
+undiminished.
+
+The rest of the band agrees. Fan speed ranges from 0 to 1453 rpm across these bins while the offset
+stays between 30.5 and 43.8 W with no relationship to it: the smallest fan difference (855 MHz,
+zero on both sides) carries a 32.7 W gap, and the largest (1785 MHz, +311 rpm) carries 36.1 W. If
+fans drove the offset it would grow with them. **It bounds the fan contribution at roughly 3 W of a
+~35 W gap**, and two axial fans at 1400 rpm cannot draw more than a couple of watts anyway.
+
+**So the offset is not fan power.** Adding to the exclusion list above: not core voltage, not core
+dynamic power, not memory clock, not crossbar clock, not leakage, **and not cooling**. No mechanism
+is claimed and the list is now longer rather than shorter.
+
+⚠️ **This does not explain the thermal inversion**, which is a separate open question. The OC
+position is 5–7 °C cooler at every matched point while drawing ~35 W more, and at the two lowest
+points it is cooler with both fans stopped. Something is moving heat differently, or the extra
+power is being dissipated somewhere that is not the die. Neither is established here.
+
+**Provenance.** Mean power delta over these eight bins is **+35.5 W**, against the **34.1 W**
+measured from the sweep CSVs. Two different instruments — HWiNFO board power binned by clock
+against `nvidia-smi` per sweep point — agreeing to 1.4 W on a different derivation. The per-point
+figures match too: 855 MHz gives 131.9 / 164.6 W here against 130.3 / 164.3 W in the table above.
