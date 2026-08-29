@@ -1598,7 +1598,7 @@ the 5.6 result one level up, and the stronger form of it: not only is the effici
 *frequency* workload-dependent, so is the efficiency-optimal *hardware configuration*, and no
 setting of this knob is right for both workloads at once.
 
-##### The 2898 MHz ceiling is probably a voltage shortfall, not a cost of the repair
+##### The 2898 MHz ceiling is NOT a voltage shortfall - a second registered prediction, refuted
 
 The repaired curve tops out 50 MHz below the tuned card, and this was recorded as unexplained. The
 voltage telemetry gives a mundane candidate. **Both curve variants measure 0.895 V at every target
