@@ -1,0 +1,121 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260829145419
+Username: DESKTOP-B5NPFQJ\user
+RunAs User: DESKTOP-B5NPFQJ\user
+Configuration Name: 
+Machine: DESKTOP-B5NPFQJ (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+Process ID: 15856
+PSVersion: 5.1.26100.9168
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9168
+BuildVersion: 10.0.26100.9168
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+  [ok] compute capability: sm_86
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 3070 Ti
+  [ok] VRAM free: 7.4 GB
+  [ok] GPU is idle (6% used)
+
+Recording machine details...
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 1: membw
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 610.88)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload membw --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: SILENT BIOS as found, stock. VBIOS 94.04.5a.00.91.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Baseline utilisation 0.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 122.33 W [14 in-window of 20], 45.4 C, util 87.9%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 136.26 W [13 in-window of 21],  48 C, util 100%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 136.22 W [13 in-window of 20], 49.5 C, util 100%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  134.9 W [13 in-window of 20], 51.3 C, util 100%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 134.55 W [13 in-window of 21],  53 C, util 94.8%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held),    125 W [14 in-window of 20], 53.9 C, util 90.4%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 142.25 W [13 in-window of 21], 56.1 C, util 100%
+[SWEEP] --> locking 1605 MHz
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 139.77 W [14 in-window of 20], 57.6 C, util  93%
+[SWEEP] --> locking 1710 MHz
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 145.43 W [14 in-window of 20], 55.6 C, util 90.5%
+[SWEEP] --> locking 1815 MHz
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 163.72 W [13 in-window of 21], 55.1 C, util 99.5%
+[SWEEP] --> locking 1920 MHz
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 182.46 W [14 in-window of 20], 56.8 C, util 92.9%
+[SWEEP] --> locking 2025 MHz
+[SWEEP]      2025 MHz -> achieved 1946.8 MHz (UNDERSHOT -78.2),  191.5 W [14 in-window of 20], 56.9 C, util  97%
+[SWEEP] --> locking 2130 MHz
+[SWEEP]      2130 MHz -> achieved 1945.4 MHz (UNDERSHOT -184.6), 187.16 W [13 in-window of 21], 56.5 C, util 93.6%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: SILENT BIOS as found, stock. VBIOS 94.04.5a.00.91.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260829-145425_rtx3070ti-silent-membw-matched2130\20260829-145431_rtx3070ti-silent-membw-matched2130-membw_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260829-145425_rtx3070ti-silent-membw-matched2130\20260829-145431_rtx3070ti-silent-membw-matched2130-membw_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+=======================================================
+  Checking what was collected
+=======================================================
+  [ok] 20260829-145431_rtx3070ti-silent-membw-matched2130-membw_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] peak SM clock, membw: 1,947 MHz (provenance evidence)
+
+  COLLECTION SUCCEEDED
+
+  Results are in:
+    F:\headroom-kit\results\20260829-145425_rtx3070ti-silent-membw-matched2130
+
+  Copy that whole folder off this machine, then delete the kit.
+
+  GPU clocks have been reset to normal automatically.
+  Verify with:  nvidia-smi -q -d CLOCK
+
+**********************
+Windows PowerShell transcript end
+End time: 20260829145844
+**********************

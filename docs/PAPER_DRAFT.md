@@ -1110,6 +1110,43 @@ matched point while drawing more of it - at the two lowest points, with both fan
 heat is moving differently or the extra power is dissipated somewhere that is not the die. Neither
 is established here.
 
+##### 5.5.1.2 The offset is not constant - it scales with memory traffic
+
+Everything above measures the gap on `gemm`. The matched-frequency `membw` sweep that Session B
+planned and did not collect was run on 2026-08-29, and it changes the description.
+
+Across 13 shared targets from 855 to 2130 MHz the OC position draws **+56.3 W** for **+0.65%**
+bandwidth - the same shape as `gemm`'s trade and a different magnitude. Restricted to the identical
+855-1485 MHz band and the same seven points the `gemm` comparison uses:
+
+| workload | approximate memory traffic | offset, OC against SILENT |
+|---|---|---|
+| `gemm` | ~12 GB/s | **+34.1 W** |
+| `membw` | ~545 GB/s | **+57.0 W** |
+
+**Same card, same BIOS pair, same frequencies, same instrument, and a 67% larger offset on the
+workload moving 45 times more memory traffic.** A genuinely constant board-level draw cannot do
+that, so "a roughly constant 34 W" is the right description of the `gemm` case and the wrong
+description of the effect.
+
+**This points where the earlier exclusions did not reach.** 5.5.1.1 ruled out memory *clock*, which
+is identical at 9251 MHz in both positions - but a matching clock says nothing about the power the
+memory subsystem draws at that clock. A higher memory rail voltage, or a more permissive memory
+controller, would give exactly this signature: near-zero cost on a compute-bound workload and a
+large one on a bandwidth-bound one.
+
+⚠️ **That is a lead and not a finding, and it is offered with this section's own track record in
+view.** Two hypotheses about this gap have been registered and refuted here already. What is
+established is the measurement - the offset depends on the workload - and not any account of why.
+
+The sweep also reproduces 5.5.3's flatness result on the other BIOS: SILENT `membw` spans 544.1 to
+546.5 GB/s across 855-2130 MHz, 0.44% while core clock rises 149%, against 0.28% measured on the OC
+position. That behaviour is not a property of one BIOS.
+
+**n = 1 per side, four days apart**, both verified quiet and both HWiNFO-logged so the conditions
+match in the ways this project has previously been caught by. The magnitude is far outside any
+run-to-run spread measured here, which is the only reason a direction is reported at n = 1.
+
 #### 5.5.2 The measurement is tighter on this card than on the reference one
 
 The two `membw` sweeps taken on the OC BIOS agree to **+0.30%** on average across all thirteen

@@ -539,3 +539,44 @@ def fanBinnedOffset():
     shared = sorted(set(silent) & set(oc))
     gaps = [mean(r["power"] for r in oc[k]) - mean(r["power"] for r in silent[k]) for k in shared]
     return f"**+{mean(gaps):.1f} W**, against the **34.1 W**"
+
+
+# ---------------------------------------------------------------------------------------------
+# Session C, 2026-08-29: the SILENT membw matched-2130 sweep Session B planned and never
+# collected. It breaks the "roughly constant 34 W" description - the offset is 67% larger on the
+# bandwidth-bound workload, on the same band and the same points.
+
+SILENT_MEMBW = (ROOT + "hwinfo-silent-membw-20260829/"
+                "20260829-145431_rtx3070ti-silent-membw-matched2130-membw_sweep.csv")
+SILENT_MEMBW_README = ("data/frequency-sweeps/rtx3070ti-20260825/"
+                       "hwinfo-silent-membw-20260829/README.md")
+
+
+@claim("5.5.1.2-membw-trade", PAPER, "5.5.1.2")
+def membwTrade():
+    """What the OC position costs on the bandwidth-bound workload, across its whole band."""
+    silent, oc = sweep(SILENT_MEMBW), sweep(OC_MEMBW_V)
+    shared = sorted(set(silent) & set(oc))
+    power = mean(oc[t]["power"] - silent[t]["power"] for t in shared)
+    throughput = mean(100 * (oc[t]["throughput"] / silent[t]["throughput"] - 1) for t in shared)
+    return f"**+{power:.1f} W** for **+{throughput:.2f}%**"
+
+
+@claim("5.5.1.2-offset-scales-with-traffic", PAPER, "5.5.1.2")
+def offsetScalesWithTraffic():
+    """RAISES if the membw offset stops exceeding the gemm one on the shared band.
+
+    The sentence around this is that a constant board-level draw cannot produce a
+    workload-dependent offset. If the two ever come out equal, that argument is gone and the
+    paragraph needs rewriting rather than the number updating.
+    """
+    band = lambda a, b: [t for t in sorted(set(a) & set(b)) if 855 <= t <= 1485]
+    silentM, ocM = sweep(SILENT_MEMBW), sweep(OC_MEMBW_V)
+    silentG, ocG = sweep(SILENT_GEMM_V), sweep(OC_GEMM_V)
+    membwOffset = mean(ocM[t]["power"] - silentM[t]["power"] for t in band(silentM, ocM))
+    gemmOffset = mean(ocG[t]["power"] - silentG[t]["power"] for t in band(silentG, ocG))
+    if membwOffset <= gemmOffset:
+        raise ValueError(
+            f"the membw offset ({membwOffset:.1f} W) no longer exceeds the gemm one "
+            f"({gemmOffset:.1f} W) - 5.5.1.2's argument does not hold")
+    return f"**+{gemmOffset:.1f} W** |\n| `membw` | ~545 GB/s | **+{membwOffset:.1f} W**"
