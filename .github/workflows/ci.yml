@@ -38,6 +38,11 @@ name: CI
 on:
   push:
   pull_request:
+  # Lets a run be started from the Actions tab without inventing a commit. Useful mainly for the
+  # reference job below: it is the one that depends on an upstream repository, so re-running it
+  # unchanged is a real diagnostic - a red that goes green on retry was the network, a red that
+  # stays red is the dataset having moved.
+  workflow_dispatch:
 
 permissions:
   contents: read
