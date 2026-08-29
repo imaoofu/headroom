@@ -507,6 +507,12 @@ at the lowest frequency and optimal frequency — but insufficient to beat the c
 
 **This null is reported as the result.** The analysis script emits this verdict about its own output.
 
+⚠️ **It is the *unconstrained* null, and that is the version of the question almost nobody asks.**
+Under a performance floor the ranking inverts and probing becomes worth its cost by a wide margin
+(§5.6.2). Both halves are reported, and of the two it is *this* measurement that misleads, because
+a performance guarantee is what essentially every real deployment has. Do not read this table
+without §5.6.1 and §5.6.2.
+
 ### 5.3 Probe-based curve reconstruction
 
 While probe measurements do not improve frequency *selection*, they do reconstruct the full curve
@@ -1239,6 +1245,59 @@ The optimiser brute-forces the feasible set rather than using the closed form
 agree on all 33 V100 workloads. They disagree on the consumer sweeps, but only by 1–5 MHz, and the
 tool identifies why: the card clamped several high targets onto one achieved clock, so those are
 repeat measurements of one condition rather than distinct grid points.
+
+#### 5.6.2 Probing captures most of it - and the fitting earns none of it
+
+§5.6.1 measured the *oracle* gap: what perfect knowledge of each workload's curve would be worth.
+That is an upper bound, and it is not available to anyone who has to discover the curve first. This
+section asks the usable question - whether a strategy that must **learn** each workload from a few
+measurements captures the gap - and answers it with two results that have to be reported together.
+
+Leave-one-workload-out over the same 33 workloads, four probes at **757, 885, 1012 and 1530 MHz**,
+at a 95% floor. Run `python analysis/models/predict_constrained_frequency.py`.
+
+| Strategy | Mean efficiency gain | Floor violations | Exact match |
+|---|---|---|---|
+| stock (do nothing) | 0.0% | 0 | 0.0% |
+| best fixed frequency | 4.9% | 0 | 6.1% |
+| **interpolation between the four probes, no fit** | **25.4%** | **0** | 33.3% |
+| probe model (Ridge) | 28.1% | **8 of 33** — disqualified | 39.4% |
+| probe model (Ridge, calibrated to respect the floor) | 19.6% | 0 | 15.2% |
+| oracle (upper bound) | 28.5% | 0 | 100.0% |
+
+**Efficiency taken below the floor is not efficiency the constraint permits**, so a strategy that
+breaks it is disqualified rather than ranked. The giveaway is *negative regret* against the
+oracle, which is arithmetically impossible for a strategy that stayed feasible; Ridge produces
+exactly that at a 90% floor. The tool disqualifies rather than reporting a winner.
+
+**First result: probing is worth its cost.** Straight-line interpolation between the four probes
+reaches **25.4% against the fixed policy's 4.9%**, breaking the floor on no workload - **87% of the
+gap** §5.6.1 identified between a fixed policy and the oracle. It holds at the other floors too:
+94% of the gap at 90%, 91% at 85%.
+
+**Second result: the fitting is not the part earning it.** Ridge appears to beat interpolation at
+28.1%, but only by violating the floor on 8 of 33 workloads, worst by 3.81 points. Made to respect
+the floor, it falls to **19.6% - below the 25.4% of drawing straight lines between the same four
+probes.** No fitted variant beats plain interpolation on this data. The honest summary is *measure
+a few points, interpolate, and attach a performance guarantee* - not *fit a model*.
+
+**Why interpolation is the safe one is measured rather than assumed, and it is a property of the
+curve rather than of the method.** Performance here is predominantly concave - **64.1%** of second
+differences curve downward - so a straight line between two probes sits below the true curve.
+Interpolated performance is an under-estimate **88%** of the time, by a mean of 0.90 points, which
+biases every frequency choice upward. Under a floor, an upward bias is free safety.
+
+⚠️ **On a convex performance curve the sign flips and interpolation would violate the floor more
+often than the fitted model, not less.** "Interpolate the probes" is therefore a consequence of
+this dataset's curve shape and must not be carried away as a general recommendation. The diagnostic
+prints on every run so the condition travels with the result.
+
+The fixed baseline is not automatically the safe choice either: at a 90% floor it breaks the floor
+on 1 of 33 workloads, because the frequency that satisfies 32 workloads does not satisfy the 33rd.
+
+**Caveat.** 33 workloads on one V100, every number in-dataset. This says nothing about consumer
+silicon until it is retested there, and the collected consumer data does not yet carry enough
+workloads for a leave-one-workload-out design (§6).
 
 ### 5.7 Separating the two tuning knobs - DRAFT, 2026-08-20
 

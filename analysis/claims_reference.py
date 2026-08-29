@@ -1,47 +1,122 @@
-"""Claims for paper section 5.1 (and two 5.2 mechanism numbers) over the public V100 set.
+"""Claims over the public V100 set - sections 5.1, 5.2, 5.3, 5.6, 5.6.1 and 5.6.2.
 
 This module is separate from claims_consumer.py and claims_crosschip.py on purpose: those hold
-claims over the consumer sweep CSVs this project collected, whereas section 5.1 is about the
+claims over the consumer sweep CSVs this project collected, whereas these sections are about the
 public V100 dataset (33 workloads by 13 frequencies) published by others and never pooled with the
 consumer data. A shared constant is how a claim silently reads the wrong hardware, so each dataset
 keeps its own module.
 
-The summary is built once at module level; the audit calls every claim in one run, so reloading per
-claim is wasted work.
+WHAT IS PINNED HERE, AND WHAT IS NOT
+    5.1        the headroom gap, in full.
+    5.2        the two numbers in its prose that come from the workload summary. NOT its regret
+               table - those come from a leave-one-out Ridge fit and are 5.6.2's business.
+    5.3        the probe-count table: selected frequencies, curve MAE, measurement reduction.
+    5.6/5.6.1  the 95% floor rows. These are ORACLE numbers - measurements of an upper bound with
+               the whole curve in hand, computed by analyze_constrained.py.
+    5.6.2      the leave-one-workload-out strategy comparison, which is a PREDICTION and comes
+               from analysis/models/. Both halves are pinned deliberately: the one saying probing
+               wins, and the one saying the fitting is not what wins. A future edit that quietly
+               dropped the second half would leave the first reading as a model success.
 
-Deliberately NOT covered here: section 5.2's regret table (44.396%, 0.837%, 0.883% and the match
-rates). Those come from a leave-one-out Ridge fit, not from this summary, and putting a model fit
-inside the audit is a decision not made here.
+    Sections 5.4, 5.5 and 5.7 are consumer measurements and belong to the other two modules.
+
+COST
+    Importing this module runs the constrained leave-one-out fit and the greedy probe selection,
+    which together add a couple of seconds to the audit. That is the price of pinning results that
+    are computed rather than read, and it is paid once per run rather than once per claim.
 
 WHY THIS MODULE CAN REGISTER NOTHING
     Every claim here needs data/raw/, which is gitignored and fetched by scripts/Get-Dataset.ps1.
     An unguarded load raises FileNotFoundError at import and takes the WHOLE audit down with it -
-    all 129 claims, not just these 8 - because the audit imports its claims modules eagerly. So a
+    every claim, not just these - because the audit imports its claims modules eagerly. So a
     missing dataset registers nothing and says so, matching what
     models/test_predict_constrained_frequency.py already does for the same data.
 
     THE SKIP IS NOT A PASS. A green audit on a machine that never fetched the dataset has not
-    checked section 5.1 at all. CI is such a machine today, so the reference half of this project
-    is exactly the half CI does not cover. Read the notice, not the tick.
+    checked any of these sections. The CI job named "V100 reference claims" exists to be the
+    machine that does fetch it; the other job is the one that skips.
 """
 
-from audit_claims import claim
+import contextlib
+import io
+import sys
+
+from audit_claims import claim, REPO_ROOT
 from load_data import loadDataset, REFERENCE_FREQUENCY_MHZ
 from characterize import buildWorkloadSummary
 
+# analysis/models is not on the path just because analysis/ is. The model files each add it for
+# themselves when run as scripts; this module is imported, so it has to do the same.
+sys.path.insert(0, str(REPO_ROOT / "analysis" / "models"))
+
 PAPER = "docs/PAPER_DRAFT.md"
 
-try:
-    # validate=False: the published efficiency matrix re-check is a startup cost the audit does
-    # not need.
-    SUMMARY = buildWorkloadSummary(loadDataset(validate=False))
-except FileNotFoundError:
-    SUMMARY = None
+FLOOR = 0.95
 
-if SUMMARY is None:
+
+def _load():
+    """Everything the claims below read, computed once. Returns None if the dataset is absent."""
+    try:
+        dataset = loadDataset(validate=False)
+    except FileNotFoundError:
+        return None
+
+    import numpy as np
+
+    import analyze_constrained as constrained
+    import curve_model
+    import predict_constrained_frequency as predictor
+
+    curves = constrained.loadV100Curves()
+
+    # reportFixedVersusPerWorkload prints its table as a side effect. The audit's output is a list
+    # of claim verdicts and nothing else, so the print is swallowed rather than allowed to
+    # interleave with them.
+    with contextlib.redirect_stdout(io.StringIO()):
+        floorRows, _ = constrained.analyseCurves(curves, [FLOOR])
+        fixedRows = constrained.reportFixedVersusPerWorkload(curves, [FLOOR])
+
+    probeFrequencies, probeCurves, _ = curve_model.loadUnitsFromPublicDataset()
+    topIndex = int(np.argmax(probeFrequencies))
+    probeTable = {}
+    for count in (3, 4, 5):
+        with contextlib.redirect_stdout(io.StringIO()):
+            indices, error = curve_model.selectProbeFrequencies(
+                probeFrequencies, probeCurves, count, alwaysInclude=[topIndex])
+        probeTable[count] = {
+            "mhz": sorted(int(probeFrequencies[i]) for i in indices),
+            "mae": error,
+            "reduction": round(100 * (len(probeFrequencies) - count) / len(probeFrequencies)),
+        }
+
+    performance = dataset.pivot(index="workload", columns="frequency_mhz",
+                                values="performance_normalised")
+    frequencies = np.array(sorted(performance.columns))
+    with contextlib.redirect_stdout(io.StringIO()):
+        looScores = predictor.runLeaveOneWorkloadOut(dataset, FLOOR)["scores"]
+        bias = predictor.measureInterpolationBias(
+            performance, frequencies, predictor.DEFAULT_PROBE_FREQUENCIES_MHZ)
+
+    return {
+        "summary": buildWorkloadSummary(dataset),
+        "floorRow": floorRows[0],
+        "fixedRow": fixedRows[0],
+        "probes": probeTable,
+        "scores": looScores,
+        "bias": bias,
+    }
+
+
+DATA = _load()
+
+if DATA is None:
     print("  [SKIP] claims_reference: the public V100 dataset is not downloaded - run "
-          "scripts/Get-Dataset.ps1. Section 5.1 is NOT audited in this run.")
+          "scripts/Get-Dataset.ps1. Sections 5.1, 5.2, 5.3, 5.6, 5.6.1 and 5.6.2 are NOT audited "
+          "in this run.")
 else:
+    SUMMARY = DATA["summary"]
+
+    # ---------------------------------------------------------------- 5.1
 
     @claim("5.1-workload-count", PAPER, "5.1")
     def workloadCount():
@@ -71,6 +146,8 @@ else:
     def powerSaved():
         return f"saving a mean {SUMMARY['power_saved_pct'].mean():.1f}% power"
 
+    # ---------------------------------------------------------------- 5.2
+
     @claim("5.2-modal-frequency", PAPER, "5.2")
     def modalFrequency():
         counts = SUMMARY["optimal_frequency_mhz"].value_counts()
@@ -88,3 +165,109 @@ else:
         # The bare figure appears twice - here and again in 5.4.1's discussion - so the anchor
         # carries the words that distinguish this occurrence from that one.
         return f"correlation {sign}{abs(correlation):.3f} between performance retained"
+
+    # ---------------------------------------------------------------- 5.3
+
+    def _probeRow(count):
+        row = DATA["probes"][count]
+        return (f"| {count} | {', '.join(str(m) for m in row['mhz'])} | "
+                f"{row['mae']:.4f} | {row['reduction']}% |")
+
+    @claim("5.3-three-probes", PAPER, "5.3")
+    def threeProbes():
+        return _probeRow(3)
+
+    @claim("5.3-four-probes", PAPER, "5.3")
+    def fourProbes():
+        return _probeRow(4)
+
+    @claim("5.3-five-probes", PAPER, "5.3")
+    def fiveProbes():
+        # The paper writes this row's frequencies as "+ 952" rather than listing them again, so
+        # only the two computed columns are pinned.
+        row = DATA["probes"][5]
+        return f"{row['mae']:.4f} | {row['reduction']}%"
+
+    # ---------------------------------------------------------------- 5.6
+
+    @claim("5.6-floor-row", PAPER, "5.6")
+    def floorRow():
+        row = DATA["floorRow"]
+        return (f"| {row['floor']:.0%} | {row['moved']}/{row['n']} | "
+                f"**{row['gain_mean']:.1f}% / {row['gain_median']:.1f}%** | "
+                f"{row['loss_mean']:.1f}% / {row['loss_max']:.1f}% | "
+                f"{row['power_saved_mean']:.1f}% | {row['freq_median']:.0f} MHz |")
+
+    # ---------------------------------------------------------------- 5.6.1
+
+    @claim("5.6.1-fixed-versus-per-workload", PAPER, "5.6.1")
+    def fixedVersusPerWorkload():
+        row = DATA["fixedRow"]
+        return (f"| {row['floor']:.0%} | {row['per_workload_pct']:.1f}% | "
+                f"**{row['fixed_pct']:.1f}%** | {row['fixed_mhz']:.0f} MHz | "
+                f"**{row['gap_pp']:.1f} pp** | **{row['share_pct']:.0f}%** |")
+
+    # ---------------------------------------------------------------- 5.6.2
+
+    def _score(strategy, column):
+        return DATA["scores"].loc[strategy, column]
+
+    @claim("5.6.2-interpolation-row", PAPER, "5.6.2")
+    def interpolationRow():
+        return (f"| **interpolation between the four probes, no fit** | "
+                f"**{_score('interpolation (no fit)', 'mean_gain_pct'):.1f}%** | "
+                f"**{_score('interpolation (no fit)', 'floor_violations'):.0f}** | "
+                f"{100 * _score('interpolation (no fit)', 'exact_match_rate'):.1f}% |")
+
+    @claim("5.6.2-probing-beats-fixed", PAPER, "5.6.2")
+    def probingBeatsFixed():
+        return (f"{_score('interpolation (no fit)', 'mean_gain_pct'):.1f}% against the fixed "
+                f"policy's {_score('best fixed frequency', 'mean_gain_pct'):.1f}%")
+
+    @claim("5.6.2-share-of-gap", PAPER, "5.6.2")
+    def shareOfGap():
+        interpolation = _score("interpolation (no fit)", "mean_gain_pct")
+        fixed = _score("best fixed frequency", "mean_gain_pct")
+        oracle = _score("oracle (upper bound)", "mean_gain_pct")
+        return f"{100 * (interpolation - fixed) / (oracle - fixed):.0f}% of the gap"
+
+    @claim("5.6.2-ridge-breaks-the-floor", PAPER, "5.6.2")
+    def ridgeBreaksTheFloor():
+        """RAISES if Ridge ever stops violating the floor.
+
+        The sentence around this number says Ridge only appears to win by breaking the floor. If
+        it ever keeps the floor, that sentence is wrong regardless of what the number renders to,
+        and the paper needs rewriting rather than the claim updating.
+        """
+        violations = _score("probe model (ridge)", "floor_violations")
+        if violations <= 0:
+            raise ValueError("Ridge no longer breaks the floor - 5.6.2's argument does not hold")
+        return (f"violating the floor on {violations:.0f} of {len(SUMMARY)} workloads, worst by "
+                f"{_score('probe model (ridge)', 'worst_violation_pp'):.2f} points")
+
+    @claim("5.6.2-calibrated-loses-to-interpolation", PAPER, "5.6.2")
+    def calibratedLosesToInterpolation():
+        """RAISES if the calibrated fit ever beats plain interpolation.
+
+        This is the half of 5.6.2 that says the FITTING earns nothing. A fitted variant that
+        overtakes interpolation would invert the section's conclusion, so it must fail loudly
+        rather than quietly render a new pair of numbers.
+        """
+        calibrated = _score("probe model (calibrated)", "mean_gain_pct")
+        interpolation = _score("interpolation (no fit)", "mean_gain_pct")
+        if calibrated >= interpolation:
+            raise ValueError(
+                f"the calibrated fit now beats interpolation, {calibrated:.1f}% against "
+                f"{interpolation:.1f}% - 5.6.2 says the opposite")
+        return f"{calibrated:.1f}% - below the {interpolation:.1f}%"
+
+    @claim("5.6.2-concavity", PAPER, "5.6.2")
+    def concavity():
+        return f"{100 * DATA['bias']['concave_share']:.1f}% of second differences curve downward"
+
+    @claim("5.6.2-underestimate", PAPER, "5.6.2")
+    def underestimate():
+        # mean_error_pp is already expressed in percentage points by the diagnostic, so it is NOT
+        # scaled again here. The share beside it is a fraction and is.
+        return (f"under-estimate {100 * DATA['bias']['under_estimate_share']:.0f}% of the time, "
+                f"by a mean of {abs(DATA['bias']['mean_error_pp']):.2f} points")

@@ -472,11 +472,11 @@ def gapIsAnOffset():
 # unprotected until these existed. The render functions are reused rather than reimplemented: two
 # formulas for one number is how the two documents would drift apart while both looked audited.
 
-@claim("5.5.1-paper-gap-is-an-offset", PAPER, "5.5.1")
+@claim("5.5.1-paper-gap-is-an-offset", PAPER, "5.5.1.1")
 def paperGapIsAnOffset():
     return gapIsAnOffset()
 
 
-@claim("5.5.1-paper-additive-beats-ratio", PAPER, "5.5.1")
+@claim("5.5.1-paper-additive-beats-ratio", PAPER, "5.5.1.1")
 def paperAdditiveBeatsRatio():
     return additiveBeatsRatio()
