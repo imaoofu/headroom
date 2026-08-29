@@ -32,17 +32,15 @@ comparison that leans on sub-percent differences between them should not be made
 > clean memory-only `gemm` run is on the 1237–3090 grid and the clean stock `gemm` run is on the
 > 465–3090 floor15 grid, which share only their top point.*
 
-This is that missing sweep. Against the clean memory-only runs of 2026-08-22 on all 13 shared
-targets, **`gemm` is 1.50% SLOWER with the memory overclock** (range −0.52% to −3.39%, negative at
-every point). So the ±1% claim fails — not "nothing", a small consistent loss.
+This is that missing sweep.
 
-Achieved clocks differ by +1.2 MHz mean and power by −0.6 W, so it is **not** the memory overclock
-stealing power budget under the 180 W cap, and not lower achieved clocks. Same clock, same power,
-less work done.
-
-⚠️ **n = 1 stock against n = 2 memory-only, seven days apart.** Between-run spread on `gemm` in this
-project is ~0.76%, so −1.50% is about twice that — suggestive, not settled. **A memory-only `gemm`
-sweep in the same session as a stock one would close it properly**, and that is one sweep.
+⛔ **The result first written here has been RETRACTED the same day.** Against the clean memory-only
+runs of 2026-08-22 this sweep gave −1.50%, negative at all 13 targets, and that was written up as
+the ±1% claim failing. **It does not fail.** A memory-only sweep collected ninety minutes later in
+this same session gives **−0.05%**, and the identical configuration measured today against
+2026-08-22 differs by **+1.47%** — cross-session drift that accounts for the whole apparent effect.
+See `../memonly-gemm-20260829/README.md`. The original claim stands and the open item is closed in
+the direction it was written.
 
 ## What the suite shows
 
@@ -70,8 +68,12 @@ That is §5.6.1's mechanism — a fixed policy is pinned by the most frequency-s
 might meet — appearing on consumer silicon across a controlled axis rather than inferred from the
 V100's −0.666 correlation.
 
-**Ten of twelve optima land at 1537 MHz.** Unconstrained, one frequency serves nearly everything
-here, which is the consumer analogue of the V100's 952 MHz serving 24 of 33.
+**Ten of twelve optima land at 1537 MHz** on this grid. ⚠️ At 155 MHz spacing that is partly a
+resolution artifact: re-swept at 51 MHz spacing the optima separate into five distinct values
+(`../dense-grid-20260829/`). What survives the finer grid is the conclusion rather than the
+positions — running everything at one frequency costs a mean 1.94%, because the curves are flat near
+their peaks. That is the consumer analogue of the V100's 952 MHz serving 24 of 33, and it should be
+cited from the dense grid rather than from this table.
 
 ## 🛑 What CANNOT be computed from these sweeps, and why
 

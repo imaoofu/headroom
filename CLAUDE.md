@@ -565,8 +565,18 @@ disagrees with the data directory, the data directory is right.*
   single-session result into a replicated one, which is worth more than the correction that
   prompted the run.
 
-  **Still unresolved:** "`gemm` gets nothing measurable from the memory overclock, plus or minus
-  1%" cannot be checked clean. The clean memory-only `gemm` run is on the 1237-3090 grid and the
+  ✅ **RESOLVED 2026-08-29, and the claim STANDS.** Measured same-session, stock against
+  memory-only on the 1237-3090 grid, `gemm` differs by **-0.05%** - comfortably inside the plus or
+  minus 1%. A first attempt the same morning compared today's stock against 2026-08-22's
+  memory-only and got -1.50%, which was written up as the claim failing and retracted hours later:
+  the identical configuration measured today against 2026-08-22 differs by **+1.47%**, so that was
+  cross-session drift and not an effect. 🔑 **THAT DRIFT FIGURE IS THE THING TO REMEMBER - ~1.47%
+  on `gemm` across sessions on one unchanged configuration, against the ~0.76% this project cites
+  for within-session spread.** Any comparison here drawn from different days carries an offset of
+  that order. See `data/frequency-sweeps/memonly-gemm-20260829/README.md`.
+
+  The original statement of the problem, kept because the reasoning was right: "`gemm` gets nothing
+  measurable from the memory overclock, plus or minus 1%" could not be checked clean. The clean memory-only `gemm` run is on the 1237-3090 grid and the
   clean stock `gemm` run is on the 465-3090 floor15 grid, which share only their top point. One
   clean stock `gemm` sweep on the 1237-3090 grid would close it.
 - ✅ **"Neither configuration dominates" was tested and SURVIVES.** This entry previously said it

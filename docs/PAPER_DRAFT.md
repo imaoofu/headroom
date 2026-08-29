@@ -2060,7 +2060,16 @@ this is unexplained and recorded rather than trimmed.
    issue-limited below roughly 2000 MHz on this device, and no constructible kernel saturates DRAM
    there (3.3.1). Consumer results that depend on a workload being bandwidth-limited hold only near
    the top of the range.
-8. **Tuning configurations were not measured contemporaneously.** The stock, fully tuned and
+8. **Same-configuration measurements drift across sessions by more than the effects several
+   comparisons here report.** Measured directly on 2026-08-29: an unchanged memory-overclocked
+   configuration read **1.47%** faster on `gemm` than the same configuration seven days earlier.
+   Within-session run-to-run spread on the same workload is ~0.76%, so a cross-day comparison
+   carries roughly twice the noise of a same-day one. This is not hypothetical - a same-day
+   stock-versus-memory-overclock comparison gives -0.05% where the cross-day version of the same
+   comparison gave -1.50%, and the difference is the drift. Any figure in this paper drawn from
+   runs on different days should be read against that bar, and sign consistency across grid points
+   does not rule it out, because a constant session offset produces exactly that signature.
+9. **Tuning configurations were not measured contemporaneously.** The stock, fully tuned and
    memory-only sweeps of 5.7 are separated by hours to a day, because switching between them
    requires a manual change that cannot be scripted (5.7.7).
 
