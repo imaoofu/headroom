@@ -150,23 +150,26 @@ SYNC_EVERY_ITERATIONS = 5
 #     offset is invisible to it, which is 5.7.6's "a memory overclock is invisible to a
 #     core-clock check" in a new place.
 #
-#     All thirteen ran. No allocation failure, and conv and attention both work on Blackwell.
-#     Implied throughput against 521.6 GB/s and the card's 15.71-18.24 TFLOP/s fp32 range:
+#     All thirteen ran, including the two since retired. No allocation failure, and conv and
+#     attention both work on Blackwell. Implied throughput against 521.6 GB/s and the card's
+#     15.71-18.24 TFLOP/s fp32 range:
 #
 #       bandwidth-bound, 74-86% of bus   reduce, bgemm128, copy, softmax, bgemm32, bgemm64
 #       compute-bound                     bgemm256, bgemm1024, conv, attention
-#       NEITHER - see below               bgemm8, bgemm16, layernorm
+#       NEITHER                           bgemm8, bgemm16 (retired, see LADDER_SIZES), layernorm
 #
-#     ⚠️ THE BOTTOM OF THE LADDER DOES NOT MEASURE THE AXIS. bgemm8 reached 32.8 GB/s, 7% of
-#     the bus, and 0.04 TFLOP/s - so it is bound by batched-matmul launch and occupancy
-#     overhead, not by bandwidth and not by arithmetic. bgemm16 is the same at 22%. Their
-#     declared intensities of 1.3 and 2.7 predict nothing about them, which is exactly the
-#     3.3.1 failure repeating: a declared intensity is not a binding constraint. Replacing
-#     them, or dropping them and letting membw and the operator family cover that end, is an
-#     open decision and needs a measurement either way.
+#     THE BOTTOM OF THE LADDER DID NOT MEASURE THE AXIS, which is why it is no longer in it.
+#     bgemm8 reached 32.8 GB/s - 6% of the bus - and 0.04 TFLOP/s, so it was bound by
+#     batched-matmul launch and occupancy overhead rather than by bandwidth or by arithmetic.
+#     bgemm16 the same at 19%. That is 3.3.1 repeating: a declared intensity is not a binding
+#     constraint. Retired rather than replaced - copy, membw, reduce and softmax already cover
+#     that end of the axis with workloads that are genuinely on it.
 #
-#     What DOES work is the knee: bgemm128 sits at 92% of the bus and bgemm256 at 48%, so the
+#     What DOES work is the knee: bgemm128 sits at 79% of the bus and bgemm256 at 42%, so the
 #     ladder crosses the roofline between them. That transition is the part worth having.
+#
+#     layernorm at 47% sits between the two groups and is undiagnosed. It is kept because it is
+#     a real operator at a real intensity, not because anyone knows what bounds it.
 #
 #     ✅ RESOLVED: reduce read 448.4 GB/s, which was 100.1% of 448 and looked like a defect in
 #     the byte accounting. It is 86% of the tuned card's actual 521.6 GB/s and entirely
@@ -187,8 +190,19 @@ SYNC_EVERY_ITERATIONS = 5
 SUITE_TARGET_BYTES = 1.2e9
 
 # Inner matrix sizes for the ladder. fp32 intensity is N/6 FLOP/byte, so this spans roughly
-# 1.3 to 171 and meets gemm's ~1365 at the top and membw's 0.167 at the bottom.
-LADDER_SIZES = (8, 16, 32, 64, 128, 256, 1024)
+# 5 to 171 and meets gemm's ~1365 at the top; copy, membw, reduce and softmax cover the bottom.
+#
+# 8 AND 16 WERE MEASURED AND RETIRED, 2026-08-28. They ran fine and are not broken - they just do
+# not measure the axis. At stock they reached 6% and 19% of the memory bus with negligible FLOP/s,
+# so both are bound by batched-matmul launch and occupancy overhead rather than by bandwidth or by
+# arithmetic, and their declared intensities of 1.3 and 2.7 predict nothing about them. Collecting
+# them would spend sweep time on two points that sit off the axis and then need a paragraph in the
+# paper explaining why they are there.
+#
+# To restore them, put 8 and 16 back in this tuple. Nothing else needs changing: buildSuiteWorkload
+# parses the size out of the name, so any bgemmN works. Their stock iteration counts are recorded
+# in SUITE-ITERATIONS.md if they are ever wanted - 238 and 664.
+LADDER_SIZES = (32, 64, 128, 256, 1024)
 
 
 def suiteWorkloadNames():
@@ -459,7 +473,8 @@ def describeSuite(elementBytes=4):
         f"    {'gemm':<12} {'existing':<9} {1365.0:>10.1f}  matrix dimension",
         "",
         "[WORKLOAD] gemm and membw are unchanged and remain comparable with every sweep already",
-        "[WORKLOAD] committed. The suite entries have never been run - calibrate and validate first.",
+        "[WORKLOAD] committed. The suite ran and was calibrated at stock on 2026-08-28 - counts and",
+        "[WORKLOAD] conditions are in SUITE-ITERATIONS.md. No suite sweep has been collected yet.",
     ]
     return lines
 

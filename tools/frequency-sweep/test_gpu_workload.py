@@ -61,7 +61,10 @@ def check(description, condition):
 
 names = workload.suiteWorkloadNames()
 
-check("the suite has 13 entries", len(names) == 13)
+# 11 since bgemm8 and bgemm16 were retired on 2026-08-28 for measuring launch overhead rather
+# than arithmetic intensity. With gemm and membw that is 13 workloads, inside the 12-16 the V100
+# subsampling put the constrained result's stability at.
+check("the suite has 11 entries", len(names) == 11)
 check("no duplicate workload names", len(names) == len(set(names)))
 check("gemm and membw are NOT in the suite - they are untouched",
       "gemm" not in names and "membw" not in names)

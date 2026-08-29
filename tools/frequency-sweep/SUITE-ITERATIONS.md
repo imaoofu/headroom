@@ -37,8 +37,6 @@ stock from tuned. Do not skip it.
 
 | workload | ms/iteration | `--iterations` |
 |---|---|---|
-| bgemm8 | 37.884 | 238 |
-| bgemm16 | 13.557 | 664 |
 | bgemm32 | 3.367 | 2673 |
 | bgemm64 | 3.383 | 2661 |
 | bgemm128 | 3.649 | 2467 |
@@ -74,13 +72,30 @@ settings is a number nobody can check.**
 
 ---
 
+## Retired: `bgemm8` and `bgemm16`
+
+Both were calibrated in this session and then removed from `LADDER_SIZES` the same day. They ran
+correctly and are not broken — they measure the wrong thing. At stock they reached **6% and 19% of
+the memory bus** with negligible FLOP/s, so both are bound by batched-matmul launch and occupancy
+overhead rather than by bandwidth or by arithmetic, and their declared intensities of 1.3 and 2.7
+predict nothing about them.
+
+Kept out because collecting them costs sweep time on two points that sit off the axis and then
+costs a paragraph in the paper explaining why they are there. The low end is already covered by
+workloads that are genuinely on the axis: `copy` at 0, `membw` at 0.167, `reduce` at 0.25 and
+`softmax` at 0.625.
+
+**To restore them:** put `8` and `16` back into `LADDER_SIZES` in `gpu_workload.py`. Nothing else
+changes — `buildSuiteWorkload` parses the size out of the name, so any `bgemmN` works. Their stock
+counts, should they be wanted:
+
+| workload | ms/iteration | `--iterations` |
+|---|---|---|
+| bgemm8 | 37.884 | 238 |
+| bgemm16 | 13.557 | 664 |
+
 ## Still open
 
-`bgemm8` and `bgemm16` are calibrated here but should probably not be collected. First execution
-measured them at 6% and 19% of the memory bus with negligible FLOP/s, so they are bound by batched
-matmul launch and occupancy overhead rather than sitting on the arithmetic-intensity axis at all.
-Their declared intensities of 1.3 and 2.7 predict nothing about them. Replacing them, or dropping
-them and letting `membw` and the operator family cover that end of the axis, is an open decision.
-
 `layernorm` sits at 47% of the bus, between the bandwidth-bound and compute-bound groups, and has
-not been diagnosed either way.
+not been diagnosed either way. It is kept because it is a real operator at a real intensity, not
+because anyone knows what bounds it.
