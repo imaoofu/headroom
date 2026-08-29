@@ -138,10 +138,22 @@ SYNC_EVERY_ITERATIONS = 5
 #     full clock, then pass the printed count explicitly and never vary it within a sweep.
 #
 # FIRST EXECUTION, 2026-08-28, RTX 5060 Ti, ~8% baseline load - PROVISIONAL
-#     All thirteen ran. No allocation failure, and conv and attention both work on Blackwell.
-#     Implied throughput against the card's 448 GB/s and its 15.71-18.24 TFLOP/s fp32 range:
 #
-#       bandwidth-bound, 87-92% of bus   bgemm32, bgemm64, bgemm128, copy, softmax
+#     APPLIED SETTINGS: the card was TUNED, not stock - memory +2500 and the core V/F curve
+#     pinned flat near 3000 MHz above ~925 mV. Recorded here because the first version of this
+#     block did not, and got the denominator wrong as a direct result.
+#
+#     ⚠️ 448 GB/s IS THE WRONG DENOMINATOR FOR THIS CARD AS CONFIGURED. That figure is the
+#     14001 MHz rating. Under load the tuned card runs 16301 MHz (5.7.1), so its actual
+#     ceiling is 448 * 16301/14001 = 521.6 GB/s; stock under load is 13801 MHz, i.e. 441.6.
+#     nvidia-smi is no help - clocks.max.memory still reports 14001, because an Afterburner
+#     offset is invisible to it, which is 5.7.6's "a memory overclock is invisible to a
+#     core-clock check" in a new place.
+#
+#     All thirteen ran. No allocation failure, and conv and attention both work on Blackwell.
+#     Implied throughput against 521.6 GB/s and the card's 15.71-18.24 TFLOP/s fp32 range:
+#
+#       bandwidth-bound, 74-86% of bus   reduce, bgemm128, copy, softmax, bgemm32, bgemm64
 #       compute-bound                     bgemm256, bgemm1024, conv, attention
 #       NEITHER - see below               bgemm8, bgemm16, layernorm
 #
@@ -156,12 +168,19 @@ SYNC_EVERY_ITERATIONS = 5
 #     What DOES work is the knee: bgemm128 sits at 92% of the bus and bgemm256 at 48%, so the
 #     ladder crosses the roofline between them. That transition is the part worth having.
 #
-#     ⚠️ reduce reported 448.4 GB/s against a 448 GB/s spec - 100.1%. At or above the
-#     theoretical bus is not a good result, it is a sign the byte accounting or the spec
-#     figure is wrong. Check before quoting it.
+#     ✅ RESOLVED: reduce read 448.4 GB/s, which was 100.1% of 448 and looked like a defect in
+#     the byte accounting. It is 86% of the tuned card's actual 521.6 GB/s and entirely
+#     ordinary. The measurement was right and the denominator was wrong - which is why the
+#     applied settings are now recorded at the top of this block rather than assumed.
 #
-#     Counts from that session are PROVISIONAL: the protocol wants a verified-quiet machine
-#     under ~5% and this was 8%. Recalibrate before collecting anything.
+#     ⚠️ THE PAIRED CROSS-CHIP RUN NEEDS THIS CARD AT STOCK. The 3070 Ti is a customer machine
+#     and is measured stock only, so a tuned 5060 Ti against a stock 3070 Ti compares two
+#     tunings as much as two architectures. Collect the shared suite at STOCK on this card -
+#     tuned as well if there is time, but stock is the leg that pairs.
+#
+#     Counts from that session are PROVISIONAL twice over: the protocol wants a verified-quiet
+#     machine under ~5% and this was 8%, and they were taken on the tuned profile rather than
+#     the stock one they will be used against. Recalibrate before collecting anything.
 # =====================================================================================
 
 # Tensors per workload, in bytes. Sized for the smaller of the two cards, not the larger.
