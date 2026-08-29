@@ -35,6 +35,44 @@ So the honest summary is *measure a few points, interpolate, and attach a perfor
 not *fit a model*. That conclusion is only visible because the baselines were built to embarrass
 the models rather than to flatter them, which is the rule these files are held to.
 
+## What these models actually are, and the weakness in how they are built
+
+Worth stating plainly, because "model" oversells them. Every file here fits **`Ridge(alpha=1.0)`** —
+ordinary least squares with an L2 penalty. No trees, no ensembles, nothing deep. The fitted object
+has `coef_` of shape `(13, 8)`, which means it is **13 independent linear equations**, one per
+frequency in the sweep, each predicting efficiency there as a weighted sum of the same 8 features:
+performance at 4 probe frequencies, and power at those same 4 expressed as a ratio against stock.
+
+**117 learned parameters against 32 training rows** in each leave-one-out fold. More parameters
+than examples, which is why the L2 penalty is load-bearing rather than decorative.
+
+That is the right size of model for this data and not an apology. With 33 workloads and a matrix
+carrying no workload feature columns at all, anything larger overfits on contact. The comparison
+ladder the three files establish runs *constant → nonparametric interpolation → regularised linear
+→ oracle*, and two of those four are not statistical models: the fixed-frequency baseline is a
+constant predictor using zero features, and the interpolation baseline has zero learned parameters
+and simply joins the probes with straight lines.
+
+⚠️ **THE WEAKNESS: the 13 output equations are fit independently, so nothing constrains the
+predicted curve to be smooth or single-peaked.** `chooseByProbeModel` takes `argmax` over 13
+unconnected linear predictions. In principle that argmax can land on a jagged artifact rather than
+a peak, and no part of the construction prevents it.
+
+It is mitigated rather than solved. Predicting the whole curve and taking its peak — instead of
+regressing the optimal frequency directly — means a wrong answer tends to land on a neighbouring
+frequency on a flat part of the curve rather than somewhere arbitrary, which is why the code is
+written that way and says so. But that is a property of the efficiency curve being flat near its
+top, not a guarantee the model provides.
+
+**It is deliberately not fixed.** The obvious repair is to fit a parametric curve shape, or to
+constrain the outputs to be unimodal. That is effort spent making a model that already loses to
+straight-line interpolation lose by less. If the constrained result is ever revisited on data with
+real workload features — the consumer suite characterises arithmetic intensity, which the V100
+matrix does not have — the fix belongs in that work rather than this one.
+
+If a reader asks why no parametric curve was fitted, the answer is the honest one: a fit was tried,
+and the unfitted baseline beat it.
+
 ## Running them
 
 Every file is a script, run directly. No package, no `-m`, no install:
