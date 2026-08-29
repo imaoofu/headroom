@@ -136,6 +136,32 @@ SYNC_EVERY_ITERATIONS = 5
 #     else on another, and guessing them here would put arbitrary numbers into the one
 #     setting that must be held constant across a sweep. Use --calibrate once per card at
 #     full clock, then pass the printed count explicitly and never vary it within a sweep.
+#
+# FIRST EXECUTION, 2026-08-28, RTX 5060 Ti, ~8% baseline load - PROVISIONAL
+#     All thirteen ran. No allocation failure, and conv and attention both work on Blackwell.
+#     Implied throughput against the card's 448 GB/s and its 15.71-18.24 TFLOP/s fp32 range:
+#
+#       bandwidth-bound, 87-92% of bus   bgemm32, bgemm64, bgemm128, copy, softmax
+#       compute-bound                     bgemm256, bgemm1024, conv, attention
+#       NEITHER - see below               bgemm8, bgemm16, layernorm
+#
+#     ⚠️ THE BOTTOM OF THE LADDER DOES NOT MEASURE THE AXIS. bgemm8 reached 32.8 GB/s, 7% of
+#     the bus, and 0.04 TFLOP/s - so it is bound by batched-matmul launch and occupancy
+#     overhead, not by bandwidth and not by arithmetic. bgemm16 is the same at 22%. Their
+#     declared intensities of 1.3 and 2.7 predict nothing about them, which is exactly the
+#     3.3.1 failure repeating: a declared intensity is not a binding constraint. Replacing
+#     them, or dropping them and letting membw and the operator family cover that end, is an
+#     open decision and needs a measurement either way.
+#
+#     What DOES work is the knee: bgemm128 sits at 92% of the bus and bgemm256 at 48%, so the
+#     ladder crosses the roofline between them. That transition is the part worth having.
+#
+#     ⚠️ reduce reported 448.4 GB/s against a 448 GB/s spec - 100.1%. At or above the
+#     theoretical bus is not a good result, it is a sign the byte accounting or the spec
+#     figure is wrong. Check before quoting it.
+#
+#     Counts from that session are PROVISIONAL: the protocol wants a verified-quiet machine
+#     under ~5% and this was 8%. Recalibrate before collecting anything.
 # =====================================================================================
 
 # Tensors per workload, in bytes. Sized for the smaller of the two cards, not the larger.
@@ -366,6 +392,11 @@ def buildArgumentParser():
                              "one, which puts a frequency-dependent bias in the measured duration.")
     parser.add_argument("--dtype", choices=["fp32", "fp16"], default="fp32",
                         help="fp32 is the conservative default and stresses the general pipeline.")
+    parser.add_argument("--allow-tf32", action="store_true",
+                        help="Permit TF32 tensor cores for fp32 convolution and matmul. OFF by "
+                             "default here, unlike PyTorch, which enables it for convolution and "
+                             "not for matmul - that asymmetry makes conv incomparable with every "
+                             "other workload in the suite. Turn it on deliberately or not at all.")
     parser.add_argument("--json", action="store_true",
                         help="Emit a single JSON object on stdout (for the sweep script to parse).")
     return parser
@@ -439,6 +470,23 @@ def main():
     device = torch.device("cuda:0")
     deviceName = torch.cuda.get_device_name(0)
     torchDtype = torch.float32 if args.dtype == "fp32" else torch.float16
+
+    # PRECISION PARITY, and it is not cosmetic.
+    #
+    # PyTorch ships these two defaults DIFFERENT: cudnn.allow_tf32 is True and
+    # matmul.allow_tf32 is False. So a convolution silently runs on TF32 tensor cores while
+    # every matmul runs true fp32 - different arithmetic, in a suite whose entire purpose is
+    # comparing workloads to each other.
+    #
+    # Measured on the 5060 Ti before this was set: conv reported 19.89 TFLOP/s, ABOVE the
+    # 15.71-18.24 TFLOP/s gemm has ever reached on the same card. A workload cannot exceed the
+    # card's fp32 ceiling by doing fp32, and that impossibility is what exposed it.
+    #
+    # Forcing both off makes the suite internally comparable. It does NOT change gemm or membw:
+    # matmul.allow_tf32 was already False by default, and membw is elementwise. --allow-tf32
+    # restores the faster path for anyone who wants it, deliberately and on the record.
+    torch.backends.cudnn.allow_tf32 = bool(args.allow_tf32)
+    torch.backends.cuda.matmul.allow_tf32 = bool(args.allow_tf32)
 
     startTemp = readGpuTemperature()
     if startTemp is not None and startTemp >= args.max_temp:
@@ -654,6 +702,10 @@ def main():
         "bytes_per_iteration": suiteBytes,
         "arithmetic_intensity_flop_per_byte": round(suiteFlops / suiteBytes, 4) if suiteBytes else None,
         "arithmetic_intensity_is_declared": True,
+        # Recorded because it changes what the number above MEANS. A TF32 convolution and an fp32
+        # matmul are not the same arithmetic, and a sweep that mixed them would be comparing
+        # precisions while appearing to compare frequencies.
+        "tf32_allowed": bool(args.allow_tf32),
         # Epoch bounds of the timed region, so the sweep can window its power samples to
         # exactly the interval that produced the throughput above.
         "timed_region_start_unix": round(startedUnix, 4),
