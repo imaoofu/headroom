@@ -2,7 +2,12 @@
 # machine instead of by someone remembering to look.
 #
 # WHAT THIS CHECKS
-#   run_tests.py             396 checks across 13 suites - every assertion written, nothing more.
+#   run_tests.py             396 checks across 13 suites here - every assertion written, nothing
+#                            more. Note the number is environment-dependent: it is 398 on a machine
+#                            that has run Get-Dataset.ps1, because two checks in
+#                            models/test_predict_constrained_frequency.py run against the real V100
+#                            dataset and SKIP when data/raw/ is absent (that file, line 453). CI
+#                            sees 396 and never executes those two.
 #   audit_claims.py          121 claims recomputed from the committed CSVs and asserted present
 #                            in the documents verbatim and exactly once. A failure here means the
 #                            prose and the data disagree, which is a finding, not a broken script.
@@ -14,10 +19,12 @@
 #     probe_* scripts are never executed here. CI cannot tell you a sweep is valid.
 #   - Nothing that needs the downloaded datasets. data/raw/ and data/external/ are gitignored and
 #     are NOT fetched, so characterize.py (the 44.4% figure), curve_model.py and the models/
-#     predictions do not run. That the audit is green without them is a fact about claim coverage,
-#     not a sign the reference results were verified - as of 2026-08-28 no claim targets the V100
-#     data at all. If claims_reference.py is ever added, this workflow needs a fetch step and the
-#     licensing note in scripts/Get-Dataset.ps1 applies to it.
+#     predictions do not run, and the two dataset-backed checks noted above skip. That the audit is
+#     green without them is a fact about claim coverage, not a sign the reference results were
+#     verified - as of 2026-08-28 no claim targets the V100 data at all. So the V100 half of this
+#     project - the 44.4% gap, the null, the constrained inversion - is the half CI does not cover.
+#     If claims_reference.py is ever added, this workflow needs a fetch step and the licensing note
+#     in scripts/Get-Dataset.ps1 applies to it.
 #   - Green means every claim that EXISTS passes, not that the paper is covered. The coverage step
 #     below prints the sections with no claims; it is informational and never fails the build.
 #   - The audit pins numbers, not assertions. A heading or a sentence can state a mechanism the
