@@ -1,15 +1,61 @@
 # Headroom — paper draft
 
-> **Status: Related Work and Methods are drafted. Results are partly written and rest on original
-> data.** Sections 5.4 and 5.7 are backed by 21 committed sweeps on one RTX 5060 Ti, including
-> core-voltage and crossbar telemetry; earlier sections still carry `[PENDING]` placeholders.
-> Every number not marked `[PENDING]` traces to something actually run or actually read, and 50 of
-> them are pinned by `analysis/audit_claims.py`, which recomputes each from the CSVs and fails if
-> the text and the data disagree. Placeholders are marked rather than filled with plausible
-> values.
+> **Status: complete in structure, still a draft in places.** Results rest on **67 committed
+> sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry. **143 numbers
+> are pinned by `analysis/audit_claims.py`**, which recomputes each from the source CSVs at audit
+> time and fails if the text and the data disagree; it runs on every push. No `[PENDING]`
+> placeholders remain, but **20 numbered sections carry no claims at all** — `--coverage` lists
+> them, and a green audit says nothing about those. Sections still marked `- DRAFT` in their
+> headings were written the day their measurements were taken and have not had a second pass.
 >
 > Citation reliability is flagged per entry in [References](#references). Anything marked
 > ⚠️ needs the primary source opened before it appears in a submitted version.
+
+---
+
+## Abstract
+
+Graphics processors ship with conservative default operating points, because a vendor's
+voltage-frequency behaviour must hold across millions of individually varying dies for a warranty
+period measured in years. The margin this produces was quantified on GPUs released in 2010 and
+2012; whether comparable margin remains on current consumer parts, and where it sits, is not
+established. It also cannot be answered from published data, for a reason that is itself a
+finding: the two public consumer DVFS datasets both sweep core frequency at and above the card's
+rated boost clock — 101–126% and 95–118% of it — while the efficiency optimum lies *below* stock.
+Their correspondingly small measured gaps invite the conclusion that consumer GPUs have little
+headroom, when what they show is a truncated measurement range.
+
+This work contributes an open dataset of consumer-GPU frequency, power and performance
+measurements swept across 40–100% of maximum core clock, released with its collection tooling and
+a locked protocol: 67 sweeps on an RTX 5060 Ti (Blackwell) and an RTX 3070 Ti (Ampere).
+
+On a public V100 reference set, running each of 33 workloads at its own efficiency optimum rather
+than at stock recovers 44.4% efficiency on average. Per-workload *prediction*, however, does not
+beat a single fixed frequency — 0.883% mean regret against 0.837%, leave-one-workload-out. That
+null inverts under a performance constraint: at a 95% floor, probe-based selection reaches 25.4%
+mean efficiency gain where the best fixed frequency reaches 4.9%. The fitting earns none of it,
+since straight-line interpolation between four probes beats every fitted variant, and the fitted
+model only appears to win by violating the floor it was given.
+
+On consumer hardware, a bandwidth-bound workload plateaus under a flattened voltage-frequency
+curve. The mechanism is measured rather than inferred — core voltage pinned across a rising core
+clock, the crossbar clock pinned with it, and the SM-to-memory path ceasing to scale — and a
+repair derived from that diagnosis behaved as predicted. Comparing two vendor BIOS positions on
+one 3070 Ti, the "OC" position draws roughly a quarter more power at matched frequency for 0.56%
+more peak compute; a prediction registered in advance that this difference was voltage was
+**refuted**, both positions holding the same voltage floor while the difference proved to be a
+roughly constant 34 W offset that does not scale with core clock and remains unexplained.
+
+A methodological result affects all of the above and, we suspect, other work: ordinary desktop
+capture software depresses measured GPU throughput and inflates run-to-run spread roughly
+five-fold, invisibly at idle. Measurements taken without controlling for it are biased downward in
+the mid-band.
+
+**Limits are stated throughout and are not incidental.** Two chips, one unit each; every *tuning*
+result comes from a single card; two workloads. Nothing here outperforms vendor boost algorithms,
+and no claim of discovering guardband or inter-chip variation is made — both are established
+literature. The contribution is open, current-generation, reproducible measurement of a
+relationship whose public data is either datacenter-only or swept over the wrong range.
 
 ---
 
@@ -1890,6 +1936,80 @@ this is unexplained and recorded rather than trimmed.
 8. **Tuning configurations were not measured contemporaneously.** The stock, fully tuned and
    memory-only sweeps of 5.7 are separated by hours to a day, because switching between them
    requires a manual change that cannot be scripted (5.7.7).
+
+---
+
+## 7. Conclusion
+
+The question this work set out to answer is narrow and checkable: how much efficiency do
+conservative stock defaults leave on the table on current consumer GPUs, what drives it, and is
+per-unit measurement worth its cost. Three things can be said with the data collected.
+
+**The gap is real and large, and the published consumer data could not have found it.** Both
+public consumer DVFS datasets sweep at or above rated boost, and the optimum lives below stock, so
+their small measured gaps are an artifact of range rather than evidence of absence (§2.7). That
+observation is reproducible in a single script, it sharpens the justification for this project's
+own sweep design, and it is the contribution most likely to be useful to someone else.
+
+**Per-unit prediction is worth its cost only under a constraint, and the fitting is not the part
+that earns it.** Unconstrained, a probe-based model ties a single fixed frequency, and that null is
+reported as the result rather than tuned away (§5.2). Impose a performance floor and the ranking
+inverts, because a fixed policy must satisfy the most frequency-sensitive workload it might meet
+(§5.6.1, §5.6.2). The practical recommendation that survives is *measure a few points, interpolate
+between them, and attach a performance guarantee* — not *fit a model*. That recommendation carries
+a condition: it depends on the performance curve being concave, and on a convex curve the safety
+argument reverses.
+
+**A mechanism was measured, not inferred.** The bandwidth plateau under a flattened
+voltage-frequency curve is traced link by link — pinned core voltage, pinned crossbar clock, an
+SM-to-memory path that stops scaling — with a stock control run, and a repair derived from the
+diagnosis behaved as predicted including in its predicted cost (§5.7). This is the part of the work
+that depended on physical access to hardware rather than on a download.
+
+### What this work refuted, including its own predictions
+
+Three predictions made inside this project were tested and failed, and each is reported where it
+was made rather than removed:
+
+1. **That a ~30 mV shortfall explained the compute ceiling of the repaired curve.** Raising the
+   top of the curve *lowered* the ceiling. The deficit reproduces and is still unexplained
+   (§5.7.5).
+2. **That the vendor OC BIOS's power premium was voltage.** Registered in advance as a specific
+   number, 0.738 V, and refuted: both BIOS positions hold the same floor, and the difference is an
+   additive offset in the intercept rather than a ratio in the frequency-scaling term (§5.5.1.1).
+3. **That per-workload prediction would beat a fixed frequency.** It ties (§5.2).
+
+A fourth correction was methodological rather than physical: an early attribution of measured
+contention to one piece of software was wrong, and the discriminating experiment identified a
+different cause (§5.4.4). The pattern across all four is that the errors were invisible on
+inspection and only appeared under measurement, which is the argument for the mechanical claim
+auditing this paper is subject to.
+
+### What this work does not claim
+
+It does not outperform vendor boost algorithms, which already incorporate per-chip factory binning.
+It does not discover voltage guardband or inter-chip variation; both are established [8, 9]. It
+does not control voltage — voltage is observed telemetry here, never an independent variable. And
+it is not a population estimate of anything: two chips, one unit each, and every tuning result from
+a single card. The chip-to-chip variation a reader will ask about is published at roughly 11% and
+remains unmeasured here, because measuring it needs repeat units of one model that this project
+does not control.
+
+### Future work
+
+The binding constraint is workload count rather than hardware. The leave-one-workload-out design
+that produced §5.6.2's result needs a workload population, and the consumer measurements carry two.
+Extending the suite to span arithmetic intensity, then running the identical suite at stock on both
+chips, would make the *workload* the unit of analysis rather than the chip, and would permit the
+question this work cannot currently ask: whether per-workload optima transfer across
+architectures. That is a paired design achievable with the hardware already in hand.
+
+Two smaller items are outstanding and both are measurement rather than analysis. The 34 W offset of
+§5.5.1.1 has one live candidate remaining — board-level cooling power, since the position drawing
+more power runs cooler — and separating it needs fan RPM logged alongside power, which the
+instrument reports and the session did not capture. And the stability protocol has been applied to
+two of the configurations reported here; the others carry no failure evidence in either direction,
+and "no failure observed in thirty minutes" is the strongest statement any of them supports.
 
 ---
 

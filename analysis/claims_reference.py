@@ -111,10 +111,28 @@ DATA = _load()
 
 if DATA is None:
     print("  [SKIP] claims_reference: the public V100 dataset is not downloaded - run "
-          "scripts/Get-Dataset.ps1. Sections 5.1, 5.2, 5.3, 5.6, 5.6.1 and 5.6.2 are NOT audited "
-          "in this run.")
+          "scripts/Get-Dataset.ps1. The Abstract and sections 5.1, 5.2, 5.3, 5.6, 5.6.1 and "
+          "5.6.2 are NOT audited in this run.")
 else:
     SUMMARY = DATA["summary"]
+
+    # ------------------------------------------------------------ Abstract
+    # The abstract restates figures the body already pins, in different words. Pinning it
+    # separately is not redundant: the two are separate strings, and an edit to one does not
+    # touch the other, so an unpinned abstract can drift away from a body that is still green.
+    # It is also the part most likely to be read on its own.
+
+    @claim("abstract-headroom-gap", PAPER, "Abstract")
+    def abstractHeadroomGap():
+        return f"recovers {SUMMARY['headroom_gap_pct'].mean():.1f}% efficiency on average"
+
+    @claim("abstract-constrained-inversion", PAPER, "Abstract")
+    def abstractConstrainedInversion():
+        scores = DATA["scores"]
+        return (f"probe-based selection reaches "
+                f"{scores.loc['interpolation (no fit)', 'mean_gain_pct']:.1f}% mean efficiency "
+                f"gain where the best fixed frequency reaches "
+                f"{scores.loc['best fixed frequency', 'mean_gain_pct']:.1f}%")
 
     # ---------------------------------------------------------------- 5.1
 
