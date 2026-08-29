@@ -20,6 +20,8 @@ param(
     [string]$Label = "",
     [string]$AppliedSettings = "",
     [switch]$SkipMembw,
+    [string[]]$Workloads = @(),
+    [int[]]$Iterations = @(),
     [switch]$NoPause
 )
 
@@ -254,8 +256,24 @@ Say "  [ok] saved machine-info.txt" "Green"
 
 # ---- the sweeps ----
 
-$workloads = @("gemm")
-if (-not $SkipMembw) { $workloads += "membw" }
+# Default is unchanged: gemm, then membw unless -SkipMembw. -Workloads overrides it entirely and
+# is how the extended suite is collected, since gpu_workload.py's suite entries have no default
+# iteration count and refuse to start without one. -Iterations supplies those, positionally
+# matched to -Workloads. A suite workload with no count here fails at the workload rather than
+# here, with a message naming --calibrate, which is the right place for it to fail.
+if ($Workloads.Count -gt 0) {
+    $workloads = $Workloads
+} else {
+    $workloads = @("gemm")
+    if (-not $SkipMembw) { $workloads += "membw" }
+}
+
+if ($Iterations.Count -gt 0 -and $Iterations.Count -ne $workloads.Count) {
+    Say "  -Iterations has $($Iterations.Count) entries against $($workloads.Count) workloads." "Red"
+    Say "  They are matched by position, so the counts must line up or a sweep silently gets" "Yellow"
+    Say "  the wrong one. Refusing to start." "Yellow"
+    exit 1
+}
 
 $results = @()
 foreach ($workload in $workloads) {
@@ -268,6 +286,9 @@ foreach ($workload in $workloads) {
     Say ""
 
     $command = '{0} {1} --workload {2} --json' -f $pythonForCmd, $workloadForCmd, $workload
+    if ($Iterations.Count -gt 0) {
+        $command = '{0} --iterations {1}' -f $command, $Iterations[$workloads.IndexOf($workload)]
+    }
 
     try {
         # No hardcoded "-stock" here. It produced filenames like
