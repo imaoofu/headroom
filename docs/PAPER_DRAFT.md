@@ -296,6 +296,30 @@ as model lines, and certainly not Blackwell and Ampere as architectures. Two par
 same chip differ in factory clocks, power limits, cooler capacity and fan curves, and this work has
 measured effects attributable to every one of those.
 
+#### Three different things are called an overclock in this paper
+
+Both board names contain "OC" and neither refers to what 5.7 tunes. The three are distinct in
+origin, in what they change, and in who applied them, and conflating them misreads every
+stock-versus-tuned comparison here.
+
+| term | what it is | who applied it | where |
+|---|---|---|---|
+| **factory OC** | the clocks Zotac ships the Twin Edge OC at, above NVIDIA reference | the board vendor, at manufacture | 3.1 |
+| **tuned** | a voltage-frequency curve drawn **by hand in MSI Afterburner**, flattened to ~3010 MHz above 925 mV, plus a **+2500 MHz memory offset** | the author | 5.7 |
+| **OC BIOS** | an alternate vendor firmware selected by a physical switch on the 3070 Ti | the board vendor, as shipped firmware | 5.5 |
+
+🔑 **"Stock" in this paper means the board as shipped with no user profile applied - not NVIDIA
+reference.** The Zotac board's factory overclock is *part of* its stock configuration: a stock sweep
+here reaches up to 3090 MHz observed, where a reference 5060 Ti is rated at 2572 MHz boost. Every
+stock-versus-tuned comparison in 5.7 is therefore factory-OC against
+factory-OC-plus-hand-drawn-curve, never reference against tuned.
+
+**Nothing in this work applies a curve programmatically.** Voltage cannot be written through any
+documented interface (3.2), so the tuned configuration is set by hand in Afterburner's curve editor
+and read back through HWiNFO. That is also why 5.7's configurations are not measured
+contemporaneously - switching between them is a manual step (5.7.7) - and why separating the memory
+offset from the core curve had to be done by hand to study them as two knobs rather than one.
+
 Additional units are drawn opportunistically from a small PC-building operation, giving on the order
 of one new machine every 2–3 weeks. Sample size is therefore small and heterogeneous by
 construction, and is reported explicitly wherever results are stated.
