@@ -74,6 +74,26 @@ successive generations of automatic boost, finer-grained factory binning, and pe
 characterisation now shipped as standard. Whether comparable margin remains, and where it sits, is
 not established for current consumer parts.
 
+**Why margin is worth locating at all needs stating, because on its face the trade looks bad.**
+Moving a chip to its efficiency optimum costs performance — on the hardware measured here, up to
+40.6% of it on a compute-bound workload — and no one chasing frame rate would accept that. The
+answer is that raw performance is the objective in fewer deployments than it appears to be. Where
+a fixed power budget is the binding constraint — a rack, a cooling envelope, a battery, a rented
+instance billed on draw — the quantity that determines total work done is performance *per watt*,
+not performance. That makes the trade arithmetic rather than a sacrifice: the same measurement
+that costs 40.6% of per-chip throughput improves work per joule by 63.1%, and under a fixed power
+budget an improvement in work per joule *is* an improvement in aggregate throughput of the same
+size. Per-chip performance falls and total output rises.
+
+**The unconstrained optimum is nonetheless the wrong form of the question, and this paper reports
+both forms.** Best efficiency at any cost gives up a mean 13.7% of performance on the reference
+dataset, which almost no operator wants. Constrained to keep at least 95% of stock performance,
+the same data gives up **3.3%** on average for **23.4%** less power (§5.6) — two-thirds of the
+available gain for a quarter of the cost. That constrained form is what a deployment would
+actually run, and §5.6.1 shows it is also the form under which knowing the workload starts to
+matter. Where the constraint is latency rather than power, none of this applies, and the paper
+does not argue otherwise.
+
 Answering that question from published data turns out not to be possible, for a reason that is
 itself worth reporting. Two public DVFS datasets covering consumer GPUs exist, and both sweep core
 frequency only **at and above** the card's rated boost clock — 101–126% for a GTX 1080 Ti, 95–118%

@@ -134,6 +134,22 @@ else:
                 f"gain where the best fixed frequency reaches "
                 f"{scores.loc['best fixed frequency', 'mean_gain_pct']:.1f}%")
 
+    # ------------------------------------------------------------ Section 1
+    # The introduction gained a motivation passage on 2026-08-29, arguing that perf-per-watt is
+    # the throughput function wherever power is the binding constraint. It restates figures from
+    # 5.1 and 5.6 to make that case, and a motivating number that drifts from the result it
+    # motivates is worse than no number, so both are pinned here as well.
+
+    @claim("1-unconstrained-cost", PAPER, "1")
+    def introUnconstrainedCost():
+        return f"a mean {SUMMARY['performance_given_up_pct'].mean():.1f}% of performance"
+
+    @claim("1-constrained-trade", PAPER, "1")
+    def introConstrainedTrade():
+        row = DATA["floorRow"]
+        return (f"{row['loss_mean']:.1f}%** on average for **{row['power_saved_mean']:.1f}%** "
+                f"less power")
+
     # ---------------------------------------------------------------- 5.1
 
     @claim("5.1-workload-count", PAPER, "5.1")
