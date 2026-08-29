@@ -265,9 +265,10 @@ signature of a truncated range.
 | Component | Detail |
 |---|---|
 | GPU | NVIDIA GeForce RTX 5060 Ti 16 GB (Blackwell, GB206, compute capability 12.0) |
-| **Board** | **Zotac Twin Edge OC** — a factory-overclocked, dual-fan partner card, not a reference design |
+| **Board** | **Zotac Twin Edge OC**, a dual-fan partner card |
 | Driver | 610.88 |
-| Rated clocks | Base 2407 MHz, boost 2572 MHz (reference); **3090 MHz observed max** (factory-OC board) |
+| Rated clocks | Base 2407 MHz, boost 2572 MHz (reference). **Measured stock boost ~2584 MHz** under a compute load |
+| Lock-target ceiling | **3090 MHz** — the highest value the driver accepts for `-lgc`, *not* a clock the card runs at |
 | Power limit | 180 W default, 200 W configured, adjustable range 150–200 W |
 | Memory | 16 GB GDDR7, 128-bit bus, 448 GB/s at the 14001 MHz rating |
 | OS | Windows 11 |
@@ -280,10 +281,14 @@ BIOS and returned as found.
 **The board model is recorded because it is load-bearing, not for completeness.** Three results in
 this paper depend on board-level rather than chip-level facts:
 
-- **The 3090 MHz maximum** is a property of *this partner board's* factory overclock. The
-  specification database lists the model at 2572 MHz boost, and a reference 5060 Ti would not
-  reach the clocks swept here. Spec-sheet clocks are not measured clocks, and analyses use the
-  measured values throughout.
+- **The sweep grid's top end is a driver capability, not a clock the board reaches.** ⚠️ An earlier
+  version of this section attributed the 3090 MHz figure to the board's factory overclock and said
+  a stock sweep reaches it. **Both were wrong.** 3090 MHz is the highest value `nvidia-smi` accepts
+  as a lock target - the top of the supported-clock table - and it is reported identically whether
+  the card is at stock or carrying a hand-drawn curve, which is exactly why it cannot evidence an
+  overclock. Measured at stock, targeting 3090 MHz achieves **2584 MHz**, against a reference
+  rating of 2572. Whatever factory bump this board carries, this project's own data cannot
+  demonstrate it, and no result here depends on one.
 - **§5.5's entire subject is a vendor BIOS pair.** The dual-BIOS switch is Gigabyte's feature, not
   NVIDIA's; the 23.11% power gap and the 34–57 W offset are properties of two BIOSes that a
   particular board vendor shipped on one card.
@@ -304,15 +309,15 @@ stock-versus-tuned comparison here.
 
 | term | what it is | who applied it | where |
 |---|---|---|---|
-| **factory OC** | the clocks Zotac ships the Twin Edge OC at, above NVIDIA reference | the board vendor, at manufacture | 3.1 |
+| **board branding** | Zotac's "Twin Edge OC" name implies a factory bump. Measured stock boost is ~2584 MHz against a 2572 MHz reference rating, so any bump is marginal and **this project cannot demonstrate one** | the board vendor, at manufacture | 3.1 |
 | **tuned** | a voltage-frequency curve drawn **by hand in MSI Afterburner**, flattened to ~3010 MHz above 925 mV, plus a **+2500 MHz memory offset** | the author | 5.7 |
 | **OC BIOS** | an alternate vendor firmware selected by a physical switch on the 3070 Ti | the board vendor, as shipped firmware | 5.5 |
 
-🔑 **"Stock" in this paper means the board as shipped with no user profile applied - not NVIDIA
-reference.** The Zotac board's factory overclock is *part of* its stock configuration: a stock sweep
-here reaches up to 3090 MHz observed, where a reference 5060 Ti is rated at 2572 MHz boost. Every
-stock-versus-tuned comparison in 5.7 is therefore factory-OC against
-factory-OC-plus-hand-drawn-curve, never reference against tuned.
+🔑 **"Stock" in this paper means the board as shipped with no Afterburner profile applied**, which
+is what the reset button in that tool restores. Measured, that is a ~2584 MHz boost under load
+against a 2572 MHz reference rating - essentially reference behaviour. Every stock-versus-tuned
+comparison in 5.7 is therefore *as-shipped against as-shipped-plus-hand-drawn-curve*, and the whole
+of the gap those sections report is the author's curve rather than any vendor's tuning.
 
 **Nothing in this work applies a curve programmatically.** Voltage cannot be written through any
 documented interface (3.2), so the tuned configuration is set by hand in Afterburner's curve editor

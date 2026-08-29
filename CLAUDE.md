@@ -114,8 +114,9 @@ That is a sharper, more defensible contribution claim, and it is checkable by an
 
 | Fact | Value |
 |---|---|
-| Board | **Zotac Twin Edge OC** — factory-OC partner card, dual fan. NOT a reference design, and that is why the max clock below exceeds the 2572 MHz the spec database lists. |
-| Max SM clock | 3090 MHz |
+| Board | **Zotac Twin Edge OC**, dual fan. ⚠️ The 3090 MHz below is the driver's LOCK-TARGET CEILING, not a boost clock and NOT evidence of a factory overclock - it reads 3090 at stock and with a curve applied alike. Measured stock boost is ~2584 MHz against a 2572 MHz reference rating. |
+| Max lock target | 3090 MHz (top of the supported-clock table) |
+| Measured stock boost | ~2584 MHz under gemm, 2026-08-29 |
 | Power limit | 200 W current, 180 W default, **range 150–200 W** |
 | Supported graphics clocks | **389 discrete**, 180–3090 MHz |
 | Compute capability | 12.0 (Blackwell, GB206) |
