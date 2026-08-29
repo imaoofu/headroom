@@ -92,6 +92,229 @@ FLOPS_PER_GEMM = lambda n: 2.0 * (n ** 3)
 SYNC_EVERY_ITERATIONS = 5
 
 
+# =====================================================================================
+# THE EXTENDED SUITE
+#
+# WHY IT EXISTS
+#     5.6.2's leave-one-workload-out result needs a workload POPULATION. gemm and membw are
+#     two points, and two points cannot support a design that removes one and predicts it.
+#     Subsampling the V100's 33 workloads says the constrained gap is detectable from about
+#     8 and stable from about 12-16, so this suite targets that range.
+#
+#     The axis that matters is ARITHMETIC INTENSITY - FLOP per byte moved - because that is
+#     what the V100 correlation of -0.666 is really about. Fourteen variants of matmul would
+#     be fourteen workloads and one data point.
+#
+# TWO FAMILIES, ON PURPOSE
+#     ladder/    batched matmul at a range of inner sizes. For a square fp32 matmul the
+#                intensity is exactly N/6, so this family SWEEPS the axis while holding the
+#                operation, the library and the access pattern constant. It isolates the
+#                variable in a way a set of different operators cannot.
+#     operator/  representative operations - copy, reduction, softmax, layer norm,
+#                convolution, attention. These establish that any effect is not an artifact
+#                of cuBLAS batched matmul specifically. They span the axis more raggedly and
+#                that is the price of external validity.
+#
+#     Reporting a result from one family alone would be weaker than reporting both.
+#
+# ⚠️ THE INTENSITIES BELOW ARE DECLARED, NOT MEASURED
+#     Each entry states the FLOPs and the bytes its operation must move in principle. Real
+#     traffic differs: caches serve some of it, fused kernels avoid round trips, and
+#     scaled_dot_product_attention may dispatch a flash implementation whose traffic is far
+#     below the naive count. So treat these as the INTENDED ordering, not as measurements.
+#     3.3.1 is the cautionary case - membw is declared at 0.167 FLOP/byte and is nonetheless
+#     issue-limited rather than bandwidth-limited below roughly 2000 MHz. What a workload is
+#     bound BY is an empirical question this file cannot answer by declaration.
+#
+# VRAM
+#     Every entry is sized to roughly 1.2 GB of tensors so the whole suite fits on the 8 GB
+#     card as well as the 16 GB one. The two chips must run the IDENTICAL suite or the
+#     paired comparison they exist for does not hold.
+#
+# ITERATION COUNTS
+#     Deliberately absent. A count that gives 9 seconds of work on one card gives something
+#     else on another, and guessing them here would put arbitrary numbers into the one
+#     setting that must be held constant across a sweep. Use --calibrate once per card at
+#     full clock, then pass the printed count explicitly and never vary it within a sweep.
+# =====================================================================================
+
+# Tensors per workload, in bytes. Sized for the smaller of the two cards, not the larger.
+SUITE_TARGET_BYTES = 1.2e9
+
+# Inner matrix sizes for the ladder. fp32 intensity is N/6 FLOP/byte, so this spans roughly
+# 1.3 to 171 and meets gemm's ~1365 at the top and membw's 0.167 at the bottom.
+LADDER_SIZES = (8, 16, 32, 64, 128, 256, 1024)
+
+
+def suiteWorkloadNames():
+    """Every extended workload, in ascending declared arithmetic intensity."""
+    return [f"bgemm{n}" for n in LADDER_SIZES] + [
+        "copy", "reduce", "softmax", "layernorm", "conv", "attention",
+    ]
+
+
+# Fixed shape parameters, named once so the analytic intensity below and the builders that
+# allocate the tensors cannot disagree about them.
+SOFTMAX_FLOPS_PER_ELEMENT = 5.0
+LAYERNORM_FLOPS_PER_ELEMENT = 8.0
+CONV_CHANNELS = 128
+CONV_KERNEL = 3
+ATTENTION_HEAD_DIM = 64
+ATTENTION_HEADS = 16
+ATTENTION_DEFAULT_SEQUENCE = 1024
+
+
+def suiteDeclaredIntensity(name, elementBytes=4):
+    """
+    Arithmetic intensity in FLOP per byte, from operation counts alone. No GPU, no allocation.
+
+    This exists so the table printed by --list-workloads is COMPUTED rather than typed. The first
+    draft of that table hand-wrote six operator intensities and three of them were wrong - conv by
+    a factor of two, softmax and layernorm by four - which is the drift this project keeps finding
+    in hand-maintained restatements of something the code already knows.
+
+    The GPU-side builders derive their own figures independently from the tensors they actually
+    allocate; test_gpu_workload.py asserts the two agree, so a shape changed in one place and not
+    the other fails rather than quietly reporting the old number.
+    """
+    if name.startswith("bgemm"):
+        inner = int(name[len("bgemm"):])
+        # 2N^3 FLOP against 3N^2 elements of traffic.
+        return (2.0 * inner) / (3.0 * elementBytes)
+    if name == "copy":
+        return 0.0
+    if name == "reduce":
+        return 1.0 / elementBytes
+    if name == "softmax":
+        return SOFTMAX_FLOPS_PER_ELEMENT / (2.0 * elementBytes)
+    if name == "layernorm":
+        return LAYERNORM_FLOPS_PER_ELEMENT / (2.0 * elementBytes)
+    if name == "conv":
+        # Per output element: 2*C*R*S FLOP against one read and one write, so 2 elements of
+        # traffic. The 2s cancel. Weights are negligible and excluded, which makes this a
+        # slight OVER-estimate. Do not reintroduce a /2 here - that was the original error.
+        return (CONV_KERNEL * CONV_KERNEL * CONV_CHANNELS) / float(elementBytes)
+    if name == "attention":
+        return ATTENTION_DEFAULT_SEQUENCE / float(elementBytes)
+    raise ValueError(f"unknown workload {name!r}")
+
+
+def buildSuiteWorkload(name, size, torchDtype, elementBytes, device, torch):
+    """
+    Construct one extended workload.
+
+    Returns (step, flopsPerIteration, bytesPerIteration, resolvedSize). `step` closes over its
+    own tensors, exactly as the gemm and membw branches do, so the timed loop is unchanged.
+
+    `size` carries a different meaning per workload and each default is stated in the table
+    printed by --list-workloads. 0 selects the default.
+    """
+    functional = torch.nn.functional
+
+    if name.startswith("bgemm"):
+        inner = int(name[len("bgemm"):])
+        # Batch chosen so the three tensors land near the VRAM target. At least one, so a
+        # very large inner size degenerates to a single un-batched matmul rather than zero.
+        batch = max(1, int(SUITE_TARGET_BYTES / (3.0 * inner * inner * elementBytes)))
+        left = torch.randn((batch, inner, inner), device=device, dtype=torchDtype)
+        right = torch.randn((batch, inner, inner), device=device, dtype=torchDtype)
+        flops = 2.0 * batch * (inner ** 3)
+        moved = 3.0 * batch * (inner ** 2) * elementBytes
+
+        def step():
+            torch.bmm(left, right)
+
+        return step, flops, moved, inner
+
+    if name == "copy":
+        count = size if size > 0 else int(SUITE_TARGET_BYTES / (2 * elementBytes))
+        source = torch.randn(count, device=device, dtype=torchDtype)
+        destination = torch.empty(count, device=device, dtype=torchDtype)
+        # No arithmetic at all. This is the zero-intensity end of the axis, and its
+        # throughput is reported in bytes for that reason.
+        def step():
+            destination.copy_(source)
+
+        return step, 0.0, 2.0 * count * elementBytes, count
+
+    if name == "reduce":
+        count = size if size > 0 else int(SUITE_TARGET_BYTES / elementBytes)
+        source = torch.randn(count, device=device, dtype=torchDtype)
+
+        def step():
+            torch.sum(source)
+
+        # One add per element, one read per element. Intensity is 1/elementBytes.
+        return step, float(count), float(count) * elementBytes, count
+
+    if name == "softmax":
+        rows = 8192
+        columns = size if size > 0 else int(SUITE_TARGET_BYTES / (2 * rows * elementBytes))
+        source = torch.randn((rows, columns), device=device, dtype=torchDtype)
+
+        def step():
+            torch.softmax(source, dim=-1)
+
+        # ~5 operations per element (max, subtract, exp, sum, divide). The byte count is the
+        # MINIMUM traffic - one read, one write - so the intensity is an upper bound; a
+        # two-pass implementation reads twice and the true figure is lower.
+        return step, 5.0 * rows * columns, 2.0 * rows * columns * elementBytes, columns
+
+    if name == "layernorm":
+        rows = 8192
+        columns = size if size > 0 else int(SUITE_TARGET_BYTES / (2 * rows * elementBytes))
+        source = torch.randn((rows, columns), device=device, dtype=torchDtype)
+        weight = torch.ones(columns, device=device, dtype=torchDtype)
+        bias = torch.zeros(columns, device=device, dtype=torchDtype)
+
+        def step():
+            functional.layer_norm(source, (columns,), weight, bias)
+
+        return step, 8.0 * rows * columns, 2.0 * rows * columns * elementBytes, columns
+
+    if name == "conv":
+        # Channels-last is what cuDNN actually wants; leaving it contiguous measures a layout
+        # conversion as much as a convolution.
+        channels = 128
+        spatial = size if size > 0 else 128
+        batch = max(1, int(SUITE_TARGET_BYTES / (2.0 * channels * spatial * spatial * elementBytes)))
+        source = torch.randn((batch, channels, spatial, spatial),
+                             device=device, dtype=torchDtype).to(memory_format=torch.channels_last)
+        weight = torch.randn((channels, channels, 3, 3),
+                             device=device, dtype=torchDtype).to(memory_format=torch.channels_last)
+
+        def step():
+            functional.conv2d(source, weight, padding=1)
+
+        flops = 2.0 * batch * channels * channels * 9 * spatial * spatial
+        moved = (2.0 * batch * channels * spatial * spatial * elementBytes
+                 + channels * channels * 9 * elementBytes)
+        return step, flops, moved, spatial
+
+    if name == "attention":
+        heads = 16
+        headDim = 64
+        sequence = size if size > 0 else 1024
+        perTensor = 3.0 * heads * sequence * headDim * elementBytes
+        batch = max(1, int(SUITE_TARGET_BYTES / max(perTensor, 1.0)))
+        shape = (batch, heads, sequence, headDim)
+        query = torch.randn(shape, device=device, dtype=torchDtype)
+        key = torch.randn(shape, device=device, dtype=torchDtype)
+        value = torch.randn(shape, device=device, dtype=torchDtype)
+
+        def step():
+            functional.scaled_dot_product_attention(query, key, value)
+
+        # Two matmuls of sequence x sequence x headDim. The naive byte count assumes q, k, v
+        # in and one tensor out; a flash implementation moves far less than this, which would
+        # make the true intensity HIGHER than declared.
+        flops = 4.0 * batch * heads * (sequence ** 2) * headDim
+        moved = 4.0 * batch * heads * sequence * headDim * elementBytes
+        return step, flops, moved, sequence
+
+    raise ValueError(f"unknown workload {name!r}")
+
+
 def readGpuTemperature():
     """Read GPU temperature via nvidia-smi. Returns None if unavailable."""
     try:
@@ -111,8 +334,21 @@ def buildArgumentParser():
         description="Fixed-work GPU benchmark for frequency sweeps.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--workload", choices=["gemm", "membw"], default="gemm",
-                        help="gemm = compute-bound matmul; membw = memory-bandwidth-bound stream")
+    parser.add_argument("--workload", choices=["gemm", "membw"] + suiteWorkloadNames(),
+                        default="gemm",
+                        help="gemm = compute-bound matmul; membw = memory-bandwidth-bound stream. "
+                             "The rest are the extended suite - run --list-workloads for the table.")
+    parser.add_argument("--list-workloads", action="store_true",
+                        help="Print every workload with its declared arithmetic intensity and exit. "
+                             "Needs no GPU.")
+    parser.add_argument("--calibrate", action="store_true",
+                        help="Time a short run and print the iteration count that would give "
+                             "--target-seconds of work, then exit without benchmarking. Run this ONCE "
+                             "per card at full clock, then pass the printed count explicitly: the "
+                             "count must not vary within a sweep.")
+    parser.add_argument("--target-seconds", type=float, default=9.0,
+                        help="Work duration --calibrate aims for. Long enough that the card reaches "
+                             "a steady clock and launch overhead stops being visible.")
     parser.add_argument("--size", type=int, default=0,
                         help="Matrix dimension for gemm, or element count for membw. 0 picks a sensible default.")
     parser.add_argument("--iterations", type=int, default=0,
@@ -143,8 +379,48 @@ def emit(payload, asJson, humanLines):
             print(line)
 
 
+def describeSuite(elementBytes=4):
+    """The suite as text, computed from the same constants the builders use.
+
+    Written from the declarations rather than from a hand-maintained table, so it cannot drift
+    away from what the code actually allocates.
+    """
+    lines = [
+        "[WORKLOAD] Extended suite. Intensities are DECLARED from operation counts, not measured -",
+        "[WORKLOAD] see the header. fp32 assumed below; fp16 halves the bytes and doubles each figure.",
+        "",
+        f"    {'workload':<12} {'family':<9} {'FLOP/byte':>10}  size parameter",
+    ]
+    parameters = {
+        "copy": "element count",
+        "reduce": "element count",
+        "softmax": "columns, 8192 rows",
+        "layernorm": "columns, 8192 rows",
+        "conv": f"spatial dimension, {CONV_CHANNELS} channels, {CONV_KERNEL}x{CONV_KERNEL}",
+        "attention": f"sequence length, {ATTENTION_HEADS} heads, head dim {ATTENTION_HEAD_DIM}",
+    }
+    for name in suiteWorkloadNames():
+        family = "ladder" if name.startswith("bgemm") else "operator"
+        parameter = parameters.get(name, f"inner matrix dimension, fixed at {name[len('bgemm'):]}")
+        lines.append(f"    {name:<12} {family:<9} "
+                     f"{suiteDeclaredIntensity(name, elementBytes):>10.3f}  {parameter}")
+    lines += [
+        f"    {'membw':<12} {'existing':<9} {0.167:>10.3f}  element count",
+        f"    {'gemm':<12} {'existing':<9} {1365.0:>10.1f}  matrix dimension",
+        "",
+        "[WORKLOAD] gemm and membw are unchanged and remain comparable with every sweep already",
+        "[WORKLOAD] committed. The suite entries have never been run - calibrate and validate first.",
+    ]
+    return lines
+
+
 def main():
     args = buildArgumentParser().parse_args()
+
+    if args.list_workloads:
+        for line in describeSuite():
+            print(line)
+        return 0
 
     try:
         import torch
@@ -172,8 +448,10 @@ def main():
 
     # Defaults chosen to be heavy enough to saturate the GPU but well inside VRAM on any
     # modern card. gemm at 8192 fp32 is ~768 MB of tensors; membw at 256M floats is ~3 GB.
+    isSuite = args.workload not in ("gemm", "membw")
+
     size = args.size
-    if size <= 0:
+    if size <= 0 and not isSuite:
         size = 8192 if args.workload == "gemm" else 256 * 1024 * 1024
 
     # Iteration defaults target roughly 8-9 seconds of ACTUAL GPU WORK at full boost clock,
@@ -189,8 +467,21 @@ def main():
     # A sweep locks the clock LOW as well as high, so the same iteration count takes 2-3x
     # longer at the bottom of the range - that is expected and correct.
     iterations = args.iterations
-    if iterations <= 0:
+    if iterations <= 0 and not isSuite:
         iterations = 120 if args.workload == "gemm" else 1200
+
+    # No default for the suite, deliberately. gemm and membw carry counts that were measured on
+    # a specific card and are correct because somebody ran them; inventing equivalents for
+    # thirteen new workloads would put unmeasured numbers into the one setting the fixed-work
+    # property depends on. --calibrate produces the count; the operator then passes it and holds
+    # it constant.
+    if iterations <= 0 and isSuite and not args.calibrate:
+        emit({"ok": False, "error": "iterations_required", "workload": args.workload}, args.json,
+             [f"[WORKLOAD] {args.workload} has no default iteration count, on purpose.",
+              "[WORKLOAD] Run once at full clock to find one:",
+              f"[WORKLOAD]     python gpu_workload.py --workload {args.workload} --calibrate",
+              "[WORKLOAD] then pass --iterations N and hold N constant across every frequency."])
+        return 8
 
     aborted = False
     abortReason = None
@@ -201,11 +492,15 @@ def main():
             left = torch.randn((size, size), device=device, dtype=torchDtype)
             right = torch.randn((size, size), device=device, dtype=torchDtype)
             workPerIteration = FLOPS_PER_GEMM(size)
+            # Declared for the intensity field only. Unchanged behaviour: workPerIteration and
+            # the unit are exactly what they were. N/6 gives the ~1365 FLOP/byte 5.7 quotes.
+            suiteFlops = workPerIteration
+            suiteBytes = 3.0 * (size ** 2) * (4 if args.dtype == "fp32" else 2)
 
             def step():
                 torch.matmul(left, right)
 
-        else:
+        elif args.workload == "membw":
             # Memory-bound: a scaled add over a large buffer. Every element is read twice
             # and written once, so this is bandwidth-limited rather than arithmetic-limited.
             source = torch.randn(size, device=device, dtype=torchDtype)
@@ -213,13 +508,49 @@ def main():
             destination = torch.empty(size, device=device, dtype=torchDtype)
             bytesPerElement = 4 if args.dtype == "fp32" else 2
             workPerIteration = float(size) * bytesPerElement * 3.0
+            # One multiply and one add per element over 12 bytes of traffic gives the 0.167
+            # FLOP/byte quoted throughout. Declared for the intensity field only.
+            suiteFlops = 2.0 * size
+            suiteBytes = workPerIteration
 
             def step():
                 torch.add(source, other, alpha=2.0, out=destination)
 
+        else:
+            elementBytes = 4 if args.dtype == "fp32" else 2
+            step, suiteFlops, suiteBytes, size = buildSuiteWorkload(
+                args.workload, size, torchDtype, elementBytes, device, torch)
+            # A workload with no arithmetic at all cannot report FLOP/s, and one below roughly
+            # one FLOP per byte is measuring the memory system whatever its operation is called.
+            # The unit follows the intensity rather than the family name.
+            intensity = (suiteFlops / suiteBytes) if suiteBytes else 0.0
+            workPerIteration = suiteFlops if intensity >= 1.0 else suiteBytes
+
         for _ in range(max(0, args.warmup)):
             step()
         torch.cuda.synchronize()
+
+        if args.calibrate:
+            # Timed with no temperature polling, because a poll inside a short sample would be a
+            # large fraction of it. This measures the card as it is RIGHT NOW - so run it at full
+            # clock on a quiet machine, or the count it prints will be sized for a throttled card.
+            probeIterations = 20
+            probeStart = time.perf_counter()
+            for _ in range(probeIterations):
+                step()
+            torch.cuda.synchronize()
+            perIteration = (time.perf_counter() - probeStart) / probeIterations
+            recommended = max(1, int(round(args.target_seconds / perIteration))) if perIteration > 0 else 0
+            emit({"ok": True, "calibration": True, "workload": args.workload, "size": size,
+                  "seconds_per_iteration": round(perIteration, 8),
+                  "target_seconds": args.target_seconds,
+                  "recommended_iterations": recommended}, args.json,
+                 [f"[WORKLOAD] Calibration for {args.workload} (size {size}) on {deviceName}:",
+                  f"[WORKLOAD]   {perIteration * 1000:.3f} ms per iteration over {probeIterations} iterations",
+                  f"[WORKLOAD]   --iterations {recommended} gives about {args.target_seconds:.0f} s at this clock",
+                  "[WORKLOAD] This is NOT a benchmark result. Record the count, pass it explicitly,",
+                  "[WORKLOAD] and hold it constant across every frequency in the sweep."])
+            return 0
 
         started = time.perf_counter()
         startedUnix = time.time()
@@ -295,6 +626,12 @@ def main():
         totalWork = workPerIteration * completedIterations
         throughput = totalWork / elapsed  # FLOP/s for gemm, byte/s for membw
 
+    # Which unit the number above is in. gemm and membw keep the units they have always had;
+    # a suite workload follows its declared intensity, because a workload below one FLOP per
+    # byte is measuring the memory system whatever its operation is called.
+    declaredIntensity = (suiteFlops / suiteBytes) if suiteBytes else 0.0
+    reportsFlops = (args.workload == "gemm") or (isSuite and declaredIntensity >= 1.0)
+
     payload = {
         "ok": (not aborted) and completedIterations == iterations,
         "workload": args.workload,
@@ -310,7 +647,13 @@ def main():
         "monitoring_overhead_seconds": round(monitoringSeconds, 4),
         "seconds_per_iteration": round(elapsed / completedIterations, 6) if completedIterations else None,
         "throughput": throughput,
-        "throughput_unit": "FLOP/s" if args.workload == "gemm" else "byte/s",
+        "throughput_unit": "FLOP/s" if reportsFlops else "byte/s",
+        # Declared, not measured - see the suite header. Present so an analysis can order the
+        # workloads by intensity without a second lookup table that could disagree with this file.
+        "flops_per_iteration": suiteFlops,
+        "bytes_per_iteration": suiteBytes,
+        "arithmetic_intensity_flop_per_byte": round(suiteFlops / suiteBytes, 4) if suiteBytes else None,
+        "arithmetic_intensity_is_declared": True,
         # Epoch bounds of the timed region, so the sweep can window its power samples to
         # exactly the interval that produced the throughput above.
         "timed_region_start_unix": round(startedUnix, 4),
@@ -321,11 +664,14 @@ def main():
         "abort_reason": abortReason,
     }
 
-    humanUnit = "TFLOP/s" if args.workload == "gemm" else "GB/s"
-    humanValue = (throughput / 1e12) if args.workload == "gemm" else (throughput / 1e9) if throughput else 0.0
+    humanUnit = "TFLOP/s" if reportsFlops else "GB/s"
+    humanValue = (throughput / 1e12) if reportsFlops else (throughput / 1e9) if throughput else 0.0
+    if throughput is None:
+        humanValue = 0.0
 
     lines = [
-        f"[WORKLOAD] {args.workload} on {deviceName} ({args.dtype}, size {size})",
+        f"[WORKLOAD] {args.workload} on {deviceName} ({args.dtype}, size {size}, "
+        f"{declaredIntensity:.3f} FLOP/byte declared)",
         f"[WORKLOAD] {completedIterations}/{iterations} iterations in {elapsed:.3f} s of GPU work "
         f"({wallSeconds:.3f} s wall, {monitoringSeconds:.3f} s monitoring excluded)",
         f"[WORKLOAD] Throughput: {humanValue:.2f} {humanUnit}",
