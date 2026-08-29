@@ -183,8 +183,12 @@ dataset, which is never pooled with either.
   clock through HWiNFO, and repaired by a change derived from that diagnosis (§5.7).
 - **The central result reproduces on a second architecture** — 21.7% throughput for 37.3% power on
   the 3070 Ti (§5.5). Two chips is not a sample; every *tuning* result is still 5060 Ti only.
-- **The vendor OC BIOS is almost entirely voltage** (§5.5.1), and its clock ceiling is a
-  `SwPowerCap`, not silicon (§5.5.3).
+- **The vendor OC BIOS costs 23.11% more power at matched frequency for 0.56% of peak compute**
+  (§5.5.1), and its clock ceiling is a `SwPowerCap`, not silicon (§5.5.3). **It is NOT voltage** —
+  this bullet said "almost entirely voltage" until 2026-08-28, which Session B refuted: both BIOSes
+  hold the same floor within one sensor step, the gap is a ~34 W additive offset that does not
+  scale with core clock, and it is excluded from being voltage, core dynamic power, memory clock,
+  crossbar or leakage. No mechanism is claimed (§5.5.1.1).
 - **The constrained result, added 2026-08-27** (§5.6.1 + `analysis/models/`): under a 95%
   performance floor, probing beats a fixed frequency **25.4% to 4.9%** mean efficiency gain — 87%
   of the available gap, zero floor violations. **But the fitting earns none of it**: straight-line
@@ -199,15 +203,14 @@ and the audit.
 
 ## Not done — roughly in order of value
 
-1. **The 3070 Ti Silent-BIOS session (Session B), and it tests a registered prediction.**
-   §5.5.3 commits to a number *before* measuring it: if the 23.11% matched-frequency power gap is
-   voltage and nothing else, the Silent BIOS should hold its floor near **0.738 V** (0.819 /
-   √1.2311). Reads near 0.738 confirm the mechanism; near 0.819 and §5.5.1 needs a different
-   explanation. The plan: flip to Silent, verify VBIOS `94.04.5a.00.91` and 290 W, Instant Replay
-   off, HWiNFO at 500 ms, then three sweeps — `gemm` matched-2130, `membw` matched-2130, and a fine
-   `gemm` 1200–1600 at `-FrequencyCount 10`. **The updated tool is already on the USB at
-   `F:\headroom-kit`**, so this session would record the enforced power limit the OC session could
-   not.
+1. **A fan-RPM log on the 3070 Ti, while the machine is still reachable.** Session B ran
+   2026-08-27 and refuted its own registered prediction: the two BIOSes hold the same voltage
+   floor, and the ~34 W gap is an additive offset excluded from voltage, core dynamic power,
+   memory clock, crossbar and leakage (§5.5.1.1). The one live candidate is board-level — the
+   position drawing *more* power runs ~5 °C *cooler*, so the cooling system is doing more work and
+   fan power sits inside `nvidia-smi`'s board figure. **HWiNFO reports fan RPM and Session B did
+   not capture it.** That single addition would turn a set of exclusions into a mechanism, and it
+   needs the card. `membw` matched-2130 was also planned and never collected.
 2. **Nothing has been stability-tested**, including the configurations producing the best numbers.
    A ~2.5% low outlier appears in roughly one split-curve `gemm` run in three, against 0.06% spread
    on the tuned curve — so this has evidence behind it now rather than being prudence.

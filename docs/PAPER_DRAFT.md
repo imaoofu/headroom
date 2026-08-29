@@ -894,7 +894,7 @@ power-limited-not-clock-limited behaviour 5.4 reports for the 5060 Ti, now on ha
 none of its design decisions, which makes it a property of how these cards are configured rather
 than of one board.
 
-#### 5.5.1 Two vendor BIOSes on one chip: the overclock is almost entirely voltage
+#### 5.5.1 Two vendor BIOSes on one chip: a quarter more power for nothing
 
 The card was found with its BIOS switch in the **SILENT** position, which is not the factory
 default. Both positions were measured in one session, minutes apart, on the same silicon in the
@@ -924,11 +924,14 @@ at five of the seven points, 55.8-58.8 C against 51.8-54.0 C, and it drew less. 
 the two curves is not thermal, and correcting for temperature would widen the gap rather than
 close it.
 
-No voltage telemetry was available - the machine belonged to somebody else and the kit installs
-nothing - so the mechanism is inferred rather than measured. At fixed frequency and fixed work,
-dynamic power scales with the square of voltage, and +23% implies roughly 11% more of it.
+No voltage telemetry was available in this session - the machine belonged to somebody else and the
+kit installs nothing - so the mechanism could not be measured here. A prediction was registered
+from this gap on the assumption that it was voltage, and a later session refuted it. That exchange
+is 5.5.1.1, and the short version is that **the extra power is not voltage and the two BIOSes hold
+the same voltage floor.** What follows in this subsection is what the gap buys, which does not
+depend on what causes it.
 
-**What the extra voltage returns.**
+**What the extra power returns.**
 
 | | SILENT | OC | difference |
 |---|---|---|---|
@@ -942,11 +945,77 @@ efficiency given away to get it. On the bandwidth-bound workload the two positio
 same throughput for 35% more power, because that workload never approaches the frequency where the
 higher ceiling could matter.
 
-**This is the clearest evidence in this work that the shipped voltage is not the required
-voltage.** Section 5.7 reaches the same conclusion by hand-tuning one card downward; this reaches
-it from the opposite direction, by measuring what a vendor's own upward tune costs when the extra
-frequency it enables is not being used. The two are independent, and the second was authored by
-the manufacturer.
+**What this does and does not show.** It shows that a vendor's own upward tune, on its own silicon,
+can cost a quarter of the board's power and return half a percent of compute when the extra
+frequency it enables is not being used. That is a statement about the *trade* the OC position makes,
+it was authored by the manufacturer rather than by us, and it stands on the measurements above
+whatever the mechanism turns out to be.
+
+An earlier version of this paragraph went further and called this "the clearest evidence in this
+work that the shipped voltage is not the required voltage", pairing it with 5.7's hand-undervolting
+of the 5060 Ti as the same conclusion reached from the opposite direction. **That pairing is
+withdrawn.** It rested on the inference refuted in 5.5.1.1: the two BIOSes ship the *same* voltage,
+so nothing here says the shipped voltage exceeds the required one. 5.7's finding is unaffected -
+it is a direct measurement on a different card and never depended on this one.
+
+##### 5.5.1.1 A prediction registered from this gap, and its refutation
+
+The gap above was measured without voltage telemetry. Section 5.5.3 recorded a prediction before
+the measurement that would test it: if the 23.11% is core voltage and nothing else, then at equal
+clock and equal work power scales with V-squared, and the SILENT BIOS should hold its floor near
+0.819 / sqrt(1.2311) = **0.738 V**.
+
+**It was measured on 2026-08-27 and the prediction failed.** The SILENT floor reads
+**0.812-0.819 V** against the OC position's 0.819-0.825 V. Within this sensor's 6-7 mV
+quantisation the two BIOSes hold **the same voltage floor**. The predicted separation was 81 mV,
+about twelve sensor steps; the measured separation is zero to one.
+
+The gap itself reproduced. Seven matched points, both sessions verified quiet: **+22.27% mean
+power** against Session A's +23.11%, **+0.42% mean throughput**, and a voltage difference of
++0.003 V that is exactly zero at four of the seven points.
+
+**Where the inference went wrong is specific, and worth stating because the error is reusable.**
+Fit each BIOS's matched-band power as `P(f) = intercept + slope*f`. The slope is the term
+`P = C*V^2*f` actually governs; the intercept is everything that does not scale with core clock.
+
+| | SILENT | OC | difference |
+|---|---|---|---|
+| slope (frequency-scaling) | 87.7 +/- 5.4 W/GHz | 79.3 +/- 6.4 W/GHz | -8.4 +/- 8.4, consistent with zero |
+| intercept (constant) | 53.6 +/- 6.4 W | 97.5 +/- 7.6 W | **+43.9 +/- 9.9 W, 4.4 sigma** |
+
+**The frequency-scaling term is the same in both BIOSes within error, and all of the resolvable
+difference is in the constant.** `V^2*f` is a statement about the slope; the +23.11% was measured
+on total board power and lives entirely in the intercept. The inference fed a whole-quantity ratio
+into a law governing one term of it, and that term had not changed.
+
+Described as an offset rather than a ratio, the gap is **34.1 W, relative spread 9.9%, against
+22.3% at 19.0%** as a percentage - the additive description fits more than twice as tightly. Under
+leave-one-out across the seven points, fitting each model's single parameter on six and predicting
+the seventh, the additive model predicts to **2.95 W against 6.43 W for the ratio model, a 54%
+reduction**. The ratio model's errors are also structured, overshooting at the bottom of the band
+and undershooting at the top, which is the signature of a wrong functional form rather than noise.
+
+**34.1 W and 43.9 W are not the same quantity.** 34.1 W is the measured mean offset across the
+seven matched points and is the number that describes the card. 43.9 W is the difference between
+the two fits' intercepts, an extrapolation to zero frequency that no measurement reaches. They
+differ because the slopes differ slightly, so the two lines converge as frequency rises.
+
+**This is an improvement in description, not in explanation. It still does not say what draws the
+34 W.** What it does is exclude, and the exclusions are tighter than 5.5.1 previously had:
+
+- **not core voltage** - the floors are identical within one sensor step
+- **not core dynamic power** - it does not scale with core clock at all, across a 74% rise
+- **not memory clock** - identical at 9251 MHz in both positions
+- **not crossbar clock** - at 1485 MHz both positions hold 1410 MHz and the offset there is
+  30.4 W, larger than the 29.0 W at 1380 MHz where the crossbar clocks differ by 75 MHz
+- **not leakage** - leakage rises with temperature, and the card drawing *less* power is the
+  *hotter* one by about 5 C at every matched point, in both sessions independently
+- **partly board-level rather than die-level** - that same thermal inversion requires more cooling
+  work in the OC position, and fan power sits inside the board power figure `nvidia-smi` reports,
+  which is exactly what distinguishes a "SILENT" BIOS from an "OC" one
+
+**No mechanism is claimed.** Separating a fan-curve contribution from the rest needs fan RPM logged
+alongside power, which HWiNFO can report and this session did not capture.
 
 #### 5.5.2 The measurement is tighter on this card than on the reference one
 
@@ -967,7 +1036,10 @@ comparisons 5.7 declines to make on the 5060 Ti might be available on this card,
 > `tools/frequency-sweep/join_hwinfo_voltage.py`.
 
 Section 5.5.1 measured the OC BIOS drawing 23.11% more power at matched frequency for no
-throughput. It could not say what the power bought, because voltage was not observed. It is now.
+throughput. It could not say what the power bought, because voltage was not observed. This section
+observes it - but note what 5.5.1.1 established with the SILENT position measured too: **the floor
+reported below is not what separates the two BIOSes, because both hold it.** What follows
+characterises the OC position's operating behaviour; it does not explain the gap.
 
 **The OC BIOS holds a hard voltage floor.** Across a ten-point fine sweep from 1200 to 1590 MHz,
 HWiNFO reports **0.819 V** at all 10 points from 1200 to 1590 MHz - no movement at all - while
@@ -1023,17 +1095,25 @@ table is a hand-recorded note in the run README rather than instrument output. N
 repository records its enforced power limit. That is a collection gap, not an analysis one, and it
 is listed in the roadmap.
 
-##### A prediction recorded before the measurement that tests it
+##### A prediction recorded before the measurement that tests it - and refuted by it
 
 If the 23.11% matched-frequency power gap of §5.5.1 is voltage and nothing else, then at equal
 clock and equal work, power scales with V-squared, and the Silent BIOS should hold its own floor
 near 0.819 / sqrt(1.2311) = **0.738 V**.
 
-That sweep has not been run. The number is committed here before it is measured, because a
-prediction registered in advance is worth more than the same number produced afterwards, and
-because the honest outcome of this section is that it is testable and untested. If Silent reads
-near 0.738 V the mechanism is established; if it reads near 0.819 V the two BIOSes differ in
-something other than voltage and §5.5.1 needs a different explanation.
+That number was committed here before the sweep existed, with the outcomes stated both ways: read
+near 0.738 V and the mechanism is established, read near 0.819 V and the two BIOSes differ in
+something other than voltage.
+
+**The sweep was run on 2026-08-27 and returned the second branch.** The Silent floor reads
+0.812-0.819 V - the same floor as the OC position, within one sensor step of 6-7 mV. The
+prediction is refuted, the voltage explanation of §5.5.1 is withdrawn, and the decomposition that
+replaces it is §5.5.1.1.
+
+The registration is left standing here rather than deleted. A prediction that fails is only worth
+what it was worth before the result if it is still legible afterwards, and this one narrowed the
+question usefully: it converted "the OC BIOS spends its power on something" into a measured set of
+exclusions.
 
 #### 5.5.4 Limits
 

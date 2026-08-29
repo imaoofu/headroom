@@ -464,3 +464,19 @@ def gapIsAnOffset():
         )
     return (f"**{mean(offsets):.1f} W**, relative spread **{offsetSpread:.1f}%**, against "
             f"**{mean(percents):.1f}%** at **{percentSpread:.1f}%**")
+
+
+# The two claims above pin the finding in hwinfo-silent/README.md, where it was written the day it
+# was measured. As of 2026-08-28 the paper carries it too, in 5.5.1.1, so it needs pinning in BOTH
+# documents - a claim asserts its string appears once in ONE document, so the paper's copy was
+# unprotected until these existed. The render functions are reused rather than reimplemented: two
+# formulas for one number is how the two documents would drift apart while both looked audited.
+
+@claim("5.5.1-paper-gap-is-an-offset", PAPER, "5.5.1")
+def paperGapIsAnOffset():
+    return gapIsAnOffset()
+
+
+@claim("5.5.1-paper-additive-beats-ratio", PAPER, "5.5.1")
+def paperAdditiveBeatsRatio():
+    return additiveBeatsRatio()
