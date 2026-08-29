@@ -171,7 +171,7 @@ utilisation and names the offending process.
 
 ## State as of 2026-08-29
 
-**Data.** 67 committed sweep CSVs across **two chips**: 55 on the RTX 5060 Ti (Blackwell) and 9 on
+**Data.** 67 committed sweep CSVs across **two chips**: 55 on a Zotac RTX 5060 Ti Twin Edge OC 16 GB (Blackwell) and 9 on
 a Gigabyte RTX 3070 Ti GAMING OC (Ampere), collected 2026-08-25 on a third party's machine and
 returned to the state it was found in. Plus the stability logger's runs and the V100 public
 dataset, which is never pooled with either.

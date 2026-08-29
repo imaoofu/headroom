@@ -265,16 +265,36 @@ signature of a truncated range.
 | Component | Detail |
 |---|---|
 | GPU | NVIDIA GeForce RTX 5060 Ti 16 GB (Blackwell, GB206, compute capability 12.0) |
+| **Board** | **Zotac Twin Edge OC** — a factory-overclocked, dual-fan partner card, not a reference design |
 | Driver | 610.88 |
 | Rated clocks | Base 2407 MHz, boost 2572 MHz (reference); **3090 MHz observed max** (factory-OC board) |
 | Power limit | 180 W default, 200 W configured, adjustable range 150–200 W |
-| Memory | 16 GB GDDR7, 128-bit bus, 448 GB/s |
+| Memory | 16 GB GDDR7, 128-bit bus, 448 GB/s at the 14001 MHz rating |
 | OS | Windows 11 |
 | Framework | PyTorch 2.11.0+cu128 |
 
-The distinction between reference and observed clocks is deliberate: the specification database
-lists this model at 2572 MHz boost, while the physical card reports a 3090 MHz maximum. Spec-sheet
-clocks are not measured clocks, and analyses use the measured values.
+The second cross-chip unit is a **Gigabyte RTX 3070 Ti GAMING OC rev2.0** (Ampere, GA104, 8 GB
+GDDR6X, 256-bit, 608 GB/s), a customer machine measured at stock in both positions of its dual
+BIOS and returned as found.
+
+**The board model is recorded because it is load-bearing, not for completeness.** Three results in
+this paper depend on board-level rather than chip-level facts:
+
+- **The 3090 MHz maximum** is a property of *this partner board's* factory overclock. The
+  specification database lists the model at 2572 MHz boost, and a reference 5060 Ti would not
+  reach the clocks swept here. Spec-sheet clocks are not measured clocks, and analyses use the
+  measured values throughout.
+- **§5.5's entire subject is a vendor BIOS pair.** The dual-BIOS switch is Gigabyte's feature, not
+  NVIDIA's; the 23.11% power gap and the 34–57 W offset are properties of two BIOSes that a
+  particular board vendor shipped on one card.
+- **§5.5.1.1's thermal inversion** — the OC position running 5–7 °C cooler while drawing more
+  power — is a statement about a cooler and a fan curve, both of which are the board vendor's.
+
+Naming the boards narrows the claims rather than broadening them, which is the point. Results here
+are one Zotac Twin Edge OC and one Gigabyte GAMING OC — not "the RTX 5060 Ti" and "the RTX 3070 Ti"
+as model lines, and certainly not Blackwell and Ampere as architectures. Two partner cards of the
+same chip differ in factory clocks, power limits, cooler capacity and fan curves, and this work has
+measured effects attributable to every one of those.
 
 Additional units are drawn opportunistically from a small PC-building operation, giving on the order
 of one new machine every 2–3 weeks. Sample size is therefore small and heterogeneous by

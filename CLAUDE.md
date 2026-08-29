@@ -110,10 +110,11 @@ every published consumer dataset misses entirely. The justification is therefore
 "no open consumer data exists" — it is **"the consumer data that exists sweeps the wrong range."**
 That is a sharper, more defensible contribution claim, and it is checkable by anyone.
 
-### The hardware (RTX 5060 Ti, driver 610.88) — verified by direct probing
+### The hardware (Zotac RTX 5060 Ti Twin Edge OC, driver 610.88) — verified by direct probing
 
 | Fact | Value |
 |---|---|
+| Board | **Zotac Twin Edge OC** — factory-OC partner card, dual fan. NOT a reference design, and that is why the max clock below exceeds the 2572 MHz the spec database lists. |
 | Max SM clock | 3090 MHz |
 | Power limit | 200 W current, 180 W default, **range 150–200 W** |
 | Supported graphics clocks | **389 discrete**, 180–3090 MHz |

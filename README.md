@@ -8,7 +8,9 @@
 > does and does not license.
 >
 > - **Two chips, one unit each — which is not a sample.** Most consumer results come from one
->   RTX 5060 Ti (Blackwell). A Gigabyte RTX 3070 Ti GAMING OC (Ampere) was measured on 2026-08-25
+>   **Zotac RTX 5060 Ti Twin Edge OC 16 GB** (Blackwell) - a factory-overclocked partner board,
+>   not a reference card, which is why its observed 3090 MHz maximum exceeds the 2572 MHz the
+>   spec database lists for the model. A Gigabyte RTX 3070 Ti GAMING OC (Ampere) was measured on 2026-08-25
 >   on a third party's machine and returned; the central result reproduces there — running the
 >   compute workload at its efficiency optimum rather than its peak-throughput point costs **21.7%**
 >   throughput and saves **37.3%** power. The magnitude differs from the 5060 Ti's; the shape does
