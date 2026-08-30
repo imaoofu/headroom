@@ -127,9 +127,36 @@ were refused as "does not parse" and the fault looked like the model's. The BOM 
 for the compile check only — `readLines`/`writeLines` keep it, or restoring would drop byte zero
 of a tracked source.
 
-## Next
+## What was done with it
 
-The 68 uncoverable survivors name 35 functions with proven-zero coverage. Writing tests for them
-is gradeable by construction: a draft that does not kill the surviving mutant is rejected by the
-same harness that found the gap. That closes the loop — find gap, fill gap, prove filled — rather
-than producing another list.
+Two things, then a deliberate stop.
+
+**`analyze_sweep.describe()` now has coverage, 17% to 80%.** All eight survivors killed; the two
+left are in `main()`. The checks were drafted by the local model from a specification naming the
+mutants they had to kill, and **two of nine were wrong**. One asserted a substring a padded format
+never produces, and failed on unmutated source. The other asserted the peak row draws a full
+40-character bar — the one row where inverting the ratio changes nothing, since the peak row's
+efficiency IS the divisor — so it passed against the very mutant it was written for. Both were
+caught mechanically by re-running the mutants, which is the property that makes delegating this
+kind of work safe.
+
+**The declared arithmetic-intensity column is now pinned** by `5.5-intensity-*` in
+`claims_consumer.py`. That began as a test task and became a claim, because the gap was not where
+it looked. `test_gpu_workload.py` compares `suiteDeclaredIntensity()` against a longhand
+`builderIntensity()` written out in the test file, and `buildSuiteWorkload()` — the code that runs
+on the card — is in neither side of that comparison. Six of its coefficients survived mutation.
+Fixing it properly means extracting the builder's arithmetic so the runtime path is the tested
+path, which is a change to the collection tool with 3070 Ti runs still outstanding on it, so it is
+deferred. The claims bound the damage rather than closing the gap: a drift in the builder alone
+still goes unnoticed. Gated by changing four shape constants, all four caught — the conv case
+renders `| \`conv\` | 144 |`, exactly the wrong value the original hand-written table carried.
+
+## Not done, on purpose
+
+The remaining 34 functions and 60 survivors were left. Seven are `main()`, roughly twelve are
+`report()`/`describe()` shaped, and the blast-radius section above says why those are second tier:
+the auditor recomputes every pinned figure from the CSVs, so a bug there misleads an operator
+rather than the paper. Driving 45% toward 70% would improve a number without improving the
+finding, and the collection gaps — the 3070 Ti's remaining priorities, replicates for a dataset
+that is n=1 throughout, a failure detector that has never seen a failure — are what a reader will
+name first.
