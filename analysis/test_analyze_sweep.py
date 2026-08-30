@@ -1,5 +1,5 @@
 """
-Known-answer checks for loadSweep in analyze_sweep.py.
+Known-answer checks for loadSweep and describe in analyze_sweep.py.
 
 WHY THIS FUNCTION NEEDS TESTS AT ALL
     loadSweep decides which rows of a sweep CSV enter the analysis and which are silently
@@ -25,6 +25,35 @@ PROVENANCE
     `/` for `*` leaves the file the same size, and stale bytecode ran the mutated version while
     inspect.getsource showed the restored source - which produced a confidently wrong result
     until the cache was cleared.
+
+WHY describe() WAS ADDED, 2026-08-30
+    Mutation testing measured this suite at 17%. All eight survivors were in describe(), which
+    had no coverage at all, and three of them INVERT a printed ratio - efficiency gain,
+    performance cost, percentage of sustained max. Those figures never reach the paper, because
+    claims_*.py recomputes every pinned number from the CSVs through audit_claims. They are what
+    the operator reads while deciding whether a sweep is worth keeping, which is its own kind of
+    load-bearing. The file now stands at 80%; the two remaining survivors are in main().
+
+    describe() computes those ratios inside print() calls, so the checks capture stdout with
+    contextlib.redirect_stdout rather than asserting on a return value. Only `peak` and
+    `fastest` come back from the function.
+
+PROVENANCE OF THE describe() CHECKS
+    Drafted by the local Qwen3.8-27B (UD-IQ4_XS via llama.cpp) from a specification listing the
+    eight mutants they had to kill, then verified rather than trusted. TWO were wrong:
+
+      - check 03 asserted the substring "300.00 GB/s", but the label is right-aligned into eight
+        columns so the two are not adjacent. It failed on unmutated source immediately.
+      - check 04 asserted that the PEAK row draws a full 40-character bar. That is the one row
+        where inverting the ratio changes nothing, since the peak row's efficiency IS `best` and
+        40*eff/best and 40*best/eff both give 40. It passed against the mutant it was written to
+        catch. 04b was added on a non-peak row, where the same inversion gives 120 characters
+        instead of 13.
+
+    The second is the more instructive: a check that looks right, passes, and verifies nothing.
+    It is the same failure as the model-drafted misalignment check in test_load_data.py, and the
+    reason nothing from a local model is committed here without the mutants being re-run against
+    it. Re-grading is mechanical - tools/mutation/run_mutants.py on the surviving mutants.
 
 Run: python analysis/test_analyze_sweep.py
 """
@@ -214,6 +243,139 @@ try:
           f"got {result12[0]['utilisation']!r}; a fabricated 0.0 would read as an idle GPU")
 finally:
     os.unlink(temp_path12)
+
+
+import io
+import contextlib
+from analyze_sweep import describe
+
+def makeRow(mhz, throughput, power, unit, windowed):
+    return {
+        "mhz": mhz,
+        "throughput": throughput,
+        "power": power,
+        "unit": unit,
+        "windowed": windowed,
+        "efficiency": throughput / power,
+    }
+
+# Peak is the middle row (1000 MHz); fastest is the last row (2000 MHz).
+# The two rows are deliberately not mirror images so every inverted ratio
+# (mhz, efficiency, throughput) yields a different number than the correct one.
+threeRows = [
+    makeRow(500.0, 100e9, 100.0, "GB/s", True),    # eff 1.0e9
+    makeRow(1000.0, 300e9, 100.0, "GB/s", True),   # eff 3.0e9 (peak)
+    makeRow(2000.0, 400e9, 200.0, "GB/s", True),   # eff 2.0e9 (fastest)
+]
+
+# --- 1. short-circuit threshold ---
+# Two rows: a correct <3 threshold skips, a mutated <2 threshold proceeds.
+twoRows = [
+    makeRow(500.0, 100e9, 100.0, "GB/s", True),
+    makeRow(1000.0, 300e9, 100.0, "GB/s", True),
+]
+bufShort = io.StringIO()
+with contextlib.redirect_stdout(bufShort):
+    resShort = describe("short case", twoRows)
+outShort = bufShort.getvalue()
+check("01. describe returns None and prints a skip notice for fewer than 3 rows",
+      resShort is None and "only 2 usable points" in outShort,
+      f"returned={resShort!r}, output={outShort!r}")
+
+# --- 2. fastest selection ---
+# Peak is 1000 MHz, true fastest is 2000 MHz. Correct: 50% of sustained max.
+# A min() mutant picks 500 MHz and prints 200%.
+bufFastest = io.StringIO()
+with contextlib.redirect_stdout(bufFastest):
+    describe("fastest case", threeRows)
+outFastest = bufFastest.getvalue()
+check("02. optimum is reported as 50% of the sustained max (fastest row by mhz)",
+      "50% of sustained max 2000.0 MHz" in outFastest,
+      outFastest)
+
+# --- 3. scale selection ---
+# GB/s fixture: correct scale 1e9 -> 300.00 GB/s. Mutated scale 1e12 -> 0.00 GB/s.
+bufScale = io.StringIO()
+with contextlib.redirect_stdout(bufScale):
+    describe("scale case", threeRows)
+outScale = bufScale.getvalue()
+check("03. GB/s throughput is printed on the 1e9 scale, not the 1e12 one",
+      "300.00" in outScale and "TFLOP/s" not in outScale,
+      outScale)
+
+# --- 4. bar length direction ---
+# Peak row (eff 3.0e9) must draw the full 40-char bar. A mutant that divides
+# best by the row's efficiency gives the peak a 1-char bar.
+bufBar = io.StringIO()
+with contextlib.redirect_stdout(bufBar):
+    describe("bar case", threeRows)
+outBar = bufBar.getvalue()
+peakLine = [l for l in outBar.splitlines() if "<-- OPTIMUM" in l]
+check("04. the peak row draws the full 40-character bar",
+      len(peakLine) == 1 and peakLine[0].count("#") == 40,
+      f"peakLine={peakLine!r}")
+
+# The peak row is the ONE row where inverting the bar ratio changes nothing, because its
+# efficiency IS `best`: 40*eff/best and 40*best/eff both give 40. Checking only the peak row
+# therefore passes against the inverted form. A non-peak row is what makes the direction
+# observable - the 500 MHz row sits at a third of peak efficiency, so 13 characters against
+# the inverted form's 120.
+lowLine = [l for l in outBar.splitlines() if l.strip().startswith("500.0 MHz")]
+check("04b. a row at a third of peak efficiency draws a proportionally SHORTER bar",
+      len(lowLine) == 1 and lowLine[0].count("#") == 13,
+      f"lowLine={lowLine!r}")
+
+# --- 5. mhz percentage ---
+# Correct: 100*peak/fastest = 50%. Mutant: 100*fastest/peak = 200%.
+# (Same fixture as check 02, but asserted as an independent substring.)
+check("05. optimum mhz is printed as 50% of the sustained max",
+      "50% of sustained max" in outFastest,
+      outFastest)
+
+# --- 6. efficiency gain ---
+# Correct: 100*(3.0/2.0 - 1) = 50.0%. Mutant: 100*(2.0/3.0 - 1) = -33.3%.
+bufEff = io.StringIO()
+with contextlib.redirect_stdout(bufEff):
+    describe("efficiency case", threeRows)
+outEff = bufEff.getvalue()
+check("06. efficiency gain is reported as 50.0%",
+      "efficiency gain  : 50.0%" in outEff,
+      outEff)
+
+# --- 7. performance cost ---
+# Correct: 100*(1 - 300/400) = 25.0%. Mutant: 100*(1 - 400/300) = -33.3%.
+bufPerf = io.StringIO()
+with contextlib.redirect_stdout(bufPerf):
+    describe("performance case", threeRows)
+outPerf = bufPerf.getvalue()
+check("07. performance cost is reported as 25.0%",
+      "performance cost : 25.0%" in outPerf,
+      outPerf)
+
+# --- 8. windowing warning polarity ---
+# All rows windowed: correct code prints no warning; an inverted all(...) prints one.
+bufNoWarn = io.StringIO()
+with contextlib.redirect_stdout(bufNoWarn):
+    describe("no warning case", threeRows)
+outNoWarn = bufNoWarn.getvalue()
+check("08. no power-windowing warning when every row is windowed",
+      "WARNING: some points lack power windowing" not in outNoWarn,
+      outNoWarn)
+
+# One row unwindowed: correct code prints the warning; an inverted all(...) does not.
+mixedRows = [
+    makeRow(500.0, 100e9, 100.0, "GB/s", True),
+    makeRow(1000.0, 300e9, 100.0, "GB/s", True),
+    makeRow(2000.0, 400e9, 200.0, "GB/s", False),
+]
+bufWarn = io.StringIO()
+with contextlib.redirect_stdout(bufWarn):
+    describe("warning case", mixedRows)
+outWarn = bufWarn.getvalue()
+check("09. power-windowing warning appears when a row lacks windowing",
+      "WARNING: some points lack power windowing" in outWarn,
+      outWarn)
+
 
 if failures:
     print(f"FAILED: {', '.join(failures)}")
