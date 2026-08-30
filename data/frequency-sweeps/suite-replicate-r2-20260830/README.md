@@ -77,10 +77,48 @@ workloads is what a flat peak looks like when sampled twice.
 Seven of twelve agree within ±1 point. The gains are 34–77%, so even the ±3 point cases leave the
 headline effect untouched — a 51% efficiency gain measured as 54% is the same finding.
 
-🔑 **`bgemm64` is not in that category.** A 7.0-point move is roughly nine times the ~0.76%
-between-run spread this project has recorded for `gemm`, and it is the largest disagreement in the
-table by a factor of two. It is **not explained** here. Until it is, `bgemm64`'s r1 figure should
-not be quoted without this replicate beside it.
+**`bgemm64`'s 7.0-point move was chased and is now explained** — see the next section. It is not
+an r1-versus-r2 discrepancy; it is this workload's own repeatability, and the reason it looks so
+large is a property of the metric rather than of the card.
+
+## 🔑 Result 3 — the efficiency-gain metric amplifies per-point noise
+
+`bgemm64` was re-swept twice more in the same session, giving four measurements of one workload
+at one configuration:
+
+| run | optimum | gain |
+|---|---|---|
+| r1 | 1537 MHz | 77.0% |
+| r2 | 1537 MHz | 70.0% |
+| r3 | **1236 MHz** | 76.5% |
+| r4 | 1537 MHz | 72.8% |
+
+**Spread 7.0 points, sd 3.3.** r2, r3 and r4 are all one session and span 6.5 of those 7.0, so the
+r1-versus-r2 gap needs no explanation beyond this workload's normal variability. Neither run is
+an outlier.
+
+The per-point view shows the curve is uniformly noisy rather than having an unstable peak:
+
+| target MHz | 1237 | 1395 | 1545 | 1702 | 1852 | 2010 | 2167 | 2317 | 2475 | 2625 | 2782 | 2932 | 3090 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| spread across 4 runs | **7.8%** | 3.1% | 3.3% | 2.8% | 2.5% | 2.7% | 3.1% | 3.1% | 3.4% | 2.3% | 2.6% | 1.8% | 1.6% |
+
+Every point carries 1.6–3.4% except 1237 MHz at 7.8%, which is why r3's argmax landed there.
+
+**The amplification is arithmetic, and it generalises.** Gain is `100 x (peak/fastest - 1)`. For
+`bgemm64` that ratio is about 1.77, so the reported gain in PERCENTAGE POINTS moves by
+`100 x` the absolute change in the ratio: a 3.9% relative error in the ratio is 0.069 absolute,
+which is **6.9 points of gain**. The metric multiplies per-point noise by roughly the ratio
+itself, so a workload with a large gain shows a large absolute swing from the same underlying
+precision.
+
+⚠️ **This project has been quoting ~0.76% between-run spread, measured on `gemm`, as though it
+described the dataset.** It describes `gemm`'s throughput. It does not bound the uncertainty on a
+reported efficiency gain, which for a high-gain workload is several percentage points. Any
+interval attached to §5.5's table should be derived per workload, not inherited from `gemm`.
+
+**What this does not say.** Four repeats give a spread, not a distribution, and all four sit in
+two sessions. The 1237 MHz point being worst is unexplained and is a single observation.
 
 ## What this does NOT establish
 
@@ -91,8 +129,9 @@ not be quoted without this replicate beside it.
   two variance components and would give intervals that are too tight.
 - **The performance-cost and power-saved columns were not compared here**, only the optimum and
   the gain.
-- **The `bgemm64` disagreement is unexplained**, and it is the one result in this directory that
-  should not be built on.
+- **The amplification factor is derived from four repeats of ONE workload.** That the mechanism is
+  arithmetic makes it general; that the noise level is 2-3% per point is measured only for
+  `bgemm64` and should not be assumed for the others.
 
 ## What it caught
 
