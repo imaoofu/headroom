@@ -1514,9 +1514,53 @@ prints on every run so the condition travels with the result.
 The fixed baseline is not automatically the safe choice either: at a 90% floor it breaks the floor
 on 1 of 33 workloads, because the frequency that satisfies 32 workloads does not satisfy the 33rd.
 
-**Caveat.** 33 workloads on one V100, every number in-dataset. This says nothing about consumer
-silicon until it is retested there, and the collected consumer data does not yet carry enough
-workloads for a leave-one-workload-out design (§6).
+**Caveat.** 33 workloads on one V100, every number in-dataset.
+
+##### 5.6.2.1 It has now been retested on consumer silicon, and it holds
+
+The caveat above previously ended *"this says nothing about consumer silicon until it is retested
+there, and the collected consumer data does not yet carry enough workloads for a
+leave-one-workload-out design."* The suite of §3.3 was built to remove that objection, and it does:
+twelve workloads spanning 0 to 1365 FLOP/byte, on one card, keyed by commanded frequency for the
+reason given in §5.6.1.1. Run `python analysis/models/predict_constrained_frequency.py
+--source consumer`.
+
+Leave-one-workload-out, 12 folds, probing at **1237, 1545, 1852 and 3090 MHz** — the V100's grid
+*positions* carried across rather than probes selected on this data, because probes optimised
+against the curves they are then scored on would be fitted to their own test set.
+
+| strategy | mean gain | floor violations |
+|---|---|---|
+| stock (do nothing) | 0.0% | 0 |
+| best fixed frequency | 1.5% | **1 of 12** — disqualified |
+| **interpolation between the four probes, no fit** | **27.7%** | **0** |
+| probe model (Ridge) | 31.8% | **2 of 12** — disqualified |
+| probe model (Ridge, calibrated to respect the floor) | 23.9% | 0 |
+| oracle (upper bound) | 31.7% | 0 |
+
+**Both halves of the V100 result reproduce.** Probing is worth its cost — interpolation captures
+**87% of the distance** between the fixed policy and the oracle, the same share it captures on the
+V100, computed the same way by the same tool.
+And the fitting still earns none of it: Ridge leads only by breaking the floor on 2 of 12
+workloads, and made to respect it falls to 23.9%, below the 27.7% of drawing straight lines between
+the same probes.
+
+**The condition travels too, which is what makes the recommendation portable rather than lucky.**
+§5.6.2 argued interpolation is safe here because performance is predominantly concave, and warned
+that on a convex curve the sign flips. Measured on consumer silicon the curves are *more* concave
+than the V100's — **68.2%** of second differences curve downward against 64.1%, and interpolated
+performance under-estimates **91%** of the time against 88%. The upward bias that makes
+interpolation floor-safe is larger on this hardware, not smaller.
+
+⚠️ **The fixed-frequency baseline breaks the floor here, and on the V100 at this floor it does
+not.** One workload of twelve. That is the same effect §5.6.1.1 measures from the other direction:
+a single frequency chosen for twelve workloads of this spread cannot hold a 95% guarantee for all
+of them, so the honest reading is that the fixed policy is not merely poor on consumer hardware but
+infeasible at the floor most deployments would want.
+
+**Caveats.** Twelve workloads on one card, n = 1 each, every number in-dataset. Chip-to-chip
+variation is untested and needs repeat units of one SKU this project does not have. Four of the
+twelve were collected under looser conditions than the other eight (§5.6.1.1).
 
 ### 5.7 Separating the two tuning knobs - DRAFT, 2026-08-20
 

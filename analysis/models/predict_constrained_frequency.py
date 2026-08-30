@@ -650,6 +650,69 @@ def reportCrossCheck(dataset, floor=0.95):
     print()
 
 
+CONSUMER_PATTERNS = ("stock-suite-20260829/*_sweep.csv", "suite-pilot-20260829/*_sweep.csv")
+
+# Chosen POSITIONALLY to mirror the V100's probes, not selected on this data.
+#
+# The V100 probes at 757, 885, 1012 and 1530 MHz - grid indices 0, 2, 4 and 12 of 13. The same
+# indices on the consumer grid give 1237, 1545, 1852 and 3090. Picking them this way is the
+# conservative option and it matters: probes optimised against the consumer curves would be
+# fitted to the data they are then evaluated on, and this file exists to embarrass models rather
+# than flatter them. If a greedy selection is ever used here it must be selected inside the
+# leave-one-out fold, not once over the whole set.
+CONSUMER_PROBE_FREQUENCIES_MHZ = (1237, 1545, 1852, 3090)
+
+
+def loadConsumerDataset(patterns=CONSUMER_PATTERNS, basis="commanded"):
+    """
+    Build the long-format frame this module expects, from consumer frequency sweeps.
+
+    The V100 arrives as a published matrix; a sweep arrives as one CSV per workload. This turns
+    the second into the shape of the first, normalising each workload against the highest
+    frequency in its own sweep exactly as analyze_constrained.buildPoints does - so the reference
+    is the clock the card actually held at the top of the grid, not a nameplate number.
+
+    basis="commanded" by default, and it has to be. Keyed by achieved clock these sweeps share
+    five frequencies out of thirteen, because each workload clamps differently under its own power
+    draw, and a pivot on that would be mostly holes. See analyze_constrained.loadSweepCurves.
+    """
+    import contextlib
+    import io
+
+    analysisDirectory = str(Path(__file__).resolve().parents[1])
+    if analysisDirectory not in sys.path:
+        sys.path.insert(0, analysisDirectory)
+    import analyze_constrained as constrained
+
+    curves = {}
+    with contextlib.redirect_stdout(io.StringIO()):
+        for pattern in patterns:
+            curves.update(constrained.loadSweepCurves(pattern, basis=basis))
+    if not curves:
+        raise FileNotFoundError(f"no sweeps matched {patterns}")
+
+    rows = []
+    for name, points in curves.items():
+        # Strip the timestamp and label prefix so the workload name is the workload, which is
+        # what a leave-one-WORKLOAD-out fold is leaving out.
+        workload = name.split("-")[-1]
+        for point in points:
+            rows.append({
+                "workload": workload,
+                "frequency_mhz": int(round(point["mhz"])),
+                "performance_normalised": point["perf"],
+                "power_watts": point["power"],
+                "efficiency_normalised": point["eff"],
+            })
+    frame = pd.DataFrame(rows)
+    duplicated = frame.duplicated(subset=["workload", "frequency_mhz"]).sum()
+    if duplicated:
+        raise ValueError(
+            f"{duplicated} duplicate workload/frequency pairs - two sweeps of the same workload "
+            f"are in the pattern, and the pivot would silently keep one of them")
+    return frame
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
     parser.add_argument(
@@ -659,14 +722,34 @@ def main():
         default=list(DEFAULT_FLOORS),
         help="performance floors to evaluate, as fractions of stock performance",
     )
+    parser.add_argument(
+        "--source",
+        choices=["v100", "consumer"],
+        default="v100",
+        help="which dataset to evaluate. 'v100' is the published reference matrix and the "
+             "default, so every number elsewhere is unchanged. 'consumer' is this project's own "
+             "twelve-workload sweep suite, keyed by COMMANDED frequency because the workloads "
+             "clamp to different achieved clocks at one target.",
+    )
     arguments = parser.parse_args()
 
-    dataset = loadDataset(validate=False)
+    if arguments.source == "consumer":
+        dataset = loadConsumerDataset()
+        probes = CONSUMER_PROBE_FREQUENCIES_MHZ
+        workloadCount = dataset["workload"].nunique()
+        print(f"[SOURCE] Consumer suite: {workloadCount} workloads, "
+              f"{dataset['frequency_mhz'].nunique()} commanded frequencies, one card, n=1 each.")
+        print("[SOURCE] Probes are the V100's grid POSITIONS carried over, not selected on this")
+        print("[SOURCE] data - see CONSUMER_PROBE_FREQUENCIES_MHZ for why that matters.\n")
+    else:
+        dataset = loadDataset(validate=False)
+        probes = DEFAULT_PROBE_FREQUENCIES_MHZ
+
     performance, _, efficiency = buildMatrices(dataset)
 
     print(
         f"[CONSTRAINED] Leave-one-workload-out, probing at "
-        f"{', '.join(str(frequency) for frequency in DEFAULT_PROBE_FREQUENCIES_MHZ)} MHz."
+        f"{', '.join(str(frequency) for frequency in probes)} MHz."
     )
     print(
         "[CONSTRAINED] Regret is efficiency given up against each workload's own CONSTRAINED "
@@ -674,20 +757,36 @@ def main():
     )
     print()
 
-    reportCrossCheck(dataset)
+    if arguments.source == "v100":
+        reportCrossCheck(dataset)
+    else:
+        # reportCrossCheck validates against analyze_constrained's V100 figures and quotes 5.6.1's
+        # published numbers back. There is no consumer equivalent to check against here - 5.6.1.1's
+        # consumer table is produced by analyze_constrained --basis commanded, which is a different
+        # question from this file's. Skipped rather than run against the wrong reference.
+        print("[CROSS-CHECK] Skipped: no consumer reference exists for this comparison.\n")
+
     reportInterpolationBias(
-        performance, np.array(efficiency.columns, dtype=int), DEFAULT_PROBE_FREQUENCIES_MHZ
+        performance, np.array(efficiency.columns, dtype=int), probes
     )
 
     for floor in arguments.floors:
-        result = runLeaveOneWorkloadOut(dataset, floor)
+        result = runLeaveOneWorkloadOut(dataset, floor, probeFrequencies=probes)
         reportFloor(result, floor, performance, efficiency)
 
-    print(
-        "[CONSTRAINED] CAVEAT: 33 workloads on one V100, every number in-dataset. This says "
-        "nothing about consumer silicon until it is retested there, and the collected data "
-        "does not yet have enough same-SKU units to retest it on."
-    )
+    if arguments.source == "v100":
+        print(
+            "[CONSTRAINED] CAVEAT: 33 workloads on one V100, every number in-dataset. This says "
+            "nothing about consumer silicon until it is retested there, and the collected data "
+            "does not yet have enough same-SKU units to retest it on."
+        )
+    else:
+        print(
+            "[CONSTRAINED] CAVEAT: 12 workloads on ONE consumer card, n=1 per workload, every "
+            "number in-dataset. Chip-to-chip variation is untested here and needs repeat units "
+            "of one SKU this project does not have. Four of the twelve were collected under "
+            "looser conditions than the other eight - see suite-pilot-20260829/README.md."
+        )
 
 
 if __name__ == "__main__":

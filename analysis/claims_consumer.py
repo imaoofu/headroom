@@ -1314,3 +1314,72 @@ def suiteAchievedSpread():
         held += [p["achieved_mhz"] for p in points if round(p["mhz"]) == target]
     return (f"**{min(held):.0f} to {max(held):.0f} MHz, a spread of "
             f"{max(held) - min(held):.0f} MHz**")
+
+
+# ---------------------------------------------------------------------------------------------
+# 5.6.2.1: the constrained MODEL comparison retested on consumer silicon. These run the
+# leave-one-workload-out evaluation, which is why the audit costs a few seconds - the alternative
+# is a stored table that cannot notice the model changing underneath it.
+
+def _consumerLoo(floor=0.95):
+    import contextlib
+    import io
+    import sys
+    from audit_claims import REPO_ROOT
+    for directory in (REPO_ROOT / "analysis", REPO_ROOT / "analysis" / "models"):
+        if str(directory) not in sys.path:
+            sys.path.insert(0, str(directory))
+    import predict_constrained_frequency as predictor
+    with contextlib.redirect_stdout(io.StringIO()):
+        dataset = predictor.loadConsumerDataset()
+        result = predictor.runLeaveOneWorkloadOut(
+            dataset, floor, probeFrequencies=predictor.CONSUMER_PROBE_FREQUENCIES_MHZ)
+    return result["scores"]
+
+
+@claim("5.6.2.1-interpolation-row", PAPER, "5.6.2.1")
+def consumerInterpolationRow():
+    s = _consumerLoo()
+    return (f"| **interpolation between the four probes, no fit** | "
+            f"**{s.loc['interpolation (no fit)', 'mean_gain_pct']:.1f}%** | "
+            f"**{s.loc['interpolation (no fit)', 'floor_violations']:.0f}** |")
+
+
+@claim("5.6.2.1-fitting-earns-nothing", PAPER, "5.6.2.1")
+def consumerFittingEarnsNothing():
+    """RAISES if a fitted variant ever beats plain interpolation on the consumer suite.
+
+    This is the half of the result that says the FITTING earns nothing. If a calibrated fit
+    overtakes interpolation, 5.6.2.1's conclusion is inverted and the prose must be rewritten
+    rather than the numbers refreshed.
+    """
+    s = _consumerLoo()
+    calibrated = s.loc["probe model (calibrated)", "mean_gain_pct"]
+    interpolation = s.loc["interpolation (no fit)", "mean_gain_pct"]
+    if calibrated >= interpolation:
+        raise ValueError(f"the calibrated fit now beats interpolation on the consumer suite, "
+                         f"{calibrated:.1f}% against {interpolation:.1f}%")
+    return f"falls to {calibrated:.1f}%, below the {interpolation:.1f}%"
+
+
+@claim("5.6.2.1-ridge-breaks-floor", PAPER, "5.6.2.1")
+def consumerRidgeBreaksFloor():
+    """RAISES if Ridge ever keeps the floor here - the sentence says it only leads by breaking it."""
+    violations = _consumerLoo().loc["probe model (ridge)", "floor_violations"]
+    if violations <= 0:
+        raise ValueError("Ridge no longer breaks the floor on the consumer suite")
+    return f"breaking the floor on {violations:.0f} of 12"
+
+
+@claim("5.6.2.1-fixed-breaks-floor", PAPER, "5.6.2.1")
+def consumerFixedBreaksFloor():
+    """The fixed baseline breaking the floor is the consumer-specific part of this result.
+
+    RAISES if it stops, because the paragraph's claim is that a single frequency is infeasible at
+    a 95% floor across this spread of workloads - not that it merely scores badly.
+    """
+    violations = _consumerLoo().loc["best fixed frequency", "floor_violations"]
+    if violations <= 0:
+        raise ValueError("the fixed baseline no longer breaks the floor on the consumer suite - "
+                         "5.6.2.1 says it does, and that is the consumer-specific finding")
+    return f"**One workload of twelve.**" if violations == 1 else f"{violations:.0f} of twelve"

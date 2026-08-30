@@ -65,7 +65,13 @@ def buildProbeFeatures(performance, power, probeFrequencies):
     """
     probeFrequencies = list(probeFrequencies)
     performanceFeatures = performance[probeFrequencies]
-    powerFeatures = power[probeFrequencies].div(power[REFERENCE_FREQUENCY_MHZ], axis=0)
+    # The grid's own highest frequency, NOT REFERENCE_FREQUENCY_MHZ. On the V100 those are the
+    # same number - 1530 is both the dataset's reference and its top point - so this changes
+    # nothing there. On a consumer sweep the grid tops out at 3090 and the V100 constant is not a
+    # column at all, which raised KeyError rather than producing a wrong number. That it failed
+    # loudly is the only reason this was cheap to find.
+    referenceFrequency = int(max(power.columns))
+    powerFeatures = power[probeFrequencies].div(power[referenceFrequency], axis=0)
 
     performanceFeatures.columns = [f"performance_at_{frequency}" for frequency in probeFrequencies]
     powerFeatures.columns = [f"power_ratio_at_{frequency}" for frequency in probeFrequencies]
@@ -108,8 +114,14 @@ def evaluateStrategy(efficiency, chosenFrequencyByWorkload):
 
 
 def chooseByStock(efficiency, workloads):
-    """Baseline 0 - do nothing. Run everything at stock, like the card does by default."""
-    return {workload: REFERENCE_FREQUENCY_MHZ for workload in workloads}
+    """Baseline 0 - do nothing. Run everything at stock, like the card does by default.
+
+    "Stock" is the top of the grid: on the V100 that is 1530 MHz, its published reference, and on
+    a consumer sweep it is the highest commanded target, where the card boosts as it pleases.
+    Taking the grid maximum rather than the V100 constant makes both cases the same statement -
+    do nothing and let the hardware run - and is identical on the V100.
+    """
+    return {workload: int(max(efficiency.columns)) for workload in workloads}
 
 
 def chooseByBestFixedFrequency(trainingEfficiency, workloads):
