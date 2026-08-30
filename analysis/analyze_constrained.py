@@ -97,7 +97,7 @@ NOISE_BAND_PCT = 1.0
 DUPLICATE_FREQUENCY_MHZ = 10.0
 
 
-def buildPoints(frequencies, performance, power):
+def buildPoints(frequencies, performance, power, achieved=None):
     """
     Normalise one workload's curve against its highest frequency.
 
@@ -110,6 +110,11 @@ def buildPoints(frequencies, performance, power):
     frequencies = np.asarray(frequencies, dtype=float)[order]
     performance = np.asarray(performance, dtype=float)[order]
     power = np.asarray(power, dtype=float)[order]
+    # Carried, not used in any calculation. On a COMMANDED-basis curve `mhz` is the target that
+    # was set and this is what the card actually held, which differs per workload and is the
+    # whole reason the commanded basis exists. Reported so a reader can see the spread rather
+    # than assume the policy delivered its number.
+    achieved = np.asarray(achieved, dtype=float)[order] if achieved is not None else None
 
     referenceIndex = len(frequencies) - 1
     referencePerformance = performance[referenceIndex]
@@ -119,13 +124,16 @@ def buildPoints(frequencies, performance, power):
     points = []
     for index in range(len(frequencies)):
         efficiency = performance[index] / power[index]
-        points.append({
+        point = {
             "mhz": float(frequencies[index]),
             "perf": float(performance[index] / referencePerformance),
             "power": float(power[index]),
             "power_rel": float(power[index] / referencePower),
             "eff": float(efficiency / referenceEfficiency),
-        })
+        }
+        if achieved is not None:
+            point["achieved_mhz"] = float(achieved[index])
+        points.append(point)
     return points
 
 
@@ -474,10 +482,30 @@ def loadV100Curves():
     return curves
 
 
-def loadSweepCurves(pattern):
+def loadSweepCurves(pattern, basis="achieved"):
+    """
+    Load sweeps as curves keyed by either the ACHIEVED or the COMMANDED frequency.
+
+    WHY THE CHOICE EXISTS
+        The V100 dataset has one frequency per point and no clamping, so the distinction is
+        empty there. On consumer sweeps it is not. At a commanded 2625 MHz one workload holds
+        2579 and another 2751, because they draw different power and the card clamps each
+        independently - so twelve sweeps that share thirteen TARGETS share only five achieved
+        clocks, and a fixed-frequency policy cannot be evaluated across them at all.
+
+        A deployment sets `nvidia-smi -lgc 2625` and accepts whatever each workload sustains.
+        The policy variable is therefore the COMMANDED frequency, and that is the basis a
+        fixed-versus-per-workload comparison on consumer hardware has to use.
+
+        "achieved" stays the default so every existing caller and every published number is
+        unchanged. Pass basis="commanded" for policy questions.
+    """
+    if basis not in ("achieved", "commanded"):
+        raise ValueError(f"basis must be 'achieved' or 'commanded', got {basis!r}")
+    column = "achieved_frequency_avg" if basis == "achieved" else "target_frequency_mhz"
     curves = {}
     for path in sorted(SWEEPS.glob(pattern)):
-        frequencies, throughput, power = [], [], []
+        frequencies, throughput, power, achieved = [], [], [], []
         with open(path, encoding="utf-8-sig") as handle:
             for raw in csv.DictReader(handle):
                 if not raw.get("bench_throughput"):
@@ -486,11 +514,14 @@ def loadSweepCurves(pattern):
                     continue
                 if raw.get("lock_miss_direction") in EXCLUDE_DIRECTIONS:
                     continue
-                frequencies.append(float(raw["achieved_frequency_avg"]))
+                frequencies.append(float(raw[column]))
                 throughput.append(float(raw["bench_throughput"]))
                 power.append(float(raw["power_avg_w"]))
+                achieved.append(float(raw["achieved_frequency_avg"]))
         if len(frequencies) >= 3:
-            curves[path.stem.replace("_sweep", "")] = buildPoints(frequencies, throughput, power)
+            curves[path.stem.replace("_sweep", "")] = buildPoints(
+                frequencies, throughput, power,
+                achieved=achieved if basis == "commanded" else None)
     return curves
 
 
@@ -501,6 +532,14 @@ def main():
     parser.add_argument("--pattern", default="*floor15*_sweep.csv",
                         help="Sweep glob. Defaults to the wide sweeps, which reach stock; the "
                              "fine sweeps stop at 1900 MHz and never measure the reference.")
+    parser.add_argument("--basis", choices=["achieved", "commanded"], default="achieved",
+                        help="Which frequency keys a consumer curve. 'achieved' is what the card "
+                             "held and is the default. 'commanded' is what was SET, and is the "
+                             "basis a fixed-frequency POLICY has to be evaluated on: workloads "
+                             "clamp to different achieved clocks at one target, so twelve sweeps "
+                             "sharing thirteen targets share only five achieved clocks and the "
+                             "fixed-versus-per-workload comparison cannot be computed at all. "
+                             "Does not affect the V100, which has no clamping.")
     args = parser.parse_args()
     floors = sorted(args.floors, reverse=True)
 
@@ -513,9 +552,21 @@ def main():
     reportFixedVersusPerWorkload(v100, [f for f in floors if f < 1.0 - NOISE_BAND_PCT / 100.0])
     compareToGeepafs(v100Rows)
 
-    consumer = loadSweepCurves(args.pattern)
+    consumer = loadSweepCurves(args.pattern, basis=args.basis)
     if consumer:
-        print(f"[DATA] RTX 5060 Ti: {len(consumer)} sweeps matching {args.pattern}\n")
+        print(f"[DATA] RTX 5060 Ti: {len(consumer)} sweeps matching "
+              f"{args.pattern}, keyed by {args.basis.upper()} frequency\n")
+        if args.basis == "commanded":
+            shared = set.intersection(
+                *[{round(q["mhz"]) for q in v} for v in consumer.values()])
+            heldShared = set.intersection(
+                *[{round(q["achieved_mhz"]) for q in v} for v in consumer.values()])
+            print(f"[BASIS] {len(shared)} shared commanded targets against "
+                  f"{len(heldShared)} shared achieved clocks. The gap between "
+                  f"those two numbers is why this basis exists.")
+            print("[BASIS] A fixed-frequency policy sets a TARGET and accepts what each")
+            print("[BASIS] workload sustains, so the policy is defined on the target. A wide")
+            print("[BASIS] achieved spread means the policy did NOT deliver one frequency.\n")
         for name, points in consumer.items():
             rows, disagreements = analyseCurves({name: points}, floors)
             printFloorTable(f"{name} ({len(points)} points, "

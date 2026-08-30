@@ -19,6 +19,7 @@ from analyze_constrained import (  # noqa: E402
     bestFixedFrequency,
     bindingCurve,
     buildPoints,
+    loadSweepCurves,
     constrainedOptimum,
     flatTopCurves,
     monotonicPerformanceViolations,
@@ -266,6 +267,56 @@ check("a floor nothing can satisfy returns None",
       bestFixedFrequency(pair, 1.01) is None, f"got {bestFixedFrequency(pair, 1.01)}")
 
 print()
+
+
+# ---------------------------------------------------------------------------------------------
+# The COMMANDED frequency basis, added 2026-08-29.
+#
+# WHY IT EXISTS: on consumer sweeps a workload clamps to whatever clock its own power draw
+# allows, so twelve sweeps sharing thirteen commanded targets shared only five achieved clocks
+# and reportFixedVersusPerWorkload could not run at all. A fixed-frequency POLICY sets a target
+# and accepts what each workload sustains, so the target is the right key for that question.
+#
+# The V100 has one frequency per point and no clamping, so this must not change it.
+
+sameFrequencies = [1000.0, 1100.0, 1200.0]
+heldLower = [990.0, 1080.0, 1150.0]
+perfCurve = [0.80, 0.92, 1.00]
+powerCurve = [100.0, 130.0, 200.0]
+
+withoutHeld = buildPoints(sameFrequencies, perfCurve, powerCurve)
+withHeld = buildPoints(sameFrequencies, perfCurve, powerCurve,
+                                          achieved=heldLower)
+
+check("buildPoints without achieved carries no achieved_mhz key",
+      all("achieved_mhz" not in point for point in withoutHeld))
+check("buildPoints with achieved carries one per point",
+      [point["achieved_mhz"] for point in withHeld] == heldLower)
+check("passing achieved does not change perf",
+      [p["perf"] for p in withHeld] == [p["perf"] for p in withoutHeld])
+check("passing achieved does not change eff",
+      [p["eff"] for p in withHeld] == [p["eff"] for p in withoutHeld])
+check("passing achieved does not change mhz - it is carried, not substituted",
+      [p["mhz"] for p in withHeld] == sameFrequencies)
+
+# achieved must be reordered with the rest when frequencies arrive unsorted, or a point would
+# be labelled with another point's achieved clock - a silent mislabelling, not an error.
+shuffled = buildPoints([1200.0, 1000.0, 1100.0],
+                                          [1.00, 0.80, 0.92], [200.0, 100.0, 130.0],
+                                          achieved=[1150.0, 990.0, 1080.0])
+check("achieved is sorted alongside frequencies, not left in input order",
+      [p["achieved_mhz"] for p in shuffled] == heldLower,
+      f"got {[p['achieved_mhz'] for p in shuffled]}")
+check("and the sorted mhz still line up with it",
+      [p["mhz"] for p in shuffled] == sameFrequencies)
+
+try:
+    loadSweepCurves("nothing*.csv", basis="nonsense")
+    check("an unknown basis is rejected", False)
+except ValueError:
+    check("an unknown basis is rejected", True)
+
+
 if failures:
     print(f"{len(failures)} CHECK(S) FAILED:")
     for item in failures:
