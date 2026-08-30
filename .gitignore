@@ -36,3 +36,7 @@ probe_telemetry.csv
 # in a public repo. Distilled per-run extracts (timestamp, GPU core voltage, clock, power) are
 # committed instead, beside the sweep they belong to.
 data/HWiNFO-Data/
+
+# Mutation-testing artifacts: regenerated on demand, and the results file is a
+# measurement of a particular run rather than something to carry forward.
+tools/mutation/*.json

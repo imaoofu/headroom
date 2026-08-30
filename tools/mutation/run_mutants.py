@@ -26,8 +26,9 @@ WHY THE MUTANT FORMAT IS AN EXACT LINE MATCH
     strings instead of storing expected values.
 
 SAFETY, WHICH MATTERS BECAUSE THIS EDITS TRACKED SOURCE
-    - Refuses to start unless `git status --porcelain` is empty. If this process is killed
-      mid-mutant, `git checkout .` is then a complete recovery and nothing of yours is lost.
+    - Refuses to start while any TRACKED file is modified. If this process is killed mid-mutant,
+      `git checkout .` is then a complete recovery and nothing of yours is lost. Untracked files
+      are ignored, because that command does not touch them either way.
     - Restores the file in a `finally`, and again on KeyboardInterrupt.
     - Verifies the tree is clean again at the end and says so loudly if it is not.
     - Runs a baseline first and aborts if it is not green: against a red baseline every mutant
@@ -224,6 +225,18 @@ def gitStatus():
                           cwd=str(REPO_ROOT)).stdout.strip()
 
 
+def trackedChanges():
+    """Modified or staged TRACKED files, which are the only ones this harness can destroy.
+
+    Untracked files are deliberately excluded. The clean-tree rule exists so that `git checkout
+    .` is a complete recovery after a crash mid-mutant, and that command does not touch
+    untracked files - so their presence says nothing about recoverability. Counting them made
+    the harness refuse to run because its OWN mutants.json was sitting next to it, which is the
+    normal state of things.
+    """
+    return [line for line in gitStatus().splitlines() if not line.startswith("??")]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     parser.add_argument("mutants", help="JSON file of proposed mutants.")
@@ -238,7 +251,7 @@ def main():
                              "a crash mid-mutant leaves edits you cannot tell from your own.")
     args = parser.parse_args()
 
-    dirty = gitStatus()
+    dirty = "\n".join(trackedChanges())
     if dirty and not args.allow_dirty:
         raise SystemExit(
             "Working tree is not clean. This harness edits tracked source in place, and a clean "
@@ -309,7 +322,7 @@ def main():
                 print(f"      {result['rationale']}")
             print(f"      owning suite: {OWNING_SUITE[normalisePath(result['file'])]}")
 
-    leaked = [line for line in gitStatus().splitlines()
+    leaked = [line for line in trackedChanges()
               if normalisePath(line.split()[-1]) in OWNING_SUITE]
     if leaked:
         print("\nA MUTATED FILE WAS NOT RESTORED. Run `git checkout .` before anything else:")
