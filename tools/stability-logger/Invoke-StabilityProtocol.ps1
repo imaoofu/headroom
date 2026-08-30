@@ -32,6 +32,10 @@
          configuration will actually be used. A locked sweep measures something else.
       6. Verdict combines three independent signals: the logger's telemetry verdict, any aborted
          benchmark iteration, and post-soak throughput degradation.
+      7. Stop driving load at the first aborted iteration (1.2.0). One abort already forces an
+         UNSTABLE verdict, so continuing buys no information and costs repeated driver resets on
+         a card that has already answered. The logger keeps running - it is what reads the event
+         log for the crash. -ContinueAfterFailure restores the old behaviour.
 
     WHAT A PASS DOES NOT MEAN
     A clean 30-minute run is not proof of stability. Undervolt failures routinely take hours to
@@ -66,14 +70,15 @@ param(
     [double]$DegradationPercent = 2.0,
     [int]$SoakMinutes = 5,
     [string]$OutputDirectory = "",
-    [switch]$AllowVideoEngines
+    [switch]$AllowVideoEngines,
+    [switch]$ContinueAfterFailure
 )
 
 $ErrorActionPreference = "Stop"
 
 # Bump this whenever a step above changes. A run's record carries it, so two runs can be compared
 # only when their protocol versions match - which is the entire point of fixing the protocol.
-$PROTOCOL_VERSION = "1.1.0"
+$PROTOCOL_VERSION = "1.2.0"
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $workloadPy = Join-Path $repoRoot "tools\frequency-sweep\gpu_workload.py"
@@ -249,7 +254,27 @@ $rows = @()
 $aborted = 0
 $iteration = 0
 
+# Stop driving load once the card has failed, unless the caller opts out. Added in 1.2.0.
+#
+# Before this, an aborted iteration was counted and the loop carried on for the rest of the phase.
+# On a genuinely dead driver the python call returns no JSON and the `continue` below fired with no
+# delay, so the loop relaunched the workload as fast as it could for the remaining minutes - each
+# attempt another chance to reset the driver, on a card that had already given its answer. One
+# aborted iteration is enough: the combined verdict is UNSTABLE either way, so the extra attempts
+# buy no information and cost repeated driver resets.
+#
+# The LOGGER is deliberately left running. It is what reads the Windows event log for the driver
+# crash, so killing it early would discard the evidence the run exists to capture, and it keeps
+# sampling the aftermath - whether the card recovers or keeps resetting is itself the finding.
+$stopEarly = $false
+$stopReason = ""
+
 foreach ($workload in @("gemm", "membw")) {
+    if ($stopEarly) {
+        Say ""
+        Say ("  Phase {0} SKIPPED: {1}" -f $workload, $stopReason) "Yellow"
+        continue
+    }
     Say ""
     Say "-------------------------------------------------------" "Cyan"
     Say ("  Phase: {0}, {1}s" -f $workload, $phaseSeconds) "Cyan"
@@ -260,11 +285,37 @@ foreach ($workload in @("gemm", "membw")) {
     while (((Get-Date) - $phaseStart).TotalSeconds -lt $phaseSeconds) {
         $iterCount = $gemmIterations
         if ($workload -eq "membw") { $iterCount = $membwIterations }
-        $raw = & python $workloadPy --workload $workload --iterations $iterCount --json 2>&1
+        # $ErrorActionPreference is "Stop" for this script, and on Windows PowerShell 5.1 that
+        # combination is a trap: merging a NATIVE command's stderr with 2>&1 wraps each stderr
+        # line in a NativeCommandError ErrorRecord, and under "Stop" that record is TERMINATING.
+        # The script dies at this line.
+        #
+        # Which is the one case this protocol exists for. A crashing workload prints a CUDA
+        # traceback to stderr, so on a genuine driver failure the protocol was killed here -
+        # before the abort was recorded, before the iterations CSV was written, and before any
+        # verdict was computed. Measured 2026-08-30 with a deliberately failing workload: the
+        # logger's files were produced and _stability_iterations.csv and _stability_protocol.json
+        # were not. The run that mattered would have left almost nothing behind.
+        #
+        # stderr is still merged into $raw on purpose - the no-JSON branch below quotes it, and
+        # that text is the most direct evidence of what killed the workload.
+        $previousErrorAction = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        try {
+            $raw = & python $workloadPy --workload $workload --iterations $iterCount --json 2>&1
+        } finally {
+            $ErrorActionPreference = $previousErrorAction
+        }
         $line = ($raw | Where-Object { "$_".TrimStart().StartsWith("{") } | Select-Object -First 1)
         if (-not $line) {
             Say ("  [!] iteration produced no JSON: {0}" -f ($raw -join " ")) "Red"
             $aborted++
+            if (-not $ContinueAfterFailure) {
+                $stopEarly = $true
+                $stopReason = "the workload produced no JSON - the driver or the process died"
+                Say ("  STOPPING: {0}. Pass -ContinueAfterFailure to override." -f $stopReason) "Yellow"
+                break
+            }
             continue
         }
 
@@ -274,6 +325,10 @@ foreach ($workload in @("gemm", "membw")) {
         if ($r.aborted) {
             $aborted++
             Say ("  [!] iteration aborted: {0}" -f $r.abort_reason) "Red"
+            if (-not $ContinueAfterFailure) {
+                $stopEarly = $true
+                $stopReason = "iteration aborted: $($r.abort_reason)"
+            }
         }
 
         $rows += [pscustomobject]@{
@@ -296,6 +351,15 @@ foreach ($workload in @("gemm", "membw")) {
             Say ("    {0,5:N0}s  iter {1,3}  {2,7:N2} {3}  {4} C" -f `
                  $elapsed, $iteration, ($r.throughput / $scale), $label, $r.temperature_peak_c) "Gray"
             $lastReport = Get-Date
+        }
+
+        # The row is appended above before this breaks, so the failing iteration is IN the record
+        # rather than inferred from a gap in it.
+        if ($stopEarly) {
+            Say ("  STOPPING: {0}. Pass -ContinueAfterFailure to keep driving load." -f $stopReason) "Yellow"
+            Say "  The telemetry logger is left running: it reads the event log for the driver" "Gray"
+            Say "  crash and keeps sampling how the card behaves after it." "Gray"
+            break
         }
     }
 }
@@ -383,17 +447,32 @@ Say ("  aborted iterations: {0}" -f $aborted) "Gray"
 # Deliberately conservative: any one of the three signals failing sinks the run. They observe
 # different failure modes and none of them subsumes the others.
 
+# ORDERED WEAKEST FIRST, so each test can only ESCALATE. These are sequential ifs, not
+# elseifs, which means the LAST matching one wins - and until 1.2.0 they ran in the opposite
+# order, so a definite failure was overwritten by a weaker signal:
+#
+#     if ($aborted -gt 0)                    { $verdict = "UNSTABLE" }      # set here
+#     if ($loggerVerdict -eq "INCONCLUSIVE") { $verdict = "INCONCLUSIVE" }  # and lost here
+#
+# An aborted benchmark iteration is a definite failure. INCONCLUSIVE means "the card was barely
+# loaded so we cannot tell". The second was silently replacing the first, against this block's
+# own comment that any one signal failing sinks the run.
+#
+# The case where it bites is exactly the case the protocol is for: a crash early in a run kills
+# the load, the GPU then sits idle, the logger reports INCONCLUSIVE on the low loaded fraction,
+# and it overwrites the UNSTABLE the abort had already established. 1.2.0's early-stop makes
+# this fire on EVERY abort rather than occasionally, because stopping the load is what produces
+# the low loaded fraction. Measured 2026-08-30: an aborted iteration reported INCONCLUSIVE.
 $verdict = "CLEAN"
 $exit = 0
+# An unreadable telemetry verdict is not a pass. Two of the protocol's three signals came from
+# the logger, and if its verdict cannot be read then only the benchmark loop reported - which
+# says nothing about driver resets, throttling or telemetry failure.
+if ($loggerVerdict -eq "INCONCLUSIVE" -or $loggerVerdict -eq "UNKNOWN") { $verdict = "INCONCLUSIVE"; $exit = 3 }
 if ($loggerVerdict -eq "FLAGGED") { $verdict = "FLAGGED"; $exit = 1 }
 if ($degraded) { $verdict = "DEGRADED"; $exit = 1 }
 if ($aborted -gt 0) { $verdict = "UNSTABLE"; $exit = 2 }
 if ($loggerVerdict -eq "UNSTABLE") { $verdict = "UNSTABLE"; $exit = 2 }
-if ($loggerVerdict -eq "INCONCLUSIVE") { $verdict = "INCONCLUSIVE"; $exit = 3 }
-# An unreadable telemetry verdict is not a pass. Two of the protocol's three signals came from
-# the logger, and if its verdict cannot be read then only the benchmark loop reported - which
-# says nothing about driver resets, throttling or telemetry failure.
-if ($loggerVerdict -eq "UNKNOWN") { $verdict = "INCONCLUSIVE"; $exit = 3 }
 
 $summary = [ordered]@{
     protocol_version    = $PROTOCOL_VERSION
