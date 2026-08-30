@@ -1200,3 +1200,117 @@ def bus5060ti():
     fractions = ([100 * stock / _r553bus(13801)]
                  + [100 * p / _r553bus(16301) for p in ocPeaks])
     return f"**{min(fractions):.1f}-{max(fractions):.1f}%** of its own bus"
+
+
+# ---------------------------------------------------------------------------------------------
+# 5.6.1.1, added 2026-08-29: the twelve-workload consumer constrained result, computed on the
+# COMMANDED frequency basis. Keyed by achieved clock these sweeps share only five frequencies and
+# the comparison cannot run at all - see analyze_constrained.py's loadSweepCurves docstring.
+#
+# These claims RUN THE ANALYSIS rather than reading a stored table, so the audit fails if the
+# analyser's behaviour changes under them. That costs about a second per run.
+
+SUITE_PATTERNS = ("stock-suite-20260829/*_sweep.csv", "suite-pilot-20260829/*_sweep.csv")
+
+
+def _suiteCurves():
+    """The twelve stock suite workloads, keyed by commanded target."""
+    import contextlib
+    import io
+    import sys
+    from audit_claims import REPO_ROOT
+    analysisDir = str(REPO_ROOT / "analysis")
+    if analysisDir not in sys.path:
+        sys.path.insert(0, analysisDir)
+    import analyze_constrained as constrained
+    curves = {}
+    with contextlib.redirect_stdout(io.StringIO()):
+        for pattern in SUITE_PATTERNS:
+            curves.update(constrained.loadSweepCurves(pattern, basis="commanded"))
+    if len(curves) != 12:
+        raise ValueError(f"expected 12 suite workloads, loaded {len(curves)}")
+    return curves
+
+
+def _fixedRow(floor):
+    import contextlib
+    import io
+    import sys
+    from audit_claims import REPO_ROOT
+    analysisDir = str(REPO_ROOT / "analysis")
+    if analysisDir not in sys.path:
+        sys.path.insert(0, analysisDir)
+    import analyze_constrained as constrained
+    with contextlib.redirect_stdout(io.StringIO()):
+        rows = constrained.reportFixedVersusPerWorkload(_suiteCurves(), [floor])
+    if not rows:
+        raise ValueError(f"no fixed frequency is feasible at a {floor:.0%} floor on the "
+                         f"commanded basis - 5.6.1.1's table cannot be rendered")
+    return rows[0]
+
+
+@claim("5.6.1.1-shared-frequencies", PAPER, "5.6.1.1")
+def suiteSharedFrequencies():
+    """RAISES if the achieved basis ever stops being the smaller number.
+
+    The whole argument for the commanded basis is that clamping collapses the shared grid. If the
+    two counts ever match, the section's premise is gone and the prose needs rewriting rather than
+    the number updating.
+    """
+    import contextlib
+    import io
+    import sys
+    from audit_claims import REPO_ROOT
+    analysisDir = str(REPO_ROOT / "analysis")
+    if analysisDir not in sys.path:
+        sys.path.insert(0, analysisDir)
+    import analyze_constrained as constrained
+    counts = {}
+    with contextlib.redirect_stdout(io.StringIO()):
+        for basis in ("achieved", "commanded"):
+            curves = {}
+            for pattern in SUITE_PATTERNS:
+                curves.update(constrained.loadSweepCurves(pattern, basis=basis))
+            counts[basis] = len(set.intersection(
+                *[{round(p["mhz"]) for p in v} for v in curves.values()]))
+    if counts["achieved"] >= counts["commanded"]:
+        raise ValueError(f"the achieved basis no longer shares fewer frequencies "
+                         f"({counts['achieved']}) than the commanded one ({counts['commanded']})")
+    return f"share only **{counts['achieved']}** achieved clocks"
+
+
+@claim("5.6.1.1-floor-row-95", PAPER, "5.6.1.1")
+def suiteFloorRow95():
+    row = _fixedRow(0.95)
+    return (f"| **{row['floor']:.0%}** | **{row['per_workload_pct']:.1f}%** | "
+            f"**{row['fixed_pct']:.1f}%** | **{row['fixed_mhz']:.0f} MHz** | "
+            f"**{row['gap_pp']:.1f} pp** | **{row['share_pct']:.0f}%** |")
+
+
+@claim("5.6.1.1-share-beats-v100", PAPER, "5.6.1.1")
+def suiteShareBeatsV100():
+    """RAISES if the consumer share ever falls below the V100's 83%.
+
+    The sentence says the consumer case is the stronger one. If it stops being so, that is a
+    finding about the suite and not a number to quietly update.
+    """
+    share = _fixedRow(0.95)["share_pct"]
+    if share <= 83:
+        raise ValueError(f"consumer share {share:.0f}% no longer exceeds the V100's 83%")
+    return f"**{share:.0f}% of the available efficiency gain requires knowing which workload is\nrunning** — against 83% on the V100"
+
+
+@claim("5.6.1.1-achieved-spread", PAPER, "5.6.1.1")
+def suiteAchievedSpread():
+    """What the twelve workloads actually held at the fixed policy's chosen target.
+
+    The point of the commanded basis is that this spread exists and an achieved-keyed analysis
+    cannot see it, so it is pinned rather than described.
+    """
+    row = _fixedRow(0.95)
+    target = round(row["fixed_mhz"])
+    held = []
+    for points in _suiteCurves().values():
+        held += [p["achieved_mhz"] for p in points if round(p["mhz"]) == target]
+    return (f"**{min(held):.0f} to {max(held):.0f} MHz, a spread of "
+            f"{max(held) - min(held):.0f} MHz**")

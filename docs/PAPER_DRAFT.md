@@ -1376,6 +1376,52 @@ tool reports that rather than substituting a number. At a 90% floor the gap is 7
 (28%), smaller than the V100's — expected, since two workloads of similar clock sensitivity span
 much less of the space than 33.
 
+##### 5.6.1.1 Twelve consumer workloads, and the frequency a policy actually sets
+
+Two workloads span little of the space. A suite of twelve, built to span arithmetic intensity from
+0 to 1365 FLOP/byte, spans considerably more, and it moves this result from the reference dataset
+onto hardware measured here (§3.3, `../data/frequency-sweeps/stock-suite-20260829/`).
+
+**One methodological change is required first, and it is not a detail.** The comparison above keys
+each curve by the clock the card *achieved*. On consumer hardware that does not work across a
+workload population: at one commanded target each workload clamps to whatever its own power draw
+allows, so twelve sweeps sharing thirteen commanded targets share only **5** achieved clocks —
+`bgemm128` tops out at 2565 MHz where `copy` reaches 2751 — and no fixed-frequency comparison can
+be computed at all. The V100 data has no clamping, so the distinction never arises there.
+
+**A fixed-frequency policy sets a target and accepts what each workload sustains.** A deployment
+runs `nvidia-smi -lgc 2625`; it does not get to choose the achieved clock. The policy variable is
+therefore the commanded frequency, and keyed that way the twelve sweeps share all thirteen points.
+`analyze_constrained.py --basis commanded` does this; `--basis achieved` remains the default and
+every number elsewhere in this paper is unchanged by it.
+
+| floor | per-workload | best fixed | at (commanded) | gap | share needing workload identity |
+|---|---|---|---|---|---|
+| 99% | 14.8% | 1.1% | 2782 MHz | 13.7 pp | 92% |
+| **95%** | **31.7%** | **1.1%** | **2782 MHz** | **30.5 pp** | **96%** |
+| 90% | 39.2% | 5.9% | 2625 MHz | 33.3 pp | 85% |
+| 85% | 42.9% | 17.3% | 2475 MHz | 25.6 pp | 60% |
+| 80% | 45.5% | 28.4% | 2317 MHz | 17.1 pp | 38% |
+
+**At a 95% floor, 96% of the available efficiency gain requires knowing which workload is
+running** — against 83% on the V100. The consumer case is the stronger one, and the reason is
+visible in the suite: the twelve workloads' unconstrained optima cost between 4.0% and 47.8% of
+performance (§3.3), so the workload that pins a fixed policy is far more demanding relative to the
+rest than any of the V100's 33.
+
+⚠️ **And the basis that makes this computable also exposes what it costs.** At the chosen commanded
+2782 MHz the twelve workloads actually held **2564 to 2755 MHz, a spread of 191 MHz**. A
+fixed-frequency policy on consumer hardware does not deliver a fixed frequency. That is a real
+limitation of the policy rather than of the measurement, it applies equally to the fixed baseline
+this table reports, and no analysis keyed on achieved clocks would have surfaced it.
+
+**Caveats.** Twelve workloads, n = 1 each, one card, one configuration. Four of the twelve were
+collected under looser conditions than the other eight — counts calibrated at a 7% baseline rather
+than under 5%, and the machine under remote control with encoder and decoder verified idle
+throughout (`../data/frequency-sweeps/suite-pilot-20260829/README.md`). Same-session run-to-run
+spread on this card is ~0.76% and cross-session drift ~1.47% (§6), so the 1.1% fixed-policy figures
+sit near the noise floor while the 30.5 pp gap sits far outside it.
+
 **This is the reconciliation between §5.2 and the project's premise.** Unconstrained, the efficiency
 curve is flat near its peak and one frequency serves nearly everything — hence the null, which is
 real and stays reported. Constrained, the flat region is cut off from below by whichever workload
