@@ -45,7 +45,8 @@ REPO_ROOT = Path(__file__).resolve().parent
 # "All suites passed". That is what would have happened when the model suites moved into
 # analysis/models/. findOrphanSuites() below is the guard - the list stays an allowlist, it just
 # refuses to stay quiet about a suite it can see and is not running.
-SUITE_DIRS = ["analysis", "analysis/models", "tools/frequency-sweep", "tools/local-model"]
+SUITE_DIRS = ["analysis", "analysis/models", "tools/frequency-sweep", "tools/local-model",
+              "tools/mutation"]
 
 
 def findSuites(nameFilter):
