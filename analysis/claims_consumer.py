@@ -1454,3 +1454,65 @@ def _registerIntensityClaim(name):
 
 for _name in SUITE_INTENSITY_NAMES:
     _registerIntensityClaim(_name)
+
+
+# --------------------------------------------------------------------------------------
+# 5.5 - the suite table's measured columns
+#
+# WHY THESE EXIST, AND WHAT THEY COST BY NOT EXISTING SOONER
+#     The FLOP/byte column was pinned earlier on 2026-08-30. The three MEASURED columns beside
+#     it - efficiency gain, performance cost, power saved - were not, and one of them was wrong.
+#     `attention` read 55.6% / 46.3% / 65.5% against its own CSV's 53.7% / 45.9% / 64.8%. The
+#     other eleven rows agreed to within rounding, so it was a transcription error rather than a
+#     computation one, and it survived from 2026-08-29 until a replicate was collected and the
+#     recomputed r1 value disagreed with the table.
+#
+#     That is the failure audit_claims.py was built for, appearing in the one part of the table
+#     nothing rendered. Each claim below pins a row through its gain column, computed from the
+#     CSV, so the same error fails the audit rather than waiting for someone to recompute it.
+# --------------------------------------------------------------------------------------
+
+SUITE_R1_SWEEPS = {
+    "copy": "suite-pilot-20260829/20260829-142703_5060ti-stock-suitepilot-copy_sweep.csv",
+    "reduce": "stock-suite-20260829/20260829-151627_5060ti-stock-suite-reduce_sweep.csv",
+    "softmax": "stock-suite-20260829/20260829-152055_5060ti-stock-suite-softmax_sweep.csv",
+    "layernorm": "stock-suite-20260829/20260829-152513_5060ti-stock-suite-layernorm_sweep.csv",
+    "bgemm32": "stock-suite-20260829/20260829-150242_5060ti-stock-suite-bgemm32_sweep.csv",
+    "bgemm64": "stock-suite-20260829/20260829-150701_5060ti-stock-suite-bgemm64_sweep.csv",
+    "bgemm128": "suite-pilot-20260829/20260829-143124_5060ti-stock-suitepilot-bgemm128_sweep.csv",
+    "bgemm256": "stock-suite-20260829/20260829-151122_5060ti-stock-suite-bgemm256_sweep.csv",
+    "bgemm1024": "suite-pilot-20260829/20260829-143601_5060ti-stock-suitepilot-bgemm1024_sweep.csv",
+    "attention": "stock-suite-20260829/20260829-152936_5060ti-stock-suite-attention_sweep.csv",
+    "conv": "suite-pilot-20260829/20260829-144105_5060ti-stock-suitepilot-conv_sweep.csv",
+    "gemm": "stock-suite-20260829/20260829-145752_5060ti-stock-gemm-1237grid_sweep.csv",
+}
+
+
+def suiteRowFigures(relativePath):
+    """(optimum MHz, efficiency gain %, performance cost %) for one sweep.
+
+    The reference point is the highest ACHIEVED clock in the sweep, not the highest commanded
+    one: above ~2310 MHz each workload clamps to a different sustained clock, so the top target
+    is not a frequency any of them actually ran at. This mirrors analyze_sweep.describe().
+    """
+    rows = list(sweep(relativePath).values())
+    peak = max(rows, key=lambda row: row["efficiency"])
+    fastest = max(rows, key=lambda row: row["mhz"])
+    return (peak["mhz"],
+            100.0 * (peak["efficiency"] / fastest["efficiency"] - 1.0),
+            100.0 * (1.0 - peak["throughput"] / fastest["throughput"]))
+
+
+def _registerSuiteRowClaim(name):
+    def render():
+        optimum, gain, _ = suiteRowFigures(SUITE_R1_SWEEPS[name])
+        return (f"| `{name}` | {formatIntensity(suiteDeclaredIntensity(name)) if name != 'gemm' else '1365'} "
+                f"| {optimum:.0f} MHz | {gain:.1f}% |")
+    render.__name__ = f"suiteRow_{name}"
+    render.__doc__ = (f"{name}'s row through the efficiency-gain column, recomputed from its "
+                      f"sweep CSV rather than read back from the table it checks.")
+    claim(f"5.5-suite-row-{name}", SUITE_README)(render)
+
+
+for _name in SUITE_R1_SWEEPS:
+    _registerSuiteRowClaim(_name)

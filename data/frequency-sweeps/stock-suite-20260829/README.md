@@ -57,9 +57,19 @@ Each workload's own efficiency optimum, from its own curve:
 | `bgemm128` | 21.33 | 1695 MHz | 34.9% | 31.3% | 49.1% |
 | `bgemm256` | 42.67 | 1537 MHz | 39.5% | 41.9% | 58.4% |
 | `bgemm1024` | 170.67 | 1537 MHz | 61.0% | 44.0% | 65.2% |
-| `attention` | 256 | 1537 MHz | 55.6% | 46.3% | 65.5% |
+| `attention` | 256 | 1537 MHz | 53.7% | 45.9% | 64.8% |
 | `conv` | 288 | 1537 MHz | 75.6% | 44.9% | 68.6% |
 | `gemm` | 1365 | 1389 MHz | 55.6% | 47.8% | 66.5% |
+
+⛔ **The `attention` row was CORRECTED on 2026-08-30.** It read 55.6% / 46.3% / 65.5%; its own
+CSV gives **53.7% / 45.9% / 64.8%**. A transcription error, not a computation one - the other
+eleven rows agree with their CSVs to within rounding, checked at the same time. It was found by
+collecting a replicate and noticing that the recomputed r1 value disagreed with the table rather
+than with r2.
+
+The gain, cost and power columns are now pinned by `5.5-suite-row-*` in `claims_consumer.py`, so
+this class of error fails the audit from here. Only the FLOP/byte column had been pinned before,
+earlier the same day, and this row is what the rest of the table cost for being left out.
 
 **The performance cost of the optimum tracks arithmetic intensity.** Everything at or below ~11
 FLOP/byte gives up 4–13%; everything at or above ~21 gives up 31–48%. The transition sits between
