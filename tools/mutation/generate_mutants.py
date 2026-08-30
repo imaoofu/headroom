@@ -20,12 +20,28 @@ WHAT IS ASKED FOR
     things, editing comments or docstrings, or deleting lines. Those either change nothing or
     change everything, and neither says anything about the assertions.
 
+LAUNCH THE SERVER SMALLER THAN ask_local.py's SERVER_COMMAND SUGGESTS
+    That command uses -c 65536, which is right for long interactive sessions and wrong here. The
+    largest prompt this script sends is gpu_workload.py at roughly 14,900 tokens, so 24576 is
+    ample:
+
+      llama-server.exe -m ...\\Qwen3.8-27B-UD-IQ4_XS.gguf -c 24576 -ngl 99 --flash-attn on
+                       -ctk q4_0 -ctv q4_0 -np 1 --spec-type draft-mtp --spec-draft-n-max 1
+
+    This is not tidiness. At -c 65536 on a 31 GB box, llama-server's PRIVATE COMMIT climbed from
+    17.1 GB at load to 24.5 GB after a dozen files, taking system commit to 35.9 GB against a
+    37.8 GB limit. Nothing spilled - VRAM stayed at 15.8 of 16.3 GB and decode held 36.4 tok/s -
+    but the machine ran out of headroom for everything else. The host-side commit tracks the
+    context the server was LAUNCHED with, not the context a request uses, so the only lever is
+    -c. Measured 2026-08-30.
+
 USAGE
     python tools/mutation/generate_mutants.py                       every allowlisted file
     python tools/mutation/generate_mutants.py --filter curve_model  one of them
     python tools/mutation/generate_mutants.py --count 20 --out mutants.json
 
-    llama-server must be running; see SERVER_COMMAND in tools/local-model/ask_local.py.
+    A run stopped partway through can simply be re-issued: files already in the output file are
+    skipped. --restart ignores them instead.
 """
 
 import argparse
@@ -180,13 +196,30 @@ def main():
     parser.add_argument("--timeout", type=int, default=1800)
     parser.add_argument("--seed", type=int, default=-1,
                         help="-1 draws randomly, so a second run proposes different mutants.")
+    parser.add_argument("--restart", action="store_true",
+                        help="Ignore an existing output file instead of resuming from it.")
     args = parser.parse_args()
 
     targets = [path for path in OWNING_SUITE if args.filter in path]
     if not targets:
         raise SystemExit(f"No allowlisted file matches {args.filter!r}.")
 
+    # Resume. The first version of this wrote the output file once, at the end, so a run stopped
+    # partway through lost every file it had already done - which is what happened when the
+    # server had to be killed for memory. Results are flushed after each file instead, and a
+    # file already represented in the output is skipped rather than asked about again.
+    outPath = Path(args.out)
     accepted, rejected = [], []
+    if outPath.exists() and not args.restart:
+        accepted = [(mutant, None) for mutant in
+                    json.loads(outPath.read_text(encoding="utf-8"))]
+        done = {mutant["file"] for mutant, _ in accepted}
+        remaining = [path for path in targets if path not in done]
+        if len(remaining) < len(targets):
+            print(f"Resuming: {len(targets) - len(remaining)} file(s) already in {outPath}, "
+                  f"{len(remaining)} to go. Pass --restart to ignore them.")
+        targets = remaining
+
     for relative in targets:
         print(f"\n=== {relative} ===")
         for mutant in askForMutants(relative, args.count, args.num_predict, args.timeout,
@@ -200,8 +233,10 @@ def main():
             (rejected if reason else accepted).append((mutant, reason))
         print(f"  {sum(1 for m, _ in accepted if m['file'] == relative)} accepted, "
               f"{sum(1 for m, _ in rejected if m['file'] == relative)} rejected")
+        # Flushed here, not after the loop, so an interrupted run keeps what it has earned.
+        outPath.write_text(json.dumps([m for m, _ in accepted], indent=2), encoding="utf-8")
 
-    Path(args.out).write_text(json.dumps([m for m, _ in accepted], indent=2), encoding="utf-8")
+    outPath.write_text(json.dumps([m for m, _ in accepted], indent=2), encoding="utf-8")
 
     print(f"\n{len(accepted)} accepted -> {args.out}")
     print(f"{len(rejected)} rejected:")

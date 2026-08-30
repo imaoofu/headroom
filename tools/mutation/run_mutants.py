@@ -154,7 +154,17 @@ def validateMutant(mutant, repoRoot=REPO_ROOT):
     candidate = list(lines)
     candidate[mutant["line"] - 1] = mutant["mutated"] + ending
     try:
-        compile("".join(candidate), str(path), "exec")
+        # lstrip the BOM for the compile check ONLY. tools/frequency-sweep/gpu_workload.py
+        # carries a UTF-8 BOM - PowerShell's `>>` and Out-File write one, which ask_local.py's
+        # appendReply already documents biting this repo twice. Python's own import machinery
+        # detects and strips it when loading a file from disk, so the module runs fine; but
+        # compile() on text handed to it in memory sees a stray U+FEFF and refuses the whole
+        # file. Without this, every mutant for that file was rejected as "does not parse" -
+        # 12 of 12 - and the fault looked like the model's.
+        #
+        # It is stripped here and NOWHERE else. readLines and writeLines must keep the BOM, or
+        # restoring the file would silently drop it and rewrite byte zero of a tracked source.
+        compile("".join(candidate).lstrip("﻿"), str(path), "exec")
     except SyntaxError as error:
         return f"mutated source does not parse: {error.msg} at line {error.lineno}"
 

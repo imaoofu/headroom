@@ -165,6 +165,27 @@ check("restoring a CRLF file returns it byte for byte",
       readRaw(fakeRoot / SUBJECT) == CRLF_BODY)
 writeRaw(fakeRoot / SUBJECT, BODY)
 
+# A UTF-8 BOM survives round-tripping and does not make every mutant look unparseable.
+# tools/frequency-sweep/gpu_workload.py really carries one, and before the compile check
+# stripped it for the check ONLY, all 12 of its mutants were rejected as "does not parse".
+BOM_BODY = "﻿" + BODY
+writeRaw(fakeRoot / SUBJECT, BOM_BODY)
+check("a mutant in a file with a UTF-8 BOM is not rejected as unparseable",
+      validateMutant(mutant(), fakeRoot) is None,
+      validateMutant(mutant(), fakeRoot))
+bomPath, bomOriginal = applyMutant(mutant(), fakeRoot)
+check("mutating a BOM file keeps the BOM at byte zero",
+      readRaw(fakeRoot / SUBJECT).startswith("﻿"))
+run_mutants.writeLines(bomPath, bomOriginal)
+check("restoring a BOM file returns it byte for byte",
+      readRaw(fakeRoot / SUBJECT) == BOM_BODY)
+# The BOM is only ever stripped for the compile check, so a genuine syntax error in a BOM file
+# is still caught rather than masked.
+check("a BOM file still rejects a mutant that does not parse",
+      "does not parse" in (validateMutant(
+          mutant(mutated="    if value > 10"), fakeRoot) or ""))
+writeRaw(fakeRoot / SUBJECT, BODY)
+
 check("splitEnding separates CRLF",
       splitEnding("abc\r\n") == ("abc", "\r\n"))
 check("splitEnding separates LF",
