@@ -149,7 +149,7 @@ Fixing it properly means extracting the builder's arithmetic so the runtime path
 path, which is a change to the collection tool with 3070 Ti runs still outstanding on it, so it is
 deferred. The claims bound the damage rather than closing the gap: a drift in the builder alone
 still goes unnoticed. Gated by changing four shape constants, all four caught — the conv case
-renders `| \`conv\` | 144 |`, exactly the wrong value the original hand-written table carried.
+renders ``| `conv` | 144 |``, exactly the wrong value the original hand-written table carried.
 
 ## Not done, on purpose
 
