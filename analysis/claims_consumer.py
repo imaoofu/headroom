@@ -1383,3 +1383,74 @@ def consumerFixedBreaksFloor():
         raise ValueError("the fixed baseline no longer breaks the floor on the consumer suite - "
                          "5.6.2.1 says it does, and that is the consumer-specific finding")
     return f"**One workload of twelve.**" if violations == 1 else f"{violations:.0f} of twelve"
+
+
+# --------------------------------------------------------------------------------------
+# 3.3 / 5.5 - the declared arithmetic intensity column
+#
+# WHY THIS IS PINNED, AND WHY A TEST WAS NOT ENOUGH
+#     The FLOP/byte column is the axis 5.5's central result is plotted against: the performance
+#     cost of the optimum tracks arithmetic intensity, with the transition between bgemm64 and
+#     bgemm128 landing where the roofline knee was measured independently. Nothing checked it.
+#
+#     test_gpu_workload.py appears to. It compares suiteDeclaredIntensity() against a longhand
+#     builderIntensity() written out in the test file, deliberately not importing from the
+#     builder so the two derivations stay independent. But buildSuiteWorkload() - the code that
+#     actually runs on the card - is in NEITHER side of that comparison. Mutation testing on
+#     2026-08-30 changed six of its coefficients one at a time (softmax 5.0 to 4.0, layernorm
+#     8.0 to 6.0, conv's 2.0 to 1.0, attention's 4.0 to 2.0, and two byte counts) and all six
+#     survived the full suite. The check compares two copies of the formula; the third copy is
+#     the one that ships.
+#
+#     Fixing that properly means extracting the builder's arithmetic so the runtime path is the
+#     tested path. That is a change to the collection tool, and the 3070 Ti runs are still to be
+#     taken with it, so it waits until after collection. THIS claim is the interim guard: it is
+#     additive, touches no collection code, and if a coefficient ever drifts the README table
+#     stops matching the formula and the audit fails.
+#
+#     It pins suiteDeclaredIntensity, not the builder, so it does not close the gap above - it
+#     bounds the damage. A drift in the builder alone still goes unnoticed.
+# --------------------------------------------------------------------------------------
+
+import sys as _sys
+from audit_claims import REPO_ROOT as _REPO_ROOT
+
+# gpu_workload defers `import torch` into the function that needs it, so importing the module
+# here costs nothing and works on a machine with no CUDA - which is what lets CI run this.
+_sys.path.insert(0, str(_REPO_ROOT / "tools" / "frequency-sweep"))
+from gpu_workload import LADDER_SIZES, suiteDeclaredIntensity  # noqa: E402
+
+SUITE_README = "data/frequency-sweeps/stock-suite-20260829/README.md"
+
+# `gemm` appears in the same table at 1365 but is the legacy workload, not a suite one -
+# suiteDeclaredIntensity raises on it - so it is not pinned here.
+SUITE_INTENSITY_NAMES = (["copy", "reduce", "softmax", "layernorm"]
+                         + [f"bgemm{n}" for n in LADDER_SIZES]
+                         + ["attention", "conv"])
+
+
+def formatIntensity(value):
+    """Render one cell exactly as the table writes it.
+
+    Three shapes, and they are the table's, not a preference: an exact zero is written `0`
+    rather than `0.00`; a whole number at or above 100 drops its decimals (`256`, `288`);
+    everything else takes two places. Changing this changes what the document must say.
+    """
+    if value == 0:
+        return "0"
+    if float(value).is_integer() and value >= 100:
+        return str(int(value))
+    return f"{value:.2f}"
+
+
+def _registerIntensityClaim(name):
+    def render():
+        return f"| `{name}` | {formatIntensity(suiteDeclaredIntensity(name))} |"
+    render.__name__ = f"intensity_{name}"
+    render.__doc__ = (f"{name}'s FLOP/byte cell, computed from operation counts rather than "
+                      f"read back from the table it is checking.")
+    claim(f"5.5-intensity-{name}", SUITE_README)(render)
+
+
+for _name in SUITE_INTENSITY_NAMES:
+    _registerIntensityClaim(_name)

@@ -31,6 +31,29 @@ WHY THE AGREEMENT TEST EXISTS
     of the memory-bound group - which is luck rather than design. The constants themselves are
     only really testable against a profiler on the card, and that is part of validating the suite
     rather than something this file can do.
+
+A LARGER GAP IN THE SAME CHECK, FOUND BY MUTATION TESTING 2026-08-30
+    The drift check compares suiteDeclaredIntensity() against builderIntensity() below. Neither
+    is buildSuiteWorkload(). The comparison is between the formula and a longhand copy of the
+    formula written out in this file - the code that actually runs on the card is in neither
+    side of it.
+
+    Six coefficients inside buildSuiteWorkload() were changed one at a time - softmax 5.0 to 4.0,
+    layernorm 8.0 to 6.0, conv's leading 2.0 to 1.0, attention's 4.0 to 2.0, and two byte counts
+    - and ALL SIX survived the full suite. The docstring for builderIntensity says sharing code
+    would defeat the test, which is right about independence and wrong about what is being
+    compared: independence from the builder is not independence, it is absence.
+
+    The reason it is written this way is real - buildSuiteWorkload allocates torch tensors
+    interleaved with its arithmetic, so it cannot be called without a GPU. Fixing it means
+    extracting the flop/byte arithmetic into a torch-free function the builder then calls, so
+    the runtime path is the tested path. That is a change to the collection tool with 3070 Ti
+    runs still outstanding on it, so it is deferred until after collection.
+
+    Until then the guard is in analysis/claims_consumer.py: 5.5-intensity-* pins every declared
+    intensity to the stock-suite README table, so a drift in suiteDeclaredIntensity or in the
+    shape constants fails the audit. It does NOT cover a drift in the builder alone. See
+    docs/MUTATION_TESTING.md.
 """
 
 import os
