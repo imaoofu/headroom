@@ -1,0 +1,13 @@
+
+[LOGGER] GPU:      NVIDIA GeForce RTX 5060 Ti (driver 616.56, VBIOS 98.06.4e.40.b4)
+[LOGGER] Limits:   max SM clock 3090 MHz, power limit 200.00 W
+[LOGGER] Settings: MSI Afterburner: V/F curve 875 mV pinned at 3000 MHz (flattened at and above that point), PLUS memory +2500 offset still applied from earlier. Power limit 180 W default. Memory offset is operator-declared - confirm against memory_clock_mhz in this run's own samples CSV (stock reads ~13801 under load, +2500 reads ~16301). DELIBERATELY TOO LOW A VOLTAGE FOR 3 GHz: this run is an attempt to induce a real instability, not a configuration under evaluation.
+[LOGGER] Test:     headroom stability protocol v1.2.0 (gpu_workload.py loop)
+[LOGGER] Sampling every 1 s for 750 s. Ctrl+C stops early.
+[LOGGER] Writing:  C:\Users\Raymond\Documents\headroom\data\stability-runs\20260830-123609_uv-875mv-3ghz_samples.csv
+
+[LOGGER] No interactive console detected - early Ctrl+C detection is unavailable this run. Duration will run to completion; the script still works, it just cannot be told to stop early.
+[LOGGER] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[LOGGER]    31s   2625 MHz  177.12 W   62 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]    47s   2572 MHz  179.97 W   66 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]    62s   2580 MHz  180.65 W   69 C  100% util  Unrecognised:0x0000000000000400

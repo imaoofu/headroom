@@ -1,0 +1,70 @@
+
+[LOGGER] GPU:      NVIDIA GeForce RTX 5060 Ti (driver 616.56, VBIOS 98.06.4e.40.b4)
+[LOGGER] Limits:   max SM clock 3090 MHz, power limit 200.00 W
+[LOGGER] Settings: STOCK - no Afterburner offsets, verified clocks.max.memory 14001 MHz and clocks.max.sm 3090 MHz, power limit 180 W default
+[LOGGER] Test:     headroom stability protocol v1.1.0 (gpu_workload.py loop)
+[LOGGER] Sampling every 1 s for 630 s. Ctrl+C stops early.
+[LOGGER] Writing:  C:\Users\Raymond\Documents\headroom\data\stability-runs\20260830-114549_stock-baseline-20260830_samples.csv
+
+[LOGGER] No interactive console detected - early Ctrl+C detection is unavailable this run. Duration will run to completion; the script still works, it just cannot be told to stop early.
+[LOGGER] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[LOGGER]    15s    727 MHz   13.18 W   38 C    6% util  Unrecognised:0x0000000000000400
+[LOGGER]    30s   2572 MHz  177.76 W   64 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]    46s   2565 MHz  180.00 W   68 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]    62s   2527 MHz  177.95 W   69 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]    78s   2550 MHz  177.62 W   70 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]    93s   2550 MHz  179.96 W   70 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   109s   2452 MHz  176.54 W   71 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   125s   2542 MHz  178.10 W   72 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   140s   2535 MHz  179.98 W   72 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   156s   2542 MHz  175.98 W   69 C   83% util  Unrecognised:0x0000000000000400
+[LOGGER]   172s   2505 MHz  177.61 W   72 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   187s   2512 MHz  180.31 W   72 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   203s   2527 MHz  179.97 W   73 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   219s   2535 MHz  158.26 W   58 C    3% util  Unrecognised:0x0000000000000400
+[LOGGER]   234s   2527 MHz  181.43 W   73 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   250s   2527 MHz  180.08 W   73 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   266s   2527 MHz  180.01 W   73 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   282s   2535 MHz  178.01 W   73 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   297s   2527 MHz  180.12 W   73 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   313s   2520 MHz  180.03 W   74 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   329s   2587 MHz  178.05 W   74 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   344s   2572 MHz  176.12 W   73 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   360s   2722 MHz   97.84 W   57 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   376s   2752 MHz   98.00 W   55 C   82% util  Unrecognised:0x0000000000000400
+[LOGGER]   391s   2610 MHz   95.87 W   54 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   407s   2580 MHz   95.50 W   54 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   423s   2752 MHz   97.40 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   438s   2752 MHz   97.40 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   454s   2535 MHz   95.05 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   470s   2752 MHz   97.40 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   485s   1545 MHz   36.17 W   48 C    4% util  Unrecognised:0x0000000000000400
+[LOGGER]   501s   2752 MHz   93.60 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   517s   2677 MHz   94.47 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   532s   2662 MHz   94.20 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   548s   2752 MHz   95.26 W   53 C   69% util  Unrecognised:0x0000000000000400
+[LOGGER]   564s   2752 MHz   95.21 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   580s   2715 MHz   95.40 W   53 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   595s   2752 MHz   96.82 W   54 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   611s   2587 MHz   94.77 W   54 C   99% util  Unrecognised:0x0000000000000400
+[LOGGER]   627s   2752 MHz   95.37 W   53 C   99% util  Unrecognised:0x0000000000000400
+
+[LOGGER] ===================== RESULT =====================
+[LOGGER] Verdict: CLEAN
+[LOGGER] Collected 603 samples over 630.9s.
+[LOGGER] SM clock: avg 2518.28 MHz, range 615-2752 MHz.
+[LOGGER] Power:    avg 133.76 W, peak 183.92 W (limit 200.00 W).
+[LOGGER] Temp:     avg 62.05 C, peak 75 C.
+[LOGGER] GPU util: avg 91.82%.
+[LOGGER] Loaded:   94% of samples above 50% utilisation (567 of 603).
+[LOGGER] While actually under load (the numbers that describe the test, not the idle time):
+[LOGGER]   SM clock: avg 2597.01 MHz, range 1747-2752 MHz.
+[LOGGER]   Power:    avg 140.25 W, peak 183.92 W.
+[LOGGER]   Temp:     avg 63.19 C, peak 75 C.
+[LOGGER] Samples: C:\Users\Raymond\Documents\headroom\data\stability-runs\20260830-114549_stock-baseline-20260830_samples.csv
+[LOGGER] Session: C:\Users\Raymond\Documents\headroom\data\stability-runs\20260830-114549_stock-baseline-20260830_session.json
+[LOGGER] ==================================================
+
+[LOGGER] A CLEAN verdict means nothing went visibly wrong during this window. It is
+[LOGGER] not proof of stability - undervolt failures often need hours to show up, and
+[LOGGER] a single clean 10-minute run is weak evidence. Say so when reporting it.
