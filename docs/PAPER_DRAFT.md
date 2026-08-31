@@ -400,7 +400,7 @@ reach steady clock and thermal state and left kernel-launch overhead visible in 
 overhead was excluded from the timer (§3.4) only 4.7 s of that proved to be memory traffic, and the
 count was doubled to restore the intended duration.
 
-#### 3.3.1 `membw` is issue-limited, not bandwidth-limited, below roughly 2000 MHz - DRAFT
+#### 3.3.1 `membw` is issue-limited, not bandwidth-limited, below roughly 2000 MHz
 
 An earlier version of this section placed the issue-limited regime below ~1200 MHz. Direct
 measurement puts it far higher, and the correction matters: it means the frequency-prediction
@@ -426,16 +426,24 @@ Three independent attempts to construct a genuinely saturated kernel all fail, a
    268.3 GB/s at unroll 1 and 281.9 at unroll 16 - a 5% spread across a 16x change in memory-level
    parallelism.
 
-Methods 2 and 3 agree to within 0.25% (281.2 against 281.9 GB/s) from entirely different mechanisms
+Methods 2 and 3 agree to within 0.24% (281.2 against 281.9 GB/s) from entirely different mechanisms
 for raising memory-level parallelism. That is a hardware ceiling at roughly 54% of the bandwidth
 available, not a defect in any one kernel.
+
+⚠️ **Probe 3 was run with the memory overclock applied, and the `membw` figures above were not.**
+Its theoretical peak is therefore 521.6 GB/s - the 448 GB/s rating scaled by the +2500 offset -
+which is the denominator the 54% is taken against, while the 59-79% earlier in this section is
+against 448. The two should not be differenced. This does not affect the argument, which rests on
+the *elasticity* of throughput to core clock and on two methods agreeing at ~281 GB/s, neither of
+which depends on the denominator; it is stated because a percentage without its denominator is
+exactly the omission this project keeps finding.
 
 **A DRAM-saturated workload at 1400 MHz is therefore not constructible on this part.** What sets the
 281 GB/s ceiling is not identified: it is neither per-thread parallelism nor concurrency, and it sits
 well below both the DRAM peak and any plausible instruction-issue bound. Naming it would require
 hardware performance counters this study does not read.
 
-#### 3.3.2 What limits `membw` is not one thing, and it moves with frequency - DRAFT
+#### 3.3.2 What limits `membw` is not one thing, and it moves with frequency
 
 Section 5.7.3 identifies a third limiter, and taken together the three make a more honest picture
 than "the memory-bound workload":
@@ -460,7 +468,7 @@ held constant moves the crossbar 2.3%, whereas at stock the crossbar holds a nea
 ratio to the graphics clock across the same range. The rail topology itself was not probed; what was
 measured is the behaviour.
 
-#### 3.3.3 The governing clock is invisible to standard telemetry - DRAFT
+#### 3.3.3 The governing clock is invisible to standard telemetry
 
 `nvidia-smi` exposes four clock domains - graphics, SM, memory and video - and on this device
 graphics and SM report identical values. **There is no crossbar or fabric clock among them**, and

@@ -5,6 +5,21 @@ over most of the swept range, which means the V100 frequency-prediction result w
 outside the domain where its premise holds. Three probes were run to find out whether such a
 kernel is constructible on this card.
 
+## ⛔ The 2800 MHz band of probe_unrolled_kernel_result.json is NOT usable
+
+`results.2800` records `memory_mhz` of **7001** and a derived `peak_gbs` of **224.0**, against
+16301 and 521.6 at the 1400 band of the same file. A memory clock does not fall when the core
+clock rises: the probe sampled the memory clock at an idle P-state, so the peak derived from it
+is wrong by more than a factor of two.
+
+The signature is unmissable once looked for - `unrolled.1` at that band reads 387.9 GB/s, which
+is **173% of the "peak" beside it**. That is the same 173% that `analysis/audit_claims.py` cites
+in its opening docstring as the defect the claim auditor was built to catch. It is left in the
+file because raw data is not edited; it is flagged here because nothing in the file marks it.
+
+**Section 3.3.1 uses only the 1400 MHz band and is unaffected.** Do not quote anything from the
+2800 band, and do not compute an elasticity across the two bands of this file.
+
 ## Probe 1 — six access patterns at two locked clocks
 
 `tools/frequency-sweep/probe_saturating_kernel.py`. Elasticity is

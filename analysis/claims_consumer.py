@@ -1516,3 +1516,58 @@ def _registerSuiteRowClaim(name):
 
 for _name in SUITE_R1_SWEEPS:
     _registerSuiteRowClaim(_name)
+
+
+# --------------------------------------------------------------------------------------
+# 3.3.1 - the saturation probes
+#
+# These sat unpinned while 3.3.1 carried a DRAFT marker, and the marker was doing the work a
+# claim should: signalling "not checked" rather than making checking unnecessary. The section's
+# argument rests on two independent methods landing at the same ceiling, so the two numbers that
+# have to agree are exactly the two worth rendering from the data.
+#
+# The 2800 MHz band of the unrolled-kernel probe is deliberately NOT pinned: it sampled the
+# memory clock at an idle P-state and its derived peak is wrong by a factor of two, which shows
+# up as unroll-1 reading 173% of "peak". See data/probes/README-saturation.md. Pinning a number
+# from it would give a wrong figure the appearance of an audited one.
+# --------------------------------------------------------------------------------------
+
+import json as _json
+
+PROBE_ISSUE_CEILING = "data/probes/probe_issue_ceiling_result.json"
+PROBE_UNROLLED = "data/probes/probe_unrolled_kernel_result.json"
+
+
+def _probe(relativePath):
+    with open(_REPO_ROOT / relativePath, encoding="utf-8-sig") as handle:
+        return _json.load(handle)
+
+
+@claim("3.3.1-concurrency-ceiling", PAPER, "3.3.1")
+def concurrencyCeiling():
+    """Four streams against one, at 1395 MHz. The sentence pins both numbers because the CLAIM is
+    that concurrency lifts throughput and then stops, which one number cannot express."""
+    data = _probe(PROBE_ISSUE_CEILING)["aggregate_gbs"]
+    return (f"four independent copies on separate streams at 1395 MHz reach "
+            f"{data['4']:.1f} GB/s\naggregate, against {data['1']:.1f} for one")
+
+
+@claim("3.3.1-unroll-spread", PAPER, "3.3.1")
+def unrollSpread():
+    """Unroll 1 against unroll 16 at 1395 MHz - a 16x change in memory-level parallelism."""
+    unrolled = _probe(PROBE_UNROLLED)["results"]["1400"]["unrolled"]
+    return (f"At 1395 MHz it delivers {unrolled['1']:.1f} GB/s at unroll 1 and "
+            f"{unrolled['16']:.1f} at unroll 16")
+
+
+@claim("3.3.1-methods-agree", PAPER, "3.3.1")
+def methodsAgree():
+    """The load-bearing sentence of 3.3.1: two unrelated mechanisms for raising memory-level
+    parallelism land on the same ceiling. Rendered as a BOUND, because the sentence states one -
+    and the bound is what makes the agreement an argument rather than a coincidence."""
+    concurrency = _probe(PROBE_ISSUE_CEILING)["aggregate_gbs"]["4"]
+    unrolled = _probe(PROBE_UNROLLED)["results"]["1400"]["unrolled"]["16"]
+    spread = abs(unrolled / concurrency - 1.0) * 100.0
+    import math
+    bound = math.ceil(spread * 100) / 100
+    return f"agree to within {bound:.2f}% ({concurrency:.1f} against {unrolled:.1f} GB/s)"
