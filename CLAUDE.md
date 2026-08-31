@@ -313,7 +313,19 @@ module then does `from audit_claims import claim`, which imports a *second copy*
 its own empty registry — claims register into one copy and the runner reads the other, reporting
 "0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
 
-Coverage as of 2026-08-27: **119 claims green, 0 failures, 25 numbered sections still unaudited.** Green means every claim that EXISTS passes, not that the paper is covered - run `--coverage` for the sections and the loose numbers inside audited ones. Claims live in TWO modules now - `claims_consumer.py` for the 5060 Ti and `claims_crosschip.py` for the 3070 Ti. Keep them apart; a shared constant is how a cross-chip claim would silently read the wrong card.
+Coverage as of 2026-08-30: **185 claims green, 0 failures, 19 numbered sections still unaudited.**
+Green means every claim that EXISTS passes, not that the paper is covered - run `--coverage` for the
+sections and the loose numbers inside audited ones.
+
+🔑 **The totals hide how uneven the coverage is, and the unevenness is the useful number.** §5.7 and
+its subsections carry 80 claims between them and §5.5 carries 53, while the same `--coverage` run
+reports **§5.4.1 at 2 of 122 numbers pinned, §5.5 at 15 of 255, and §5.6 at 49 of 274**. A high claim
+count is not a covered paper, and quoting the total alone is the same omission this project keeps
+catching elsewhere.
+
+Claims live in **THREE** modules, split by which hardware the data came from - `claims_consumer.py`
+for the 5060 Ti, `claims_crosschip.py` for the 3070 Ti, and `claims_reference.py` for the public
+V100 set. Keep them apart; a shared constant is how a claim would silently read the wrong hardware.
 
 ---
 
@@ -323,9 +335,11 @@ Coverage as of 2026-08-27: **119 claims green, 0 failures, 25 numbered sections 
 run_tests.py       runs every suite, one verdict - `python run_tests.py`
 analysis/          Python measurement + audit on the public V100 dataset
   audit_claims.py     mechanical paper auditor — see "The claims auditor" above
-  claims_consumer.py  the claims themselves, one function per sentence of the paper
+  claims_*.py         the claims themselves, one function per sentence of the paper - THREE
+                      modules, split by hardware: _consumer (5060 Ti), _crosschip (3070 Ti),
+                      _reference (public V100)
   models/             everything that PREDICTS rather than measures — has its own README
-  test_*.py           13 suites, 394 checks total (models/ suites included via run_tests.py)
+  test_*.py           15 suites, 536 checks total (models/ suites included via run_tests.py)
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset
@@ -353,10 +367,17 @@ Keep that true for anything added.
 
 ## Open right now
 
-*Status as of 2026-08-22. The bullet this replaced — "zero real data collected... first real sweep
+*Status as of 2026-08-30. The bullet this replaced — "zero real data collected... first real sweep
 is the immediate next step" — was true on 08-15 and badly false a week later, while this file was
 still being loaded into every session as the authority on project state. If this section ever
 disagrees with the data directory, the data directory is right.*
+
+*⚠️ **It rotted again, and the second time it contradicted itself.** On 2026-08-30 this section still
+said "26 paper sections are unaudited, 87 claims are green" and "the failure detector has never seen
+a failure", while the auditor section above said 119 claims and the data directory held a real
+driver crash caught earlier the same day. Two stale numbers for the same quantity, in one file, is
+worse than one: neither can be trusted and nothing flags which is which. **Read counts off
+`python analysis/audit_claims.py --coverage` and `python run_tests.py`, never off this file.***
 
 - ✅ **The transcript-only results were re-measured 2026-08-22 and are now committed.** The
   split-region curve peaks at **17.97 and 17.98 TFLOP/s at ~2976 MHz** across two back-to-back
@@ -622,10 +643,48 @@ disagrees with the data directory, the data directory is right.*
   `analysis/audit_claims.py` now REQUIRES the window at the call site, and §5.7.6 went from 4
   pinned numbers to 23. **The lesson is the one this project keeps relearning: an aggregate whose
   window is implicit is a claim nobody can check.**
-- **26 paper sections are unaudited.** 87 claims are green; `analyze_fine_sweep.py` needs its
-  summary exposed before §5.4.1's vertices and confidence intervals can be pinned.
-- **The failure detector has never seen a failure.** Deliberately crashing something and confirming
-  the logger catches it is still the highest-value single hour available.
+- **19 paper sections are unaudited, and 185 claims are green.** Most of the 19 are prose - 2.1-2.5,
+  3.1-3.4 - with little to pin. The ones carrying real numbers are **5.4.2, 5.5.4, 5.7, 5.7.3 and
+  5.7.7**.
+
+  ✅ **The blocker this bullet used to name is gone.** It said `analyze_fine_sweep.py` "needs its
+  summary exposed" before §5.4.1's vertices and confidence intervals could be pinned.
+  `analyseWorkload()` is importable, returns the summary dict, and takes an `rng` whose seed already
+  defaults to 20260816 - so the intervals are deterministic and pinnable today. Nothing is stopping
+  §5.4.1, which at **2 of 122 numbers pinned** is the least-covered section in the paper.
+- ✅ **The failure detector HAS now seen a real failure, 2026-08-30.** This bullet called it "the
+  highest-value single hour available" for weeks; it was spent, and it paid. An undervolt
+  deliberately set past the edge - **875 mV pinned at 3000 MHz** - crashed the display driver, and
+  `Get-DisplayDriverCrashEvents` returned 11 events over the run window. Full record in
+  `data/stability-runs/README-uv-875mv-3ghz-20260830.md`. Three things fell out that no synthetic
+  test would have produced:
+  - **The failure signature is a power collapse under sustained reported utilisation** - 92.21 W to
+    24.05 W in one second while the card still reported 2970 MHz and 100% util. That is §5.4.3's
+    decoupling of `utilization.gpu` from real throughput, appearing inside a crash instead of a
+    measurement.
+  - **The driver reset silently cleared the Afterburner offsets.** Memory came back at 13801, stock.
+    Any run continued past that point would have measured stock silicon under a settings string
+    still claiming an undervolt.
+  - **It crashed fourteen seconds BEFORE the benchmark process launched.** Ordinary desktop
+    compositing was enough to boost the card to ~2970 MHz at 875 mV and kill the driver. A protocol
+    that only inspects its own load window would have missed the event outright.
+
+  ⚠️ **The UNSTABLE verdict was reconstructed, not emitted.** The operator stopped the run on seeing
+  the crash, so no `_session.json` and no `_stability_protocol.json` were written. The detector
+  function was re-run unmodified over the same event-log window, which is sound - but it is not the
+  same as the tool having produced the verdict itself, and the difference is worth keeping. What
+  makes the record exist at all is `AutoFlush = $true` in the logger: `_samples.csv` covers the
+  whole event.
+
+  **n = 1, and the crash was spontaneous rather than provoked at a known load.** It establishes that
+  875 mV at 3000 MHz is unstable on this card and nothing about where the edge sits. **Quote no
+  threshold from it.** One of the eleven events, at 12:37:21, post-dates the kill and is not
+  attributable to the card.
+
+  ⚠️ **§3.5 of the paper has NOT been updated for this and still carries a DRAFT marker.** It
+  describes the reset detector as having fired only on an induced context-reset from force-killing a
+  CUDA process. Its sentence "an actual hard lock remains untested" needs care rather than deletion:
+  the card recovered on its own here, so what is now tested is genuine instability, not a hard lock.
 - **Instant Replay went 0% -> 14% inside one session on 2026-08-23, and the cause is now known:
   the operator switched it back on** after a deliberate guard test, and confirmed so when asked.
   **It did NOT re-enable itself.** An earlier version of this entry, and the `applied_settings`
