@@ -80,7 +80,7 @@ HOST = BACKENDS[BACKEND]
 SERVER_COMMAND = (
     r"C:\Users\Raymond\llamacpp\llama-server.exe "
     r"-m C:\Users\Raymond\models\Qwen3.8-27B-UD-IQ4_XS.gguf "
-    r"-c 65536 -ngl 99 --flash-attn on -ctk q4_0 -ctv q4_0 -np 1 "
+    r"-c 65536 -ngl 99 --flash-attn on -ctk q4_0 -ctv q4_0 -np 1 --no-mmap "
     r"--spec-type draft-mtp --spec-draft-n-max 1"
 )
 # -np 1 is not a tidiness flag. llama-server defaults to four slots and allocates compute
@@ -88,6 +88,26 @@ SERVER_COMMAND = (
 # memory WITHOUT failing, and decode fell to 14.6 tok/s while prefill fell 6x. nvidia-smi
 # still reported free VRAM throughout, because spilled memory is not counted. One slot is
 # what makes 64K fit.
+
+# --no-mmap is a memory fix, not a speed flag, and it is the difference between this machine
+# having 4 GB of headroom while the server runs and having 17. llama.cpp maps the GGUF by
+# default and the mapped pages stay RESIDENT for the life of the process even though every
+# weight has already been uploaded to VRAM. Measured 2026-09-02, same model and flags, one
+# variable changed:
+#
+#     mmap (default)   working set 13.94 GB, system RAM 27.51 of 31.11 GB (88.4%)
+#     --no-mmap        working set  1.27 GB, system RAM 13.84 of 31.11 GB (44.5%)
+#
+# Nothing is traded at inference. VRAM was 15.03 GB against 15.02, eval ran 37.75 tok/s, and
+# MTP still drafted (acceptance 0.806, mean len 1.81). Only a COLD load should pay, to read
+# 14.25 GB rather than map it - and that cost is NOT measured here, because the file was
+# already in the OS cache both times. Do not quote a load-time figure from this.
+#
+# The trap worth remembering is the instrument, not the flag. PRIVATE BYTES DO NOT SHOW THIS:
+# they read 17.52 GB against 17.54, because they count committed address space rather than
+# resident pages. `\Memory\Cache Bytes` does not show it either - it measures the system
+# cache, not a process's mapped views, and reading 0.29 GB there was briefly taken as proof
+# that mmap was NOT the cause. Only the A/B settled it. Working set is the number that moves.
 
 # Short names for the models configured on this machine, so a caller does not have to remember
 # which tag carries the Headroom system prompt and which is the stock upstream one.
