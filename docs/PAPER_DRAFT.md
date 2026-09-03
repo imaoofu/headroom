@@ -989,6 +989,58 @@ contaminant. Absolute throughput figures from those runs are understated, and th
 and efficiency gains in sections 5.4 and 5.4.1 are subject to the shift demonstrated above. Those
 sweeps are being repeated under the corrected protocol.
 
+#### 5.4.5 What reproduces between sessions, and what does not
+
+The twelve-workload suite was collected three times at stock on separate days - 2026-08-29,
+2026-08-30 and 2026-09-02 - specifically so that the figures derived from it could carry an
+interval rather than a point. The third set was required to be on a different day because 6.8's
+cross-session drift is the larger variance component, so same-sitting repeats would measure only
+the smaller one. All three are verified-quiet: every sweep records encoder and decoder at 0%.
+
+Mean spread across the three replicates, over twelve workloads and thirteen commanded frequencies
+each:
+
+| quantity | mean spread across r1/r2/r3 |
+|---|---|
+| throughput | **0.87%** |
+| power | **2.07%** |
+| efficiency (throughput per watt) | **2.08%** |
+| reported efficiency gain | **4.34 percentage points** |
+
+🔑 **Power is the dominant noise source, not throughput.** It reproduces 2.4 times worse, and
+efficiency tracks power almost exactly - 2.08% against 2.07% - because throughput noise is
+negligible beside it. This is consistent with limitation 4: power here is a device-side,
+boxcar-averaged estimate rather than an external measurement, and it is the term every efficiency
+result in this paper divides by.
+
+**The gain spread follows arithmetically from that, and is not an additional effect.** Efficiency
+gain is `100 x (peak / reference - 1)`. Both terms carry roughly 2.08%, so their ratio carries
+about 2.9%, and multiplying by the ratio itself - about 1.56 at the mean gain - predicts a spread
+near 4.6 points against the 4.34 observed. **The three replicates agree.** The metric simply
+amplifies power noise by a factor of roughly five.
+
+⚠️ **The ~0.76% this paper quotes elsewhere is THROUGHPUT reproducibility on `gemm`, and must not
+be used as an uncertainty on anything derived from watts.** Efficiency and every gain computed from
+it reproduce several times worse. Two figures in earlier drafts were read against the wrong bar for
+exactly this reason; both are corrected in place.
+
+**What this permits and forbids.** The headline effect is untouched: the twelve workloads gain
+between 33% and 78% at their optima, an order of magnitude outside this noise. But per-workload
+spreads range from 1.1 points (`bgemm256`) to 8.8 points (`layernorm`), so **no ordering of
+workloads by efficiency gain is supported across gaps smaller than roughly five points.**
+
+**A hypothesis of this study's own, tested and refuted.** The gain ratio is anchored on the highest
+measured frequency, which is where the undershooting points are (2-4 per sweep, always undershoot),
+so that anchor was expected to be the noisiest term. It is the least noisy: 3090 MHz reproduces to
+0.71% against 0.88% averaged over every other point, and the worst point is 1237 MHz at 1.37%. The
+gain spread is not an artifact of an unstable denominator.
+
+**Caveats.** n = 3 is three measurements, not a distribution; these are ranges, not confidence
+intervals. One chip. The driver changed between r1 and r2 (610.88 to 616.56) but does not explain
+the variance and appears to run the wrong way - mean absolute gain difference is 1.99 points for
+the driver-differing pair against 3.07 for the driver-matched one. Full record in
+`../data/frequency-sweeps/suite-replicate-r3-20260902/README.md`.
+
 ### 5.5 Cross-chip variation
 
 Every result before this section was measured on one RTX 5060 Ti. This section adds a second chip
@@ -1427,8 +1479,14 @@ this table reports, and no analysis keyed on achieved clocks would have surfaced
 collected under looser conditions than the other eight — counts calibrated at a 7% baseline rather
 than under 5%, and the machine under remote control with encoder and decoder verified idle
 throughout (`../data/frequency-sweeps/suite-pilot-20260829/README.md`). Same-session run-to-run
-spread on this card is ~0.76% and cross-session drift ~1.47% (§6), so the 1.1% fixed-policy figures
-sit near the noise floor while the 30.5 pp gap sits far outside it.
+spread on this card is ~0.76% on THROUGHPUT and cross-session drift ~1.47% (§6). ⚠️ Neither bar
+applies to the figures in this table: they are efficiency gains, and §5.4.5 measures efficiency
+reproducing at ~2.08% across three replicates because power - the term efficiency divides by -
+reproduces at ~2.07% rather than 0.87%. **Read against the right bar the 1.1% fixed-policy figures
+are below the noise floor rather than near it**, which strengthens rather than weakens the reading:
+a fixed policy recovers nothing distinguishable from zero. The 30.5 pp gap remains far outside any
+of these bars. An earlier draft judged the 1.1% against the throughput figure; that was the wrong
+denominator.
 
 **This is the reconciliation between §5.2 and the project's premise.** Unconstrained, the efficiency
 curve is flat near its peak and one frequency serves nearly everything — hence the null, which is
@@ -2220,8 +2278,12 @@ this is unexplained and recorded rather than trimmed.
 8. **Same-configuration measurements drift across sessions by more than the effects several
    comparisons here report.** Measured directly on 2026-08-29: an unchanged memory-overclocked
    configuration read **1.47%** faster on `gemm` than the same configuration seven days earlier.
-   Within-session run-to-run spread on the same workload is ~0.76%, so a cross-day comparison
-   carries roughly twice the noise of a same-day one. This is not hypothetical - a same-day
+   Within-session run-to-run spread on the same workload is ~0.76% **on throughput**, so a
+   cross-day comparison carries roughly twice the noise of a same-day one. ⚠️ **That figure does
+   not cover power or anything derived from it.** Across three stock replicates §5.4.5 measures
+   throughput reproducing at 0.87% but power at 2.07%, efficiency at 2.08%, and a reported
+   efficiency gain at 4.40 percentage points. Any uncertainty quoted on an efficiency or
+   gain figure must come from those, not from 0.76%. This is not hypothetical - a same-day
    stock-versus-memory-overclock comparison gives -0.05% where the cross-day version of the same
    comparison gave -1.50%, and the difference is the drift. Any figure in this paper drawn from
    runs on different days should be read against that bar, and sign consistency across grid points

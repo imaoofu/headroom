@@ -68,7 +68,7 @@ assuming. Mean spread across r1/r2/r3, over all twelve workloads and thirteen fr
 | throughput | **0.87%** |
 | power | **2.07%** |
 | efficiency (throughput per watt) | **2.08%** |
-| reported efficiency gain | **4.40 percentage points** |
+| reported efficiency gain | **4.34 percentage points** |
 
 **Power is the dominant noise source, not throughput.** It reproduces 2.4× worse, and efficiency
 tracks power almost exactly — 2.08% against 2.07% — because throughput noise is negligible beside
@@ -77,7 +77,7 @@ estimate, not an external measurement.
 
 **The gain spread follows arithmetically from that.** Gain is `100 × (peak_eff / ref_eff − 1)`.
 Both terms carry ~2.08%, so their ratio carries ~2.9%, and multiplying by the ratio itself (~1.56
-at the mean gain) predicts **~4.6 points**. Observed: **4.40**. The three trials agree; the metric
+at the mean gain) predicts **~4.6 points**. Observed: **4.34**. The three trials agree; the metric
 is simply noisy, and the amplification from power measurement to reported gain is roughly **5×**.
 
 ⚠️ **The ~0.76% figure this project quotes is THROUGHPUT reproducibility on `gemm`.** Every
@@ -90,29 +90,38 @@ noisiest term. It is the **least** noisy: 3090 MHz reproduces to 0.71% against 0
 other point averaged, and the worst point is 1237 MHz at 1.37%. The gain spread is not an artifact
 of an unstable anchor.
 
-## Result 2 — per-workload spread, which is what §5.5 needs
+## Result 2 — per-workload spread, which is what §5.4.5 of the paper reports
+
+⚠️ **The first version of this table was wrong, and the claim auditor caught it.** It anchored
+each gain on the highest **commanded** frequency. The repository's canonical `suiteRowFigures()`
+anchors on the highest **achieved** clock, and its docstring gives the reason: above ~2310 MHz each
+workload clamps to a different sustained clock, so the top commanded target is not a frequency any
+of them actually ran at. Anchoring on it compares each workload against a point it never reached.
+The table below uses the canonical reference; the numbers moved enough to **reverse which workload
+reproduces worst** — `bgemm256` went from the worst row to the best. The lesson is the project's
+usual one: the wrong version looked entirely plausible.
 
 | workload | r1 | r2 | r3 | spread |
 |---|---|---|---|---|
-| `attention` | 55.6% | 56.2% | 56.4% | **0.9** |
-| `conv` | 76.1% | 74.5% | 75.0% | 1.6 |
-| `bgemm128` | 37.5% | 37.5% | 35.6% | 2.0 |
-| `bgemm1024` | 61.0% | 58.7% | 58.5% | 2.5 |
-| `layernorm` | 55.4% | 58.1% | 55.5% | 2.7 |
-| `copy` | 51.3% | 51.3% | 47.2% | 4.1 |
-| `softmax` | 65.6% | 65.0% | 70.3% | 5.3 |
-| `reduce` | 40.4% | 37.3% | 42.6% | 5.3 |
-| `gemm` | 58.1% | 57.3% | 52.8% | 5.3 |
-| `bgemm32` | 76.6% | 73.5% | 71.2% | 5.4 |
-| `bgemm64` | 81.1% | 73.0% | 77.8% | 8.1 |
-| `bgemm256` | 41.8% | 44.4% | 34.5% | **9.9** |
+| `bgemm256` | 39.5% | 39.6% | 38.5% | **1.1** |
+| `copy` | 51.3% | 51.3% | 52.6% | 1.3 |
+| `bgemm128` | 34.9% | 34.8% | 33.2% | 1.7 |
+| `attention` | 53.7% | 56.2% | 53.8% | 2.5 |
+| `gemm` | 55.6% | 54.8% | 52.8% | 2.8 |
+| `conv` | 75.6% | 72.1% | 72.7% | 3.4 |
+| `bgemm1024` | 61.0% | 60.3% | 56.8% | 4.1 |
+| `reduce` | 37.2% | 37.3% | 42.6% | 5.4 |
+| `softmax` | 61.5% | 63.6% | 67.9% | 6.4 |
+| `bgemm32` | 74.0% | 73.4% | 67.4% | 6.7 |
+| `bgemm64` | 77.0% | 70.0% | 77.8% | 7.7 |
+| `layernorm` | 51.0% | 53.8% | 59.8% | **8.8** |
 
-Mean 4.40, median 4.68, max 9.89.
+Mean 4.34, median 4.13, max 8.84.
 
 🛑 **No ordering of workloads by efficiency gain is supported across gaps smaller than about five
-points.** The headline effect is untouched — every workload gains 34–81% and that is far outside
-this noise — but a sentence ranking two workloads whose gains differ by three points is reading
-noise.
+points.** The headline effect is untouched — every workload gains 33–78% and that is an order of
+magnitude outside this noise — but a sentence ranking two workloads whose gains differ by three
+points is reading noise.
 
 ## Result 3 — the optima are stable, and move by one grid step when they move
 

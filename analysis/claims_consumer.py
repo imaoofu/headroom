@@ -1571,3 +1571,147 @@ def methodsAgree():
     import math
     bound = math.ceil(spread * 100) / 100
     return f"agree to within {bound:.2f}% ({concurrency:.1f} against {unrolled:.1f} GB/s)"
+
+
+# --------------------------------------------------------------------------------------
+# 5.4.5 - what reproduces between sessions
+#
+# Three complete stock collections of the twelve-workload suite: r1 (2026-08-29), r2 (08-30),
+# r3 (09-02). These claims recompute the spread from all 36 CSVs rather than storing it, so a
+# re-measured replicate or an edited paper both fail the audit.
+#
+# THE FILES CANNOT BE GLOBBED, which is why all three maps are written out. r1's gemm sweep is
+# named `stock-gemm-1237grid` rather than `stock-suite-gemm`, so a `*gemm*` pattern matches
+# `bgemm1024` instead and yields a plausible wrong number - that happened once during analysis.
+# And `bgemm64-r3` exists in TWO directories: this replicate, and the third of four bgemm64
+# repeats collected during the r2 session. Resolve by directory, never by tag.
+# --------------------------------------------------------------------------------------
+
+SUITE_R2_DIR = "suite-replicate-r2-20260830"
+SUITE_R3_DIR = "suite-replicate-r3-20260902"
+
+SUITE_R2_SWEEPS = {
+    "copy": f"{SUITE_R2_DIR}/20260830-131414_5060ti-stock-suite-copy-r2_sweep.csv",
+    "reduce": f"{SUITE_R2_DIR}/20260830-131835_5060ti-stock-suite-reduce-r2_sweep.csv",
+    "softmax": f"{SUITE_R2_DIR}/20260830-132304_5060ti-stock-suite-softmax-r2_sweep.csv",
+    "layernorm": f"{SUITE_R2_DIR}/20260830-132723_5060ti-stock-suite-layernorm-r2_sweep.csv",
+    "bgemm32": f"{SUITE_R2_DIR}/20260830-133147_5060ti-stock-suite-bgemm32-r2_sweep.csv",
+    "bgemm64": f"{SUITE_R2_DIR}/20260830-133608_5060ti-stock-suite-bgemm64-r2_sweep.csv",
+    "bgemm128": f"{SUITE_R2_DIR}/20260830-134028_5060ti-stock-suite-bgemm128-r2_sweep.csv",
+    "bgemm256": f"{SUITE_R2_DIR}/20260830-134503_5060ti-stock-suite-bgemm256-r2_sweep.csv",
+    "bgemm1024": f"{SUITE_R2_DIR}/20260830-135007_5060ti-stock-suite-bgemm1024-r2_sweep.csv",
+    "attention": f"{SUITE_R2_DIR}/20260830-135511_5060ti-stock-suite-attention-r2_sweep.csv",
+    "conv": f"{SUITE_R2_DIR}/20260830-140020_5060ti-stock-suite-conv-r2_sweep.csv",
+    "gemm": f"{SUITE_R2_DIR}/20260830-140529_5060ti-stock-suite-gemm-r2_sweep.csv",
+}
+
+SUITE_R3_SWEEPS = {
+    "copy": f"{SUITE_R3_DIR}/20260902-190250_5060ti-stock-suite-copy-r3_sweep.csv",
+    "reduce": f"{SUITE_R3_DIR}/20260902-190713_5060ti-stock-suite-reduce-r3_sweep.csv",
+    "softmax": f"{SUITE_R3_DIR}/20260902-191142_5060ti-stock-suite-softmax-r3_sweep.csv",
+    "layernorm": f"{SUITE_R3_DIR}/20260902-191602_5060ti-stock-suite-layernorm-r3_sweep.csv",
+    "bgemm32": f"{SUITE_R3_DIR}/20260902-192026_5060ti-stock-suite-bgemm32-r3_sweep.csv",
+    "bgemm64": f"{SUITE_R3_DIR}/20260902-192446_5060ti-stock-suite-bgemm64-r3_sweep.csv",
+    "bgemm128": f"{SUITE_R3_DIR}/20260902-192906_5060ti-stock-suite-bgemm128-r3_sweep.csv",
+    "bgemm256": f"{SUITE_R3_DIR}/20260902-193343_5060ti-stock-suite-bgemm256-r3_sweep.csv",
+    "bgemm1024": f"{SUITE_R3_DIR}/20260902-193847_5060ti-stock-suite-bgemm1024-r3_sweep.csv",
+    "attention": f"{SUITE_R3_DIR}/20260902-194351_5060ti-stock-suite-attention-r3_sweep.csv",
+    "conv": f"{SUITE_R3_DIR}/20260902-194901_5060ti-stock-suite-conv-r3_sweep.csv",
+    "gemm": f"{SUITE_R3_DIR}/20260902-195410_5060ti-stock-suite-gemm-r3_sweep.csv",
+}
+
+REPLICATES = (SUITE_R1_SWEEPS, SUITE_R2_SWEEPS, SUITE_R3_SWEEPS)
+
+
+def _relativeSpread(values):
+    """Range as a percentage of the mean - the statistic 5.4.5's table reports."""
+    return 100.0 * (max(values) - min(values)) / mean(values)
+
+
+def _sharedTargets(name):
+    """Commanded frequencies present in all three replicates of one workload."""
+    keyed = [sweep(table[name]) for table in REPLICATES]
+    shared = set(keyed[0])
+    for one in keyed[1:]:
+        shared &= set(one)
+    return keyed, sorted(shared)
+
+
+def _spreadsFor(field):
+    """Mean per-point spread of one measured field, averaged over the twelve workloads."""
+    perWorkload = []
+    for name in SUITE_R1_SWEEPS:
+        keyed, targets = _sharedTargets(name)
+        perWorkload.append(mean(_relativeSpread([k[t][field] for k in keyed]) for t in targets))
+    return mean(perWorkload)
+
+
+def _gainSpreads():
+    """Per-workload range of the reported efficiency gain, in percentage POINTS not percent."""
+    out = {}
+    for name, relativePath in SUITE_R1_SWEEPS.items():
+        gains = [suiteRowFigures(table[name])[1] for table in REPLICATES]
+        out[name] = max(gains) - min(gains)
+    return out
+
+
+@claim("5.4.5-throughput-spread", PAPER, "5.4.5")
+def replicateThroughputSpread():
+    """Throughput is the quantity the project's existing ~0.76% figure describes."""
+    return f"| throughput | **{_spreadsFor('throughput'):.2f}%** |"
+
+
+@claim("5.4.5-power-spread", PAPER, "5.4.5")
+def replicatePowerSpread():
+    """Power, the term every efficiency figure divides by, and the dominant noise source."""
+    return f"| power | **{_spreadsFor('power'):.2f}%** |"
+
+
+@claim("5.4.5-efficiency-spread", PAPER, "5.4.5")
+def replicateEfficiencySpread():
+    """Efficiency tracks power rather than throughput - that is the section's whole point."""
+    return f"| efficiency (throughput per watt) | **{_spreadsFor('efficiency'):.2f}%** |"
+
+
+@claim("5.4.5-gain-spread", PAPER, "5.4.5")
+def replicateGainSpread():
+    """The derived gain, in percentage POINTS. Rendered to match the table's own wording."""
+    return (f"| reported efficiency gain | **{mean(_gainSpreads().values()):.2f} percentage "
+            f"points** |")
+
+
+@claim("5.4.5-power-versus-throughput", PAPER, "5.4.5")
+def powerIsTheDominantTerm():
+    """The ratio the section leads with. Rendered as a bound so it states the direction."""
+    factor = _spreadsFor("power") / _spreadsFor("throughput")
+    return f"It reproduces {factor:.1f} times worse"
+
+
+@claim("5.4.5-gain-range", PAPER, "5.4.5")
+def gainSpreadRange():
+    """Best and worst reproducing workloads. Both are named because the RANGE is the claim -
+    a mean alone would hide that one workload moves eleven times as much as another."""
+    spreads = _gainSpreads()
+    best = min(spreads, key=spreads.get)
+    worst = max(spreads, key=spreads.get)
+    return (f"from {spreads[best]:.1f} points (`{best}`) to {spreads[worst]:.1f} points "
+            f"(`{worst}`)")
+
+
+@claim("5.4.5-anchor-refutation", PAPER, "5.4.5")
+def topPointIsNotTheNoisiest():
+    """The refuted hypothesis. Pinned because a claim that only recorded the conclusion would
+    not fail if the underlying numbers moved enough to reverse it."""
+    byTarget = {}
+    for name in SUITE_R1_SWEEPS:
+        keyed, targets = _sharedTargets(name)
+        for target in targets:
+            byTarget.setdefault(target, []).append(
+                _relativeSpread([k[target]["throughput"] for k in keyed]))
+    ordered = sorted(byTarget)
+    top = mean(byTarget[ordered[-1]])
+    rest = mean(mean(byTarget[t]) for t in ordered[:-1])
+    worst = max(ordered, key=lambda t: mean(byTarget[t]))
+    return (f"{ordered[-1]:.0f} MHz reproduces to {top:.2f}% against {rest:.2f}% averaged over "
+            f"every other point, and the worst point is {worst:.0f} MHz at "
+            f"{mean(byTarget[worst]):.2f}%")
