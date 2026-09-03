@@ -1,9 +1,10 @@
 # Headroom — paper draft
 
 > **Status: complete in structure, still a draft in places.** Results rest on **67 committed
-> sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry. **143 numbers
-> are pinned by `analysis/audit_claims.py`**, which recomputes each from the source CSVs at audit
-> time and fails if the text and the data disagree; it runs on every push. No `[PENDING]`
+> sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
+> **193 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
+> is itself pinned, so adding a claim without updating this line fails the audit. No `[PENDING]`
 > placeholders remain, but **20 numbered sections carry no claims at all** — `--coverage` lists
 > them, and a green audit says nothing about those. Sections still marked `- DRAFT` in their
 > headings were written the day their measurements were taken and have not had a second pass.
@@ -20,8 +21,9 @@ voltage-frequency behaviour must hold across millions of individually varying di
 period measured in years. The margin this produces was quantified on GPUs released in 2010 and
 2012; whether comparable margin remains on current consumer parts, and where it sits, is not
 established. It also cannot be answered from published data, for a reason that is itself a
-finding: the two public consumer DVFS datasets both sweep core frequency at and above the card's
-rated boost clock — 101–126% and 95–118% of it — while the efficiency optimum lies *below* stock.
+finding: the public consumer DVFS data we could locate — two cards, both from a single released
+collection [7] rather than from independent groups — sweeps core frequency at and above the card's
+rated boost clock, 101–126% and 95–118% of it, while the efficiency optimum lies *below* stock.
 Their correspondingly small measured gaps invite the conclusion that consumer GPUs have little
 headroom, when what they show is a truncated measurement range.
 
@@ -245,16 +247,33 @@ enough to measure on shipping hardware without modifying anything.
 | HKBU-HPML [7] | RTX 2070 Super | 95–118% | **No** — at/above stock only |
 
 This is a contribution in its own right and is reproducible via `analysis/compare_consumer.py`.
-Both public *consumer* DVFS datasets are effectively overclocking sweeps: they begin at or above the
-rated boost clock and increase from there. Because the efficiency optimum lies *below* stock — at
-62% of maximum in the V100 data — these datasets cannot locate it.
+
+⚠️ **Both consumer rows are the same citation.** They are two cards from one released collection
+[7], not two independently produced datasets, and **no systematic survey established that they are
+the only public consumer DVFS sweeps in existence.** The claim made here is therefore about the
+consumer DVFS data we were able to locate, not about a surveyed population. That distinction is
+stated rather than glossed because this project has already retracted one novelty claim for
+exactly this failure — asserting an absence in the literature without searching for it (§2.2). A
+dated search across the dataset repositories and artifact appendices would be needed before any
+stronger wording is justified, and has not been performed.
+
+What the two ranges show is arithmetic and does not depend on the survey being complete. Both are
+effectively overclocking sweeps: they begin at or above the rated boost clock and increase from
+there. Because the efficiency optimum lies *below* stock — at 62% of maximum in the V100 data —
+neither swept range contains it.
 
 The consequence is a trap for anyone reading them naively. The GTX 1080 Ti data yields a mean
 efficiency gap of 1.00% and the RTX 2070 Super 3.34%, against 44.40% for the V100. Read without
 reference to stock clock, that pattern invites the conclusion that consumer GPUs lack headroom.
 The correct reading is that the measurements stop short of where headroom appears — evidenced by
-60% of 1080 Ti applications having their measured optimum at the lowest frequency tested, the
-signature of a truncated range.
+60% of 1080 Ti applications (18 of 30) having their measured optimum at the lowest frequency
+tested, the signature of a truncated range.
+
+⚠️ **That signature is much weaker on the second card, and both figures are given here because
+quoting only the stronger one would overstate the evidence.** The RTX 2070 Super has 20% of its
+units at the boundary (4 of 20) against the GTX 1080 Ti’s 60%. The truncation argument therefore
+rests on the swept ranges themselves, which are arithmetic and independent of workload, rather than
+on the boundary share — which is corroborating on one card and weak on the other.
 
 ---
 

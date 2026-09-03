@@ -35,7 +35,7 @@ WHY SOME CLAIMS PIN A SENTENCE FRAGMENT
 """
 
 from statistics import fmean as mean, median, stdev
-from audit_claims import (POST_SOAK, SOAK, WHOLE_RUN, claim, deltaPct, iterationsIn,
+from audit_claims import (CLAIMS, POST_SOAK, SOAK, WHOLE_RUN, claim, deltaPct, iterationsIn,
                           loadedSamples, signedPct, stabilityRun, sweep, sweepRaw,
                           voltageJoin)
 
@@ -1715,3 +1715,21 @@ def topPointIsNotTheNoisiest():
     return (f"{ordered[-1]:.0f} MHz reproduces to {top:.2f}% against {rest:.2f}% averaged over "
             f"every other point, and the worst point is {worst:.0f} MHz at "
             f"{mean(byTarget[worst]):.2f}%")
+
+
+# --------------------------------------------------------------------------------------
+# The status header - the one place the auditor could not previously audit
+#
+# A council review of the paper found the header advertising "143 numbers are pinned" while the
+# real count was 192. That is the failure this whole file exists to prevent, sitting in the
+# paragraph that ADVERTISES the mechanism, and nothing caught it because nothing pinned it.
+#
+# The claim below is deliberately SELF-REFERENTIAL: it counts itself, so adding any future claim
+# forces the header to be updated or the audit fails. That is the intended friction. It is also
+# why the number in the paper is one higher than the count before this claim existed.
+# --------------------------------------------------------------------------------------
+
+@claim("header-pinned-count", PAPER)
+def headerPinnedCount():
+    """The header's own advertised claim count, rendered from the live registry."""
+    return f"**{len(CLAIMS)} numbers are pinned by `analysis/audit_claims.py`**"
