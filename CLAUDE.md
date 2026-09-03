@@ -110,7 +110,14 @@ every published consumer dataset misses entirely. The justification is therefore
 "no open consumer data exists" — it is **"the consumer data that exists sweeps the wrong range."**
 That is a sharper, more defensible contribution claim, and it is checkable by anyone.
 
-### The hardware (Zotac RTX 5060 Ti Twin Edge OC, driver 610.88) — verified by direct probing
+### The hardware (Zotac RTX 5060 Ti Twin Edge OC) — verified by direct probing
+
+⚠️ **Driver: 616.56 as of 2026-09-02.** This heading said 610.88 until then, which had been stale
+since 2026-08-30 - the update landed between suite replicates r1 and r2, not before r3, and was
+found only by reading `driver_version` out of the sweep JSONs. r1 is the odd one out. It does not
+explain the between-replicate variance and appears to run the wrong way (mean absolute gain
+difference 1.99 points for the driver-differing pair against 3.07 for the driver-matched one), so
+attribute nothing to it. Read the driver off a sweep JSON, never off this file.
 
 | Fact | Value |
 |---|---|
@@ -711,5 +718,29 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   reviewer, which is what makes the clean/contaminated split below the project's main technical
   problem. And n=1 chip is the weakness any reader will name first, which is what makes stock
   sweeps on other machines valuable even when nothing can be tuned on them.
-- **Push directly with `git push`.** `gh` is installed but auth never completed; Windows Credential
-  Manager already works. Do not route through `gh`.
+- **Push directly with `git push`** - Windows Credential Manager handles it and there is no reason
+  to change that. This line used to end "do not route through `gh`" because auth had never
+  completed; **`gh` was authenticated 2026-09-02** (account `imaoofu`, keyring, scopes `gist`,
+  `read:org`, `repo`, `workflow`), so the instruction is now about pushes ONLY.
+
+  ✅ **Use `gh` to read CI, because nothing else can.** The repo is PRIVATE, so an unauthenticated
+  `api.github.com` request returns `Not Found` rather than a useful error, and a session without
+  `gh` is reduced to guessing at build results:
+
+  ```
+  gh run list --limit 10
+  gh run view <run-id>                 # per-job breakdown
+  gh run view <run-id> --log-failed    # just the failing step
+  ```
+
+  ⚠️ **A `cancelled` run is usually not a failure.** `ci.yml` sets `cancel-in-progress: true`, so a
+  push that supersedes one still running cancels the older one. Three of the last forty runs are
+  cancelled for that reason and none of them indicate a problem.
+
+  🔑 **CI does NOT see `data/raw/`, and that changes the claim count.** The dataset is gitignored
+  and fetched, so `claims_reference.py` registers its 24 claims only in the "V100 reference
+  claims" job. The "checks" job reports **168 of 168** and the reference job **193 of 193** - both
+  green. Any claim whose value depends on the SIZE of the registry is therefore
+  environment-dependent; `header-pinned-count` is guarded for exactly that reason, after an
+  unguarded version broke both checks legs on 2026-09-02. A local run can be made to match CI by
+  temporarily moving `data/raw` aside, which is how that break was reproduced before it was fixed.
