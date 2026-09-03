@@ -1820,6 +1820,23 @@ voltage and the tuned card does not.
 The chain is therefore: flattened curve, so pinned voltage, so pinned crossbar clock, so a
 non-scaling path to memory, so a bandwidth plateau while DRAM itself is untouched at 16301 MHz.
 
+⚠️ **This does not require `membw` to be DRAM-saturated, and it is not.** Section 3.3.1 establishes
+that no constructible kernel saturates DRAM below roughly 2000 MHz on this device, which covers
+most of the band measured above — so a reader arriving from that section will reasonably ask
+whether this plateau is simply that ceiling under another name. It is not, and the table itself
+shows why: an issue limit is a property of the part and applies to **both** configurations equally,
+so it cannot produce a difference between them. Stock and tuned agree at 1402 MHz, where their
+voltages agree, and diverge only from 1635 MHz, where stock raises voltage and the tuned card does
+not. What is measured here is that divergence at matched core and memory clock, not an absolute
+bandwidth. Section 3.3.2 sets out which limiter governs which regime.
+
+**One relationship between the two is open and untested.** The ceiling 3.3.1 could not identify sits
+at ~281 GB/s at 1395 MHz, and both configurations here deliver ~282 GB/s at 1402 MHz. 3.3.2 treats
+the issue limit and the crossbar as separate limiters in separate regimes, which is the
+conservative reading; whether the low-clock ceiling is *also* the crossbar has not been measured.
+Logging the crossbar clock during a stock sweep at that frequency would settle it, and the HWiNFO
+join built for this section is the instrument that could.
+
 **This also unifies 5.7.1 and 5.7.2, which had read as two unrelated findings.** They are one
 intervention with one mechanism. `gemm`, at ~1365 FLOP per byte, never loads the crossbar hard
 enough to care, so the pinned low voltage is pure benefit - the 18 to 26% power reduction at
@@ -2294,6 +2311,13 @@ this is unexplained and recorded rather than trimmed.
    issue-limited below roughly 2000 MHz on this device, and no constructible kernel saturates DRAM
    there (3.3.1). Consumer results that depend on a workload being bandwidth-limited hold only near
    the top of the range.
+
+   **This does not undercut 5.7, and the distinction is worth stating because the two sections
+   otherwise look as though they collide.** That mechanism identifies the crossbar clock, not DRAM,
+   as the limiter — it asserts DRAM is *untouched* — and it rests on a divergence between two
+   configurations at matched core and memory clock rather than on an absolute bandwidth. A ceiling
+   shared by both configurations cancels in that comparison. 3.3.2 assigns the limiters by regime;
+   read it before concluding that either section contradicts the other.
 8. **Same-configuration measurements drift across sessions by more than the effects several
    comparisons here report.** Measured directly on 2026-08-29: an unchanged memory-overclocked
    configuration read **1.47%** faster on `gemm` than the same configuration seven days earlier.
