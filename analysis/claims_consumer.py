@@ -1727,9 +1727,27 @@ def topPointIsNotTheNoisiest():
 # The claim below is deliberately SELF-REFERENTIAL: it counts itself, so adding any future claim
 # forces the header to be updated or the audit fails. That is the intended friction. It is also
 # why the number in the paper is one higher than the count before this claim existed.
+#
+# IT IS ALSO GUARDED, and the first version of it broke CI for exactly the reason the guard now
+# exists. claims_reference.py registers 24 claims ONLY when data/raw/ is present, and that
+# dataset is gitignored and fetched rather than committed - so the registry totals 193 on a
+# machine that has it and 169 on one that does not. An unguarded count renders whichever number
+# the environment produces and fails wherever the paper disagrees, which is both CI legs of the
+# "checks" job. The guard is the same condition claims_reference.py itself uses, so this claim
+# registers exactly where the count it reports is the complete one: locally, and in the CI job
+# named "V100 reference claims" that fetches the dataset before auditing.
+#
+# THE SKIP IS NOT A PASS, for the same reason that module says so: a green audit without the
+# dataset has not checked this number either.
 # --------------------------------------------------------------------------------------
 
-@claim("header-pinned-count", PAPER)
-def headerPinnedCount():
-    """The header's own advertised claim count, rendered from the live registry."""
-    return f"**{len(CLAIMS)} numbers are pinned by `analysis/audit_claims.py`**"
+def _referenceDataPresent():
+    """Whether the V100 set is fetched, and therefore whether CLAIMS is the complete registry."""
+    return (_REPO_ROOT / "data" / "raw" / "dataset_performance.csv").exists()
+
+
+if _referenceDataPresent():
+    @claim("header-pinned-count", PAPER)
+    def headerPinnedCount():
+        """The header's own advertised claim count, rendered from the live registry."""
+        return f"**{len(CLAIMS)} numbers are pinned by `analysis/audit_claims.py`**"
