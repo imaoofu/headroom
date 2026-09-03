@@ -1570,6 +1570,65 @@ infeasible at the floor most deployments would want.
 variation is untested and needs repeat units of one SKU this project does not have. Four of the
 twelve were collected under looser conditions than the other eight (§5.6.1.1).
 
+#### 5.6.3 What the headroom is worth once the hardware is paid for
+
+Every efficiency figure above is per-GPU at fixed work. A deployment does not buy efficiency, it
+buys throughput, so the question that decides whether any of this is actionable is what happens when
+total output is held constant and the fleet is resized to compensate. Running each unit slower means
+buying more units, and the extra silicon is a real cost set against the saved energy.
+
+The two operating points in this section answer it directly, using only measured quantities:
+
+| operating point | perf retained | power per unit | units for equal output | fleet power |
+|---|---|---|---|---|
+| stock | 100% | 100% | 1.000 | 100% |
+| unconstrained optimum (5.1) | 86.3% | 59.9% | **1.159** | **69.4%** |
+| 95% floor (5.6) | 96.7% | 76.6% | **1.034** | **79.2%** |
+
+The unconstrained optimum trades **15.9% more units for 30.6% less fleet power**. The 95% floor
+trades **3.4% more units for 20.8% less**. Both rows follow arithmetically from the measured
+performance cost and power saving; nothing is assumed yet.
+
+**That converts to a single break-even ratio, which is the useful form.** The extra hardware is paid
+once and the energy is saved continuously, so the trade pays exactly when lifetime energy cost
+exceeds a fixed fraction of purchase price:
+
+    unconstrained   0.159 / 0.306 = lifetime energy must exceed 52% of unit price
+    95% floor       0.034 / 0.208 = lifetime energy must exceed 16% of unit price
+
+**The constrained point is roughly three times easier to justify than the unconstrained one**, and
+that gap is wider than the efficiency difference between them would suggest. Giving up two-thirds of
+the headroom removes four-fifths of the extra capital. This is the same flatness near the efficiency
+peak that 5.4.1 and the r1-versus-r2 replicate both report, seen through its consequence rather than
+its shape.
+
+⚠️ **The following worked examples are ILLUSTRATIVE and use assumed prices, not measurements.** Unit
+prices, electricity tariffs, duty cycle and PUE are inputs a reader must supply for their own
+deployment; they are stated here only to show the ratio being applied, and no claim in this paper
+depends on them.
+
+| illustrative case | assumed price | power | assumed lifetime energy | ratio | unconstrained | 95% floor |
+|---|---|---|---|---|---|---|
+| consumer card, high duty | $450 | 180 W | ~$850 (3 yr) | 1.89 | pays | pays |
+| datacenter accelerator | $30,000 | 700 W | ~$5,200 (5 yr) | 0.17 | **loses** | marginal |
+
+**The honest conclusion is that the unconstrained optimum is not a cost argument on expensive
+silicon.** Where a unit costs tens of thousands and its lifetime electricity is a sixth of that,
+buying 15.9% more units to save 30.6% of the power loses money, and this paper should not be read as
+recommending it. The 95% floor survives that same arithmetic, which is a further reason to treat it
+rather than 5.1's 44.4% as the deployable result.
+
+**Two cases escape the trade entirely, and they are not edge cases.**
+
+First, **a facility that cannot add units at all**. Where the binding constraint is provisioned
+power, cooling, or rack space rather than capital, the compensating purchase is not available at any
+price, and efficiency is the only remaining way to raise throughput per provisioned watt. The
+capital argument never runs.
+
+Second, **a fleet that is not saturated**. Resizing is only required if the existing units are
+already at full utilisation. A deployment with slack keeps its output and simply pays less power, and
+the trade is unconditionally favourable.
+
 ### 5.7 Separating the two tuning knobs - DRAFT, 2026-08-20
 
 > **Draft.** Written the day the measurements were taken. Numbers are checked against the
@@ -2170,6 +2229,21 @@ this is unexplained and recorded rather than trimmed.
 9. **Tuning configurations were not measured contemporaneously.** The stock, fully tuned and
    memory-only sweeps of 5.7 are separated by hours to a day, because switching between them
    requires a manual change that cannot be scripted (5.7.7).
+10. **Every measurement is single-GPU and fixed-work, so 5.6.3's fleet arithmetic is an upper bound
+   on the benefit.** The workloads here are microbenchmarks run to completion on one device, and the
+   deployment model in 5.6.3 scales them as `output = units x per-unit throughput`. Real multi-GPU
+   work does not compose that way. Collective operations make every participant wait for the
+   slowest, so uniformly downclocking a fleet lengthens each synchronisation rather than dividing
+   cleanly; stragglers, interconnect latency and tail effects all worsen as per-unit throughput
+   falls, and none of them appear in a single-device fixed-work benchmark. **Nothing in this study
+   measures the multi-GPU case**, and the linear scaling assumed in 5.6.3 is therefore optimistic in
+   an unquantified direction. A reader sizing a real cluster should treat the unit counts there as a
+   floor on how much extra hardware would be required.
+
+    The same caveat limits the workloads themselves. `gemm` at ~1365 FLOP/byte and `membw` at 0.167
+    bracket a range, but a training step is a sequence of phases with different intensities, and 5.7
+    shows the same voltage curve can help one phase and cost another up to 29.6%. A per-phase optimum
+    is not measured here.
 
 ---
 
