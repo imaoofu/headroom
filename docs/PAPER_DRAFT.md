@@ -2,14 +2,18 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **67 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **195 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **199 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. No `[PENDING]`
-> placeholders remain, but **19 numbered sections carry no claims at all** — `--coverage` lists
+> placeholders remain, but **18 numbered sections carry no claims at all** — `--coverage` lists
 > them, and a green audit says nothing about those. That 19 is NOT itself pinned, unlike the count
 > above it: it is computed from the audit results rather than during them, so a claim cannot reach
-> it without circularity. Re-read it from `--coverage` rather than from here. Sections still marked `- DRAFT` in their
-> headings were written the day their measurements were taken and have not had a second pass.
+> it without circularity. Re-read it from `--coverage` rather than from here.
+>
+> **No section carries a `- DRAFT` marker any more.** That marker meant "written the day the
+> measurements were taken, no second pass"; the last three were on 3.5 and 5.7 and both had their
+> pass on 2026-09-04. It does NOT mean every measurement is clean - 5.7.4 and 5.7.5 still predate
+> the capture-software finding of 5.4.4 and say so in place, and a prose pass cannot fix that.
 >
 > Citation reliability is flagged per entry in [References](#references). Anything marked
 > ⚠️ needs the primary source opened before it appears in a submitted version.
@@ -1744,10 +1748,17 @@ Second, **a fleet that is not saturated**. Resizing is only required if the exis
 already at full utilisation. A deployment with slack keeps its output and simply pays less power, and
 the trade is unconditionally favourable.
 
-### 5.7 Separating the two tuning knobs - DRAFT, 2026-08-20
+### 5.7 Separating the two tuning knobs
 
-> **Draft.** Written the day the measurements were taken. Numbers are checked against the
-> committed CSVs; prose and framing are not settled.
+> **Written 2026-08-20, second pass 2026-09-04.** The mechanism of 5.7.3 was re-verified against
+> the committed voltage extracts and its headline figures are now pinned by the claim auditor
+> rather than only checked by eye. **One claim did not survive the pass and is withdrawn in
+> place** - 5.7.1 had read a 2% power agreement as meaningfully tighter than 3%, and both sit
+> inside the 2.07% at which power reproduces (5.4.5).
+>
+> **The contamination caveat on 5.7.4 and 5.7.5 is unaffected and stands.** Those measurements
+> predate the capture-software finding of 5.4.4 and have no clean counterpart; a second pass over
+> the prose cannot fix that, and does not claim to.
 
 Every earlier consumer result treats "tuned" as one setting. It is two: a **memory overclock**
 (+2500 MHz offset, 16301 against a 14001 rating) and a **core V/F curve** pinned flat near
@@ -1784,10 +1795,18 @@ published, not weaker.
 | 2167 MHz | **-21.4%** | -0.1% |
 | 2317 MHz | **-17.2%** | +1.6% |
 
-Memory-only reproduces stock power to within 2%. That is tighter than the 3% the contaminated
-pair showed, so cleaning the measurement sharpened this result rather than softening it.
-Temperatures at these four points matched to within 0.6 C. Memory speed does nothing measurable for a compute-bound workload, which is the
-sanity check this design should pass and does.
+Memory-only reproduces stock power to within 2%. ⚠️ **That is at the noise floor rather than
+below it:** section 5.4.5 measures power itself reproducing at **2.07%** across three replicates of
+an unchanged configuration. An earlier version of this passage read the 2% against the 3% the
+contaminated pair had shown and concluded that cleaning the measurement had sharpened the result.
+**That conclusion is withdrawn.** Both figures sit inside the reproducibility of the quantity being
+compared, so neither is distinguishable from the other, and a 1-point difference between them
+cannot be evidence of anything.
+
+What survives is the direction, which is what this table is for: four points, two of each sign, no
+systematic offset. Memory speed does nothing measurable for a compute-bound workload, which is the
+sanity check this design should pass and does. Temperatures at these four points matched to within
+0.6 C.
 
 The curve additionally raises the sustainable ceiling: at stock and at memory-only the card cannot
 hold the top three grid points, collapsing to ~2590 MHz and ~15.7 TFLOP/s, while with the curve it
@@ -1829,7 +1848,7 @@ region, where the applied and stock curves diverge most, and that the memory con
 interconnect - which share the core voltage domain, unlike the DRAM devices themselves - become the
 limiter. `gemm` is unaffected because at ~1365 FLOP per byte it is nowhere near saturating that path.
 
-**This mechanism is now established by direct measurement - DRAFT.** NVML exposes neither core
+**This mechanism is established by direct measurement.** NVML exposes neither core
 voltage nor interconnect clock, but HWiNFO exposes both, and two further sweeps were run with it
 logging alongside: one fully tuned, one at full stock.
 
@@ -1844,8 +1863,13 @@ logging alongside: one fully tuned, one at full stock.
 Across the swept range stock core voltage rises 0.120 V while the tuned card's rises 0.020 V: the
 flattened curve holds one voltage, as configured. The consequence is the crossbar clock - the
 SM-to-memory-controller interconnect. At stock its ratio to core clock holds between 0.928 and
-0.976. Under the flattened curve that ratio collapses from 0.942 to 0.726: the interconnect
+0.976. Under the flattened curve that ratio collapses from 0.942 to 0.725: the interconnect
 decouples from the core and stops scaling.
+
+**The table above shows five of the ten measured points**, chosen for spacing. The 0.725 is the
+lowest of all ten and falls at 1942 MHz, which the table does not display; an earlier version of
+this sentence read 0.726 off the displayed rows alone. Both extracts are committed beside the
+sweeps they came from and every figure in this subsection is recomputed from them by the auditor.
 
 Throughput follows the crossbar, not the core. On the tuned card, elasticity of `membw` throughput
 to core clock is 0.51; to crossbar clock it is 1.31. Above the plateau a 14.4% crossbar increase
@@ -1889,7 +1913,7 @@ both workloads.** This is the section 5.6 result one level up: not only is the e
 frequency workload-dependent, so is the efficiency-optimal hardware configuration, and by a
 considerably larger margin.
 
-#### 5.7.4 A repair derived from the mechanism, and confirmed - DRAFT
+#### 5.7.4 A repair derived from the mechanism, and confirmed
 
 > ⚠️ **Every measurement in this subsection and in 5.7.5 predates the capture-software finding of
 > 5.4.4 and has no clean counterpart.** All four curve-fixed sweeps were taken on 2026-08-20/21
@@ -2298,6 +2322,13 @@ tuned at 20:42 the same day, memory-only at 18:13 the next - switching configura
 manual Afterburner change that cannot be scripted here. Idle temperature was 40-42 C at the start of
 each, the only cross-run control available. Effect sizes up to 29.6% are far outside plausible
 day-to-day drift so the direction is safe, but the precise percentages are softer than they look.
+
+**How much softer is now measured rather than guessed.** Section 5.4.5 puts power reproducing at
+2.07% and efficiency at 2.08% across three replicates of one unchanged configuration, and
+limitation 8 puts cross-session drift at 1.47% on throughput. Since the three configurations here
+were measured on different days, **any percentage in this subsection smaller than roughly 3% should
+be read as indistinguishable from zero.** The large effects are untouched by that bar; the small
+ones were never load-bearing and are now explicitly not.
 n = 1 chip, one profile. Two `gemm` points outside the comparison band (2475 and 2625 MHz) show
 memory-only drawing 5.8% and 6.6% more power than stock with only 1.2 and 2.1 C to account for it;
 this is unexplained and recorded rather than trimmed.

@@ -1811,3 +1811,81 @@ def offsetsCleared():
     before, _ = _largestPowerDrop()
     final = _crashSamples()[-1]
     return f"read {before['memory']:.0f} MHz before the event and {final['memory']:.0f}"
+
+
+# --------------------------------------------------------------------------------------
+# 5.7.3 - the crossbar mechanism
+#
+# This is the largest original finding in the paper and it carried NO claims until 2026-09-04:
+# its table was checked by eye when written and never again. The two extracts below are the
+# distilled HWiNFO joins committed beside the sweeps they came from, and every figure 5.7.3
+# quotes is recomputed from them here.
+#
+# The ratio is crossbar / ACHIEVED core clock, not crossbar / target. The card undershoots its
+# lock at several of these points, and dividing by a clock it did not reach would understate the
+# stock ratio at exactly the points where the argument needs it to be near unity.
+# --------------------------------------------------------------------------------------
+
+VOLT_DIR = "data/frequency-sweeps/membw-anomaly-20260819/"
+VOLT_STOCK = VOLT_DIR + "20260820-211630_5060ti-stock-volt-membw_sweep_voltage.csv"
+VOLT_TUNED = VOLT_DIR + "20260820-210822_5060ti-oc-volt-membw_sweep_voltage.csv"
+
+
+def _voltageExtract(relativePath):
+    """One distilled HWiNFO join, keyed by commanded target."""
+    import csv as _csv
+    out = {}
+    with open(_REPO_ROOT / relativePath, encoding="utf-8-sig") as handle:
+        for raw in _csv.DictReader(handle):
+            out[int(raw["target"])] = {
+                "achieved": float(raw["achieved"]),
+                "throughput": float(raw["throughputGbs"]),
+                "voltage": float(raw["voltage"]),
+                "crossbar": float(raw["crossbar"]),
+            }
+    return out
+
+
+def _ratios(relativePath):
+    """Crossbar-to-core ratio at every point, ordered by target."""
+    rows = _voltageExtract(relativePath)
+    return [rows[t]["crossbar"] / rows[t]["achieved"] for t in sorted(rows)]
+
+
+@claim("5.7.3-stock-ratio-band", PAPER, "5.7.3")
+def stockRatioBand():
+    """At stock the interconnect tracks the core. The BAND is the claim, not a midpoint."""
+    values = _ratios(VOLT_STOCK)
+    return f"its ratio to core clock holds between {min(values):.3f} and {max(values):.3f}"
+
+
+@claim("5.7.3-ratio-collapse", PAPER, "5.7.3")
+def ratioCollapse():
+    """The headline: under the flattened curve the ratio falls away instead of holding. Rendered
+    as first-to-lowest rather than max-to-min, because the CLAIM is a collapse with frequency and
+    an unordered range would also match a curve that merely wobbled."""
+    values = _ratios(VOLT_TUNED)
+    return f"that ratio collapses from {values[0]:.3f} to {min(values):.3f}"
+
+
+@claim("5.7.3-voltage-rise", PAPER, "5.7.3")
+def voltageRise():
+    """What the flattened curve actually does, in volts. Both numbers, because the contrast is
+    the point - one configuration responds to frequency and the other does not."""
+    stock = _voltageExtract(VOLT_STOCK)
+    tuned = _voltageExtract(VOLT_TUNED)
+    stockRise = max(r["voltage"] for r in stock.values()) - min(r["voltage"] for r in stock.values())
+    tunedRise = max(r["voltage"] for r in tuned.values()) - min(r["voltage"] for r in tuned.values())
+    return (f"stock core voltage rises {stockRise:.3f} V while the tuned card's rises "
+            f"{tunedRise:.3f} V")
+
+
+@claim("5.7.3-agree-where-voltages-agree", PAPER, "5.7.3")
+def agreeWhereVoltagesAgree():
+    """The control that makes the mechanism a measurement rather than a correlation: at the one
+    point where both configurations sit at the same voltage, they deliver the same bandwidth."""
+    stock = _voltageExtract(VOLT_STOCK)[1402]
+    tuned = _voltageExtract(VOLT_TUNED)[1402]
+    both = (stock["throughput"] + tuned["throughput"]) / 2.0
+    return (f"at 1402 MHz both sit at {stock['voltage']:.3f} V\nand both deliver "
+            f"~{both:.0f} GB/s")
