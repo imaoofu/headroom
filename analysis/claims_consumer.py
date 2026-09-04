@@ -1751,3 +1751,63 @@ if _referenceDataPresent():
     def headerPinnedCount():
         """The header's own advertised claim count, rendered from the live registry."""
         return f"**{len(CLAIMS)} numbers are pinned by `analysis/audit_claims.py`**"
+
+
+# --------------------------------------------------------------------------------------
+# 3.5 - the real driver crash of 2026-08-30
+#
+# WHY THIS DOES NOT USE stabilityRun(). That loader requires all four artifacts a completed run
+# writes - protocol, session, iterations and samples - and this run has only the samples. The
+# operator stopped it on seeing the crash, so neither JSON was ever written. That is not an
+# inconvenience to work around; it is the fact 3.5 reports when it says the UNSTABLE verdict was
+# reconstructed rather than emitted. A claim that quietly reached for the missing files would be
+# asserting the run completed.
+#
+# The samples exist at all because the logger flushes each row as it writes it, which is what
+# lets the record cover the four-second gap where sampling itself stopped.
+# --------------------------------------------------------------------------------------
+
+CRASH_SAMPLES = "data/stability-runs/20260830-123609_uv-875mv-3ghz_samples.csv"
+
+
+def _crashSamples():
+    """Every telemetry row of the crashed run, in order."""
+    rows = []
+    with open(_REPO_ROOT / CRASH_SAMPLES, encoding="utf-8-sig") as handle:
+        import csv as _csv
+        for raw in _csv.DictReader(handle):
+            rows.append({
+                "mhz": float(raw["sm_clock_mhz"]),
+                "memory": float(raw["memory_clock_mhz"]),
+                "watts": float(raw["power_draw_w"]),
+                "util": float(raw["gpu_utilization_pct"]),
+            })
+    return rows
+
+
+def _largestPowerDrop():
+    """The consecutive pair with the steepest fall in power. Found rather than indexed, so the
+    claim keeps pointing at the event and not at a row number that a re-export could shift."""
+    rows = _crashSamples()
+    pairs = zip(rows, rows[1:])
+    return max(pairs, key=lambda pair: pair[0]["watts"] - pair[1]["watts"])
+
+
+@claim("3.5-crash-signature", PAPER, "3.5")
+def crashSignature():
+    """The failure signature: power collapses while utilisation still reads 100%. Both samples are
+    rendered because the CLAIM is that the counter did not move while the power did, which one
+    number cannot express."""
+    before, after = _largestPowerDrop()
+    return (f"{before['watts']:.2f} W to {after['watts']:.2f} W in one second while the card still "
+            f"reported {before['mhz']:.0f} MHz and {before['util']:.0f}% utilisation")
+
+
+@claim("3.5-offsets-cleared", PAPER, "3.5")
+def offsetsCleared():
+    """The memory clock either side of the reset. 16301 is the +2500 offset, 13801 is stock, and
+    the difference is the whole reason a run continued past this point would have been measuring
+    something other than what its settings string claimed."""
+    before, _ = _largestPowerDrop()
+    final = _crashSamples()[-1]
+    return f"read {before['memory']:.0f} MHz before the event and {final['memory']:.0f}"

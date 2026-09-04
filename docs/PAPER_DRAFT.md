@@ -2,11 +2,13 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **67 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **193 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **195 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. No `[PENDING]`
-> placeholders remain, but **20 numbered sections carry no claims at all** — `--coverage` lists
-> them, and a green audit says nothing about those. Sections still marked `- DRAFT` in their
+> placeholders remain, but **19 numbered sections carry no claims at all** — `--coverage` lists
+> them, and a green audit says nothing about those. That 19 is NOT itself pinned, unlike the count
+> above it: it is computed from the audit results rather than during them, so a claim cannot reach
+> it without circularity. Re-read it from `--coverage` rather than from here. Sections still marked `- DRAFT` in their
 > headings were written the day their measurements were taken and have not had a second pass.
 >
 > Citation reliability is flagged per entry in [References](#references). Anything marked
@@ -575,15 +577,51 @@ Telemetry is logged throughout and the Windows System event log is checked for d
 events (ID 4101) within the run window. Runs are classified `CLEAN`, `FLAGGED` (thermal or hardware
 throttling observed), or `UNSTABLE` (driver reset or telemetry failure).
 
-**The classifier has been tested against induced failures - DRAFT.** Until 2026-08-20 the logger
-had only ever run on sessions that went well, so a tool that unconditionally reported `CLEAN` would
-have been indistinguishable from a working one. Three 45-second cases were run: sustained load
-throughout (reported `CLEAN`, 95% of samples loaded), an idle device (`INCONCLUSIVE`, 0% loaded),
-and a load that stops a third of the way through (`INCONCLUSIVE`, 28% loaded). The positive control
-is load-bearing: without it a classifier stuck on `INCONCLUSIVE` would have passed both failure
-cases. The driver-reset detector also fired correctly for the first time, on an `nvlddmkm`
-context-reset event induced by force-terminating a CUDA process. An actual hard lock remains
-untested, and by construction can only be inferred from a truncated log.
+**The classifier has been tested against induced failures, and since 2026-08-30 against a real
+one.** Until 2026-08-20 the logger had only ever run on sessions that went well, so a tool that
+unconditionally reported `CLEAN` would have been indistinguishable from a working one. Three
+45-second cases were run: sustained load throughout (reported `CLEAN`, 95% of samples loaded), an
+idle device (`INCONCLUSIVE`, 0% loaded), and a load that stops a third of the way through
+(`INCONCLUSIVE`, 28% loaded). The positive control is load-bearing: without it a classifier stuck
+on `INCONCLUSIVE` would have passed both failure cases.
+
+**The driver-reset detector has now fired on genuine hardware instability, not only on an induced
+event.** Its first firing, in that same exercise, was on an `nvlddmkm` context-reset produced by
+force-terminating a CUDA process - real, but not the failure class the classifier exists for. On
+2026-08-30 an undervolt deliberately set past the edge, 875 mV pinned at 3000 MHz, crashed the
+display driver, and the detector returned 11 events over the run window. The full record is in
+`../data/stability-runs/README-uv-875mv-3ghz-20260830.md`.
+
+Three properties of that failure bear on the *method* rather than on the configuration, which is
+why they are recorded here:
+
+- **The signature is a power collapse under sustained reported utilisation.** Power fell from
+  92.21 W to 24.05 W in one second while the card still reported 2970 MHz and 100% utilisation.
+  Work had already stopped; the utilisation counter had not noticed. That is 5.4.3's decoupling of
+  `utilization.gpu` from real throughput appearing inside a failure instead of a measurement, and
+  it means a monitor keyed on utilisation would not have seen this one.
+- **The driver reset silently cleared the applied offsets.** The memory clock read 16301 MHz before
+  the event and 13801 - stock - after it. Any run continued past that point would have been
+  measuring stock silicon under a settings string still claiming an undervolt.
+- **The crash preceded the benchmark process by fourteen seconds.** Ordinary desktop compositing
+  was enough to boost the card to ~2970 MHz at 875 mV. A protocol that inspects only its own load
+  window would have missed the event entirely.
+
+⚠️ **The `UNSTABLE` verdict was reconstructed rather than emitted.** The operator stopped the run
+on seeing the crash, so neither `_session.json` nor `_stability_protocol.json` was written, and the
+detector function was re-run unmodified over the same event-log window. That is sound, but it is
+not the tool having produced the verdict itself and the difference is kept rather than glossed.
+What makes the record exist at all is that the logger flushes each sample as it is written, so
+`_samples.csv` covers the whole event including the four-second gap in which sampling stopped.
+
+**n = 1, and the crash was spontaneous rather than provoked at a known load.** It establishes that
+875 mV at 3000 MHz is unstable on this card and nothing about where the edge sits; **no threshold
+should be quoted from it.** One of the eleven events post-dates the operator's intervention and is
+not attributable to the card.
+
+**An actual hard lock still remains untested.** The card recovered on its own here, so what is now
+tested is genuine instability rather than a hang, and a true lock can by construction still only be
+inferred from a truncated log.
 
 **A `CLEAN` result is reported as "no failure observed in 10 minutes," never as "stable."**
 Undervolt-induced instability commonly requires hours to manifest. Separately, GDDR7 employs error
