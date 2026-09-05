@@ -22,6 +22,8 @@ param(
     [switch]$SkipMembw,
     [string[]]$Workloads = @(),
     [int[]]$Iterations = @(),
+    [int]$ExpectedMemoryClockMhz = 0,
+    [int]$MemoryClockToleranceMhz = 400,
     [switch]$NoPause
 )
 
@@ -122,6 +124,74 @@ foreach ($required in @($pythonExe, $workloadPy, $sweepPs1)) {
     if (-not (Test-Path $required)) { Fail "Missing file in the kit: $required`n`nThe kit did not copy fully. Copy the whole folder again." }
 }
 Say "  [ok] kit files present" "Green"
+
+# ---- MEASURED MEMORY CLOCK UNDER LOAD -------------------------------------------------------
+# Nothing else in this kit can tell a stock card from a tuned one. `clocks.max.memory` reports
+# the same value either way - it is the P-state ceiling, not the applied clock - so a card with a
+# vendor memory offset live looks identical to one without until it is put under load. That
+# mistake has been made in this project: a run was labelled "memory untouched, verified stock"
+# on 2026-08-30 while a +2500 offset was applied, and only the run's own telemetry caught it.
+#
+# WHY THE TOLERANCE IS 400 MHz AND NOT TIGHTER. The probe takes the MAXIMUM clock seen while the
+# workload runs, and the memory briefly touches its top P-state on the way up. Measured on this
+# 5060 Ti at stock on 2026-09-04, minutes apart: one run reported 13801 and the next 14001, from
+# the same card in the same configuration. A 150 MHz tolerance refused the second one - a false
+# refusal on a perfectly good card, found by running the check rather than by reading it. The
+# tolerance therefore has to clear ~200 MHz of P-state jitter while still catching a real offset,
+# and the smallest offset worth catching on this card is +2500. 400 sits an order of magnitude
+# away from the thing it must reject and twice as far as the thing it must tolerate.
+#
+# WHY THIS MEASURES ALWAYS AND REFUSES ONLY SOMETIMES. On a card you know, pass
+# -ExpectedMemoryClockMhz and a mismatch stops the run before any data is collected. On a card
+# you do not - a borrowed machine, a model this kit has never seen - the stock value is not
+# known in advance and there is nothing to compare against. Refusing would be useless and
+# guessing would be worse, so the clock is measured, printed loudly, and written into
+# machine-info.txt where the provenance of the run can be checked afterwards. Measuring without
+# a verdict is weaker than refusing, and much stronger than the nothing that was here before.
+Say ""
+Say "  Measuring the memory clock UNDER LOAD..." "Cyan"
+Say "  (clocks.max.memory reads the same on a stock and an overclocked card)" "Gray"
+
+$probe = Start-Process -FilePath $pythonExe -WorkingDirectory $kit `
+    -ArgumentList $workloadPy, "--workload", "membw", "--iterations", "1200", "--json" `
+    -PassThru -WindowStyle Hidden
+$observedMem = 0
+for ($i = 0; $i -lt 60; $i++) {
+    Start-Sleep -Milliseconds 400
+    $raw = & nvidia-smi --query-gpu=clocks.current.memory --format=csv,noheader,nounits 2>$null
+    $value = 0
+    if ([int]::TryParse(("$raw").Trim(), [ref]$value)) {
+        if ($value -gt $observedMem) { $observedMem = $value }
+    }
+    if ($probe.HasExited) { break }
+}
+if (-not $probe.HasExited) { $probe.WaitForExit() }
+
+# 60 polls at 400 ms is 24 s, deliberately longer than the 10 s Invoke-SuiteReplicate.ps1 uses.
+# That budget starts at process launch and has to cover Python starting, torch importing, CUDA
+# initialising and a multi-GB allocation before the GPU sees any work at all - and on 2026-09-02
+# a cold import outran a 10 s window and produced a false refusal on a card that was fine.
+if ($observedMem -le 0) {
+    Fail ("Could not read a memory clock under load.`n`n" +
+          "The probe workload may have failed to start. Nothing was collected.")
+}
+$script:MeasuredMemoryClockMhz = $observedMem
+Say ("  MEASURED MEMORY CLOCK UNDER LOAD: {0} MHz" -f $observedMem) "Yellow"
+
+if ($ExpectedMemoryClockMhz -gt 0) {
+    $delta = [math]::Abs($observedMem - $ExpectedMemoryClockMhz)
+    if ($delta -gt $MemoryClockToleranceMhz) {
+        Fail ("REFUSING: memory clock under load is $observedMem MHz, not " +
+              "$ExpectedMemoryClockMhz +/- $MemoryClockToleranceMhz.`n`n" +
+              "The card is not in the configuration this run claims. Nothing was collected.`n" +
+              "Fix the card, or pass the right -ExpectedMemoryClockMhz if you meant to collect`n" +
+              "a tuned configuration.")
+    }
+    Say "  [ok] matches the expected $ExpectedMemoryClockMhz MHz" "Green"
+} else {
+    Say "  [!] No -ExpectedMemoryClockMhz given, so this is RECORDED, NOT VERIFIED." "Yellow"
+    Say "      Check it against the card's stock figure before trusting the run." "Yellow"
+}
 
 # The sweep hands its workload string to `cmd /c` through Start-Process, which mangles
 # embedded quotes - so a path containing a space cannot be quoted its way out of trouble.
@@ -228,6 +298,17 @@ $sysinfo += "                       Nothing in nvidia-smi reports whether an Aft
 $sysinfo += "                       vendor profile is applied, so this kit cannot check it."
 $sysinfo += "                       See measured_peak_sm_clock_mhz at the end of this file -"
 $sysinfo += "                       that IS measured, and is the field to trust."
+$sysinfo += ""
+# Written here as well as printed, because a number that scrolls past in a console is not
+# provenance. This is the one field that distinguishes a stock card from a tuned one.
+$sysinfo += "measured_memory_clock_under_load_mhz : $script:MeasuredMemoryClockMhz"
+if ($ExpectedMemoryClockMhz -gt 0) {
+    $sysinfo += "                       VERIFIED against an expected $ExpectedMemoryClockMhz MHz"
+    $sysinfo += "                       +/- $MemoryClockToleranceMhz; the run would have refused on a mismatch."
+} else {
+    $sysinfo += "                       RECORDED, NOT VERIFIED - no -ExpectedMemoryClockMhz was given,"
+    $sysinfo += "                       so nothing compared this against the card's stock figure."
+}
 $sysinfo += ""
 $sysinfo += "--- GPU (nvidia-smi) ---"
 $sysinfo += (& $smi.Source --query-gpu=name,driver_version,vbios_version,memory.total,power.limit,power.max_limit,pcie.link.gen.max,pcie.link.width.max --format=csv -i 0 2>&1)
