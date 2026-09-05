@@ -53,7 +53,14 @@ param(
     [Parameter(Mandatory = $true)][string]$Replicate,
     [string]$AppliedSettings = "",
     [int]$ExpectedMemoryClockMhz = 13801,
-    [int]$MemoryClockToleranceMhz = 150,
+    # 400, not 150, and the difference is a measured false refusal rather than caution. The probe
+    # takes the MAXIMUM memory clock seen while the workload runs, and this card briefly touches a
+    # higher P-state on the way up: at stock, minutes apart, it reads 13801 on one run and 14001 on
+    # the next. At 150 the 14001 reading REFUSES A PERFECTLY GOOD CARD - observed 2026-09-05 in the
+    # preflight for r6. 400 clears ~200 MHz of P-state jitter while still rejecting the smallest
+    # offset worth catching on this card, +2500. Collect.ps1 was fixed on 2026-09-05 and this copy
+    # was not; two tolerances for one quantity is how they drift apart.
+    [int]$MemoryClockToleranceMhz = 400,
     [switch]$SkipStockCheck
 )
 
