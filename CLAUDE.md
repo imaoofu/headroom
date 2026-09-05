@@ -320,9 +320,15 @@ module then does `from audit_claims import claim`, which imports a *second copy*
 its own empty registry — claims register into one copy and the runner reads the other, reporting
 "0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
 
-Coverage as of 2026-08-30: **185 claims green, 0 failures, 19 numbered sections still unaudited.**
-Green means every claim that EXISTS passes, not that the paper is covered - run `--coverage` for the
-sections and the loose numbers inside audited ones.
+Coverage as of **2026-09-05: 204 claims green, 0 failures, 18 numbered sections still unaudited**
+(179 where `data/raw/` is absent - see the CI note below). Green means every claim that EXISTS
+passes, not that the paper is covered - run `--coverage` for the sections and the loose numbers
+inside audited ones.
+
+⚠️ **THIS FIGURE HAS NOW GONE STALE FOUR TIMES: 87 -> 119 -> 185 -> 204.** It is written down because
+the ratio between the numbers is the useful part, not because the total is worth quoting. Any date
+older than the newest commit means it is wrong again. **`python analysis/audit_claims.py --coverage`
+is the authority; this line is a snapshot.**
 
 🔑 **The totals hide how uneven the coverage is, and the unevenness is the useful number.** §5.7 and
 its subsections carry 80 claims between them and §5.5 carries 53, while the same `--coverage` run
@@ -366,9 +372,30 @@ data/
 ```
 
 **Every data directory carries its own README** explaining what is dataset-grade and what is not.
-Keep that true for anything added.
+Keep that true for anything added. ⚠️ **Two sweep directories had drifted out of that rule until
+2026-09-05** - `curve-rebuild-20260823` and `memonly-clean-20260823`, both of them read by live
+claims and both central to the §5.7.6 paragraph that has been wrong twice. The convention holds
+again; check it with a loop over `data/frequency-sweeps/*/` rather than assuming.
 
-`ROADMAP.md` holds the ordered plan. `README.md` holds results and related work.
+**Every tool directory carries one too**, for the same reason. `tools/local-model/README.md` leads
+with the VRAM hazard rather than with usage, because that is the part that costs data.
+
+## The five root documents, and which answers what
+
+Ask the right file and none of them need re-deriving. This list exists because the layout above
+named only two of them.
+
+| file | answers |
+|---|---|
+| `CLAUDE.md` | **what is technically established** and must not be re-derived, plus the standards |
+| `ROADMAP.md` | the ordered plan - what is open, in what order, and what is closed with why |
+| `README.md` | results and related work - the outward-facing summary |
+| `CONTEXT.md` | **why this project exists** and how to work on it; portable copy of context that otherwise lives only in local memory on one machine |
+| `HANDOFF.md` | **how to get running** on another machine or in a new chat, and the current state |
+
+🛑 **None of them is the authority on a COUNT.** `python analysis/audit_claims.py --coverage` and
+`python run_tests.py` are. Every one of these files has carried a stale claim total at some point,
+and CLAUDE.md has carried two contradictory ones simultaneously.
 
 ---
 
@@ -650,9 +677,14 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   `analysis/audit_claims.py` now REQUIRES the window at the call site, and §5.7.6 went from 4
   pinned numbers to 23. **The lesson is the one this project keeps relearning: an aggregate whose
   window is implicit is a claim nobody can check.**
-- **19 paper sections are unaudited, and 185 claims are green.** Most of the 19 are prose - 2.1-2.5,
-  3.1-3.4 - with little to pin. The ones carrying real numbers are **5.4.2, 5.5.4, 5.7, 5.7.3 and
-  5.7.7**.
+- **18 paper sections are unaudited, and 204 claims are green** (2026-09-05 - re-read them off
+  `--coverage`, not off this line). Most of the 18 are prose - 2.1-2.5, 3.1-3.4 - with little to
+  pin. The ones carrying real numbers are **3.3.2, 3.3.3, 5.4.2, 5.5.5, 5.6.3, 5.7 and 5.7.7**.
+
+  **5.5.4 and 5.7.3 have left this list** - 5.5.4 gained four claims when the cross-architecture
+  result entered the paper, and 5.7.3 is now 23 of 70 pinned. **5.5.5 and 5.6.3 have joined it**,
+  and both joined by being WRITTEN, not by being neglected: a new section starts unaudited, so this
+  count going up is not automatically a regression.
 
   ✅ **The blocker this bullet used to name is gone.** It said `analyze_fine_sweep.py` "needs its
   summary exposed" before §5.4.1's vertices and confidence intervals could be pinned.
@@ -739,8 +771,9 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
 
   🔑 **CI does NOT see `data/raw/`, and that changes the claim count.** The dataset is gitignored
   and fetched, so `claims_reference.py` registers its 24 claims only in the "V100 reference
-  claims" job. The "checks" job reports **168 of 168** and the reference job **193 of 193** - both
-  green. Any claim whose value depends on the SIZE of the registry is therefore
+  claims" job. As of 2026-09-05 the "checks" job reports **179 of 179** and the reference job
+  **204 of 204** - both green; the gap is 25 rather than 24 because `header-pinned-count` is guarded
+  on the same condition and so registers only alongside the reference set. Any claim whose value depends on the SIZE of the registry is therefore
   environment-dependent; `header-pinned-count` is guarded for exactly that reason, after an
   unguarded version broke both checks legs on 2026-09-02. A local run can be made to match CI by
   temporarily moving `data/raw` aside, which is how that break was reproduced before it was fixed.

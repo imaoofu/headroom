@@ -76,7 +76,7 @@ green result.
 python analysis/audit_claims.py
 ```
 
-**200 claims, 0 failures**, or **175** where `data/raw/` was not fetched - `claims_reference.py`
+**204 claims, 0 failures**, or **179** where `data/raw/` was not fetched - `claims_reference.py`
 registers its 24 claims only when the dataset is present, and `header-pinned-count` is guarded on
 the same condition because a claim counting the registry is otherwise environment-dependent. Every pinned number in the paper, recomputed from the CSVs and asserted
 present verbatim and exactly once. If a claim fails, the paper and the data disagree — that is the
