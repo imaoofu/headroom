@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **168 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **200 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **204 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. No `[PENDING]`
 > placeholders remain, but **18 numbered sections carry no claims at all** — `--coverage` lists
@@ -1417,7 +1417,66 @@ what it was worth before the result if it is still legible afterwards, and this 
 question usefully: it converted "the OC BIOS spends its power on something" into a measured set of
 exclusions.
 
-#### 5.5.4 Limits
+#### 5.5.4 Per-workload ranking does not transfer across architectures
+
+Everything above compares two chips on two workloads. Running the full twelve-workload suite at
+stock on the RTX 3070 Ti - the same suite, the same grid construction, iteration counts calibrated
+for that card - makes the *workload* the unit of comparison rather than the chip, and answers a
+question this study could not previously ask.
+
+**The headline effect reproduces; the ordering does not.** Mean efficiency gain across the twelve is
+**55.8%** on the 5060 Ti (the mean of five stock replicates) against **38.9%** on the 3070 Ti. Both
+are an order of magnitude outside the 4.95-point replicate spread of §5.4.5, so the finding that
+large gains exist survives a change of architecture. Which workloads carry them does not:
+
+| workload | 5060 Ti | 3070 Ti | 5060 rank | 3070 rank |
+|---|---|---|---|---|
+| `bgemm64` | 74.1% | 25.3% | 1 | **10** |
+| `conv` | 73.7% | 27.8% | 2 | 8 |
+| `bgemm32` | 70.9% | 39.8% | 3 | 7 |
+| `softmax` | 64.3% | 50.2% | 4 | 4 |
+| `bgemm1024` | 59.4% | 23.0% | 5 | **12** |
+| `layernorm` | 55.2% | 56.4% | 6 | **1** |
+| `gemm` | 54.6% | 25.1% | 7 | 11 |
+| `attention` | 54.4% | 48.4% | 8 | 5 |
+| `copy` | 52.7% | 51.0% | 9 | **2** |
+| `reduce` | 38.5% | 50.3% | 10 | **3** |
+| `bgemm256` | 38.1% | 42.6% | 11 | 6 |
+| `bgemm128` | 33.9% | 26.6% | 12 | 9 |
+
+**Spearman rank correlation between the two cards: −0.273.** One card's best workload is the
+other's tenth; its fifth is the other's last. Only `softmax` holds its position.
+
+**A ranking of noisy quantities would scramble against anything, so the control is what makes this a
+result.** The identical statistic computed for the 5060 Ti against its own five stock replicates,
+all ten pairs, gives **+0.881 to +0.972, mean +0.924**. Within a card the ordering is a stable,
+reproducible property; across architectures it carries no information at all, and the cross-card
+figure falls far outside the within-card range.
+
+That control also bounds the n = 1 concern on the 3070 Ti. Single 5060 Ti replicates rank
+consistently with one another at ρ ≥ 0.88, so one replicate's *ordering* is a reliable thing to
+have even though its individual gain figures carry no interval of their own.
+
+**The optimum also sits in a different part of each card's range** — median **49.7%** of maximum
+clock on the 5060 Ti against **70.2%** on the 3070 Ti. In MHz the two are not comparable; as a
+fraction of range they still differ by twenty points.
+
+⚠️ **What this costs the constrained result.** §5.6.1 establishes that under a performance floor,
+workload identity is worth most of the available gain. That is unaffected *within* a card. What this
+adds is a boundary on its portability: a per-workload policy learned on one architecture does not
+carry to another, so a deployment spanning chip generations would have to re-measure rather than
+inherit. It also sharpens the caution around §5.1's reference set — if two consumer cards four years
+apart disagree this completely on ordering, a 2017 datacenter part is not a source of per-workload
+expectations for current consumer silicon, only of the shape of the frequency response, which is
+what this work takes from it.
+
+**Caveats.** One pair of architectures, one chip each, and the 3070 Ti swept once. Silent BIOS only
+— the OC position of §5.5.1 was not swept with the suite. Different machines and different drivers
+(610.88 against 616.56); §5.4.5 found the driver did not explain between-replicate variance on the
+5060 Ti, which is not the same as showing it cannot matter across cards. All twenty-four sweeps are
+stock. Full record in `../data/frequency-sweeps/rtx3070ti-suite-20260904/README.md`.
+
+#### 5.5.5 Limits
 
 Two chips is not a sample. The BIOS comparison is one sweep per position on the compute workload
 and one against two on the bandwidth workload, on a card measured once, in one case, at one
@@ -2481,14 +2540,17 @@ does not control.
 
 ### Future work
 
-The binding constraint is hardware rather than workload count, and that is a change: an earlier
-version of this paragraph said the reverse, when the consumer measurements carried two workloads.
-They now carry **twelve**, collected three times each at stock (§5.4.5), so the suite half of this
-plan is done. What remains is the other half — running that identical suite at stock on further
-chips. The RTX 3070 Ti has only ever run `gemm` and `membw`, so it is the nearest target, and each
-additional card makes the *workload* rather than the chip the unit of analysis. That would permit
-the question this work cannot currently ask: whether per-workload optima transfer across
-architectures.
+**The question this section previously named as future work has been answered, and the answer was
+no.** It asked whether per-workload optima transfer across architectures; §5.5.4 measures a rank
+correlation of −0.273 between the two chips, against a within-card reproducibility of +0.924. Both
+halves of the plan are now done — the suite carries twelve workloads (§5.4.5) and has been run at
+stock on both chips.
+
+What that opens rather than closes is the population question. Two architectures cannot say whether
+orderings *generally* fail to transfer or whether these two happen to disagree, and separating those
+needs more chips rather than more workloads. A second Ampere die would be the sharpest next
+measurement, because it distinguishes "this is an architecture effect" from "this is a chip
+effect" — a distinction one card per architecture structurally cannot make.
 
 One measurement item is outstanding. The stability protocol has been applied to three of the
 configurations reported here; the others carry no failure evidence in either direction, and "no

@@ -1914,3 +1914,107 @@ def headerSweepCount():
     sweeps = [p for p in (_REPO_ROOT / "data" / "frequency-sweeps").rglob("*_sweep.csv")
               if not p.name.endswith("_sweep_voltage.csv")]
     return f"**{len(sweeps)} committed"
+
+
+# --------------------------------------------------------------------------------------
+# 5.5.4 - does the per-workload ordering transfer between architectures?
+#
+# WHY A CROSS-CHIP CLAIM LIVES IN THE CONSUMER MODULE. The three claims modules are split by
+# which hardware the data came from, and this one reads BOTH cards, so neither module is its
+# natural home. It sits here because the machinery does: the r1-r5 suite maps and
+# suiteRowFigures() are already here, and duplicating them into claims_crosschip.py is precisely
+# the shared-constant drift the split exists to prevent - two copies of a path map diverge
+# silently, whereas one map read by a claim that NAMES both cards does not.
+#
+# THE CONTROL IS PINNED ALONGSIDE THE RESULT, DELIBERATELY. A rank correlation of -0.273 means
+# nothing on its own: a ranking of noisy quantities scrambles against anything, including itself.
+# It is a finding only beside the within-card figure. An edit that dropped the control would
+# leave the result reading as though it needed no baseline, which is the same failure mode
+# claims_reference.py guards against for 5.6.2.
+# --------------------------------------------------------------------------------------
+
+SUITE_R4_SWEEPS = {name: f"suite-replicate-r4-20260904/{stamp}_5060ti-stock-suite-{name}-r4_sweep.csv"
+                   for name, stamp in {
+                       "copy": "20260904-192751", "reduce": "20260904-193212",
+                       "softmax": "20260904-193641", "layernorm": "20260904-194100",
+                       "bgemm32": "20260904-194523", "bgemm64": "20260904-194944",
+                       "bgemm128": "20260904-195403", "bgemm256": "20260904-195839",
+                       "bgemm1024": "20260904-200343", "attention": "20260904-200848",
+                       "conv": "20260904-201356", "gemm": "20260904-201904"}.items()}
+
+SUITE_R5_SWEEPS = {name: f"suite-replicate-r5-20260904/{stamp}_5060ti-stock-suite-{name}-r5_sweep.csv"
+                   for name, stamp in {
+                       "copy": "20260904-202626", "reduce": "20260904-203048",
+                       "softmax": "20260904-203517", "layernorm": "20260904-203935",
+                       "bgemm32": "20260904-204358", "bgemm64": "20260904-204818",
+                       "bgemm128": "20260904-205238", "bgemm256": "20260904-205712",
+                       "bgemm1024": "20260904-210215", "attention": "20260904-210719",
+                       "conv": "20260904-211226", "gemm": "20260904-211735"}.items()}
+
+SUITE_3070_SWEEPS = {name: f"rtx3070ti-suite-20260904/{stamp}_rtx3070ti-suite-{name}_sweep.csv"
+                     for name, stamp in {
+                         "copy": "20260904-194702", "reduce": "20260904-195142",
+                         "softmax": "20260904-195620", "layernorm": "20260904-200107",
+                         "bgemm32": "20260904-200548", "bgemm64": "20260904-201106",
+                         "bgemm128": "20260904-201622", "bgemm256": "20260904-202116",
+                         "bgemm1024": "20260904-202634", "attention": "20260904-203205",
+                         "conv": "20260904-203735", "gemm": "20260904-204245"}.items()}
+
+REPLICATES_5060 = (SUITE_R1_SWEEPS, SUITE_R2_SWEEPS, SUITE_R3_SWEEPS,
+                   SUITE_R4_SWEEPS, SUITE_R5_SWEEPS)
+
+
+def _rankOf(gains):
+    ordered = sorted(gains, key=lambda name: -gains[name])
+    return {name: index + 1 for index, name in enumerate(ordered)}
+
+
+def _spearman(first, second):
+    names = list(first)
+    count = len(names)
+    squared = sum((first[n] - second[n]) ** 2 for n in names)
+    return 1.0 - 6.0 * squared / (count * (count * count - 1))
+
+
+def _gainsOf(table):
+    """Gain per workload for one complete suite, via the canonical highest-achieved reference."""
+    return {name: suiteRowFigures(path)[1] for name, path in table.items()}
+
+
+@claim("5.5.4-rank-correlation", PAPER, "5.5.4")
+def crossArchitectureRank():
+    """The result: the ordering carries no information across these two architectures."""
+    perWorkload = {name: mean(_gainsOf(t)[name] for t in REPLICATES_5060)
+                   for name in SUITE_R1_SWEEPS}
+    rho = _spearman(_rankOf(perWorkload), _rankOf(_gainsOf(SUITE_3070_SWEEPS)))
+    # U+2212 MINUS SIGN, not a hyphen: the paper sets negative correlations that way and so does
+    # 5.2-sensitivity-correlation, and a claim that rendered ASCII would never match.
+    return ("Spearman rank correlation between the two cards: "
+            + f"{rho:+.3f}".replace("-", "−"))
+
+
+@claim("5.5.4-within-card-control", PAPER, "5.5.4")
+def withinCardRankControl():
+    """The control, without which the result above is uninterpretable. Rendered as the band across
+    all ten replicate pairs AND the mean: a midpoint alone would not show that every single pair
+    clears the cross-card figure by a wide margin, which is the part that carries the argument."""
+    import itertools
+    ranks = [_rankOf(_gainsOf(table)) for table in REPLICATES_5060]
+    values = [_spearman(a, b) for a, b in itertools.combinations(ranks, 2)]
+    return (f"all ten pairs, gives **{min(values):+.3f} to {max(values):+.3f}, mean "
+            f"{mean(values):+.3f}**")
+
+
+@claim("5.5.4-mean-gain-5060", PAPER, "5.5.4")
+def crossArchitectureMeanGain5060():
+    """What DOES transfer is the size of the effect, so both cards' means are pinned - this one
+    and the 3070 Ti's below - rather than only their difference."""
+    perWorkload = {name: mean(_gainsOf(t)[name] for t in REPLICATES_5060)
+                   for name in SUITE_R1_SWEEPS}
+    return f"**{mean(perWorkload.values()):.1f}%** on the 5060 Ti"
+
+
+@claim("5.5.4-mean-gain-3070", PAPER, "5.5.4")
+def crossArchitectureMeanGain3070():
+    """The other half of the pair."""
+    return f"against **{mean(_gainsOf(SUITE_3070_SWEEPS).values()):.1f}%** on the 3070 Ti"
