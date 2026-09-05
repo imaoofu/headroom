@@ -65,7 +65,7 @@ proceed.
 python run_tests.py
 ```
 
-**`536 checks across 15 suite(s).`** then `All suites passed.` It is `534` where `data/raw/` was
+**`541 checks across 16 suite(s).`** then `All suites passed.` It is `539` where `data/raw/` was
 not fetched: two checks in `models/test_predict_constrained_frequency.py` skip without it. The
 runner also fails if it finds a
 `test_*.py` under a directory it is not running — that guard exists because moving the model suites
@@ -105,7 +105,10 @@ machine, so either start the server or pass `--backend ollama`.
 The server command is recorded as `SERVER_COMMAND` in `ask_local.py` itself:
 
 ```powershell
-C:\Users\Raymond\llamacpp\llama-server.exe -m C:\Users\Raymond\models\Qwen3.8-27B-UD-IQ4_XS.gguf -c 65536 -ngl 99 --flash-attn on -ctk q4_0 -ctv q4_0 -np 1 --spec-type draft-mtp --spec-draft-n-max 1
+# THIS COPY WENT STALE ONCE ALREADY - it lost --no-mmap for three days after that flag landed
+# on 2026-09-02. Read the command from SERVER_COMMAND in tools/local-model/ask_local.py, which
+# is the copy the script itself uses and therefore cannot drift from what actually runs.
+# tools/local-model/README.md explains why -np 1 and --no-mmap are load-bearing, not style.
 ```
 
 Three of those flags are load-bearing and were each found the hard way:

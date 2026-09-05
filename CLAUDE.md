@@ -320,21 +320,41 @@ module then does `from audit_claims import claim`, which imports a *second copy*
 its own empty registry — claims register into one copy and the runner reads the other, reporting
 "0 registered". The `__main__` block re-imports itself by name to avoid this. Do not simplify it.
 
-Coverage as of **2026-09-05: 204 claims green, 0 failures, 18 numbered sections still unaudited**
-(179 where `data/raw/` is absent - see the CI note below). Green means every claim that EXISTS
-passes, not that the paper is covered - run `--coverage` for the sections and the loose numbers
-inside audited ones.
+### 📌 Coverage — the canonical block, and the ONLY place in this file a registry count lives
 
-⚠️ **THIS FIGURE HAS NOW GONE STALE FOUR TIMES: 87 -> 119 -> 185 -> 204.** It is written down because
-the ratio between the numbers is the useful part, not because the total is worth quoting. Any date
-older than the newest commit means it is wrong again. **`python analysis/audit_claims.py --coverage`
-is the authority; this line is a snapshot.**
+**These four numbers are themselves audited**, by `analysis/claims_repo.py` against this file. They
+cannot go stale without CI failing, so unlike every earlier version of this paragraph they can be
+quoted. Nothing else in CLAUDE.md restates them; if you find a second copy, delete it rather than
+update it.
 
-🔑 **The totals hide how uneven the coverage is, and the unevenness is the useful number.** §5.7 and
-its subsections carry 80 claims between them and §5.5 carries 53, while the same `--coverage` run
-reports **§5.4.1 at 2 of 122 numbers pinned, §5.5 at 15 of 255, and §5.6 at 49 of 274**. A high claim
-count is not a covered paper, and quoting the total alone is the same omission this project keeps
-catching elsewhere.
+| quantity | value |
+|---|---|
+| claims green, 0 failures, with `data/raw/` | **208 of 208** |
+| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **180 of 180** |
+| sections with no claim at all | **18 numbered sections are still unaudited** |
+| §5.7 and its subsections carry | **84 claims between them and §5.5 carries 30** |
+
+⚠️ **THE TOTAL WENT STALE FOUR TIMES BEFORE IT WAS PINNED: 87 -> 119 -> 185 -> 204**, and on
+2026-08-30 this file carried two contradictory values for it at once. That history is the reason the
+claims exist and is kept deliberately - a reader who sees the sequence knows the total is not the
+interesting part.
+
+**Green means every claim that EXISTS passes, not that the paper is covered.**
+
+🔑 **The totals hide how uneven the coverage is, and the unevenness is the useful number.** A high
+claim count is not a covered paper. Snapshot from `--coverage` on 2026-09-05, **not pinned** — these
+need a full audit pass to compute, so read them off the tool: **§5.4.1 at 2 of 122 numbers pinned,
+§5.5 at 15 of 332, §5.6 at 54 of 323.** §5.4.1 is the least-covered section in the paper.
+
+⚠️ **Two figures that stood here did not reproduce and have been replaced.** This paragraph said §5.7
+carried 80 claims and §5.5 carried 53; by registry attribution they are 84 and 30, and by
+pinned-numbers far larger. The derivation was never written down, so it could never be checked. **A
+figure nobody can reproduce is worse than one that is merely out of date** — the counting method now
+travels with the number, in `claims_repo.sectionFamilyCounts`.
+
+**Check counts are NOT pinned and must be read off `python run_tests.py`.** They come from a
+different runner counting a different thing, and a second implementation inside the auditor would be
+two methods that can disagree - the exact failure this project keeps finding elsewhere.
 
 Claims live in **THREE** modules, split by which hardware the data came from - `claims_consumer.py`
 for the 5060 Ti, `claims_crosschip.py` for the 3070 Ti, and `claims_reference.py` for the public
@@ -352,7 +372,7 @@ analysis/          Python measurement + audit on the public V100 dataset
                       modules, split by hardware: _consumer (5060 Ti), _crosschip (3070 Ti),
                       _reference (public V100)
   models/             everything that PREDICTS rather than measures — has its own README
-  test_*.py           15 suites, 536 checks total (models/ suites included via run_tests.py)
+  test_*.py           16 suites, 541 checks (539 without data/raw) - NOT pinned, see above
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset
@@ -677,9 +697,10 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   `analysis/audit_claims.py` now REQUIRES the window at the call site, and §5.7.6 went from 4
   pinned numbers to 23. **The lesson is the one this project keeps relearning: an aggregate whose
   window is implicit is a claim nobody can check.**
-- **18 paper sections are unaudited, and 204 claims are green** (2026-09-05 - re-read them off
-  `--coverage`, not off this line). Most of the 18 are prose - 2.1-2.5, 3.1-3.4 - with little to
-  pin. The ones carrying real numbers are **3.3.2, 3.3.3, 5.4.2, 5.5.5, 5.6.3, 5.7 and 5.7.7**.
+- **Which sections are unaudited, and which of them matter.** *The count itself lives in the
+  canonical coverage block above and is not repeated here - that duplication is what produced two
+  contradictory totals in one file on 2026-08-30.* Most are prose - 2.1-2.5, 3.1-3.4 - with little
+  to pin. The ones carrying real numbers are **3.3.2, 3.3.3, 5.4.2, 5.5.5, 5.6.3, 5.7 and 5.7.7**.
 
   **5.5.4 and 5.7.3 have left this list** - 5.5.4 gained four claims when the cross-architecture
   result entered the paper, and 5.7.3 is now 23 of 70 pinned. **5.5.5 and 5.6.3 have joined it**,
@@ -690,7 +711,7 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   summary exposed" before §5.4.1's vertices and confidence intervals could be pinned.
   `analyseWorkload()` is importable, returns the summary dict, and takes an `rng` whose seed already
   defaults to 20260816 - so the intervals are deterministic and pinnable today. Nothing is stopping
-  §5.4.1, which at **2 of 122 numbers pinned** is the least-covered section in the paper.
+  §5.4.1, which the canonical block above records as the least-covered section in the paper.
 - ✅ **The failure detector HAS now seen a real failure, 2026-08-30.** This bullet called it "the
   highest-value single hour available" for weeks; it was spent, and it paid. An undervolt
   deliberately set past the edge - **875 mV pinned at 3000 MHz** - crashed the display driver, and
@@ -771,9 +792,12 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
 
   🔑 **CI does NOT see `data/raw/`, and that changes the claim count.** The dataset is gitignored
   and fetched, so `claims_reference.py` registers its 24 claims only in the "V100 reference
-  claims" job. As of 2026-09-05 the "checks" job reports **179 of 179** and the reference job
-  **204 of 204** - both green; the gap is 25 rather than 24 because `header-pinned-count` is guarded
-  on the same condition and so registers only alongside the reference set. Any claim whose value depends on the SIZE of the registry is therefore
+  claims" job. Both legs are green, and **their two totals are in the canonical coverage block
+  above rather than here.** The gap between them is 25 rather than 24 because `header-pinned-count`
+  is guarded on the same condition and so registers only alongside the reference set - and
+  `claims_repo.py` splits the same way, registering the with-reference total in one leg and the
+  without-reference total in the other, because `len(CLAIMS)` can only honestly report the
+  environment it is running in. Any claim whose value depends on the SIZE of the registry is therefore
   environment-dependent; `header-pinned-count` is guarded for exactly that reason, after an
   unguarded version broke both checks legs on 2026-09-02. A local run can be made to match CI by
   temporarily moving `data/raw` aside, which is how that break was reproduced before it was fixed.

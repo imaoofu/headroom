@@ -1749,7 +1749,16 @@ def _referenceDataPresent():
 if _referenceDataPresent():
     @claim("header-pinned-count", PAPER)
     def headerPinnedCount():
-        """The header's own advertised claim count, rendered from the live registry."""
+        """The header's own advertised claim count, rendered from the live registry.
+
+        ⚠️ THE WHOLE REGISTRY, NOT ONLY THE PAPER'S SHARE, AND THAT WAS CHECKED RATHER THAN
+        ASSUMED. When claims_repo.py began pinning numbers in CLAUDE.md on 2026-09-05 this was
+        briefly narrowed to document == PAPER, on the reasoning that a count in the paper's header
+        describes the paper. Reading the sentence settled it the other way: it says "numbers are
+        pinned by analysis/audit_claims.py", which is a statement about the TOOL's coverage, and
+        the registry had already included 27 claims on two data READMEs long before CLAUDE.md
+        joined it. Narrowing it would have reported 177 and silently redefined a published figure.
+        """
         return f"**{len(CLAIMS)} numbers are pinned by `analysis/audit_claims.py`**"
 
 

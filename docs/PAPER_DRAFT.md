@@ -2,13 +2,13 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **168 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **204 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **208 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
-> is itself pinned, so adding a claim without updating this line fails the audit. No `[PENDING]`
-> placeholders remain, but **18 numbered sections carry no claims at all** — `--coverage` lists
-> them, and a green audit says nothing about those. That 19 is NOT itself pinned, unlike the count
-> above it: it is computed from the audit results rather than during them, so a claim cannot reach
-> it without circularity. Re-read it from `--coverage` rather than from here.
+> is itself pinned, so adding a claim without updating this line fails the audit. It counts the
+> tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
+> alone. No `[PENDING]` placeholders remain, but **18 numbered sections carry no claims at all** —
+> `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
+> too**, as of 2026-09-05.
 >
 > **No section carries a `- DRAFT` marker any more.** That marker meant "written the day the
 > measurements were taken, no second pass"; the last three were on 3.5 and 5.7 and both had their

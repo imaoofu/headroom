@@ -665,6 +665,7 @@ def main():
     import claims_consumer                             # noqa: F401 - registers claims
     import claims_crosschip                            # noqa: F401 - registers claims
     import claims_reference                            # noqa: F401 - registers claims
+    import claims_repo                                 # noqa: F401 - registers claims
 
     selected = [c for c in CLAIMS if args.filter in c["claimId"]]
     if not selected:
