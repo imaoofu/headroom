@@ -545,7 +545,42 @@ Turning two separate models into one project with a single research question.
 
 ---
 
-- **[CORE] The preflight guard cannot see VRAM, and an idle model walks straight past it.**
+- ✅ **[CORE] The preflight guard cannot see VRAM, and an idle model walks straight past it.**
+  **Closed 2026-09-05.** `Invoke-FrequencySweep.ps1` now reads `memory.free` and refuses below
+  `-MinFreeVramMb`, default 4000 - the SAME constant `preflight.py` already used, deliberately, so
+  that two guards on one quantity cannot disagree. `free_vram_mb_at_start` goes into every session
+  JSON at schema `0.3.2`.
+
+  ⚠️ **THIS ITEM WAS WRONG ABOUT ITS OWN SCOPE, AND THE ERROR RAN THE SAFE WAY.** It said VRAM was
+  unchecked; the collection kit's `preflight.py` had checked it since 2026-08-27, before torch is
+  imported, with the failure written into its docstring - "with an unrelated 19 GB model resident
+  and ~765 MB free, the preflight hung indefinitely". The gap was only ever in the sweep script.
+  Written from a grep of one file and generalised to the toolchain.
+
+  🔑 **AND THE PROCESS-NAME HINT HAD BEEN BLIND TO THIS PROJECT'S OWN MODEL FOR ELEVEN DAYS.** The
+  offender list named `ollama` and `ollama_llama_server`. The delegation moved to llama.cpp on
+  2026-08-25 (commit `c80b569`) and the list did not follow, so `llama-server` - the single most
+  likely offender on this machine - was not on it. Added, with `llama-cli`, `koboldcpp`, `lm-studio`.
+
+  ⛔ **THE FIRST VERSION OF THE FIX WAS DEAD CODE ON THE TARGET PLATFORM, AND ONLY RUNNING IT SAID
+  SO.** `Get-VramHolders` parsed `--query-compute-apps=used_memory` to name the heaviest holder.
+  Under WDDM - the consumer Windows driver model - that field returns the string `[N/A]` for every
+  process, because NVML cannot account memory per process when the OS owns the allocator. Tested
+  with a python process demonstrably holding 6 GB: its NAME was listed, its memory read `[N/A]`. The
+  code parsed the figure, skipped anything under 200 MB, and would therefore have printed an EMPTY
+  list under exactly the conditions it was written for. It now reports the figure where the platform
+  supplies it (Linux, TCC-mode datacenter cards) and names alone where it does not, saying which.
+
+  Verified on hardware with a 6 GB resident allocation at 3% utilisation and 0% encoder - the exact
+  shape both older guards miss: refusal below threshold (exit 6), the holder named, a pass at the
+  default on a clean card, `free_vram_mb_at_start=15243` in the JSON, clocks released after.
+
+  **Found while verifying: `-FrequencyCount 1` divides by zero** in grid construction. Pre-existing,
+  unrelated, not fixed here, and nothing in the repo has ever passed 1.
+
+  *Original statement of the problem, kept because the reasoning was right:*
+
+- **[SUPERSEDED] The preflight guard cannot see VRAM, and an idle model walks straight past it.**
   `Get-BaselineUtilization` reads `utilization.gpu`, and the separate encoder check reads
   `utilization.encoder` / `utilization.decoder`. **Neither reports memory, and `memory.used` is
   queried nowhere in the script** - the only `memory` fields anywhere in it are memory *clock*.

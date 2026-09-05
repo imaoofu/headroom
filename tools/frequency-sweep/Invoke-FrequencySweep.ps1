@@ -81,6 +81,15 @@
     under ten samples to average; 0.5 s doubles the resolution for a cost of ~42 ms per
     nvidia-smi call, on a thread that is otherwise sleeping.
 
+.PARAMETER MinFreeVramMb
+    Refuse to start unless at least this much VRAM is free, in MB. Default 4000, which is not a
+    round number chosen for looking sensible - membw allocates three 256M-float buffers totalling
+    3.07 GB and gemm about 0.8 GB, and the CUDA context costs a few hundred MB on top. It is the
+    SAME constant tools/collection-kit/preflight.py already enforces (REQUIRED_VRAM_BYTES), and
+    they are deliberately identical: two guards on the same quantity that disagree are worse than
+    one, because a run refused by one tool and accepted by the other tells the operator nothing.
+    Set to 0 to disable, and say so in -AppliedSettings if you do.
+
 .PARAMETER MaxBaselineUtilization
     Refuse to start if the GPU is already busier than this percentage before our workload
     runs. Default 10.
@@ -141,6 +150,7 @@ param(
     [int]$MeasureSeconds = 20,
     [double]$SampleIntervalSeconds = 0.5,
     [double]$MaxBaselineUtilization = 10,
+    [int]$MinFreeVramMb = 4000,
     [switch]$AllowVideoEngines,
     [string]$AppliedSettings = "",
     [string]$OutputDirectory = "",
@@ -259,6 +269,70 @@ function Get-EncoderActivity {
     }
 }
 
+function Get-FreeVramMb {
+    param([string]$Smi)
+    # WHY FREE AND NOT USED. The obvious guard is "refuse above N MB used", and it is wrong: the
+    # workload needs an ABSOLUTE amount, so the same used-figure is fine on a 16 GB card and fatal
+    # on an 8 GB one. This project runs both. Free is the quantity that means the same thing on
+    # every card, which is the only way one default can be correct across the fleet.
+    try {
+        $line = @(& $Smi --query-gpu=memory.free --format=csv,noheader,nounits -i 0 2>$null)
+        if ($line.Count -eq 0) { return $null }
+        $value = 0
+        if ([int]::TryParse(("$($line[0])").Trim(), [ref]$value)) { return $value }
+    } catch { }
+    return $null
+}
+
+function Get-VramHolders {
+    param([string]$Smi)
+    # Named the way the encoder check names its offender: a percentage tells the operator to go
+    # hunting, a name tells them what to close.
+    #
+    # ⚠️ THE PER-PROCESS FIGURE DOES NOT EXIST ON THIS PLATFORM, AND THE FIRST VERSION OF THIS
+    # FUNCTION ASSUMED IT DID. `--query-compute-apps=used_memory` returns the STRING "[N/A]" for
+    # every process under WDDM, the consumer Windows driver model, because NVML cannot account
+    # memory per process when the OS owns the allocator. Measured 2026-09-05 with a python
+    # process demonstrably holding 6 GB: its NAME was listed, its memory read "[N/A]". The
+    # original code parsed the figure, skipped anything under 200 MB, and therefore skipped
+    # EVERY process on every Windows consumer card - it would have printed an empty list under
+    # exactly the conditions it was written for, while looking correct on inspection.
+    #
+    # So: report the figure where the platform supplies it (Linux, and TCC-mode datacenter
+    # cards), report names alone where it does not, and let the caller say which happened.
+    # A name with no number is worth having. A silent empty list is not.
+    $withMemory = @()
+    $namesOnly = @()
+    try {
+        $lines = @(& $Smi --query-compute-apps=process_name,used_memory --format=csv,noheader,nounits 2>$null)
+        foreach ($line in $lines) {
+            $parts = ("$line") -split "\s*,\s*"
+            if ($parts.Count -lt 2) { continue }
+            $name = [System.IO.Path]::GetFileNameWithoutExtension(("$($parts[0])").Trim())
+            if ($name -eq "") { continue }
+            $mb = 0
+            if ([int]::TryParse(("$($parts[1])").Trim(), [ref]$mb)) {
+                if ($mb -ge 200) { $withMemory += [pscustomobject]@{ Name = $name; Mb = $mb } }
+            } elseif ($namesOnly -notcontains $name) {
+                $namesOnly += $name
+            }
+        }
+    } catch { }
+    if ($withMemory.Count -gt 0) {
+        return [pscustomobject]@{
+            HasMemoryFigures = $true
+            Holders = @($withMemory | Sort-Object -Property Mb -Descending)
+        }
+    }
+    # Windows lists a dozen shell and compositor processes that are always present and never the
+    # cause. Filtering through the known-offenders list keeps the hint pointed at things the
+    # operator can actually close - and that list now knows llama-server, which is the whole
+    # reason this guard exists on this machine.
+    $interesting = @(Get-HeavyGpuProcesses -Smi $Smi)
+    if ($interesting.Count -eq 0) { $interesting = $namesOnly }
+    return [pscustomobject]@{ HasMemoryFigures = $false; Holders = @($interesting) }
+}
+
 function Get-HeavyGpuProcesses {
     param([string]$Smi)
     # Windows always has a dozen shell/compositor processes touching the GPU; those are
@@ -269,7 +343,10 @@ function Get-HeavyGpuProcesses {
         "opera", "chrome", "msedge", "firefox", "brave",      # browsers composite and play video
         "Discord", "Spotify", "steamwebhelper",
         "obs64", "obs32",
-        "ollama", "ollama_llama_server",                      # local LLM inference will saturate the card
+        # Local LLM inference. llama-server is the one THIS project runs - the delegation moved
+        # from Ollama to llama.cpp on 2026-08-25 and this list did not follow until 2026-09-05,
+        # so for eleven days the hint was blind to the single most likely offender on this machine.
+        "ollama", "ollama_llama_server", "llama-server", "llama-cli", "koboldcpp", "lm-studio",
         "python", "pythonw"                                   # another sweep or training run already going
     )
     $found = @()
@@ -430,6 +507,7 @@ if (-not $elevated) {
 # given. A run with no workload records "not checked" rather than a misleading zero.
 $encoderUtilPct = $null
 $decoderUtilPct = $null
+$freeVramMb = $null
 
 if ($WorkloadCommand -ne "") {
     Write-Host "[SWEEP] Checking the GPU is quiet before starting..."
@@ -463,6 +541,52 @@ if ($WorkloadCommand -ne "") {
         if ($media.Encoder -eq 0 -and $media.Decoder -eq 0) {
             Write-Host ("[SWEEP] Video engines idle (encoder {0}%, decoder {1}%)." -f $media.Encoder, $media.Decoder)
         }
+    }
+
+    # ---- FREE VRAM ---------------------------------------------------------------------
+    # THE FAILURE THIS CATCHES IS THE OPPOSITE SHAPE TO THE ONE ABOVE. The utilisation guard was
+    # built for a BUSY card - a gaming session read 79% baseline and took gemm from 8.03 to
+    # 4.84 TFLOP/s. A local LLM server that is loaded but idle is the inverse: ~0% utilisation
+    # and most of the card's memory held. It walks straight past every check above, and on this
+    # machine that is the NORMAL state, because llama-server holds a 27B on the same card this
+    # script measures.
+    #
+    # What it would do to a run, if unguarded. gemm allocates ~768 MB and would RUN TO
+    # COMPLETION under memory pressure, producing a number indistinguishable from a good one.
+    # membw allocates ~3 GB and would not fit - failing outright, or falling back to system
+    # memory the way this driver has already been shown to do silently, where throughput
+    # collapses and nothing errors. A membw sweep measuring spilled memory is plausible, wrong,
+    # and unrecoverable afterwards.
+    $freeVramMb = Get-FreeVramMb -Smi $nvidiaSmi
+    if ($null -ne $freeVramMb -and $MinFreeVramMb -gt 0 -and $freeVramMb -lt $MinFreeVramMb) {
+        Write-Host ""
+        Write-Host ("[SWEEP] REFUSING TO START: only {0} MB of VRAM is free, and the workloads need {1} MB." -f $freeVramMb, $MinFreeVramMb)
+        $vramReport = Get-VramHolders -Smi $nvidiaSmi
+        if ($vramReport.Holders.Count -gt 0 -and $vramReport.HasMemoryFigures) {
+            Write-Host "[SWEEP] Holding the card right now, heaviest first:"
+            foreach ($holder in $vramReport.Holders) {
+                Write-Host ("[SWEEP]     {0}  {1} MB" -f $holder.Name, $holder.Mb)
+            }
+        } elseif ($vramReport.Holders.Count -gt 0) {
+            Write-Host ("[SWEEP] On the GPU right now: {0}" -f ($vramReport.Holders -join ", "))
+            Write-Host "[SWEEP] (Windows does not report per-process VRAM, so these are names without figures.)"
+        }
+        Write-Host "[SWEEP] The usual cause is a local LLM server left loaded - llama-server, Ollama,"
+        Write-Host "[SWEEP] LM Studio, KoboldCpp. It sits at 0% utilisation with the model resident, so"
+        Write-Host "[SWEEP] NEITHER the utilisation guard NOR the encoder guard above can see it."
+        Write-Host "[SWEEP] membw allocates about 3 GB. Without it, this driver spills to system RAM"
+        Write-Host "[SWEEP] WITHOUT FAILING - throughput collapses and no error is raised, which is a"
+        Write-Host "[SWEEP] wrong number that looks exactly like a right one."
+        Write-Host ("[SWEEP] Override with -MinFreeVramMb 0 if you know what you are doing, and say so in -AppliedSettings.")
+        exit 6
+    }
+    if ($null -ne $freeVramMb) {
+        Write-Host ("[SWEEP] Free VRAM {0} MB - clear to start." -f $freeVramMb)
+    } else {
+        # Not fatal: nvidia-smi answered every other query to get this far, so a null here is a
+        # field this driver does not report rather than a broken card. Said out loud because a
+        # silent skip would be indistinguishable from a passing check.
+        Write-Host "[SWEEP] WARNING: could not read free VRAM. This run is NOT checked for a resident model."
     }
 
     if ($null -ne $baseline -and $baseline -gt $MaxBaselineUtilization) {
@@ -776,6 +900,13 @@ $session = [ordered]@{
     encoder_util_pct     = $encoderUtilPct
     decoder_util_pct     = $decoderUtilPct
     video_engines_allowed = [bool]$AllowVideoEngines
+    # ADDED 0.3.2. Every sweep collected before this schema version has NO record of VRAM
+    # occupancy, so those runs cannot be audited for a resident model retrospectively - the
+    # information was never captured. That is the specific, unfixable cost of having shipped the
+    # guard late, and it is recorded here rather than in a commit message nobody will read.
+    # Null means the field could not be read, NOT that the card was empty.
+    free_vram_mb_at_start = $freeVramMb
+    min_free_vram_mb_required = $MinFreeVramMb
     started_at           = $startTime.ToString("o")
     ended_at             = (Get-Date).ToString("o")
     aborted_by_user      = $abortedByUser
@@ -796,7 +927,7 @@ $session = [ordered]@{
     power_windowed_points = ($results.Count - $undilutedPoints.Count)
     supported_clock_count = $supported.Count
     samples_file         = Split-Path $csvPath -Leaf
-    schema_version       = "0.3.1"
+    schema_version       = "0.3.2"
 }
 # Out-File -Encoding utf8 writes a BOM in PowerShell 5.1, and json.load, jq and every other
 # standard parser choke on it with "Expecting value: line 1 column 1". This is a
