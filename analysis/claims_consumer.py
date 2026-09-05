@@ -1889,3 +1889,28 @@ def agreeWhereVoltagesAgree():
     both = (stock["throughput"] + tuned["throughput"]) / 2.0
     return (f"at 1402 MHz both sit at {stock['voltage']:.3f} V\nand both deliver "
             f"~{both:.0f} GB/s")
+
+
+# --------------------------------------------------------------------------------------
+# The header's OTHER count
+#
+# The status header advertised "67 committed sweeps" while the repository held 112. Same defect
+# as the claim count it sits beside, found the same way - by measuring instead of reading - and
+# 24 of the missing 45 were added by suite replicates r2 and r3 alone.
+#
+# Counted from the filesystem rather than from git, because the audit has no git dependency and
+# does not want one. That is only equivalent while nothing untracked lives under
+# data/frequency-sweeps; it was verified equal (112 both ways, working tree clean) when this
+# claim was written. Voltage extracts end _sweep_voltage.csv and are joins rather than sweeps,
+# so the glob excludes them - there are 11, and counting them would inflate this by a tenth.
+#
+# NOT guarded on the reference dataset, unlike header-pinned-count: these CSVs are committed, so
+# the number is the same with or without data/raw.
+# --------------------------------------------------------------------------------------
+
+@claim("header-sweep-count", PAPER)
+def headerSweepCount():
+    """The header's advertised sweep count, recomputed from the committed CSVs."""
+    sweeps = [p for p in (_REPO_ROOT / "data" / "frequency-sweeps").rglob("*_sweep.csv")
+              if not p.name.endswith("_sweep_voltage.csv")]
+    return f"**{len(sweeps)} committed"

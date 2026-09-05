@@ -23,7 +23,9 @@
     They are per card AND per configuration. Running this on a different card, or on this one
     with a different curve, needs its own calibration - the counts below would be measuring
     something else. gemm keeps its own long-standing default of 120, which is not re-set here
-    because changing it would break comparability with 67 committed sweeps.
+    because changing it would break comparability with every gemm sweep already committed. That
+    is deliberately not a count: the figure here read 67 while the repository held 112 sweeps, and
+    a number in a comment nothing recomputes drifts by design.
 
     THE STOCK CHECK IS NOT OPTIONAL, AND IT IS NOT nvidia-smi's max clock
     `clocks.max.memory` reports 14001 MHz whether or not an Afterburner memory offset is applied,
