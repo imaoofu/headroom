@@ -1969,8 +1969,36 @@ SUITE_3070_SWEEPS = {name: f"rtx3070ti-suite-20260904/{stamp}_rtx3070ti-suite-{n
                          "bgemm1024": "20260904-202634", "attention": "20260904-203205",
                          "conv": "20260904-203735", "gemm": "20260904-204245"}.items()}
 
+SUITE_R6_SWEEPS = {name: f"suite-replicate-r6-20260905/{stamp}_5060ti-stock-suite-{name}-r6_sweep.csv"
+                   for name, stamp in {
+                       "copy": "20260905-133312", "reduce": "20260905-133733",
+                       "softmax": "20260905-134201", "layernorm": "20260905-134618",
+                       "bgemm32": "20260905-135041", "bgemm64": "20260905-135501",
+                       "bgemm128": "20260905-135921", "bgemm256": "20260905-140356",
+                       "bgemm1024": "20260905-140859", "attention": "20260905-141403",
+                       "conv": "20260905-141911", "gemm": "20260905-142420"}.items()}
+
+# SIX STOCK REPLICATES, and the count is load-bearing for what the control below can say.
+# r4 and r5 are the only WITHIN-session pair; r1, r2, r3, r4 and r6 span five separate days. So
+# this is not six independent sessions and 5.5.4 must not be read as though it were.
+#
+# ⚠️ SCHEMA MIXED. r6 is 0.3.2 and carries free_vram_mb_at_start; r1-r5 are 0.3.1 and record no
+# VRAM occupancy at all, so they cannot be audited retrospectively for a resident model. Nothing
+# read here is affected - the added fields are preflight provenance, not measurement - but any
+# code that reads the whole set must tolerate the field's absence rather than assume it.
+#
+# ⚠️ DRIVER MIXED, AND DELIBERATELY SO. r1 is 610.88; r2-r6 are 616.56. r6 was collected before a
+# pending update specifically to stay in the larger group rather than straddle the change.
 REPLICATES_5060 = (SUITE_R1_SWEEPS, SUITE_R2_SWEEPS, SUITE_R3_SWEEPS,
-                   SUITE_R4_SWEEPS, SUITE_R5_SWEEPS)
+                   SUITE_R4_SWEEPS, SUITE_R5_SWEEPS, SUITE_R6_SWEEPS)
+
+
+def _englishCount(n):
+    """Small counts as words, because the paper writes them that way and a claim must match the
+    document rather than ask the document to match it."""
+    words = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 10: "ten",
+             15: "fifteen", 21: "twenty-one", 28: "twenty-eight"}
+    return words.get(n, str(n))
 
 
 def _rankOf(gains):
@@ -2010,8 +2038,12 @@ def withinCardRankControl():
     import itertools
     ranks = [_rankOf(_gainsOf(table)) for table in REPLICATES_5060]
     values = [_spearman(a, b) for a, b in itertools.combinations(ranks, 2)]
-    return (f"all ten pairs, gives **{min(values):+.3f} to {max(values):+.3f}, mean "
-            f"{mean(values):+.3f}**")
+    # ⚠️ THE PAIR COUNT IS RENDERED, NOT WRITTEN. It said "all ten pairs" as literal text while
+    # computing however many the replicate set implies - correct at five replicates and silently
+    # wrong the moment a sixth was added, which is exactly what happened on 2026-09-05. A claim
+    # that hardcodes any part of its own sentence is only pinning the rest of it.
+    return (f"all {_englishCount(len(values))} pairs, gives **{min(values):+.3f} to "
+            f"{max(values):+.3f}, mean {mean(values):+.3f}**")
 
 
 @claim("5.5.4-mean-gain-5060", PAPER, "5.5.4")
@@ -2027,3 +2059,80 @@ def crossArchitectureMeanGain5060():
 def crossArchitectureMeanGain3070():
     """The other half of the pair."""
     return f"against **{mean(_gainsOf(SUITE_3070_SWEEPS).values()):.1f}%** on the 3070 Ti"
+
+
+# --------------------------------------------------------------------------------------
+# 5.5.4, second pass - the figures the sixth replicate forced into the open (2026-09-05).
+#
+# The optimum-as-a-fraction-of-range numbers were in the paper UNPINNED, and folding r6 in meant
+# checking whether they moved. They did not - but establishing that took reverse-engineering which
+# denominator produced them, because the method had never been written down. 49.7% is against the
+# highest COMMANDED clock; against the highest ACHIEVED clock, which is what suiteRowFigures uses
+# three paragraphs earlier, the same data gives 56.3%. Two defensible conventions, a 6.6-point
+# gap, and nothing in the document saying which was in force. Pinned with the method in the
+# docstring so the next person does not have to derive it from the answer.
+# --------------------------------------------------------------------------------------
+
+
+def _medianOptimumFraction(tables, denominator):
+    values = []
+    for table in (tables if isinstance(tables, tuple) else (tables,)):
+        for path in table.values():
+            rows = sweep(path)
+            peak = max(rows.values(), key=lambda row: row["efficiency"])
+            values.append(100.0 * peak["mhz"] / denominator(rows))
+    return median(values)
+
+
+def _maxCommanded(rows):
+    return max(row["target"] for row in rows.values())
+
+
+def _maxAchieved(rows):
+    return max(row["mhz"] for row in rows.values())
+
+
+@claim("5.5.4-optimum-fraction-5060", PAPER, "5.5.4")
+def optimumFraction5060():
+    """Against the highest COMMANDED clock - the convention this sentence uses."""
+    value = _medianOptimumFraction(REPLICATES_5060, _maxCommanded)
+    return f"median **{value:.1f}%** of maximum"
+
+
+@claim("5.5.4-optimum-fraction-3070", PAPER, "5.5.4")
+def optimumFraction3070():
+    """The other half of the pair, same convention."""
+    value = _medianOptimumFraction(SUITE_3070_SWEEPS, _maxCommanded)
+    return f"against **{value:.1f}%** on the 3070 Ti"
+
+
+@claim("5.5.4-two-conventions", PAPER, "5.5.4")
+def optimumFractionBothConventions():
+    """Pins BOTH numbers in one string, deliberately.
+
+    The point of the sentence is that two conventions disagree by six points on one card. A claim
+    that pinned only the commanded figure would let the achieved one drift and leave the sentence
+    asserting a gap it no longer measured - which is the same shape as the paired-comparison
+    failure of 5.7.6, where correcting one half of a pair produced a confident wrong answer.
+    """
+    commanded = _medianOptimumFraction(REPLICATES_5060, _maxCommanded)
+    achieved = _medianOptimumFraction(REPLICATES_5060, _maxAchieved)
+    return f"give {commanded:.1f}% and {achieved:.1f}% for the same card"
+
+
+@claim("5.5.4-ranks-unmoved", PAPER, "5.5.4")
+def ranksUnmovedBySixthReplicate():
+    """The sixth replicate changed no rank, and the largest percentage shift was under a point.
+
+    ⚠️ THIS CLAIM WILL FAIL IF A SEVENTH REPLICATE MOVES A RANK, AND THAT IS THE POINT. The
+    sentence it pins is an observation about stability, not a permanent property. If r7 reorders
+    anything the sentence becomes false and the audit says so, rather than the paper continuing to
+    assert it. Computed by comparing the six-replicate ordering against the five-replicate one.
+    """
+    six = {name: mean(_gainsOf(t)[name] for t in REPLICATES_5060) for name in SUITE_R1_SWEEPS}
+    five = {name: mean(_gainsOf(t)[name] for t in REPLICATES_5060[:5]) for name in SUITE_R1_SWEEPS}
+    if _rankOf(six) != _rankOf(five):
+        raise AssertionError("a rank MOVED between five and six replicates - the sentence this "
+                             "claim pins is no longer true and must be rewritten, not renumbered")
+    shift = max(abs(six[n] - five[n]) for n in six)
+    return f"by at most {shift:.1f} points"

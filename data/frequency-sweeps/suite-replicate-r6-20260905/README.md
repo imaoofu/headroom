@@ -111,11 +111,19 @@ r5's **2752.9** — half a megahertz apart, so this ceiling is a stable property
 and not a fault in this run. Temperatures 40–56 °C against an 88 °C ceiling; power 15–132 W against
 the 180 W limit. No throttle events, no failed sweeps, clocks verified released afterwards.
 
-## Not yet in the paper
+## In the paper as of 2026-09-05 — §5.5.4 yes, §5.4.5 no
 
-§5.5.4 and §5.4.5 cite **five** stock replicates. r6 is collected, complete and clean, but folding
-it in changes pinned numbers (the within-card control becomes 15 pairs and the mean gain moves
-55.8% → 55.9%), so that is a deliberate edit rather than a consequence of collecting data.
+**§5.5.4 now uses all six.** Mean gain 55.8% → **55.9%**, and the within-card control went from ten
+pairs to **fifteen**, +0.881 to +0.986, mean **+0.929**. Four numbers that had sat unpinned or
+under-pinned are now claims, including the optimum-fraction figures — establishing that those had
+not moved required reverse-engineering which denominator produced them, because the method had never
+been written down.
+
+**§5.4.5 deliberately stays at three.** It is a variance decomposition, and r4/r5 are a
+within-session pair: pooling all six would mix the two components that section exists to separate.
+Recomputing it at n = 6 means rebuilding the session-structure argument first, not just widening a
+sample. The section now says so in place rather than leaving a reader to assume three is all there
+is.
 
 ## Related
 

@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **180 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **208 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **212 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
@@ -1060,6 +1060,14 @@ interval rather than a point. The third set was required to be on a different da
 cross-session drift is the larger variance component, so same-sitting repeats would measure only
 the smaller one. All three are verified-quiet: every sweep records encoder and decoder at 0%.
 
+⚠️ **Six stock replicates now exist (r1-r6); every figure in this section is the THREE-replicate
+one and deliberately stays that way.** r4 and r5 were collected back-to-back on 2026-09-04 and r6 on
+2026-09-05, after this decomposition was written. Recomputing it at n = 6 is real work rather than a
+larger number — r4/r5 are a within-session pair, so pooling all six would mix the two variance
+components this section exists to separate, and the session-structure argument would have to be
+rebuilt before the figures meant anything. §5.5.4 uses all six because a rank correlation does not
+care about that structure. Until this is redone, read every number below as n = 3.
+
 Mean spread across the three replicates, over twelve workloads and thirteen commanded frequencies
 each:
 
@@ -1425,41 +1433,59 @@ for that card - makes the *workload* the unit of comparison rather than the chip
 question this study could not previously ask.
 
 **The headline effect reproduces; the ordering does not.** Mean efficiency gain across the twelve is
-**55.8%** on the 5060 Ti (the mean of five stock replicates) against **38.9%** on the 3070 Ti. Both
+**55.9%** on the 5060 Ti (the mean of six stock replicates) against **38.9%** on the 3070 Ti. Both
 are an order of magnitude outside the 4.95-point replicate spread of §5.4.5, so the finding that
 large gains exist survives a change of architecture. Which workloads carry them does not:
 
 | workload | 5060 Ti | 3070 Ti | 5060 rank | 3070 rank |
 |---|---|---|---|---|
-| `bgemm64` | 74.1% | 25.3% | 1 | **10** |
-| `conv` | 73.7% | 27.8% | 2 | 8 |
-| `bgemm32` | 70.9% | 39.8% | 3 | 7 |
-| `softmax` | 64.3% | 50.2% | 4 | 4 |
-| `bgemm1024` | 59.4% | 23.0% | 5 | **12** |
-| `layernorm` | 55.2% | 56.4% | 6 | **1** |
-| `gemm` | 54.6% | 25.1% | 7 | 11 |
-| `attention` | 54.4% | 48.4% | 8 | 5 |
-| `copy` | 52.7% | 51.0% | 9 | **2** |
-| `reduce` | 38.5% | 50.3% | 10 | **3** |
-| `bgemm256` | 38.1% | 42.6% | 11 | 6 |
-| `bgemm128` | 33.9% | 26.6% | 12 | 9 |
+| `bgemm64` | 74.5% | 25.3% | 1 | **10** |
+| `conv` | 73.0% | 27.8% | 2 | 8 |
+| `bgemm32` | 70.8% | 39.8% | 3 | 7 |
+| `softmax` | 64.8% | 50.2% | 4 | 4 |
+| `bgemm1024` | 59.2% | 23.0% | 5 | **12** |
+| `layernorm` | 55.6% | 56.4% | 6 | **1** |
+| `gemm` | 55.0% | 25.1% | 7 | 11 |
+| `attention` | 54.1% | 48.4% | 8 | 5 |
+| `copy` | 53.2% | 51.0% | 9 | **2** |
+| `reduce` | 39.4% | 50.3% | 10 | **3** |
+| `bgemm256` | 38.0% | 42.6% | 11 | 6 |
+| `bgemm128` | 33.6% | 26.6% | 12 | 9 |
+
+🔑 **A sixth replicate was added on 2026-09-05 and did not move a single rank.** Every position in
+the 5060 Ti column above is identical to the one the five-replicate version reported; only the
+percentages shifted, by at most 0.9 points. That is a stronger statement about the ordering's
+stability than the correlation below, because it is a direct observation rather than a statistic:
+adding twelve fresh sweeps changed no part of the thing this section is about.
 
 **Spearman rank correlation between the two cards: −0.273.** One card's best workload is the
 other's tenth; its fifth is the other's last. Only `softmax` holds its position.
 
 **A ranking of noisy quantities would scramble against anything, so the control is what makes this a
-result.** The identical statistic computed for the 5060 Ti against its own five stock replicates,
-all ten pairs, gives **+0.881 to +0.972, mean +0.924**. Within a card the ordering is a stable,
+result.** The identical statistic computed for the 5060 Ti against its own six stock replicates,
+all fifteen pairs, gives **+0.881 to +0.986, mean +0.929**. Within a card the ordering is a stable,
 reproducible property; across architectures it carries no information at all, and the cross-card
 figure falls far outside the within-card range.
+
+⚠️ **The range widened when the sixth replicate joined, and that is expected rather than
+reassuring.** A range grows monotonically with sample size; the mean is the figure to read across
+different n, and it moved by 0.005. Note also that r6 agrees with the other five at mean **+0.940**,
+slightly *above* the +0.929 the set gives among itself, so the newest replicate is not the one
+holding the range open.
 
 That control also bounds the n = 1 concern on the 3070 Ti. Single 5060 Ti replicates rank
 consistently with one another at ρ ≥ 0.88, so one replicate's *ordering* is a reliable thing to
 have even though its individual gain figures carry no interval of their own.
 
 **The optimum also sits in a different part of each card's range** — median **49.7%** of maximum
-clock on the 5060 Ti against **70.2%** on the 3070 Ti. In MHz the two are not comparable; as a
-fraction of range they still differ by twenty points.
+clock on the 5060 Ti against **70.2%** on the 3070 Ti, both unchanged by the sixth replicate. In MHz
+the two are not comparable; as a fraction of range they still differ by twenty points.
+
+*Both figures are against the highest COMMANDED clock, not the highest achieved one — which is the
+opposite convention to the gain column above, where §5.5's `suiteRowFigures` anchors on the highest
+achieved clock because the top target is not a frequency any workload actually runs at. The two
+conventions give 49.7% and 56.3% for the same card. Neither is wrong; quoting one as the other
+would be, so both are now pinned with the method attached.*
 
 ⚠️ **What this costs the constrained result.** §5.6.1 establishes that under a performance floor,
 workload identity is worth most of the available gain. That is unaffected *within* a card. What this
@@ -1470,7 +1496,11 @@ apart disagree this completely on ordering, a 2017 datacenter part is not a sour
 expectations for current consumer silicon, only of the shape of the frequency response, which is
 what this work takes from it.
 
-**Caveats.** One pair of architectures, one chip each, and the 3070 Ti swept once. Silent BIOS only
+**Caveats.** One pair of architectures, one chip each, and the 3070 Ti swept once. The six 5060 Ti
+replicates are **not six independent sessions** — r4 and r5 were collected back-to-back without a
+reboot, so the set is five sessions, and it is **schema-mixed** (r6 at 0.3.2 records VRAM occupancy;
+r1–r5 at 0.3.1 record none, and cannot be audited for it retrospectively) and **driver-mixed** (r1
+on 610.88, r2–r6 on 616.56). Silent BIOS only
 — the OC position of §5.5.1 was not swept with the suite. Different machines and different drivers
 (610.88 against 616.56); §5.4.5 found the driver did not explain between-replicate variance on the
 5060 Ti, which is not the same as showing it cannot matter across cards. All twenty-four sweeps are
