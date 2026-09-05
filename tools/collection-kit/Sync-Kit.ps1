@@ -54,6 +54,7 @@ $files = @(
     @{ From = "tools\Disable-QuickEdit.ps1";                     To = "tools\Disable-QuickEdit.ps1" },
     @{ From = "tools\stability-logger\Log-GpuStability.ps1";     To = "tools\stability-logger\Log-GpuStability.ps1" },
     @{ From = "tools\collection-kit\Collect.ps1";                To = "Collect.ps1" },
+    @{ From = "tools\collection-kit\Calibrate-Suite.ps1";        To = "Calibrate-Suite.ps1" },
     @{ From = "tools\collection-kit\RUN-ME.bat";                 To = "RUN-ME.bat" },
     @{ From = "tools\collection-kit\preflight.py";               To = "preflight.py" },
     @{ From = "tools\collection-kit\CHECKLIST.txt";              To = "CHECKLIST.txt" }
