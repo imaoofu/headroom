@@ -112,10 +112,12 @@ invite precisely the wrong conclusion — that consumer GPUs have little headroo
 actually show is a truncated measurement range (§2.7).
 
 A second constraint shapes what can be measured rather than what has been. On the hardware studied
-here, GPU voltage is neither readable nor writable through any documented interface: enumeration of
-the driver's full management API surface returns no voltage-related function among 260 device
-operations (§3.2). Direct guardband measurement in the manner of [8], which requires undervolting
-until failure, is therefore unavailable. What remains accessible — and what this work measures — is
+here, GPU voltage cannot be *set* through any documented interface, and the vendor management API
+does not report it either: enumeration of the driver's full management API surface returns no
+voltage-related function among 260 device operations (§3.2). It can be *read* through third-party
+instrumentation, and §5.7.3's mechanism depends on doing so - but a quantity that can only be
+observed, never commanded, is not an independent variable. Direct guardband measurement in the
+manner of [8], which requires undervolting until failure, is therefore unavailable. What remains accessible — and what this work measures — is
 the relationship between core frequency, power draw, and delivered performance.
 
 This paper makes three contributions:
@@ -2479,19 +2481,24 @@ does not control.
 
 ### Future work
 
-The binding constraint is workload count rather than hardware. The leave-one-workload-out design
-that produced §5.6.2's result needs a workload population, and the consumer measurements carry two.
-Extending the suite to span arithmetic intensity, then running the identical suite at stock on both
-chips, would make the *workload* the unit of analysis rather than the chip, and would permit the
-question this work cannot currently ask: whether per-workload optima transfer across
-architectures. That is a paired design achievable with the hardware already in hand.
+The binding constraint is hardware rather than workload count, and that is a change: an earlier
+version of this paragraph said the reverse, when the consumer measurements carried two workloads.
+They now carry **twelve**, collected three times each at stock (§5.4.5), so the suite half of this
+plan is done. What remains is the other half — running that identical suite at stock on further
+chips. The RTX 3070 Ti has only ever run `gemm` and `membw`, so it is the nearest target, and each
+additional card makes the *workload* rather than the chip the unit of analysis. That would permit
+the question this work cannot currently ask: whether per-workload optima transfer across
+architectures.
 
-Two smaller items are outstanding and both are measurement rather than analysis. The 34 W offset of
-§5.5.1.1 has one live candidate remaining — board-level cooling power, since the position drawing
-more power runs cooler — and separating it needs fan RPM logged alongside power, which the
-instrument reports and the session did not capture. And the stability protocol has been applied to
-two of the configurations reported here; the others carry no failure evidence in either direction,
-and "no failure observed in thirty minutes" is the strongest statement any of them supports.
+One measurement item is outstanding. The stability protocol has been applied to three of the
+configurations reported here; the others carry no failure evidence in either direction, and "no
+failure observed in thirty minutes" is the strongest statement any of them supports.
+
+**The 34 W offset of §5.5.1.1 is no longer on this list.** Cooling was its last live candidate and
+§5.5.1.1 excludes it: the fan RPM this paragraph once said had not been captured was in the raw
+HWiNFO logs all along, dropped when they were distilled rather than when they were recorded, and
+the offset holds at +32.7 W and +36.3 W with both fans reading exactly zero. No mechanism is
+claimed for it, which is a different state from an open measurement.
 
 ---
 

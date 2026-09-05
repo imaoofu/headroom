@@ -9,7 +9,7 @@ and knowing the current state. `docs/PAPER_DRAFT.md` is the write-up; every numb
 sections is pinned by `analysis/audit_claims.py` and must not be edited by hand without re-running
 that.
 
-Last updated **2026-08-29**.
+Last updated **2026-09-04**.
 
 ---
 
@@ -65,7 +65,9 @@ proceed.
 python run_tests.py
 ```
 
-**`444 checks across 14 suite(s).`** then `All suites passed.` The runner also fails if it finds a
+**`536 checks across 15 suite(s).`** then `All suites passed.` It is `534` where `data/raw/` was
+not fetched: two checks in `models/test_predict_constrained_frequency.py` skip without it. The
+runner also fails if it finds a
 `test_*.py` under a directory it is not running — that guard exists because moving the model suites
 into `analysis/models/` would otherwise have silently dropped three suites while still printing a
 green result.
@@ -74,7 +76,9 @@ green result.
 python analysis/audit_claims.py
 ```
 
-**149 claims, 0 failures** (fewer if `data/raw/` was not fetched - `claims_reference.py` registers nothing and says so). Every pinned number in the paper, recomputed from the CSVs and asserted
+**200 claims, 0 failures**, or **175** where `data/raw/` was not fetched - `claims_reference.py`
+registers its 24 claims only when the dataset is present, and `header-pinned-count` is guarded on
+the same condition because a claim counting the registry is otherwise environment-dependent. Every pinned number in the paper, recomputed from the CSVs and asserted
 present verbatim and exactly once. If a claim fails, the paper and the data disagree — that is the
 whole point of the tool, so read it as a real finding, not a broken script.
 
@@ -203,7 +207,7 @@ and the audit.
 
 ## Not done — roughly in order of value
 
-1. ~~A fan-RPM log on the 3070 Ti~~ **DONE 2026-08-29 without the card** - the RPM was already in the raw HWiNFO logs and cooling is now excluded (§5.5.1.1). The remaining 3070 Ti item is the never-collected `membw` matched-2130 sweep. Session B ran
+1. ~~A fan-RPM log on the 3070 Ti~~ **DONE 2026-08-29 without the card** - the RPM was already in the raw HWiNFO logs and cooling is now excluded (§5.5.1.1). ⚠️ **The `membw` matched-2130 sweep this entry called never-collected WAS collected**, on 2026-08-25 (`hwinfo-oc/20260825-155312_rtx3070ti-oc-membw-matched2130-hwinfo_sweep.csv`). Session B ran
    2026-08-27 and refuted its own registered prediction: the two BIOSes hold the same voltage
    floor, and the ~34 W gap is an additive offset excluded from voltage, core dynamic power,
    memory clock, crossbar and leakage (§5.5.1.1). The one live candidate is board-level — the
@@ -211,25 +215,37 @@ and the audit.
    fan power sits inside `nvidia-smi`'s board figure. **HWiNFO reports fan RPM and Session B did
    not capture it.** That single addition would turn a set of exclusions into a mechanism, and it
    needs the card. `membw` matched-2130 was also planned and never collected.
-2. **Nothing has been stability-tested**, including the configurations producing the best numbers.
-   A ~2.5% low outlier appears in roughly one split-curve `gemm` run in three, against 0.06% spread
-   on the tuned curve — so this has evidence behind it now rather than being prudence.
-3. **The failure detector has never seen a failure.** Deliberately crashing something and confirming
-   the logger catches it is still the highest-value single hour available.
-4. **The paper does not yet carry the constrained result.** §5.2 reports the unconstrained null
-   alone, with no indication that it inverts under a floor. The README carries both halves and the
-   draft does not. Both halves go in together or neither does — reporting the inversion without the
-   "interpolation beats the fitted model" half would overstate what a model achieved.
+2. ~~**Nothing has been stability-tested**~~ **DONE, three configurations** - split curve and the
+   original tune on 2026-08-23, a stock baseline on 2026-08-30, all under
+   `tools/stability-logger/Invoke-StabilityProtocol.ps1`. Say "no failure observed in thirty
+   minutes", never "stable". The ~2.5% split-curve outlier this entry cited as evidence was the
+   capture software of §5.4.4 and is retired, not outstanding.
+3. ~~**The failure detector has never seen a failure**~~ **DONE 2026-08-30, and it was worth the
+   hour.** An undervolt set deliberately past the edge - 875 mV at 3000 MHz - crashed the display
+   driver and the detector returned 11 events. The signature is a power collapse under sustained
+   *reported* utilisation, the reset silently cleared the Afterburner offsets, and it crashed
+   fourteen seconds before the benchmark process launched. The verdict was **reconstructed, not
+   emitted** - the run was stopped before either JSON was written (§3.5,
+   `data/stability-runs/README-uv-875mv-3ghz-20260830.md`).
+4. ~~**The paper does not yet carry the constrained result**~~ **DONE.** §5.6.2 carries both halves
+   and the abstract states the inversion in the sentence after the null. §5.6.2.1 retests it on
+   consumer silicon.
 5. **A voltage contradiction in the paper.** Lines 41 and 109 say voltage is "neither readable nor
    writable" while §5.5.3 reports measured voltage. One of them is wrong and it is the early text.
-6. **Two results exist only in working notes** — the split-region curve's `gemm` peak and a tuned
-   control re-run were taken as ad-hoc single points and never written to disk. Re-measure before
-   citing either.
+6. ~~**Two results exist only in working notes**~~ **DONE 2026-08-22** - both were re-measured
+   under the clean protocol and committed. The split curve's figure of record is 18.24 TFLOP/s.
 7. **Specs conditioning is stubbed.** `loadSpecFeatures()` in `analysis/models/curve_model.py`
    returns `None` on purpose. The specs table exists (`data/external/all-gpus.json`), but fitting
    specs → curve needs ~10+ distinct GPU models. Validate leave-one-*model*-out when activating, or
    two cards of the same model leak across the split.
-8. **Inspirit deliverable format still unknown** — paper, poster, journal, or symposium.
+8. ~~**Inspirit deliverable format still unknown**~~ **RETIRED 2026-08-23** - the premise was
+   wrong. There is no required format; the program's role is to support publication, so treat
+   publication rather than a submission as the target.
+
+**Live items after this sweep: 5 (the voltage wording, now fixed in the paper) and 7 (specs
+conditioning), plus running the twelve-workload suite on chips other than the 5060 Ti.** Everything
+else above closed between 2026-08-22 and 2026-08-30 and was still listed as open on 2026-09-04,
+which is the same drift this project audits the paper for and does not audit here.
 
 **To run a sweep**, from an elevated shell on a quiet GPU (close games, browsers, Discord — the
 sweep refuses above 10% baseline utilisation and will tell you what to close):
