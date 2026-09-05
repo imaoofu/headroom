@@ -192,15 +192,22 @@ Say ""
 Say "  Record these. They are a property of THIS card and this configuration," "Yellow"
 Say "  and a sweep that reuses them on different silicon measures something else." "Yellow"
 Say ""
-Say "  Then run, from the kit root:" "Cyan"
+# Emitted as ONE line with no placeholder in angle brackets. Both details are deliberate and both
+# come from watching this fail: PowerShell treats < as a reserved operator, so a "<card>" stub
+# makes the whole line a parse error before anything runs, and a backtick-continued block is
+# fragile to paste. The label is filled in from the card name instead of left as a stub.
+$label = ($name -replace "NVIDIA GeForce ", "" -replace "[^A-Za-z0-9]", "").ToLower()
+if (-not $label) { $label = "card" }
+
+Say "  Then run it, FROM THE KIT ROOT - cd there first, an elevated shell opens in system32:" "Cyan"
 Say ""
-Say "  .\Collect.ps1 -Label <card>-suite ``" "White"
-Say "      -Workloads $workloadList ``" "White"
-Say "      -Iterations $countList ``" "White"
-Say "      -AppliedSettings `"STOCK - describe what is on the card, in your own words`"" "White"
+Say ("  cd " + $kit) "White"
 Say ""
-Say "  That is one command and roughly 1.5-2 hours. Leave the machine alone;" "Gray"
-Say "  do not click inside the window, which pauses the run." "Gray"
+$quote = [char]34
+Say ("  .\Collect.ps1 -Label {0}-suite -Workloads {1} -Iterations {2} -AppliedSettings {3}STOCK - describe the card and what was closed{3}" -f $label, $workloadList, $countList, $quote) "White"
+Say ""
+Say "  Edit only the -AppliedSettings sentence. That is one command and roughly 1.5-2 hours." "Gray"
+Say "  Leave the machine alone; do not click inside the window, which pauses the run." "Gray"
 Say ""
 
 if ($failed.Count -gt 0) { exit 1 }
