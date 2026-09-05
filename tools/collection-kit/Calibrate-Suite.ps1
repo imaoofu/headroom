@@ -199,10 +199,15 @@ Say ""
 $label = ($name -replace "NVIDIA GeForce ", "" -replace "[^A-Za-z0-9]", "").ToLower()
 if (-not $label) { $label = "card" }
 
-Say "  Then run it, FROM THE KIT ROOT - cd there first, an elevated shell opens in system32:" "Cyan"
+# Three lines, and all three are needed. An elevated shell opens in system32, where
+# .\Collect.ps1 does not resolve; and a fresh elevated window carries the default Restricted
+# execution policy, so the script refuses to load even though this one just ran - this script is
+# normally launched with -ExecutionPolicy Bypass on its own command line, which does not carry
+# over. Both were hit for real on the 3070 Ti, 2026-09-04, one after the other.
+Say "  Then run these three, FROM AN ELEVATED SHELL:" "Cyan"
 Say ""
 Say ("  cd " + $kit) "White"
-Say ""
+Say "  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force" "White"
 $quote = [char]34
 Say ("  .\Collect.ps1 -Label {0}-suite -Workloads {1} -Iterations {2} -AppliedSettings {3}STOCK - describe the card and what was closed{3}" -f $label, $workloadList, $countList, $quote) "White"
 Say ""
