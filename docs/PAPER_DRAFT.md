@@ -6,7 +6,7 @@
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
-> alone. No `[PENDING]` placeholders remain, but **18 numbered sections carry no claims at all** —
+> alone. No `[PENDING]` placeholders remain, but **19 numbered sections carry no claims at all** —
 > `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
 > too**, as of 2026-09-05.
 >
@@ -226,6 +226,38 @@ NVIDIA's built-in power sensor documents its update frequency, transient respons
 averaging window applied to reported values [5]. Any work sampling power through `nvidia-smi` — this
 work included — inherits those characteristics, and §3.4 states the consequences explicitly rather
 than treating the sensor as ground truth.
+
+### 2.5.1 The crossbar clock domain, and what is already known about it
+
+**Searched 2026-09-06.** §5.7.3 attributes a bandwidth plateau to the crossbar — the on-chip
+interconnect between the SMs and the memory controllers, which NVIDIA calls XBAR. Two things about
+it are already public and this work claims neither.
+
+**XBAR is an independently documented clock domain on Blackwell.** A published analysis of GB202
+(RTX 5090) establishes that XBARCLK has its own PMU object, clock source, 127-point V/F table,
+hardware measurement entry point and runtime control path, arguing explicitly that public tooling had
+mistaken it for a software statistic. It reports a 0.8999:1 GPC-to-XBAR constraint in the propagation
+topology.
+
+**Raising it deliberately is also published.** Work on runtime XBAR offsets under Linux reports
+applying +60 to +450 MHz and measuring up to +10.6% FPS on an RTX 5090, August 2026.
+
+⚠️ **The direction of both is the opposite of this study's.** Neither reports memory-bandwidth
+measurements in GB/s, an XBAR-to-core ratio measured across a swept range, the behaviour of the
+domain under a *flattened* V/F curve, or the DRAM clock during such an event. What §5.7.3 contributes
+is therefore not the domain's existence or its controllability, but the measured **consequence** of
+pinning its voltage: a bandwidth plateau on a real workload, with the DRAM clock shown to be
+constant throughout, and a workload-dependent sign that the same setting helps one kernel and harms
+another.
+
+🔑 **The narrower claim is the defensible one**, and it is stated narrowly here because the broader
+version did not survive a fifteen-minute search. §2.2 records the same lesson from a claim that had
+to be retracted outright.
+
+*One thread remains unresolved: a search summary referred to XBAR/SYS clocks collapsing while the GPU
+clock rose with no slowdown reason reported, which would be closer to this study's observation than
+anything above. Fetching the cited page did not confirm it. It is recorded as unconfirmed rather
+than cited or dismissed.*
 
 ### 2.6 Vendor auto-tuning
 
@@ -1964,6 +1996,23 @@ flattened curve holds one voltage, as configured. The consequence is the crossba
 SM-to-memory-controller interconnect. At stock its ratio to core clock holds between 0.928 and
 0.976. Under the flattened curve that ratio collapses from 0.942 to 0.725: the interconnect
 decouples from the core and stops scaling.
+
+⛔ **THE MEMORY IS NOT SLOWER, AND THAT IS THE POINT.** The obvious reading of a falling ratio is
+that the memory overclock stopped working. It did not: **the DRAM runs at 16301 MHz throughout both
+configurations**, the +2500 offset applied and holding at every point in the table. What stops
+scaling is the on-chip path between the SMs and the memory controllers, not the memory devices. The
+memory can deliver the bandwidth; the GPU cannot issue requests fast enough to use it.
+
+⚠️ **Nor is the crossbar slowing down — it is failing to speed up**, and the distinction matters for
+anyone reading the ratio as a rate. Across 1402–1867 MHz the core climbs 33% while the tuned
+crossbar moves 1320 → 1350 MHz, a rise of 2.3%. It is pinned, not throttled. The ratio falls because
+its denominator grows. Stock over the same range takes the crossbar 1335 → 1815 MHz, tracking the
+core, which is what the 0.928–0.976 band describes.
+
+That distinction is what makes the elasticities interpretable rather than merely suggestive:
+throughput responds to crossbar clock at **1.31** and to core clock at **0.51**, and above the
+plateau a 14.4% crossbar increase buys 14.1% more throughput — very nearly one-to-one. **Throughput
+tracks the crossbar, not the core**, on a card whose DRAM clock never moved.
 
 **The table above shows five of the ten measured points**, chosen for spacing. The 0.725 is the
 lowest of all ten and falls at 1942 MHz, which the table does not display; an earlier version of
