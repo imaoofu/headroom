@@ -244,11 +244,30 @@ applying +60 to +450 MHz and measuring up to +10.6% FPS on an RTX 5090, August 2
 
 ⚠️ **The direction of both is the opposite of this study's.** Neither reports memory-bandwidth
 measurements in GB/s, an XBAR-to-core ratio measured across a swept range, the behaviour of the
-domain under a *flattened* V/F curve, or the DRAM clock during such an event. What §5.7.3 contributes
-is therefore not the domain's existence or its controllability, but the measured **consequence** of
-pinning its voltage: a bandwidth plateau on a real workload, with the DRAM clock shown to be
-constant throughout, and a workload-dependent sign that the same setting helps one kernel and harms
-another.
+domain under a *flattened* V/F curve, or the DRAM clock during such an event. Both were read in full
+rather than judged from a search snippet. A third source [12] covers the opposite regime again —
+*raised* voltage at a fixed high clock, with instability from overclocking XBAR rather than pinning
+it.
+
+**The general concept is older than any of them and is not claimed here.** A 2013 patent [13]
+describes decoupling an interconnect clock from a core clock so that a slow interconnect stalls a
+faster core. It is CPU/uncore, describes a deliberate closed-loop controller rather than an
+unintended side effect of a V/F curve, and never touches voltage-pinning or a GPU crossbar — but the
+idea that interconnect frequency can bottleneck a faster core is prior art and is cited here so a
+reviewer does not have to raise it.
+
+**What §5.7.3 contributes is therefore the measured consequence chain, not the domain's existence
+or its controllability**: pinning core voltage collapses the core-to-crossbar ratio and produces a
+bandwidth plateau on a real workload, with the DRAM clock shown constant throughout, and a
+workload-dependent sign where the same setting helps one kernel and harms another.
+
+🛑 **What this section does NOT establish, stated because the distinction is easy to lose.** The
+searches above did not find XBAR disclosed in NVIDIA's own documentation — but NVIDIA's Blackwell
+whitepaper **could not be text-extracted**, GTC session transcripts were reached only as search
+snippets, and the NVAPI SDK headers and full DCGM reference were not searched. The patent sweep used
+the Google Patents mirror only: Espacenet classification search and non-English filings
+(Samsung, Qualcomm, MediaTek GPU interconnect IP) were not searched at all. **The supportable
+statement is "not found in the sources we could read", never "not documented by the vendor."**
 
 🔑 **The narrower claim is the defensible one**, and it is stated narrowly here because the broader
 version did not survive a fifteen-minute search. §2.2 records the same lesson from a claim that had
@@ -1997,6 +2016,11 @@ SM-to-memory-controller interconnect. At stock its ratio to core clock holds bet
 0.976. Under the flattened curve that ratio collapses from 0.942 to 0.725: the interconnect
 decouples from the core and stops scaling.
 
+**The novelty claimed here is the chain, not the domain.** That XBAR is an independently clocked
+domain coupled to core voltage is established in the reverse-engineering literature [11] and is not
+claimed as a finding of this work; §2.5.1 sets out what is already known and what was searched for.
+What follows is the measured consequence of pinning that domain's voltage.
+
 ⛔ **THE MEMORY IS NOT SLOWER, AND THAT IS THE POINT.** The obvious reading of a falling ratio is
 that the memory overclock stopped working. It did not: **the DRAM runs at 16301 MHz throughout both
 configurations**, the +2500 offset applied and holding at every point in the table. What stops
@@ -2680,6 +2704,31 @@ claimed for it, which is a different state from an open measurement.
   Characterizing Variability in Large-Scale, Accelerator-Rich Systems.* SC '22. arXiv:2208.11035.
   *Figures confirmed: 8% average (max 22%) performance variation within identical SKUs; outliers up
   to 1.5× slower than median; >18,800 hours across five clusters.*
+
+- [10] *Modeling and Chasing the Energy-Efficiency Sweet Spots in Modern GPUs.* arXiv:2607.00819.
+  Full-range core-clock sweep below nominal on A40/A100/H100/H200 with an open dataset — the closest
+  published analogue to this study's method, and **datacenter-only**, which is why it sharpens the
+  consumer-availability gap of §2.7 rather than closing it. Its abstract states that efficiency
+  regimes are architecture-dependent, which corroborates §5.5.4's framing.
+- [11] *XBAR in NVIDIA Blackwell GPUs: A Physical Clock Domain Ignored by Public Tooling.*
+  `loong0x00.com/notes/blackwell-xbar-physical-clock-domain/`. GB202. Establishes XBARCLK's own PMU
+  object, clock source, 127-point V/F table and control path, and reports a 0.8999:1 GPC-to-XBAR
+  topology constraint. **Cited as the source that establishes the domain, which this work therefore
+  does not claim.** Reports no bandwidth figures and no swept ratio.
+- [12] Runtime XBAR clock and per-domain MSVDD control on NVIDIA Blackwell. LACT issue #1147,
+  `github.com/ilya-zlobintsev/LACT/issues/1147`, August 2026, RTX 5090. Applies +60 to +450 MHz XBAR
+  offsets for up to +10.6% FPS. ⚠️ **A throughput-limit figure appears in that thread with no
+  benchmark trace behind it and is deliberately not cited here or used as corroboration.**
+- [13] *Dynamically controlling interconnect frequency in a processor.* WO2013137862A1. Prior art for
+  the general concept that a slow interconnect stalls a faster core — **CPU/uncore, a deliberate
+  closed-loop controller, no voltage-pinning and no GPU crossbar.** Cited to pre-empt the objection,
+  not as a source for anything measured here.
+
+*⚠️ Provenance note for [10]–[13]: located and read by delegated search agents on 2026-09-06, not
+yet re-opened by the author. [11] and [13] were read in full and [10]'s abstract verified verbatim;
+treat the summaries above as second-hand until re-read. Two further leads — arXiv:2001.07104 and
+ACM 10.1145/3605573.3605600 — surfaced in the same sweep with figures that could NOT be confirmed
+from source, and are deliberately omitted rather than cited as either support or threat.*
 
 **⚠️ Located but not yet read in full** — open the primary source before submission:
 
