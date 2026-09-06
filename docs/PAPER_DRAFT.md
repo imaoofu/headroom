@@ -134,11 +134,32 @@ This paper makes three contributions:
    curve accurately enough to reduce measurement effort by 77%. Those are distinct results and are
    reported as such.
 
+🔑 **The contribution is an intersection, not an ingredient.** Every individual piece of this has
+been done somewhere. Sub-stock sweeping is established, on datacenter parts [10] and on consumer
+parts a decade ago. Voltage guardbands are measured [8]. Chip-to-chip variation is characterised [9].
+The crossbar is a documented clock domain [11] that others have deliberately tuned [12], and
+interconnect-stalls-core is patented prior art [13]. What has not been done is the **combination**:
+current-generation consumer silicon, swept below stock, with voltage telemetry, released as
+downloadable per-frequency data — plus one mechanism result that requires exactly that combination
+to be visible at all.
+
+That last clause is structural rather than fortunate. §5.7.3's plateau could not have been found by
+the datacenter studies (wrong hardware), by the crowdsourced undervolting databases (single operating
+points, no sweep), or by the overclocking work on the same domain (opposite direction, and no
+bandwidth measured). It needed all four legs at once, which is the argument for the dataset as much
+as for the finding.
+
 Two claims are explicitly **not** made. This work does not outperform vendor boost algorithms, which
 already incorporate per-chip factory binning and against which a small independent study has no
 plausible advantage. And it does not claim the discovery of guardband or of inter-chip variation;
 both are established [8, 9]. The contribution is open, current-generation, reproducible measurement
 of a relationship whose public data is either datacenter-only or swept over the wrong range.
+
+⚠️ **These claims have been searched against, not merely asserted.** Two delegated literature sweeps
+on 2026-09-06 — fourteen agents, roughly sixty queries — were pointed at falsifying rather than
+confirming them. Two claims narrowed as a result and are stated here in their narrowed form; none
+collapsed. §2.5.1 records what those sweeps could *not* reach, which is the part that bounds how
+strongly any absence here can be read.
 
 ---
 
