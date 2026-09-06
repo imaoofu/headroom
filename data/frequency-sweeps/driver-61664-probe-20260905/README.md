@@ -43,9 +43,33 @@ every window while consuming almost none of it. This is a second face of §5.4.3
 `utilization.gpu` decouples from real throughput; §5.4.3 saw it read *high* while throughput was
 low under load, and this is the idle-side version of the same defect.
 
-⚠️ **The guard is still right to exist.** It caught a 79% gaming session that cost 8.03 → 4.84
-TFLOP/s. It reads a proxy, and on this driver the proxy overstates — which argues for recording
-the threshold beside the reading, not for removing the guard.
+## ⛔ The elevated reading was TRANSIENT, and this README first said otherwise
+
+**Added 2026-09-05, after a reboot.** The same machine, same driver 616.64, same 240 Hz desktop and
+the same applications read **4% flat over ten samples** — back in line with the 3–4% of r1–r6. The
+16–21% was **post-install settling work**, not a property of 616.64.
+
+The first version of this file said the proxy "overstates on this driver". **That is withdrawn.**
+What survives is narrower: `utilization.gpu` is an occupancy proxy, it *can* read high without
+costing throughput, and the sweep above measured that directly on one occasion. Nothing here
+licenses a general statement about how this driver reports utilisation.
+
+🔑 **Operationally: if the baseline reads high, REBOOT AND RE-CHECK before raising any threshold.**
+That would have resolved this in five minutes instead of an afternoon.
+
+## The guard, and the bar it is not
+
+⚠️ **The guard is right to exist** — it caught a 79% gaming session costing 8.03 → 4.84 TFLOP/s.
+
+But it is the **backstop, not the bar**. CLAUDE.md's collection protocol requires a dataset-grade
+sweep to run with the baseline *"stable and under ~5%"*; the tool refuses above **10%**. Those are
+different numbers on purpose and **the protocol is the stricter one**, so raising the tool threshold
+never makes a run acceptable — it only moves the automated floor. The protocol says as much
+directly: *"A passing 10% guard is not enough; run 1 passed at 6% and still lost 10.3% at
+1545 MHz."*
+
+**This probe violated both** — 18.8% against a 5% protocol bar — which is exactly why it is filed as
+not dataset-grade rather than as a replicate.
 
 ## ⛔ What this does NOT show
 

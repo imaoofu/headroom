@@ -63,6 +63,15 @@ param(
     [int]$MemoryClockToleranceMhz = 400,
     # Passed straight through to the sweep. Default 10 leaves behaviour unchanged.
     #
+    # 🔑 THIS IS THE BACKSTOP, NOT THE BAR. CLAUDE.md's collection protocol requires a dataset-grade
+    # sweep to run with the baseline "stable and under ~5%"; this guard refuses above 10%. The two
+    # numbers are different on purpose and the protocol is the stricter one, so RAISING THIS DOES
+    # NOT MAKE A RUN ACCEPTABLE - it only moves the automated floor. A run at 15% would pass a
+    # threshold of 25 and still violate the protocol.
+    #
+    # The protocol says so in as many words: "A passing 10% guard is not enough; run 1 passed at 6%
+    # and still lost 10.3% at 1545 MHz."
+    #
     # ⚠️ RAISE THIS ONLY WITH A MEASUREMENT BEHIND IT. On 2026-09-05, driver 616.64 reported an
     # idle baseline of 16-21% on a machine whose Task Manager showed 0% and whose desktop had not
     # changed. `utilization.gpu` is TIME-OCCUPANCY - the fraction of sampling windows in which any
@@ -72,9 +81,22 @@ param(
     # contamination bites hardest, with achieved clocks identical to a tenth of a megahertz.
     # Contamination makes runs slower; that one was not contaminated.
     #
-    # The guard is still right to exist - it caught a 79% gaming session - but it reads a proxy,
-    # and on this driver the proxy overstates. schema 0.3.3 records max_baseline_allowed_pct
-    # alongside the reading so a raised threshold is visible in the data rather than only here.
+    # ⛔ AND THE READING WAS TRANSIENT, WHICH RETIRES THE ONLY REASON THIS PARAMETER WAS ADDED.
+    # After a reboot the same machine, same driver 616.64, same 240 Hz desktop, same applications,
+    # read 4% flat over ten samples - straight back in line with the 3-4% of r1-r6. The elevated
+    # figure was post-install settling work (shader cache and similar), NOT a property of the
+    # driver. An earlier version of this comment said "on this driver the proxy overstates"; that
+    # is withdrawn. What survives is narrower and still worth having: utilization.gpu is an
+    # occupancy proxy, it CAN read high without costing throughput, and the sweep above measured
+    # that directly on one occasion.
+    #
+    # So the default stays 10 and no run has needed it raised. The guard is right to exist - it
+    # caught a 79% gaming session costing 8.03 -> 4.84 TFLOP/s - and this parameter exists so a
+    # future override is explicit and recorded rather than done by editing the guard. schema 0.3.3
+    # stores max_baseline_allowed_pct beside the reading so a raised threshold is visible in the
+    # data, not only in a comment nobody reads.
+    #
+    # 🔑 IF THE BASELINE READS HIGH, REBOOT AND RE-CHECK BEFORE RAISING ANYTHING.
     [int]$MaxBaselineUtilization = 10,
     [switch]$SkipStockCheck
 )
