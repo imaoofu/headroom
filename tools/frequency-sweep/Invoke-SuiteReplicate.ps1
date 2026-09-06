@@ -61,6 +61,21 @@ param(
     # offset worth catching on this card, +2500. Collect.ps1 was fixed on 2026-09-05 and this copy
     # was not; two tolerances for one quantity is how they drift apart.
     [int]$MemoryClockToleranceMhz = 400,
+    # Passed straight through to the sweep. Default 10 leaves behaviour unchanged.
+    #
+    # ⚠️ RAISE THIS ONLY WITH A MEASUREMENT BEHIND IT. On 2026-09-05, driver 616.64 reported an
+    # idle baseline of 16-21% on a machine whose Task Manager showed 0% and whose desktop had not
+    # changed. `utilization.gpu` is TIME-OCCUPANCY - the fraction of sampling windows in which any
+    # kernel was resident - so a compositor drawing at 240 Hz makes the GPU non-idle almost always
+    # while consuming nearly no capacity. A 13-point gemm sweep run at 18.8% came out FASTER than
+    # its 616.56 counterpart at 12 of 13 points, +1.75% in the mid band where 5.4.4 says
+    # contamination bites hardest, with achieved clocks identical to a tenth of a megahertz.
+    # Contamination makes runs slower; that one was not contaminated.
+    #
+    # The guard is still right to exist - it caught a 79% gaming session - but it reads a proxy,
+    # and on this driver the proxy overstates. schema 0.3.3 records max_baseline_allowed_pct
+    # alongside the reading so a raised threshold is visible in the data rather than only here.
+    [int]$MaxBaselineUtilization = 10,
     [switch]$SkipStockCheck
 )
 
@@ -166,6 +181,7 @@ for ($i = 0; $i -lt $SUITE.Count; $i++) {
         -WorkloadCommand $command `
         -FrequencyCount 13 `
         -MinFrequencyPercent 40 `
+        -MaxBaselineUtilization $MaxBaselineUtilization `
         -AppliedSettings $AppliedSettings
 
     if ($LASTEXITCODE -ne 0) {
