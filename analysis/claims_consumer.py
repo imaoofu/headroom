@@ -2136,3 +2136,140 @@ def ranksUnmovedBySixthReplicate():
                              "claim pins is no longer true and must be rewritten, not renumbered")
     shift = max(abs(six[n] - five[n]) for n in six)
     return f"by at most {shift:.1f} points"
+
+
+# --------------------------------------------------------------------------------------
+# 5.4.1 - the fine-sweep vertex fits. Least-covered section in the paper at 2 of 122 numbers
+# pinned before 2026-09-05, and the blocker CLAUDE.md recorded for it had already been removed:
+# analyseWorkload() is importable, returns its summary, and the seed defaults to 20260816.
+#
+# 🔑 THE RNG IS CONSUMED SEQUENTIALLY AND THE ORDER IS PART OF THE ANSWER. One generator is
+# created and then passed to gemm's bootstrap, membw's, and the comparison, in that order. Fitting
+# a workload on its own, or in the other order, draws different resamples and moves the interval by
+# a megahertz or two. So this runs the WHOLE analysis once, in main()'s order, and caches it -
+# every claim below reads that one run rather than recomputing its own.
+#
+# ⛔ THE PER-PASS CONFIDENCE INTERVALS ARE DELIBERATELY NOT PINNED. The paper's table gives
+# 1446-1491, 1492-1536, 1552-1636 and 1582-1633 for the four passes. Re-running the bootstrap
+# reproduces the four VERTICES exactly (1467, 1513, 1598, 1611) but lands one megahertz off on one
+# bound of all four intervals, whichever way the generator is seeded. One megahertz is not a
+# disagreement worth correcting the paper over, and it is also not a match - so writing a claim
+# that rendered the paper's numbers would mean fitting the formula to the document, which is the
+# one thing a claim must never do. Recorded here instead: those four intervals were produced by an
+# invocation this code path does not reproduce, and their provenance is unknown.
+# --------------------------------------------------------------------------------------
+
+_fineSweepCache = {}
+
+
+def _fineSweepAnalysis():
+    """The full 5.4.1 analysis, run once in main()'s order, with stdout suppressed."""
+    if _fineSweepCache:
+        return _fineSweepCache
+
+    import collections
+    import contextlib
+    import glob
+    import io as _io
+    import os
+    import sys as _sys
+    import numpy as np
+
+    _sys.path.insert(0, str(_REPO_ROOT / "analysis"))
+    import analyze_fine_sweep as fine
+
+    grouped = collections.defaultdict(dict)
+    for path in sorted(glob.glob(str(_REPO_ROOT / "data" / "frequency-sweeps"
+                                     / "*fine-p*-rerun_sweep.csv"))):
+        workload, passNo = fine.parseName(os.path.basename(path).replace("_sweep.csv", ""))
+        grouped[workload][passNo] = fine.loadSweep(path)
+
+    rng = np.random.default_rng(20260816)
+    summaries = {}
+    with contextlib.redirect_stdout(_io.StringIO()):
+        for workload in ("gemm", "membw"):
+            summaries[workload] = fine.analyseWorkload(workload, grouped[workload], 5000, rng)
+        # compare() draws from the SAME generator, after both workloads. Its output is parsed
+        # rather than recomputed, so the number pinned is the one the tool actually prints.
+        captured = _io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            fine.compare(summaries["gemm"], summaries["membw"], rng)
+
+    perPass = {}
+    for workload in ("gemm", "membw"):
+        for passNo, rows in sorted(grouped[workload].items()):
+            pooled = fine.normalisePerPass({passNo: rows})
+            perPass[(workload, passNo)] = fine.fitVertex([p[0] for p in pooled],
+                                                         [p[1] for p in pooled], degree=3)
+
+    _fineSweepCache.update({"summaries": summaries, "perPass": perPass,
+                            "compareText": captured.getvalue(), "grouped": grouped})
+    return _fineSweepCache
+
+
+@claim("5.4.1-pooled-optima", PAPER, "5.4.1")
+def fineSweepPooledOptima():
+    """The section's headline: two workloads, two optima, and an interval excluding zero.
+
+    The difference and its interval are read from compare()'s own printed line rather than
+    recomputed, so this pins what the tool reports rather than a second implementation of it.
+    """
+    import re as _re
+    data = _fineSweepAnalysis()
+    line = [l for l in data["compareText"].splitlines() if "95% CI" in l][0].strip()
+    difference, interval = _re.match(r"(-?\d+) MHz\s+\(95% CI (-?\d+ to -?\d+) MHz\)", line).groups()
+    # U+2212 MINUS SIGN, not a hyphen: 5.4's tables set negatives that way and so does
+    # 5.5.4-rank-correlation. The tool prints ASCII, the document uses the typographic form, and
+    # an unconverted hyphen would never match - the same trap 5.5.4 hit on its first run.
+    toMinus = lambda s: s.replace("-", chr(0x2212))
+    return (f"`gemm` **{data['summaries']['gemm']['vertex']:.0f} MHz**, "
+            f"`membw` **{data['summaries']['membw']['vertex']:.0f} MHz**, difference "
+            f"**{toMinus(difference)} MHz (95% CI {toMinus(interval)})**")
+
+
+def _perPassVertexClaim(workload, passNo):
+    """One claim per table row. Four separate claims rather than one combined string, because the
+    rows are on separate lines of a markdown table and each must be pinned where it sits - a
+    combined render would depend on how the table happens to wrap."""
+
+    @claim(f"5.4.1-vertex-{workload}-p{passNo}", PAPER, "5.4.1")
+    def perPassVertex():
+        vertex = _fineSweepAnalysis()["perPass"][(workload, passNo)]
+        return f"`{workload}` pass {passNo} | {vertex:.0f} MHz"
+
+    return perPassVertex
+
+
+for _workload in ("gemm", "membw"):
+    for _passNo in (1, 2):
+        _perPassVertexClaim(_workload, _passNo)
+
+
+@claim("5.4.1-pass-agreement", PAPER, "5.4.1")
+def fineSweepPassAgreement():
+    """The spread between repeats of one measurement, which is what makes the 112 MHz meaningful."""
+    # ⚠️ DIFFERENCE THE ROUNDED VERTICES, NOT THE RAW FLOATS. The sentence refers to the table
+    # three lines above it, which shows whole megahertz, and 1611.4 - 1598.6 rounds to 12 while
+    # 1611 - 1598 is 13. The paper says 13, and it is right: it is describing the numbers a reader
+    # can see. Differencing the floats would have silently contradicted the table it points at.
+    v = {k: round(x) for k, x in _fineSweepAnalysis()["perPass"].items()}
+    gemmGap = abs(v[("gemm", 2)] - v[("gemm", 1)])
+    membwGap = abs(v[("membw", 2)] - v[("membw", 1)])
+    return f"agree within {gemmGap:.0f} MHz and the two `membw` fits within {membwGap:.0f} MHz"
+
+
+@claim("5.4.1-repeatability", PAPER, "5.4.1")
+def fineSweepRepeatability():
+    """Median and worst point-to-point disagreement between the two passes of each workload."""
+    import re as _re
+    data = _fineSweepAnalysis()
+    import analyze_fine_sweep as fine
+    import contextlib, io as _io
+    worst = {}
+    for workload in ("gemm", "membw"):
+        with contextlib.redirect_stdout(_io.StringIO()) as buf:
+            fine.reportRepeatability(workload, data["grouped"][workload])
+        worst[workload] = _re.search(r"worst ([\d.]+)%", buf.getvalue()).group(1)
+    return (f"median {data['summaries']['gemm']['noise']:.2f}% for `gemm` "
+            f"(worst {worst['gemm']}%) and {data['summaries']['membw']['noise']:.2f}% for `membw` "
+            f"(worst {worst['membw']}%)")

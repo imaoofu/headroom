@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **180 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **212 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **219 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
@@ -868,6 +868,14 @@ answers are known by construction, and not by inspection of the code.
 | `gemm` pass 2 | 1513 MHz | 1492–1536 |
 | `membw` pass 1 | 1598 MHz | 1552–1636 |
 | `membw` pass 2 | 1611 MHz | 1582–1633 |
+
+⚠️ **The four vertices are pinned by `analysis/audit_claims.py`; the four confidence intervals are
+not.** Re-running the bootstrap from the recorded seed reproduces every vertex exactly and lands one
+megahertz off on one bound of all four intervals, whichever way the generator is seeded. One
+megahertz is not a disagreement worth changing the numbers over, and it is also not a match — so no
+claim renders them, because a claim written to reproduce them would be a formula fitted to the
+document rather than to the data. Their provenance is an invocation this code path does not
+reproduce, and that is stated rather than papered over.
 
 The two `gemm` fits agree within 46 MHz and the two `membw` fits within 13 MHz, while the gap
 between workloads is ~112 MHz — so the effect remains larger than the disagreement between

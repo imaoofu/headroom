@@ -329,8 +329,8 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` | **212 of 212** |
-| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **184 of 184** |
+| claims green, 0 failures, with `data/raw/` | **219 of 219** |
+| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **191 of 191** |
 | sections with no claim at all | **18 numbered sections are still unaudited** |
 | §5.7 and its subsections carry | **84 claims between them and §5.5 carries 34** |
 
@@ -343,8 +343,13 @@ interesting part.
 
 🔑 **The totals hide how uneven the coverage is, and the unevenness is the useful number.** A high
 claim count is not a covered paper. Snapshot from `--coverage` on 2026-09-05, **not pinned** — these
-need a full audit pass to compute, so read them off the tool: **§5.4.1 at 2 of 122 numbers pinned,
-§5.5 at 15 of 332, §5.6 at 54 of 323.** §5.4.1 is the least-covered section in the paper.
+need a full audit pass to compute, so read them off the tool: **§5.5 at 15 of 352, §5.4 at 24 of 350,
+§5.6.1 at 20 of 147.** §5.5 is now the least-covered section in the paper.
+
+✅ **§5.4.1 was the worst at 2 of 122 and is now 32 of 122**, done 2026-09-05. The blocker this file
+recorded for it — `analyze_fine_sweep.py` needing its summary exposed — had already been removed
+some time before, so the section sat at the bottom of the coverage table for weeks with nothing
+actually stopping it. **Check whether a recorded blocker still exists before treating it as one.**
 
 ⚠️ **Two figures that stood here did not reproduce and have been replaced.** This paragraph said §5.7
 carried 80 claims and §5.5 carried 53; by registry attribution they are 84 and 30, and by
