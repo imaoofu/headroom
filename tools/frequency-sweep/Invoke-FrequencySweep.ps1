@@ -508,6 +508,8 @@ if (-not $elevated) {
 $encoderUtilPct = $null
 $decoderUtilPct = $null
 $freeVramMb = $null
+$baselineUtilPct = $null
+$maxBaselineAllowed = $MaxBaselineUtilization
 
 if ($WorkloadCommand -ne "") {
     Write-Host "[SWEEP] Checking the GPU is quiet before starting..."
@@ -602,6 +604,7 @@ if ($WorkloadCommand -ne "") {
         exit 4
     }
 
+    $baselineUtilPct = $baseline
     Write-Host ("[SWEEP] Baseline utilisation {0}% - clear to start." -f $baseline)
 
 } else {
@@ -900,6 +903,15 @@ $session = [ordered]@{
     encoder_util_pct     = $encoderUtilPct
     decoder_util_pct     = $decoderUtilPct
     video_engines_allowed = [bool]$AllowVideoEngines
+    # ADDED 0.3.3. The tool has ALWAYS measured this, used it to decide whether to refuse, printed
+    # it, and then thrown it away. That is the wrong field to discard: 5.4.4 makes competing desktop
+    # load the single most consequential contaminant in this project - up to 10.3% at 1545 MHz from
+    # a baseline that passed the guard at 6% - and every sweep before this version can only be
+    # checked against whatever the operator happened to type into -AppliedSettings. Across the six
+    # stock suite replicates, five recorded a figure in free text and one recorded none at all.
+    # Null means no workload ran, so the check was skipped - NOT that the GPU was idle.
+    baseline_util_pct    = $baselineUtilPct
+    max_baseline_allowed_pct = $maxBaselineAllowed
     # ADDED 0.3.2. Every sweep collected before this schema version has NO record of VRAM
     # occupancy, so those runs cannot be audited for a resident model retrospectively - the
     # information was never captured. That is the specific, unfixable cost of having shipped the
@@ -927,7 +939,7 @@ $session = [ordered]@{
     power_windowed_points = ($results.Count - $undilutedPoints.Count)
     supported_clock_count = $supported.Count
     samples_file         = Split-Path $csvPath -Leaf
-    schema_version       = "0.3.2"
+    schema_version       = "0.3.3"
 }
 # Out-File -Encoding utf8 writes a BOM in PowerShell 5.1, and json.load, jq and every other
 # standard parser choke on it with "Expecting value: line 1 column 1". This is a
