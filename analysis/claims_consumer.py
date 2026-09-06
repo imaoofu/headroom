@@ -1919,9 +1919,30 @@ def agreeWhereVoltagesAgree():
 
 @claim("header-sweep-count", PAPER)
 def headerSweepCount():
-    """The header's advertised sweep count, recomputed from the committed CSVs."""
-    sweeps = [p for p in (_REPO_ROOT / "data" / "frequency-sweeps").rglob("*_sweep.csv")
-              if not p.name.endswith("_sweep_voltage.csv")]
+    """The header's advertised sweep count, recomputed from the committed CSVs.
+
+    ⚠️ EXCLUDES DIRECTORIES WHOSE README DECLARES THEM NOT DATASET-GRADE, because the sentence
+    this renders says results REST ON these sweeps. On 2026-09-05 a deliberately-overridden
+    one-workload probe was committed to settle whether a driver's raised utilisation reading was
+    real contamination; its own README says do not pool it with the replicate suite. Counting it
+    would have made the paper claim its results rest on a run the repository explicitly says not
+    to use - a true count producing a false sentence.
+
+    The marker is read from the directory README rather than kept as a list here, so a new probe
+    is excluded by documenting it honestly rather than by remembering to edit this function. That
+    is the same reason every data directory carries a README in the first place.
+    """
+    root = _REPO_ROOT / "data" / "frequency-sweeps"
+    excluded = set()
+    for readme in root.rglob("README.md"):
+        # An HTML comment, not prose. The first attempt matched the string "NOT DATASET-GRADE"
+        # anywhere in the file and excluded 36 sweeps, because most of these READMEs discuss the
+        # CONCEPT - "what is dataset-grade and what is not" is the convention's own wording. A
+        # marker that collides with the text describing it is not a marker.
+        if "<!-- dataset-grade: no -->" in readme.read_text(encoding="utf-8", errors="replace"):
+            excluded.add(readme.parent)
+    sweeps = [p for p in root.rglob("*_sweep.csv")
+              if not p.name.endswith("_sweep_voltage.csv") and p.parent not in excluded]
     return f"**{len(sweeps)} committed"
 
 

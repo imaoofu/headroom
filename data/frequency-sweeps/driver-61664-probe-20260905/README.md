@@ -1,3 +1,5 @@
+<!-- dataset-grade: no -->
+
 # `driver-61664-probe-20260905` — one `gemm` sweep on driver 616.64
 
 ⚠️ **NOT DATASET-GRADE, and not a replicate.** One workload, one sweep, run to settle a
