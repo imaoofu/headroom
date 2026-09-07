@@ -23,7 +23,7 @@ alongside `free_vram_mb_at_start`.
 
 ---
 
-## 🔑 The result: no measurable driver effect
+## 🔑 The result: borderline and baseline-dependent, not a clean null
 
 Mean efficiency gain across the twelve workloads:
 
@@ -45,14 +45,36 @@ against the right yardstick.
 | band-mean throughput | **−0.78%** (within the 0.65% n=6 spread) |
 | band-mean power | **+0.16%** (within 1.03%) |
 
-⛔ **The honest statement: at n=1 on the new driver, no effect is demonstrated.** The direction is
-consistently slightly negative — 8 of 12 workloads lower, mean −1.90 points — but the evidence does
-not support calling it real. **Do not report "the new driver costs 1.9 points of efficiency."**
+⛔ **THE FIRST VERSION OF THIS SECTION READ THOSE TESTS AS A CLEAN NULL. THAT WAS WRONG, AND THE
+ERROR WAS USING AN UNDERPOWERED YARDSTICK.** Single-workload gains carry spreads of 3–10 points, so
+almost nothing clears them; the sign test discards magnitude entirely. The **replicate mean** is far
+more precise — **sd 0.485 points** across r2–r6 — and it is the right statistic for "did the headline
+number move".
 
-**Why the mean can fall outside while the workloads are null.** The mean of twelve correlated
-workloads has a smaller standard error than any single workload, so a small consistent bias surfaces
-in the mean before it surfaces anywhere else. That is a reason to look again, not a reason to
-conclude. The sign test is the direct check on whether the bias is real, and at p = 0.388 it is not.
+Against that yardstick r7 sits **3.93 sd below the r2–r6 mean**, outside the 95% prediction interval
+for a new replicate. But the verdict **flips on which baseline replicates are used**, which is the
+actual finding:
+
+| baseline | 95% prediction interval | r7 = 54.02 |
+|---|---|---|
+| r2–r6, the matched-driver group | [54.45, 57.40] | **outside** |
+| drop r5 (r4/r5 are one session) | [54.02, 57.92] | *inside* — exactly on the boundary |
+| drop r4 instead | [54.47, 57.64] | **outside** |
+| all six, incl. r1 on 610.88 | [54.73, 57.15] | **outside** |
+| between-session only (r2, r3, r6) | [53.75, 58.57] | *inside* |
+
+🔑 **This is neither a null nor an effect. It is underdetermined, and a result whose sign depends on
+an arbitrary choice of baseline is not a result.** Report it that way.
+
+**Do not report "the new driver costs 1.9 points of efficiency"** — one replicate cannot support it.
+**And do not report "the driver has no effect"** — the first version of this file did, and the
+replicate-mean test does not agree.
+
+**What settles it:** the observed difference is 1.90 points against a within-driver sd of 0.485, an
+effect size of 3.93. A **second** 616.64 replicate takes difference/SE to **4.69**, which is
+decisive in either direction. If it lands near 54 the driver effect is real and is the most
+interesting result since §5.7.3; if it lands near 56, r7 was an outlier session and the null stands
+properly. Both are publishable. The present state is the one that is not.
 
 ## Where the shift comes from, mechanically
 
@@ -66,7 +88,8 @@ second 616.64 replicate should target.
 
 ## Limits
 
-**n = 1 against n = 5**, an asymmetric comparison. r7 is also a separate session, so the project's
+**n = 1 against n = 5**, an asymmetric comparison, and the reason the verdict above is
+baseline-sensitive rather than merely uncertain. r7 is also a separate session, so the project's
 established **~1.47% cross-session `gemm` drift** applies on top. A second replicate on 616.64 is
 the cheapest measurement that would move this from "no effect demonstrated" toward either an effect
 or a firmer null.
