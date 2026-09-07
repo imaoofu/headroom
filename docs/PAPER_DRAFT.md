@@ -220,6 +220,20 @@ is therefore *established*, not novel. What this work adds is open, released mea
 frequency–efficiency relationship on current consumer parts, across a range that includes the
 optimum.
 
+**The guardband finding is not a 2015 NVIDIA artifact.** NAVIgator [14] repeats the direct
+measurement on three modern AMD RDNA3 consumer cards (RX 7600 XT, 7700 XT, 7800 XT), reaching the
+full −300 mV offset on some workloads and reporting **14% average power saving**, with stability
+judged by silent data corruption rather than by crash alone. It also finds real chip-to-chip
+variation — "the 7700 cards exhibit the largest voltage-margins followed by the 7600 and 7800-series
+cards" — on three chips, which is more per-architecture replication than this study has.
+
+⚠️ **It moves the OTHER lever, and that matters for reading it against §5.7.7.** Its abstract is
+explicit: *"Reducing the supply voltage, while maintaining a fixed frequency."* Voltage is varied,
+frequency is held. This work does the reverse — frequency is varied and voltage is observed, because
+voltage cannot be written through any documented API on the hardware here (§3.2). §5.7.7 measures
+those two levers to be substitutes rather than complements, so the two studies are attacking one
+inefficiency from opposite sides rather than measuring different things.
+
 ### 2.3 Prediction models for frequency scaling
 
 The closest prior work predicts optimal core *and* memory frequency configurations for an unseen
@@ -318,6 +332,14 @@ overclocked BIOS did identical work at matched frequency for **23.11%** more pow
 for is not the one a buyer running below peak would choose, and the gap between the two is large
 enough to measure on shipping hardware without modifying anything.
 
+**Combining overclocking and undervolting has been done, but only with fault recovery attached.**
+SAOU [16] deliberately runs *past* safe limits — above `f_safeMax` and below `V_safeMin` — and
+catches the resulting errors with an enhanced checkpoint-recovery scheme, reporting up to **22%
+energy reduction** on a 10K×10K cuBLAS matrix multiply on a GTX 980. It is a fault-tolerance result:
+it assumes corruption will occur and engineers around it. This work stays inside stable operation
+and treats a driver crash as a failure rather than an input (§3.5), so the two are not alternatives
+to one another.
+
 ### 2.7 Existing public datasets, and why they are insufficient
 
 | Dataset | Hardware | Core sweep (% of rated boost) | Suitable for efficiency-optimum questions? |
@@ -327,6 +349,24 @@ enough to measure on shipping hardware without modifying anything.
 | HKBU-HPML [7] | RTX 2070 Super | 95–118% | **No** — at/above stock only |
 
 This is a contribution in its own right and is reproducible via `analysis/compare_consumer.py`.
+
+🔑 **The same research group's own paper corroborates this, and states the asymmetry outright.**
+Tang et al. [15] sweep three GPUs and describe the two classes differently in one sentence: *"The
+default core frequency of P100 and V100 are also the highest… For GTX 2080Ti, scaling up the default
+1350 MHz to 2050 MHz has 17.4%–38.2% performance improvements."* Their **datacenter** parts are
+swept downward from a default that is already the ceiling, and their **consumer** part is scaled
+*up* from 1350 MHz. That is the swept-range split of the table above, stated by the authors of the
+consumer dataset in [7], on a different card, without reference to this argument.
+
+**What they find where they do sweep below default is the same shape this work reports.** Energy
+curves "generally show a valley trend and there exists a sweet spot", with the optimum conserving
+**8.7%–23.1%** of energy for DNN training and **19.6%–26.4%** for inference against default.
+
+⚠️ **Those percentages are not comparable to §5.1's 44.4% or §5.5's 55.9% without care**, and the
+difference is the baseline, not the effect. Tang et al. measure against each card's **default**
+clock; this work measures against the **highest achieved** clock. On a datacenter part with a
+conservative default those are far apart; on a consumer card boosting to near its ceiling they are
+close. Any comparison of the two numbers must say which baseline it means.
 
 ⚠️ **Both consumer rows are the same citation.** They are two cards from one released collection
 [7], not two independently produced datasets, and **no systematic survey established that they are
@@ -2751,8 +2791,32 @@ treat the summaries above as second-hand until re-read. Two further leads — ar
 ACM 10.1145/3605573.3605600 — surfaced in the same sweep with figures that could NOT be confirmed
 from source, and are deliberately omitted rather than cited as either support or threat.*
 
+- [14] Trakosa, Chatzopoulos, Papadimitriou, Gizopoulos. *NAVIgator: Exploring the Voltage Limits of
+  AMD NAVI GPUs for Energy Efficient Computing.* IOLTS 2025, University of Athens.
+  `ceid.upatras.gr/webpages/faculty/gpapad/assets/papers/iolts2025_trakosa.pdf`
+  *Read in full 2026-09-07. Confirmed from the text: RX 7600 XT / 7700 XT / 7800 XT; voltage reduced
+  at FIXED frequency; up to −300 mV; 14% average power saving; chip-to-chip variation across the
+  three models; datacenter extrapolation of 42 W per GPU.*
+- [15] Tang, Wang, Wang, Chu. *The Impact of GPU DVFS on the Energy and Performance of Deep
+  Learning.* e-Energy '19. arXiv:1905.11012. doi:10.1145/3307772.3328315.
+  *Read in full 2026-09-07. Confirmed: P100, V100 and GTX 2080 Ti; energy curves show a valley with
+  a sweet spot; 8.7–23.1% training and 19.6–26.4% inference energy conservation against DEFAULT
+  clock; and the sentence quoted in §2.7 in which the consumer card is scaled UP from 1350 MHz while
+  the datacenter defaults are already the ceiling.*
+- [16] Zamani, Tripathy, Chen (and Bhuyan). *SAOU: Safe Adaptive Overclocking and Undervolting for
+  Energy-Efficient GPU Computing.* ISLPED 2020. doi:10.1145/3370748.3406553.
+  `cs.ucr.edu/~hzama001/publications/SAOU.pdf`
+  *Read in full 2026-09-07. Confirmed: GTX 980, cuBLAS matrix multiply at 10K, MSI Afterburner used
+  for the offsets, checkpoint-recovery for faults, up to 22% energy reduction.*
+
 **⚠️ Located but not yet read in full** — open the primary source before submission:
 
+- [17] Mei, Wang, Chu. *A survey and measurement study of GPU DVFS on energy conservation.*
+  Digital Communications and Networks, 2017. `sciencedirect.com/science/article/pii/S2352864816300736`
+  ⛔ **NOT READ — ScienceDirect returned HTTP 403.** Surfaced repeatedly in searches as the standard
+  survey of this area and is very likely to contain a swept-range comparison bearing directly on
+  §2.7. Nothing in this paper cites it for a figure, and nothing should until someone opens it.
+  Try an institutional login or the authors' own copy.
 - [1] Guerreiro et al. *Predictable GPUs Frequency Scaling for Energy and Performance.* ICPP 2019.
   DOI 10.1145/3337821.3337833 — **the closest prior art; read this before finalising any novelty
   claim.**
