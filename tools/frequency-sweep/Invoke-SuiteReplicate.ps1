@@ -153,8 +153,18 @@ if (-not $SkipStockCheck) {
         -ArgumentList $workloadPy, "--workload", "membw", "--iterations", "1200", "--json" `
         -PassThru -WindowStyle Hidden
 
+    # 60 polls at 400 ms is 24 s, not the 10 s this loop used until 2026-09-06. That budget starts
+    # at PROCESS LAUNCH and must cover Python starting, torch importing, CUDA initialising and a
+    # multi-GB allocation before the GPU sees any work at all. At 10 s the probe returned 810 MHz -
+    # the IDLE memory floor - and refused r7 on a card that was perfectly stock, reporting it as a
+    # configuration mismatch.
+    #
+    # ⚠️ THIS IS THE SECOND TIME THIS EXACT DEFECT HAS BEEN FIXED. Collect.ps1 hit it on 2026-09-02
+    # and was widened to 24 s with this reasoning written beside it; this copy was left at 10 s, and
+    # when its TOLERANCE was corrected on 2026-09-05 the window was not. Two probes of the same
+    # quantity in two files is how one gets fixed and the other does not.
     $observed = 0
-    for ($i = 0; $i -lt 25; $i++) {
+    for ($i = 0; $i -lt 60; $i++) {
         Start-Sleep -Milliseconds 400
         $raw = & nvidia-smi --query-gpu=clocks.current.memory --format=csv,noheader,nounits 2>$null
         $value = 0
@@ -173,6 +183,19 @@ if (-not $SkipStockCheck) {
     }
     if ($delta -gt $MemoryClockToleranceMhz) {
         Say "" "Red"
+        # Distinguish "the card is wrong" from "the probe never saw load". A reading at or near
+        # the idle floor is the latter, and reporting it as the former sends the operator to check
+        # a card that was fine - which is exactly what happened to r7 on 2026-09-06.
+        if ($observed -lt 2000) {
+            Say ""
+            Say ("PROBE FAILED: memory clock never rose above {0} MHz, which is the IDLE floor." -f $observed) "Red"
+            Say "This is NOT a statement about the card's configuration - the benchmark almost" "Yellow"
+            Say "certainly had not reached the GPU before the probe window closed. A cold start" "Yellow"
+            Say "pays for Python, torch, CUDA init and a multi-GB allocation first." "Yellow"
+            Say "Re-run: the second attempt starts warm and normally succeeds. If it fails twice," "Yellow"
+            Say "run the workload by hand and watch nvidia-smi to see whether the GPU is loaded." "Yellow"
+            exit 3
+        }
         Say ("REFUSING: memory clock under load is {0} MHz, not {1} +/- {2}." -f `
              $observed, $ExpectedMemoryClockMhz, $MemoryClockToleranceMhz) "Red"
         Say "The card is not in the configuration this run claims. 13801 is stock on this card;" "Yellow"
