@@ -52,6 +52,9 @@
 param(
     [Parameter(Mandatory = $true)][string]$Replicate,
     [string]$AppliedSettings = "",
+    # Names the configuration in every output filename. Defaults to "stock" so existing usage is
+    # unchanged. Set it for anything else - the filename is the only part of a run most people read.
+    [string]$ConfigurationLabel = "stock",
     [int]$ExpectedMemoryClockMhz = 13801,
     # 400, not 150, and the difference is a measured false refusal rather than caution. The probe
     # takes the MAXIMUM memory clock seen while the workload runs, and this card briefly touches a
@@ -212,7 +215,15 @@ $failed = @()
 
 for ($i = 0; $i -lt $SUITE.Count; $i++) {
     $item = $SUITE[$i]
-    $label = "5060ti-stock-suite-{0}-{1}" -f $item.Workload, $Replicate
+    # ⚠️ "stock" WAS HARDCODED HERE UNTIL 2026-09-07, AND IT PRODUCED ELEVEN TUNED SWEEPS NAMED
+    # "5060ti-stock-suite-*". The applied_settings inside each file was correct and loud, but a
+    # filename is what a person skims, and a file that says "stock" while holding split-curve data
+    # is the 2026-08-30 mislabelling class exactly. The string was true when written - every suite
+    # run was stock - and became a lie the first time the script was pointed at a tuned card.
+    #
+    # -ConfigurationLabel defaults to "stock", so nothing about the r1-r8 naming changes; a tuned
+    # run must now say what it is to get a filename.
+    $label = "5060ti-{0}-suite-{1}-{2}" -f $ConfigurationLabel, $item.Workload, $Replicate
     $command = "python {0} --workload {1} --iterations {2} --json" -f `
                $workloadPy, $item.Workload, $item.Iterations
 
