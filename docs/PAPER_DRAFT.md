@@ -6,7 +6,7 @@
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
-> alone. No `[PENDING]` placeholders remain, but **19 numbered sections carry no claims at all** —
+> alone. No `[PENDING]` placeholders remain, but **20 numbered sections carry no claims at all** —
 > `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
 > too**, as of 2026-09-05.
 >
@@ -350,17 +350,57 @@ to one another.
 
 This is a contribution in its own right and is reproducible via `analysis/compare_consumer.py`.
 
-🔑 **The same research group's own paper corroborates this, and states the asymmetry outright.**
-Tang et al. [15] sweep three GPUs and describe the two classes differently in one sentence: *"The
-default core frequency of P100 and V100 are also the highest… For GTX 2080Ti, scaling up the default
-1350 MHz to 2050 MHz has 17.4%–38.2% performance improvements."* Their **datacenter** parts are
-swept downward from a default that is already the ceiling, and their **consumer** part is scaled
-*up* from 1350 MHz. That is the swept-range split of the table above, stated by the authors of the
-consumer dataset in [7], on a different card, without reference to this argument.
+### 2.7.1 The strongest counter-result found, and it is not dismissed
 
-**What they find where they do sweep below default is the same shape this work reports.** Energy
-curves "generally show a valley trend and there exists a sweet spot", with the optimum conserving
-**8.7%–23.1%** of energy for DNN training and **19.6%–26.4%** for inference against default.
+⛔ **Tang et al. [15] swept a consumer GPU below its default and report NO efficiency valley on it.**
+This is the most direct challenge to this work's thesis located in any search, it comes from the
+same group that released the consumer dataset critiqued above, and it is stated twice in their text:
+
+> "P100 and V100 generally perform a valley trend in the energy scaling curve with increasing core
+> frequency. They achieve a sweet spot of the best energy efficiency in the middle core frequency
+> level, **while GTX 2080Ti seems to benefit more from a higher core frequency.**"
+
+> "the performance of GTX 2080Ti **always has a faster-growing trend than the power consumption,
+> which results in that the best energy efficiency is mostly achieved at the highest core
+> frequency.**"
+
+Their RTX 2080 Ti range is **[950, 1150, 1350, 1550, 1750, 1950] MHz against a 1350 MHz default** —
+two points below default. **They did look below stock on consumer silicon and found no valley**, so
+this cannot be answered by the swept-range argument of §2.7. (The paper writes "GTX 2080Ti"
+throughout; the product is an RTX 2080 Ti.)
+
+**Four differences that may explain it, none of which is established here:**
+
+1. **Their workload is not GPU-bound end to end.** They say so: *"DNN training includes the data
+   loading step that is not operated on GPUs. Whether the data loading latency can be well hidden
+   significantly affects the GPU core utilization."* Wall-clock that the GPU does not control biases
+   the energy metric toward higher clocks — finish the GPU part sooner and a fixed overhead is
+   amortised. Every workload in §3.3 here is pure GPU with no host-side stage.
+2. **Their own explanation is a power-curve difference:** *"two Tesla GPUs have a dramatically
+   increasing power consumption when the core frequency surpasses 1,000 MHz, while GTX 2080Ti does
+   not have this issue."* If a card's power does not turn up sharply, no valley exists. Whether
+   Blackwell behaves like their Turing part or like their Teslas is an empirical question, and §5.5
+   answers it for this chip: it has a valley.
+3. **Their ceiling is 1950–2050 MHz.** The 5060 Ti here sustains ~2590 MHz at stock and is commanded
+   to 3090. The steep region of a power curve is near the top, and their sweep may simply not reach
+   it on that part.
+4. **Turing 2018 against Blackwell 2025**, seven years and four architectures apart.
+
+⚠️ **Read their Table III with the direction in mind.** The 2080 Ti's average energy conservation of
+**8.7%** (training) is achieved by moving *up* from default, not down — a different mechanism from
+the P100's 23.1% and V100's 14.5%, which come from moving *down* into a valley. Those three numbers
+are not the same measurement and should not be averaged or quoted as one range.
+
+🛑 **What this costs this paper.** It bounds the generality claim, not the measurement. §5.5's 55.9%
+is measured on this chip across twelve workloads and six replicates and is not in doubt. What [15]
+shows is that **a consumer GPU exists for which the valley was not found**, so "consumer GPUs have
+substantial headroom below stock" is a claim about the chips measured here, not about consumer
+silicon as a class. §5.5.4 already establishes that per-workload ordering does not transfer between
+two architectures; this is the stronger version of the same warning applied to the effect itself.
+
+**What they find on the parts that do show a valley matches this work's shape.** Energy curves
+"generally show a valley trend and there exists a sweet spot", the optimum conserving **23.1%
+(P100)** and **14.5% (V100)** on training and **26.4%** and **22.3%** on inference, against default.
 
 ⚠️ **Those percentages are not comparable to §5.1's 44.4% or §5.5's 55.9% without care**, and the
 difference is the baseline, not the effect. Tang et al. measure against each card's **default**
