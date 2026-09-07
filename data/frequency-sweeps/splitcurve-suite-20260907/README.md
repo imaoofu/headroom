@@ -1,4 +1,4 @@
-# `splitcurve-suite-20260907` — the twelve-workload suite on a tuned card, and half the headroom is gone
+# `splitcurve-suite-20260907` — the suite on a tuned card: undervolting and frequency reduction are substitutes
 
 **Twelve sweeps, 13 of 13 frequencies each, 49 minutes plus a top-up.** RTX 5060 Ti on the
 **split-region V/F curve with memory +2500**, driver 616.64, schema 0.3.3, 2026-09-07.
@@ -10,8 +10,7 @@ axis, and `softmax`, `layernorm`, `bgemm32`, `bgemm256` and `attention` had neve
 
 ---
 
-## 🔑 The result: tuning captures about half the headroom, so the headroom is measured against a
-## configuration a tuned user has already left
+## 🔑 The result: the two levers overlap almost entirely
 
 | | mean efficiency gain, optimum vs highest achieved clock |
 |---|---|
@@ -19,9 +18,42 @@ axis, and `softmax`, `layernorm`, `bgemm32`, `bgemm256` and `attention` had neve
 | **split curve** | **27.4%** |
 
 **The gap narrows by 28.5 points.** That is not a contradiction of §5.1 — it is what the thesis
-predicts. Headroom exists because the stock configuration is inefficient at high clock; apply a
-curve that fixes some of that and roughly half the recoverable efficiency has already been taken.
-What remains — 27.4% — is the headroom still available *on top of* a well-tuned card.
+predicts. Headroom exists because the stock configuration is inefficient at high clock, and a curve
+that fixes some of that has already taken part of what was recoverable.
+
+⛔ **AN EARLIER VERSION OF THIS SECTION SAID TUNING "CAPTURES ABOUT HALF THE HEADROOM". THAT READS
+AS ADDITIVE AND IT IS WRONG.** The two numbers are ratios against *different* baselines — each
+configuration's own top clock — so they cannot be subtracted. Put all three against ONE common
+baseline, the stock card at its top clock:
+
+| what you do | gain over stock at its top clock |
+|---|---|
+| drop frequency only, no tune | **+55.9%** |
+| tune only, stay at top clock | **+26.4%** |
+| **both** | **+60.9%** |
+
+**55.9 + 26.4 = 82.3, but together they deliver 60.9.** 🔑 **Frequency reduction and undervolting
+are substitutes, not complements.** They are two routes to the same thing — running the chip at
+lower voltage for the work being done. One moves *down* the stock V/F curve; the other moves the
+curve *down*. You cannot collect both.
+
+Three consequences, and the third is the useful one:
+
+1. **Frequency reduction alone reaches ~92% of everything achievable** (55.9 of 60.9). Tuning alone
+   reaches 43%.
+2. **Tuning on top of frequency reduction adds about 5 points** (55.9 → 60.9) — a small return for
+   hand-drawing a curve, accepting stability exposure, and having it silently cleared by any driver
+   reset.
+3. **If you do one thing, lock the clock.** It is scriptable through `nvidia-smi -lgc`, needs no
+   per-chip hand-tuning, survives driver updates, and carries none of the stability risk. That is a
+   stronger and better-supported recommendation than "undervolt your GPU".
+
+**This also connects the measurement to the guardband literature quantitatively.** Leng et al. [8]
+report a ~20% voltage guardband and up to 25% energy savings; a hand-drawn curve here captures
+**+26.4%**, in that range, and frequency reduction is shown reaching the same underlying
+inefficiency by a different route. It suggests the headroom is substantially guardband — which would
+also explain why 952 MHz was optimal for 24 of 33 V100 workloads in §5.1: voltage margin does not
+vary much by workload.
 
 ⚠️ **This bounds who the 55.9% figure is for.** It is the gap for a user running stock. A user who
 already undervolts has roughly half as much left. Any framing of the headline number should say
@@ -71,9 +103,42 @@ matched-frequency efficiency table above is the one that isolates the tune's eff
 
 **Configuration identified by clock signature, not assumed**: peak core 2977 MHz, peak memory
 16301 MHz under load before launch. This card's signatures are stock ~2593, memory-only ~2584,
-rebuilt repair ~2906, full tuned ~2947, **split ~2977**. The operator independently described the
-applied curve as "≈925 mV at 3 GHz", which is the split design. n=1 signature match — recorded as
-identification, not proof.
+rebuilt repair ~2906, full tuned ~2947, **split ~2977**. n=1 signature match.
+
+### ⛔ THE CURVE, READ OFF THE EDITOR AFTERWARDS — and it is not what the run declared
+
+The operator supplied a screenshot of the Afterburner V/F editor after collection. The applied curve
+has **four** regions, not two:
+
+| region | behaviour |
+|---|---|
+| 700 → ~845 mV | smooth stock-like slope, ~1430 → ~1980 MHz |
+| **~845–850 mV** | **near-vertical step, ~1980 → ~2750 MHz — roughly 770 MHz across about 5 mV** |
+| ~850 → 925 mV | shallower slope, ~2750 → ~3020 MHz |
+| 925 mV and above | **flat at ~3020 MHz** through to 1250 mV |
+
+`applied_settings` in every JSON from this run describes it as *"stock voltage slope restored below
+~925 mV, flattened region above it left intact"*. **The flat top from 925 mV is correct. The rest is
+not.** There is no simple stock slope below 925 mV — there is a ~770 MHz discontinuity at ~848 mV
+that the declaration omits entirely, and a distinct third region between the step and the flat.
+
+**The JSONs are deliberately NOT edited.** `applied_settings` records what was declared at run time,
+and rewriting it later would destroy the only honest record of what the operator believed while
+collecting. The correction lives here instead, and anything reading those files should read this
+section with them.
+
+⚠️ **What this costs.** The signature match to "split ~2977" stands as a clock measurement, but
+"this is the split curve" is now a weaker claim than it looked: the previously-recorded split design
+is described in `CLAUDE.md` as a two-region curve, and this is a four-region one that happens to
+share its flat top. **Whether it is the same curve as the 2026-08-23 split runs is unresolved**, and
+no claim in this file should be read as asserting they are identical.
+
+⚠️ **The step is a hazard worth naming.** A ~770 MHz jump across ~5 mV means any small voltage
+excursion near 848 mV moves the requested clock enormously. Nothing in this run misbehaved — zero
+crash events across 49 minutes — but that region is not a place to assume stability from one clean
+session, and the 875 mV crash of 2026-08-30 sits close to it.
+
+*Figures read off a screenshot by eye; treat every voltage as ±5 mV and every frequency as ±20 MHz.*
 
 **A read-only watcher ran for the whole session** (`run-watcher.csv`), polling the Windows System
 log for Event 4101 / `nvlddmkm` and checking the memory clock under load every 20 s. Result: **zero
