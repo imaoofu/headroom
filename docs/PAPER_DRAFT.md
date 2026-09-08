@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **204 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **222 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **225 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
@@ -1736,6 +1736,65 @@ floor gives 36.9% for 6.5%, close to the EDP figures here.
 the perf/W optimum. Compute-heavy ones (`bgemm128`, `bgemm256`, `bgemm1024`, `attention`, `conv`,
 `gemm`) put it at 2310–2354 MHz. Where time is cheap the two metrics agree; where the card is doing
 dense arithmetic, pricing delay pushes the answer most of the way back to stock.
+
+#### 5.5.7 The optimum sits at the knee of the vendor's voltage curve, on both chips
+
+The standard account of why an efficiency valley exists invokes **leakage** — a fixed per-second
+drain that eventually cancels the dynamic saving as a job stretches out. That mechanism is real and
+is not disputed here. But it is **borrowed rather than observed**: `nvidia-smi` reports one
+board-level power figure and cannot separate static from dynamic, so this study cannot see leakage
+at all, and saying it causes the left-hand fall-off would be asserting a mechanism the instrument
+cannot reach.
+
+What the instrument *can* reach, through HWiNFO, is the vendor's own voltage/frequency curve — and
+it supplies a sharper explanation.
+
+**Below some frequency the stock curve stops lowering voltage and holds a floor.** Write power as a
+fixed part plus a switching part:
+
+> P = P_fixed + C · V² · f
+
+Above the floor, V rises with f and the switching term grows superlinearly, so coming down the curve
+sheds power much faster than speed. **Below the floor V is constant**, so power falls only linearly
+while runtime grows as 1/f — the two roughly cancel — and P_fixed does not shrink at all while the
+job takes longer. Efficiency stops improving and then declines.
+
+**The prediction is therefore specific: the efficiency optimum should sit at the last frequency at
+which voltage is still falling.** It does, on both chips:
+
+| | median suite optimum | stock voltage floor holds to | floor value |
+|---|---|---|---|
+| RTX 5060 Ti (Blackwell GB206) | **1537 MHz** | **1552 MHz** | 0.720 V |
+| RTX 3070 Ti (Ampere GA104) | **1485 MHz** | **1500 MHz** | 0.812 V |
+
+On the 5060 Ti the optimum is **1537 MHz against a voltage floor holding to 1552 MHz**; on the
+3070 Ti, **1485 MHz against a floor holding to 1500 MHz**. Both optima fall within one grid step
+below the top of their own card's floor, at different absolute frequencies and different floor
+voltages.
+
+🔑 **Two chips is what makes this a mechanism rather than a coincidence.** One card landing near its
+own knee could be luck. Two architectures, two vendor curves, two different frequencies, each landing
+at its own knee, is a regularity — and it makes a falsifiable prediction for any further card:
+locate where its stock V/F curve stops flattening and the efficiency optimum should be there. That is
+the cheapest available test on the incoming RTX 3060 and RTX 2060 Super, and it requires no new
+method.
+
+**The 3070 Ti's optimum is not an artefact of its grid.** Its suite grid continues to 1590, 1695 and
+1771 MHz, so 1485 is an interior maximum rather than an edge, and **7 of the twelve** workloads pick
+it independently — a median produced by agreement rather than by a scatter with nothing at its
+centre.
+
+⚠️ **On both cards the voltage and the optimum come from different runs.** Voltage requires HWiNFO
+joined by timestamp and was collected on `gemm`/`membw` sweeps; the optima come from the
+twelve-workload suites. Same card and same stock configuration in each case, but not the same
+session, and this project measures ~1.47% cross-session drift on `gemm` alone. The alignment is
+striking and the mechanism is coherent, but **a careful version measures voltage during the suite
+itself**, and that is the next thing this section needs.
+
+⚠️ **This does not refute the leakage account, and is not offered as an alternative to it.** P_fixed
+contains leakage along with memory refresh, display output, VRM losses and fan power, none of which
+this instrument separates. What changes is which part of the explanation this work can claim to have
+*measured*: the voltage floor is in the data, the leakage decomposition is not.
 
 #### 5.5.5 Limits
 

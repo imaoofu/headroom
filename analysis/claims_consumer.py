@@ -2357,3 +2357,87 @@ def ed2pGain():
     """ED2P, which weights delay harder still."""
     return (f"**{_acrossStock(3, 'improvement'):.1f}%** better ED2P for "
             f"**{_acrossStock(3, 'cost'):.1f}%**")
+
+
+# --------------------------------------------------------------------------------------
+# 5.5.7 - the efficiency optimum sits at the knee of the stock V/F curve, on BOTH chips.
+#
+# WHAT THIS IS. The textbook account of why an efficiency valley exists invokes leakage: a fixed
+# per-second drain that eventually cancels the dynamic saving. That mechanism is real and is not
+# disputed here, but it is BORROWED - nvidia-smi reports one board-level power number and cannot
+# separate static from dynamic, so this study cannot observe leakage at all.
+#
+# What it CAN observe is the vendor's own voltage/frequency curve, through HWiNFO. Below some
+# frequency the curve stops lowering voltage and holds a floor. Below that floor, P = Pfixed + C*V^2*f
+# has a CONSTANT V, so power falls only linearly with frequency while runtime grows as 1/f - the two
+# cancel, Pfixed does not shrink at all, and efficiency stops improving. The prediction is therefore
+# that the efficiency optimum should sit at the LAST frequency at which voltage is still falling.
+#
+# 🔑 IT HOLDS ON BOTH CHIPS, at different absolute frequencies, which is what makes it a mechanism
+# rather than a coincidence. One card could be luck; two architectures with different vendor curves
+# landing on their own respective knees is a testable regularity - and it predicts where a third
+# card's optimum will be, which is the cheapest possible check on the 3060 and 2060 Super.
+#
+# ⚠️ THE VOLTAGE AND THE OPTIMUM COME FROM DIFFERENT RUNS ON BOTH CARDS. Voltage needs HWiNFO joined
+# by timestamp and was collected on gemm/membw sweeps; the optima come from the 12-workload suites.
+# Same card and same stock configuration in each case, but not the same session. The claims below
+# render both numbers so the gap between them is visible rather than asserted, and 5.5.7 says plainly
+# that a careful version measures voltage during the suite itself.
+# --------------------------------------------------------------------------------------
+
+_VOLT_5060_STOCK = "membw-anomaly-20260819/20260820-211630_5060ti-stock-volt-membw_sweep_voltage.csv"
+_VOLT_3070_SILENT = ("rtx3070ti-20260825/hwinfo-silent/"
+                     "20260827-172904_rtx3070ti-silent-gemm-fine_sweep_voltage.csv")
+
+
+def _voltageFloorTop(relativePath):
+    """Highest achieved clock at which stock voltage is still sitting at its floor.
+
+    The floor is the minimum voltage the row set contains; the answer is the last row still at it.
+    Reading the file directly rather than through sweep() because these are the HWiNFO-joined
+    extracts, which carry voltage and crossbar columns the ordinary sweep CSVs do not.
+    """
+    import csv
+    import io as _io
+    with _io.open(_REPO_ROOT / "data" / "frequency-sweeps" / relativePath,
+                  encoding="utf-8-sig", newline="") as handle:
+        rows = [(float(r["achieved"]), float(r["voltage"])) for r in csv.DictReader(handle)]
+    floor = min(v for _, v in rows)
+    return max(mhz for mhz, v in rows if v <= floor + 1e-9)
+
+
+def _medianSuiteOptimum(tables):
+    """Median per-workload efficiency optimum. Accepts one table or a tuple of replicates."""
+    tables = tables if isinstance(tables, tuple) else (tables,)
+    perWorkload = []
+    for name in tables[0]:
+        perWorkload.append(mean(max(sweep(t[name]).values(),
+                                    key=lambda row: row["efficiency"])["mhz"] for t in tables))
+    return median(perWorkload)
+
+
+@claim("5.5.7-knee-5060", PAPER, "5.5.7")
+def kneeFiveThousandSixty():
+    """5060 Ti: suite optimum against the top of its stock voltage floor."""
+    return (f"**{_medianSuiteOptimum(REPLICATES_5060[1:]):.0f} MHz** against a voltage floor holding "
+            f"to **{_voltageFloorTop(_VOLT_5060_STOCK):.0f} MHz**")
+
+
+@claim("5.5.7-knee-3070", PAPER, "5.5.7")
+def kneeThirtySeventy():
+    """3070 Ti: the same pair, on a different architecture and at a different absolute frequency."""
+    return (f"**{_medianSuiteOptimum(SUITE_3070_SWEEPS):.0f} MHz** against a floor holding to "
+            f"**{_voltageFloorTop(_VOLT_3070_SILENT):.0f} MHz**")
+
+
+@claim("5.5.7-knee-modal", PAPER, "5.5.7")
+def kneeModalAgreement():
+    """How many of the twelve 3070 Ti workloads independently pick the modal optimum.
+
+    Pinned because "the median is 1485" is much weaker than "seven workloads chose it separately" -
+    a median can be produced by a scatter with nothing at its centre.
+    """
+    optima = [max(sweep(p).values(), key=lambda row: row["efficiency"])["mhz"]
+              for p in SUITE_3070_SWEEPS.values()]
+    modal = median(optima)
+    return f"**{sum(1 for m in optima if abs(m - modal) < 5)} of the twelve**"
