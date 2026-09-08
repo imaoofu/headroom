@@ -391,6 +391,41 @@ throughout; the product is an RTX 2080 Ti.)
 the P100's 23.1% and V100's 14.5%, which come from moving *down* into a valley. Those three numbers
 are not the same measurement and should not be averaged or quoted as one range.
 
+### The counter-result is explained, using their own stated mechanism
+
+**Tang et al. name the reason themselves**, and it is testable against data already collected here:
+
+> "two Tesla GPUs have a dramatically increasing power consumption when the core frequency surpasses
+> 1,000 MHz, **while GTX 2080Ti does not have this issue.**"
+
+A valley requires power to turn up faster than performance somewhere in the swept range. If a card's
+power rises close to linearly, no valley exists and the optimum sits at the ceiling — which is what
+they report. So the question is not whether their result contradicts this one, but **which of their
+two power-curve shapes this card has.** Mean power across twelve workloads and five stock replicates,
+as the slope between adjacent grid points:
+
+| band (MHz) | dP/df, W per 100 MHz |
+|---|---|
+| 1237 → 1545 | **1.85 – 2.09** |
+| 1545 → 2010 | 4.50 – 6.30 |
+| 2167 → 2475 | 5.98 – 8.56 |
+| 2475 → 2625 | **9.96** |
+
+🔑 **The slope steepens 5.4-fold across the swept band.** The RTX 5060 Ti has the Tesla-shaped power
+curve, not the one Tang et al. describe for their RTX 2080 Ti. **Their explanation and this result
+are consistent**, and the disagreement is between two consumer cards seven years apart rather than
+between consumer and datacenter silicon as a class.
+
+*Slopes above 2625 MHz fall to ~0.1 W/100 MHz because the card clamps near 2590 MHz and the top
+three commanded points deliver the same achieved clock (§5.4.3); the meaningful range is
+1237–2625 MHz.*
+
+⚠️ **This does not make the valley universal, and it is not offered as proof that Tang et al. are
+wrong.** It replaces "two papers disagree" with a measurable property that predicts which outcome a
+given card will show — **does its power curve turn up inside the swept range?** That is checkable on
+any card by anyone, from data this method already collects, and it is a more useful statement than
+either paper's result alone.
+
 🛑 **What this costs this paper.** It bounds the generality claim, not the measurement. §5.5's 55.9%
 is measured on this chip across twelve workloads and six replicates and is not in doubt. What [15]
 shows is that **a consumer GPU exists for which the valley was not found**, so "consumer GPUs have
