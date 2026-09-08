@@ -2294,3 +2294,66 @@ def fineSweepRepeatability():
     return (f"median {data['summaries']['gemm']['noise']:.2f}% for `gemm` "
             f"(worst {worst['gemm']}%) and {data['summaries']['membw']['noise']:.2f}% for `membw` "
             f"(worst {worst['membw']}%)")
+
+
+# --------------------------------------------------------------------------------------
+# 5.5.6 - the same sweeps read through energy-delay product.
+#
+# WHY THIS EXISTS. Every headline in 5.5 is perf-per-watt, which weights a watt saved and a second
+# lost equally. EDP and ED2P weight delay once and twice more, and a reviewer is entitled to ask
+# what the answer looks like under them. The sweeps already contain everything needed: the workload
+# is FIXED-WORK, so time is proportional to 1/throughput and no new measurement is required.
+#
+#     energy  = power / throughput          EDP = power / throughput^2   ED2P = power / throughput^3
+#
+# 🔑 ENERGY AND PERF-PER-WATT ARE THE SAME STATISTIC HERE, not two agreeing ones. For fixed work
+# they are exact reciprocals, so their optima coincide by construction and the agreement is not
+# evidence of anything. Reporting them as though it were would be a mistake; the claims below pin
+# the coincidence so nobody later reads it as corroboration.
+# --------------------------------------------------------------------------------------
+
+
+def _metricOptimum(path, exponent):
+    """Frequency minimising power/throughput**exponent, and the improvement over the top clock.
+
+    exponent 1 = energy, 2 = EDP, 3 = ED2P. Lower is better for all three, so the improvement is
+    how much LOWER the metric sits at its optimum than at the highest achieved clock.
+    """
+    rows = list(sweep(path).values())
+    reference = max(rows, key=lambda row: row["mhz"])
+    best = min(rows, key=lambda row: row["power"] / (row["throughput"] ** exponent))
+    atBest = best["power"] / (best["throughput"] ** exponent)
+    atRef = reference["power"] / (reference["throughput"] ** exponent)
+    return {"mhz": best["mhz"],
+            "improvement": 100.0 * (atRef / atBest - 1.0),
+            "cost": 100.0 * (1.0 - best["throughput"] / reference["throughput"])}
+
+
+def _acrossStock(exponent, field):
+    return mean(mean(_metricOptimum(table[name], exponent)[field]
+                     for table in REPLICATES_5060[1:])
+                for name in SUITE_R1_SWEEPS)
+
+
+@claim("5.5.6-edp-optimum", PAPER, "5.5.6")
+def edpOptimum():
+    """Median EDP optimum against the perf-per-watt one. The gap is the point of the section."""
+    perWatt = median([mean(_metricOptimum(t[n], 1)["mhz"] for t in REPLICATES_5060[1:])
+                      for n in SUITE_R1_SWEEPS])
+    edp = median([mean(_metricOptimum(t[n], 2)["mhz"] for t in REPLICATES_5060[1:])
+                  for n in SUITE_R1_SWEEPS])
+    return f"median optimum moves from **{perWatt:.0f} MHz** to **{edp:.0f} MHz**"
+
+
+@claim("5.5.6-edp-gain", PAPER, "5.5.6")
+def edpGain():
+    """What EDP recovers at its own optimum, and what it costs."""
+    return (f"**{_acrossStock(2, 'improvement'):.1f}%** better EDP for a "
+            f"**{_acrossStock(2, 'cost'):.1f}%** performance cost")
+
+
+@claim("5.5.6-ed2p-gain", PAPER, "5.5.6")
+def ed2pGain():
+    """ED2P, which weights delay harder still."""
+    return (f"**{_acrossStock(3, 'improvement'):.1f}%** better ED2P for "
+            f"**{_acrossStock(3, 'cost'):.1f}%**")

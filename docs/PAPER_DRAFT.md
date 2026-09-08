@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **204 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **219 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **222 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
@@ -1700,6 +1700,42 @@ on 610.88, r2–r6 on 616.56). Silent BIOS only
 (610.88 against 616.56); §5.4.5 found the driver did not explain between-replicate variance on the
 5060 Ti, which is not the same as showing it cannot matter across cards. All twenty-four sweeps are
 stock. Full record in `../data/frequency-sweeps/rtx3070ti-suite-20260904/README.md`.
+
+#### 5.5.6 The same sweeps under energy-delay product
+
+Every figure above is throughput-per-watt, which values a watt saved and a second lost equally. That
+is the right metric for "how efficiently can this chip do work", and the wrong one for "should I
+actually run it here". **Energy-delay product** weights delay once more and **ED2P** twice more, and
+both are standard in this literature. The sweeps already contain what is needed — the workloads are
+fixed-work, so time is proportional to 1/throughput and no new measurement is required:
+
+> energy = power / throughput  ·  EDP = power / throughput²  ·  ED2P = power / throughput³
+
+⚠️ **Energy and throughput-per-watt are the same statistic here, not two that agree.** For fixed work
+they are exact reciprocals, so their optima coincide by construction. This is stated because the
+coincidence is easy to present as corroboration, and it is not.
+
+| metric | median optimum | improvement at its own optimum | performance cost |
+|---|---|---|---|
+| energy = perf/W | 1537 MHz | 55.9% | 25.4% |
+| **EDP** | **2078 MHz** | **29.9%** | **8.3%** |
+| ED2P | 2187 MHz | 22.4% | 3.0% |
+
+**The median optimum moves from 1537 MHz to 2078 MHz** — 541 MHz higher — once delay is priced at
+all. **EDP gives 29.9% better EDP for a 8.3% performance cost**; ED2P gives **22.4% better ED2P for
+3.0%**.
+
+🔑 **This is the honest counterweight to the headline.** §5.5's 55.9% is real and is what
+perf-per-watt says. Under a metric that prices time, roughly half the gain remains and the optimum
+sits far closer to stock. Anyone deciding where to actually run a card should be reading the EDP row,
+and §5.6.1's constrained analysis reaches the same place from the other direction — a 10% performance
+floor gives 36.9% for 6.5%, close to the EDP figures here.
+
+**The workloads split, and the split is structural.** Bandwidth-bound and light kernels (`copy`,
+`reduce`, `softmax`, `layernorm`, `bgemm32`, `bgemm64`) put their EDP optimum at 1537–1971 MHz, near
+the perf/W optimum. Compute-heavy ones (`bgemm128`, `bgemm256`, `bgemm1024`, `attention`, `conv`,
+`gemm`) put it at 2310–2354 MHz. Where time is cheap the two metrics agree; where the card is doing
+dense arithmetic, pricing delay pushes the answer most of the way back to stock.
 
 #### 5.5.5 Limits
 
