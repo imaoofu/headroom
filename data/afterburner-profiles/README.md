@@ -21,7 +21,27 @@ A slot number is not an identity. This file is what makes the identity recoverab
 
 ## Contents
 
-`5060ti-profiles-20260908.json` — all five slots plus `[Startup]`, captured before any edit:
+Two snapshots so far. **The Profile 4 edit they bracket is exactly the event this directory exists
+for**, and it happened the same day the directory was created.
+
+| file | sha256 (head) | Profile 4 plateau |
+|---|---|---|
+| `5060ti-profiles-20260908.json` | `7f98d342` | **3015 MHz** |
+| `5060ti-profiles-20260908b-p4-plateau-3030.json` | `e5cbe0ec` | **3030 MHz** |
+
+🔑 **`abba-20260908`'s `a1` and `a2` legs measured the 3015 version.** Any later run on "Profile 4"
+measures the 3030 one. Same slot, two configurations, and only the date tells them apart.
+
+**What changed:** 49 of 127 curve points, all at **940 mV and above**, raising the plateau from 3015
+to 3030 to match Profile 5. The low-voltage region is byte-identical — 1912 MHz at 700 mV, 2317 at
+800, 2752 at 875, 2932 at 925 — and power limit (111) and memory offset (+2500) are unchanged.
+
+**Why the operator made it:** to match Profile 5's plateau, so that the two profiles differ only in
+the low/mid-band voltage shape. That isolates the variable behind the +465 MHz optimum shift instead
+of leaving the top clock confounded with it. Note one residual difference — P4 reaches its plateau at
+940 mV where P5 reaches it at 925.
+
+Each snapshot holds, for all five slots plus `[Startup]`:
 
 - `power_limit_pct`, `core_clk_boost_khz`, `mem_clk_boost_khz` as stored
 - `vf_curve_hex` — the raw blob, so a profile can be restored exactly

@@ -12,6 +12,12 @@ RTX 5060 Ti, driver 616.64, enforced 200 W, schema 0.3.3. Collected 2026-09-08.
 | 3 | `b2` | split curve | Profile 5 |
 | 4 | `a2` | full tune | Profile 4 |
 
+⚠️ **Profile 4 WAS EDITED LATER THE SAME DAY, after this run.** `a1` and `a2` measured it with a
+**3015 MHz plateau**; the operator then raised the plateau to 3030 to match Profile 5, changing 49 of
+127 curve points at 940 mV and above and leaving the low-voltage region identical. Any future run
+labelled "Profile 4" is therefore a *different configuration* from these two legs. Both versions are
+snapshotted in `data/afterburner-profiles/`, distinguished by date and by sha256 of the cfg.
+
 **ABBA, not ABAB.** A sits at positions 1 and 4, B at 2 and 3, so both configurations are centred
 on the same instant in the session and linear drift cancels exactly. Every other cross-configuration
 comparison in this repository is day-1 versus day-2, carrying the ~1.47% cross-session drift
