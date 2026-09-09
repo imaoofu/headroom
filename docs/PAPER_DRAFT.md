@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **314 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **225 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **231 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share

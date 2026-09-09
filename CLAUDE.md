@@ -360,8 +360,8 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` | **225 of 225** |
-| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **197 of 197** |
+| claims green, 0 failures, with `data/raw/` | **231 of 231** |
+| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **203 of 203** |
 | sections with no claim at all | **20 numbered sections are still unaudited** |
 | §5.7 and its subsections carry | **84 claims between them and §5.5 carries 40** |
 
@@ -829,11 +829,17 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   🔑 **CI does NOT see `data/raw/`, and that changes the claim count.** The dataset is gitignored
   and fetched, so `claims_reference.py` registers its 24 claims only in the "V100 reference
   claims" job. Both legs are green, and **their two totals are in the canonical coverage block
-  above rather than here.** The gap between them is 25 rather than 24 because `header-pinned-count`
-  is guarded on the same condition and so registers only alongside the reference set - and
-  `claims_repo.py` splits the same way, registering the with-reference total in one leg and the
-  without-reference total in the other, because `len(CLAIMS)` can only honestly report the
-  environment it is running in. Any claim whose value depends on the SIZE of the registry is therefore
+  above rather than here.** ⛔ **The gap between them is 28, and this paragraph said 25 until
+  2026-09-09 - in the same block that claims its numbers cannot go stale.** The reasoning it gave
+  was right and its inventory was short by three. **Five** non-reference claims are guarded on the
+  same condition and register only alongside the reference set, not two: `header-pinned-count`,
+  `header-unaudited-count`, `claudemd-claims-with-reference`, `claudemd-section-families` and
+  `claudemd-unaudited-sections`. So 24 + 5 = 29 register only when `data/raw/` is present, exactly
+  one (`claudemd-claims-without-reference`) registers only when it is absent, and 29 - 1 = 28.
+  `claims_repo.py` splits this way because `len(CLAIMS)` can only honestly report the environment it
+  is running in. **Verify this by diffing the two registries, not by reasoning about it** - the
+  arithmetic here was internally consistent and still wrong, because the premise was an
+  under-count nobody re-derived. Any claim whose value depends on the SIZE of the registry is therefore
   environment-dependent; `header-pinned-count` is guarded for exactly that reason, after an
   unguarded version broke both checks legs on 2026-09-02. A local run can be made to match CI by
   temporarily moving `data/raw` aside, which is how that break was reproduced before it was fixed.

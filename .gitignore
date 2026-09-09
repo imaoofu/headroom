@@ -35,7 +35,12 @@ probe_telemetry.csv
 # on the logging machine - almost all of it irrelevant here, and more host detail than belongs
 # in a public repo. Distilled per-run extracts (timestamp, GPU core voltage, clock, power) are
 # committed instead, beside the sweep they belong to.
-data/HWiNFO-Data/
+data/HWiNFO-Data/*
+# ...but NOT the directory's own README. Git cannot re-include a file whose parent
+# DIRECTORY is excluded, so this must stay as `dir/*` plus a negation rather than `dir/`.
+# Written as `data/HWiNFO-Data/` until 2026-09-09, which silently ignored the README that
+# CLAUDE.md requires every data directory to carry.
+!data/HWiNFO-Data/README.md
 
 # Mutation-testing artifacts: regenerated on demand, and the results file is a
 # measurement of a particular run rather than something to carry forward.
