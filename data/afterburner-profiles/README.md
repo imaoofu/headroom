@@ -32,9 +32,33 @@ for**, and it happened the same day the directory was created.
 🔑 **`abba-20260908`'s `a1` and `a2` legs measured the 3015 version.** Any later run on "Profile 4"
 measures the 3030 one. Same slot, two configurations, and only the date tells them apart.
 
-**What changed:** 49 of 127 curve points, all at **940 mV and above**, raising the plateau from 3015
-to 3030 to match Profile 5. The low-voltage region is byte-identical — 1912 MHz at 700 mV, 2317 at
-800, 2752 at 875, 2932 at 925 — and power limit (111) and memory offset (+2500) are unchanged.
+**What changed in Profile 4:** 49 of 127 curve points, all at **940 mV and above**, raising the
+plateau from 3015 to 3030 to match Profile 5. The low-voltage region is byte-identical — 1912 MHz at
+700 mV, 2317 at 800, 2752 at 875, 2932 at 925 — and power limit (111) and memory offset (+2500) are
+unchanged.
+
+⛔ **AND PROFILE 3 CHANGED IN THE SAME EDIT, WHICH THIS FILE MISSED UNTIL 2026-09-09.** The paragraph
+above was the entire description of the diff and it covered one slot of two. **Profile 3 was wiped to
+stock** in the same sitting: its curve replaced with 122 all-zero-offset points, its memory offset
+taken from **+2500 to +0**, leaving PL 100 — the card's 180 W factory default.
+
+**The snapshot itself is complete and always was.** `…20260908b…` holds the stock Profile 3 verbatim,
+which is exactly what snapshotting the whole store is for. What failed was the *description*: the
+diff was run against the slot the edit was expected in, and the answer was written up as though that
+were the whole answer. **Diff every slot. An edit you were told about is not evidence that it was the
+only edit.** The cost was real — `docs/AFTERBURNER-PROFILES.md` carried "None of these is stock" and
+"there is no stock profile to apply" for a day after a stock profile existed, and a run design was
+built on that constraint.
+
+🔑 **Consequence: stock is applicable programmatically for the first time.** Every ABBA and
+cross-configuration comparison in this repository has been tuned-versus-tuned because stock could not
+be reached from the command line. It can now. ⚠️ Verified **on disk only** — see the application
+check flagged in `docs/AFTERBURNER-PROFILES.md`.
+
+**Re-decoded 2026-09-09 10:47:** the live store is sha256 `e5cbe0ec`, **byte-identical to the
+`…20260908b…` snapshot**, so that snapshot is current and no new one is due. The file's mtime
+(09-09 08:23:35) is Afterburner rewriting it unchanged at launch, not an edit — **compare the hash,
+never the timestamp.**
 
 **Why the operator made it:** to match Profile 5's plateau, so that the two profiles differ only in
 the low/mid-band voltage shape. That isolates the variable behind the +465 MHz optimum shift instead
