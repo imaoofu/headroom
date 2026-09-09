@@ -78,6 +78,48 @@ correlation.
 
 ---
 
+## The raw log was audited, not just the join's output
+
+The join returns one median per bin and discards the rest — 123 of 203 samples on P5, 87 of 165 on
+P4. Those medians were initially taken at face value. Going back to the raw HWiNFO log checks three
+things the median hides.
+
+**Voltage resolution is 5 mV, so 0.720 is a reported value and not a rounding artifact.** The log
+contains 29 distinct voltages including 0.715, 0.720, 0.725 and 0.730. Adjacent-value gaps run
+0.005–0.045 V. If the sensor quantised coarsely, "0.720 across five points" could have been several
+different voltages collapsing together. It is not.
+
+**On the floor, the samples are not near 0.720 — they are all exactly 0.720.**
+
+| | floor points | samples | distinct values observed |
+|---|---|---|---|
+| P4 | 1236 → 2002 MHz (6 points) | **44** | `[0.720]` |
+| P5 | 1236 → 1537 MHz (3 points) | **26** | `[0.720]` |
+
+Zero within-bin variance across 70 loaded samples. Per-point counts are low (4–10), but on the floor
+that does not weaken anything — there is no tighter measurement than every sample being identical.
+The step off the floor is equally sharp: P5's next point reads `[0.755]` on all six of its samples.
+Above the floor there is modest spread, 5–10 mV, e.g. `[0.785, 0.790, 0.795]` at 2310 MHz on P4.
+
+**The extracts reproduce.** HWiNFO kept logging after each sweep — P4's log grew from 165 samples at
+join time to 453 — and re-running the join on the larger log reproduces both committed extracts
+byte-identically. The 30 W filter removes the added idle samples exactly as intended.
+
+### ⚠️ "Voltage floor" is imprecise, and the log says what it should be
+
+**0.720 V is a LOAD floor, not the card's minimum voltage.**
+
+| samples | minimum voltage |
+|---|---|
+| loaded (>30 W) | **0.720 V** |
+| idle (<30 W) | **0.650 V** |
+
+The card demonstrably goes to 0.650 V — it does so at idle in this very log. What 0.720 V represents
+is the lowest voltage the vendor will run *active* SMs at. Statements of the form "the card cannot go
+below 0.720 V" are wrong; "the card will not run loaded below 0.720 V" is what the data supports.
+
+---
+
 ## Why the voltage had to be observed rather than inferred
 
 Every earlier statement of this result related a **decoded intended** curve to a **measured**
