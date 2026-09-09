@@ -142,10 +142,41 @@ attribute nothing to it. Read the driver off a sweep JSON, never off this file.
 | `nvidia-smi -svfd` | ❌ Rubin+ only. Not Blackwell. |
 | Per-point V/F curve reshaping | ⚠️ Undocumented NVAPI only (`ClockClientClkVfPointsSetControl`, `0x0733E009`). Out of scope — breaks on driver updates. |
 
-**Bonus, decoded but unused:** Afterburner stores the curve at
-`Profiles\VEN_10DE&DEV_2D04&…cfg` as hex — 3224 bytes, header, then 127 points × 3 float32.
-His Profile 4 shows `+478` mid-band and `−2500` at top. `MSIAfterburner.exe -profile4 -q` applies
-and exits. Scriptable curve control **as a stretch goal only.**
+**Decoded, and NO LONGER a stretch goal — this paragraph said "decoded but unused" and
+"scriptable curve control as a stretch goal only" until 2026-09-09.** Afterburner stores the curve at
+`Profiles\VEN_10DE&DEV_2D04&…cfg` as hex — 3224 bytes, header, then 127 points × 3 float32 as
+**(offset, voltage_mV, base_clock_MHz)**, applied = base + offset. `MSIAfterburner.exe -profileN -q`
+applies and exits. **It has now driven three multi-hour runs with the operator away from the
+machine** (`abba-20260908`, `voltage-curve-20260908`, `stock-bracket-20260909`). Full decode and the
+five-profile table: `docs/AFTERBURNER-PROFILES.md`; verbatim snapshots: `data/afterburner-profiles/`.
+
+⚠️ A naive stride-3 read mispairs at the zero-offset boundary and yields an impossible ~6000 MHz
+point near 937 mV. **Filter to ≤3090 MHz on read.**
+
+🔑 **Profile 3 holds STOCK as of 2026-09-08, so stock is applicable from the command line.** Verified
+two ways on 2026-09-09 — on disk (122 curve points, **every per-point offset zero**, memory +0, core
++0, PL 100 = the 180 W factory default) and in application (power limit 200 → 180 W, memory under
+load 13801 not 16301, peak core 2640 against Profile 4's ~2976). **This removes the constraint that
+forced every cross-configuration comparison in this repository to be tuned-versus-tuned**, and
+`data/frequency-sweeps/stock-bracket-20260909/` is the first same-session stock-versus-tuned result.
+⚠️ **Do not assume a slot's contents.** P3 carried a +2500 memory offset and an aggressive curve the
+day before; a slot number is not an identity, which is what `data/afterburner-profiles/` exists for.
+
+🔑 **A second, independent knob: the NVML P0 clock offset reads back 0 MHz while a profile is live.**
+So Afterburner drives its curve through NVAPI, and `nvmlDeviceSetClockOffsets` **stacks on top of a
+profile** rather than being the mechanism a profile uses. A global offset slides the whole V/F curve
+and therefore slides *the frequency at which the 0.720 V load floor ends* — the one quantity
+`voltage-curve-20260908` records as set by the profile rather than by the experimenter. Negative
+offsets are the safe direction: lower clock at every voltage, so a given clock takes **more** voltage.
+⛔ **The write has NEVER been exercised on this card.** Reading back works; a validation pair — power
+at a locked *f* with a −300 offset should match power at *f*+300 without one — was designed
+2026-09-09 and not run. **Claim nothing about its effect until it has been.**
+
+⚠️ **`CoreClkBoost` reads −502 MHz on P1/P2/P4/P5 and +0 on stock, and nobody knows what it means.**
+It is treated as *not* additively applied, on two pieces of evidence: NVML reports a 0 MHz offset with
+those profiles live, and optimum predictions computed from the curve **without** subtracting 502 hit
+1537 and 2002 exactly, which a missing 502 MHz shift would have destroyed. That is an empirical
+inference, not a decoded fact.
 
 ### 🔑 The `membw` plateau: mechanism measured, repair built (2026-08-19 → 08-21)
 

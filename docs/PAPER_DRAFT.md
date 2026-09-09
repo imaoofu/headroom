@@ -1,6 +1,6 @@
 # Headroom — paper draft
 
-> **Status: complete in structure, still a draft in places.** Results rest on **278 committed
+> **Status: complete in structure, still a draft in places.** Results rest on **314 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
 > **225 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count

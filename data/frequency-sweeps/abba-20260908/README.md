@@ -114,7 +114,23 @@ Same configuration, same session, ~2.5 hours apart:
 | full tune `a1` → `a2` | **+0.04 points** |
 | split `b1` → `b2` | **−1.85 points** |
 
-**The full tune reproduces to 0.04 points. The split curve does not, and the reason is measurable.**
+⛔ **"The full tune reproduces to 0.04 points" is RETRACTED, 2026-09-09.** A second bracket on the
+same configuration — `stock-bracket-20260909`, legs `p4t1` and `p4t2`, ~2 h apart — drifted
+**−1.25 points**. At n=2 brackets the full tune's session reproducibility is **±1.3 points**, and the
++0.04 below was luck, not precision. **Quote ±1.3, not 0.04.**
+
+This is the project's recurring failure arriving again: an n=1 methods finding that did not survive a
+second sample, exactly like the "mean of top 3" metric fix in the retraction further down this file.
+⚠️ Note the asymmetry it creates with the sentence that follows — **the split curve's −1.85 is no
+longer distinguishable from the full tune's own spread**, so the contrast drawn below between a
+reproducible configuration and an unreproducible one is not supported. What survives is the
+*explanation* offered for it, which was measured independently: the split legs' top point drew 179.7
+against 169.3 W at essentially identical clocks, and a metric dividing by efficiency at the top clock
+inherits that. A tuned card near its ceiling is noisy to measure. Which of the two tuned
+configurations is noisier is not established.
+
+**The original text, kept because the reasoning that followed it still stands:** *The full tune
+reproduces to 0.04 points. The split curve does not, and the reason is measurable.*
 At the top of the grid, at essentially identical achieved clocks (2977.0 vs 2978.8 MHz), the two
 split legs drew **179.7 W and 169.3 W — 10.4 W apart, 6.1%**. The efficiency gain divides by
 efficiency at that point, so a 6% power swing there moves the ratio by exactly the observed amount.
