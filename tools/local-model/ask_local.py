@@ -7,8 +7,12 @@ BACKENDS
     on the 5060 Ti, 40.0 tok/s with --spec-type draft-mtp against 28.9 without, n=5 each,
     spreads 3.1% and 0.9%, byte-identical greedy output. Ollama's CUDA runner has no
     speculative path at all - its MTP code lives in the MLX runner and runs only on Apple
-    Silicon. Ollama stays reachable via --backend ollama because qwen3-coder lives there
-    and has no llama.cpp counterpart on this machine.
+    Silicon. Ollama stays reachable via --backend ollama because the Headroom-prompted model
+    is registered there too, which is a convenience rather than a capability llama.cpp lacks.
+
+    That rationale used to read "because qwen3-coder lives there and has no llama.cpp
+    counterpart on this machine." Both qwen3-coder models were deleted on 2026-09-08, so the
+    Ollama backend no longer reaches anything llama.cpp cannot.
 
 WHY THIS EXISTS
     Delegating a mechanical task to a local model is fiddly in four specific ways, and all four
@@ -55,7 +59,7 @@ WHAT THIS DELIBERATELY DOES NOT DO
 
 USAGE
     python tools/local-model/ask_local.py spec.md --context analysis/claims_consumer.py
-    python tools/local-model/ask_local.py spec.md --backend ollama --model coder --out draft.py
+    python tools/local-model/ask_local.py spec.md --backend ollama --model qwen38 --out draft.py
     python tools/local-model/ask_local.py spec.md --think --num-predict 4000
 
     llama-server must already be running; see SERVER_COMMAND below.
@@ -111,10 +115,14 @@ SERVER_COMMAND = (
 
 # Short names for the models configured on this machine, so a caller does not have to remember
 # which tag carries the Headroom system prompt and which is the stock upstream one.
+#
+# "coder" -> qwen3-coder-headroom and "coder-stock" -> qwen3-coder:30b were removed 2026-09-08
+# when both models were deleted to reclaim 17 GB. A short name pointing at a model that is not
+# installed fails inside Ollama with a pull attempt rather than an argument error, which is a
+# worse failure than not offering the name at all.
 MODELS = {
     "qwen38": "qwen38-headroom",
-    "coder": "qwen3-coder-headroom",
-    "coder-stock": "qwen3-coder:30b",
+    "qwen38-iq4": "qwen38-iq4",
 }
 
 DEFAULT_SYSTEM = (
