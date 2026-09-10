@@ -14,6 +14,49 @@ scattered across ten files.
 | `predict_optimal_frequency.py` | Which frequency gives the best performance-per-watt? | **Ties** a fixed 952 MHz — 0.883% vs 0.837% mean regret |
 | `predict_constrained_frequency.py` | Same, subject to keeping ≥95% of stock performance | **Loses** to straight-line interpolation between the same probes |
 | `curve_model.py` | Can a few probes reconstruct the *whole* curve? | **Reconstruction works** (MAE 0.0261); frequency *selection* ties |
+| `predict_from_curve.py` | Can the applied **V/F curve** predict the optimum with no workload measurement at all? | **Ties a hindsight-fitted per-configuration constant exactly** — 0.675% vs 0.675% — while needing no data |
+
+## The fourth file asks a different question, and it changes what the null means
+
+The three files above all predict from **measurements of the workload**, and all of them tie or lose.
+`predict_from_curve.py` predicts from the **hardware configuration** instead: the optimum is the last
+frequency the V/F curve reaches at the card's 0.720 V load floor.
+
+🔑 **This is why the others lose, and it is a property of the DATASET rather than of modelling.**
+Across 192 consumer sweeps under four applied curves, a variance decomposition puts **61.9%** of the
+optimum's variance on the configuration and **19.0%** on the workload. The public V100 set contains
+**exactly one configuration**, so that 62% is invisible in it by construction — all a model can see
+there is the 19% term against roughly as much noise, which is why a constant is nearly the right
+answer. "The model loses" is the correct result and now has a mechanism behind it.
+
+**What the curve-reading predictor actually earns, stated carefully:**
+
+| | mean regret | exact |
+|---|---|---|
+| oracle | 0.000% | 100% |
+| **read the curve at the load floor** | **0.675%** | **74.0%** |
+| best constant **per configuration**, fitted with hindsight | **0.675%** | 74.0% |
+| best **single** constant, fitted with hindsight | 1.961% | 60.9% |
+
+- It beats the best single constant **2.90×**, and 142 of 192 sweeps come out exactly optimal.
+- ⚠️ **It ties the per-configuration constant to three decimals** because it picks the identical
+  frequency every time. **It extracts everything the configuration axis holds and nothing beyond
+  it.** Its value is needing no measurement — a per-config constant requires sweeping every
+  configuration first — not being cleverer.
+- ⚠️ **It is not "zero-parameter" in a fair comparison.** It reads the V/F curve, which the constant
+  and the Ridge baselines never had. The curve is free to obtain, so this is not cheating, but it is
+  a **different information set**. The honest claim is *"there is a free feature nobody was using"*,
+  not *"fitting was done better"*.
+- 🛑 **AND THE WHOLE AXIS IS WORTH 1.29 POINTS OF REGRET, against a headroom of 30–57 points.**
+  Predictor choice barely matters. Anyone quoting the 2.90× without this sentence is overselling it.
+
+**The residual is one workload.** `reduce` is sub-optimal in **16 of 16** sweeps and carries most of
+what is left; with `gemm` it accounts for **70%** of all remaining regret. That is structure, not
+noise, and it is a mechanism question rather than a modelling one.
+
+**Limits:** one chip; four configurations but only **two distinct predicted values** (1537 and
+2002), so "configuration" is close to a binary variable here and the 61.9% must be read with that in
+mind. The 0.720 V floor was measured on this card and is assumed to transfer.
 
 Each has a `test_*.py` beside it. All three are mutation-gated: the suites were accepted only
 after deliberate bugs were introduced and caught.
