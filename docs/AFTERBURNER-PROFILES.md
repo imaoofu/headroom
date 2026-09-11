@@ -83,6 +83,36 @@ and do not claim to know what the field means.
   the only single-variable pair in the whole profile set, and losing it is a real cost — but what
   replaced it is worth more, because a stock control is what every cross-configuration comparison in
   this repository has lacked.
+
+  🔑 **P1 AND P4 CARRY THE IDENTICAL +478 MHz FLOOR OFFSET, AND P1 HAS NEVER BEEN SWEPT
+  (2026-09-11).** Reading the floor extent for all five slots rather than the four that have data:
+
+  | slot | offset at 0.720 V | **floor extent** | nearest grid target | plateau | mem | PL |
+  |---|---|---|---|---|---|---|
+  | P3 stock | +0 | 1530 | 1545 | none | +0 | 100% |
+  | P2 repair | +0 | 1530 | 1545 | 3022 | +2500 | 111% |
+  | P5 split | +0 | 1530 | 1545 | 3030 | +2500 | 111% |
+  | **P1** | **+478** | **1972** | **2010** | 2962 | +2000 | **100%** |
+  | P4 full tune | +478 | 2002 | 2010 | 3030 | +2500 | 111% |
+
+  ⚠️ **P1 is easy to mis-remember as "the memory-only profile" and it is not one** — its core curve
+  is P4's in the region that decides the optimum. It is a **fifth configuration**, and the mechanism
+  makes a falsifiable prediction about it that costs one suite to check: **its optimum should land on
+  the same 2010 MHz grid point as P4**, because 1972 and 2002 are 30 MHz apart against a ~155 MHz
+  grid step.
+
+  🔑 **That would be a THIRD control, on the one variable the other two do not touch: power limit.**
+  The manipulation arm (`abba-20260908`) moved the floor and the optimum moved with it; the negative
+  control (`repair-suite-p2-20260909`) moved the curve *above* the floor and the optimum did not
+  move. P1 against P4 changes **power limit (180 W against 200 W) and memory (+2000 against +2500)
+  while holding the floor region fixed** — so the mechanism predicts no movement. ⚠️ **It is a
+  two-variable contrast, not a clean single-variable one**, which weakens it as a *cause* test but
+  not as a *prediction* test: the mechanism says the optimum is set by the floor extent alone, so any
+  movement at all refutes it regardless of which of the two did it.
+
+  ⚠️ **The floor extents differ by 30 MHz for a reason nobody has checked**: P1's base curve reads
+  1494 MHz at 720 mV where P4's reads 1524, though their offsets are identical. Two clock bins. Do
+  not assume the base curve is a constant of the card until that is looked at.
 - **P2 — the repaired shape.** Gentle low end (1447 at 700 mV) *and* a low mid-band (2280 at 875 mV).
   This is the curve-fixed / repair geometry: stock voltage slope restored across the whole lower
   range. **Its low end is not merely stock-like — it is stock**, offsets zero, and only 12 of its 125
@@ -136,27 +166,54 @@ that stood here until 2026-09-11 was not, and is struck:** it said "a naive stri
 one record — the boundary between the zero-offset and non-zero-offset regions — and renders a
 nonsensical ~6000 MHz point around 937 mV."
 
-**What the store actually does.** The flat top of a tuned curve is written with a **sentinel**: a
-single constant, deliberately out-of-range base clock repeated across every point of the plateau,
-paired with one constant large negative offset that lands `base + offset` exactly on the plateau
-clock.
+**What the store actually does.** The flat top is written as a block of identical records — a
+constant base plus a constant offset that sum to the plateau clock. Three of the four tuned profiles
+use a **sentinel**: a deliberately out-of-range base with a large negative offset correcting it.
 
-| profile | sentinel base | sentinel offset | block | applied |
+| profile | plateau encoding | block | applied |
+|---|---|---|---|
+| Profile 1 | sentinel base 5462 MHz, offset −2500 | 50 points, 935–1240 mV | 2962 |
+| Profile 4 | sentinel base 5530 MHz, offset −2500 | 50 points, 935–1240 mV | **3030** |
+| Profile 5 | sentinel base 5453 MHz, offset −2423 | 50 points, 935–1240 mV | **3030** |
+| **Profile 2** | **real base 3022 MHz, offset 0** from 935 mV… | 226 points, 935–1160 mV | 3022 |
+| Profile 2 | …then sentinel base 5608 MHz, offset −2586 | 13 points, 1165–1240 mV | 3022 |
+| **Profile 3 (stock)** | **no plateau at all** — every offset 0 | — | base only, to 3135 |
+
+⚠️ **Profile 2 is why "the plateau is a sentinel" is not a format-wide rule.** It writes its flat top
+as a genuine repeated base for 226 records and only switches to a sentinel for its last 13. Whatever
+the sentinel is for, it is not *how a plateau is stored*.
+
+### The one impossible record, and the identity it obeys
+
+**Exactly one record per tuned profile decodes above the ceiling, and it is always at 935 mV.** It
+obeys an exact arithmetic identity, in all four:
+
+    offset(935 mV)  ==  plateau_clock  −  base(925 mV)
+
+| profile | plateau | base at 925 mV | difference | stored offset at 935 mV |
 |---|---|---|---|---|
-| Profile 1 | 5462 MHz | −2500 | 50 points, 935–1240 mV | 2962 |
-| Profile 4 | 5530 MHz | −2500 | 50 points, 935–1240 mV | **3030** |
-| Profile 5 | 5453 MHz | −2423 | 50 points, 935–1240 mV | **3030** |
-| Profile 2 | 5608 MHz | −2586 | 13 points, 1165–1240 mV | 3022 |
-| **Profile 3 (stock)** | **none** | **all offsets 0** | — | base only |
+| Profile 1 | 2962 | 2456 | **+506** | **+506** |
+| Profile 2 | 3022 | 2455 | **+567** | **+567** |
+| Profile 4 | 3030 | 2454 | **+576** | **+576** |
+| Profile 5 | 3030 | 2458 | **+572** | **+572** |
 
-**Exactly one record per tuned profile decodes above the ceiling, and it is the FIRST of the
-sentinel block, at 935 mV** — its base has already switched to the sentinel while its offset is
-still the one from the region below, so the negative correction has not arrived yet.
+🔑 **That is the offset which would carry the PREVIOUS record's base to the plateau.** The offset
+field lags the base field by one record at that boundary — and such a lag is **invisible everywhere
+else**, because shifting the offsets inside a constant-offset block changes nothing. That is exactly
+why the defect surfaces at one record and only at one record.
 
-🔑 **That is not a zero-offset boundary, which is what refutes the old explanation.** Profile 1 and
-Profile 4 carry no zero-offset point anywhere above **695 mV**, and Profile 5's zero-offset region
-ends at **850 mV** — yet all three place the artifact at 935 mV. And a stride error corrupts a
-boundary, not **fifty consecutive identical triples**.
+⛔ **So this IS a pairing problem, and the section's ORIGINAL wording was right in kind.** What it
+got wrong was the place: it named "the boundary between the zero-offset and non-zero-offset
+regions", and Profile 1 and Profile 4 have no zero-offset point anywhere above **695 mV** while
+Profile 5's ends at **850 mV** — yet all three put the artifact at 935.
+
+⛔ **And the replacement written hours later on 2026-09-11 was wrong too, which is the part worth
+keeping.** It said the record "still carries the offset from the region below". That is **false for
+Profile 1, Profile 2 and Profile 4** — +506, +567 and +576 against preceding offsets of +478, 0 and
++478. It was generalised from Profile 5, the single profile where the value happens to coincide
+(+572 is also its high-voltage block offset). 🔑 **A correction drawn from one example replaced a
+vague right answer with a specific wrong one, and looked more rigorous for it.** Check a regularity
+on every profile before writing it down as the mechanism.
 
 ⚠️ **The filter therefore does two different jobs, and only one of them is removing an artifact.**
 On a tuned profile it drops the single 935 mV record. On **stock it drops five entirely legitimate
@@ -164,11 +221,15 @@ points** — 1215–1240 mV at 3105–3135 MHz, where the factory curve genuinel
 lock-target ceiling. **This is why stock decodes to 122 points and not 127**, and the 122 quoted at
 the top of this file is a post-filter count rather than what the profile contains.
 
+**Curve-editor screenshots for all five slots are committed in `docs/figures/`**, with a README
+explaining how to read the two traces. They are an independent visual check on this decode, not a
+source of any number.
+
 **How this was caught.** Screenshots of Afterburner's own Voltage/Frequency curve editor for
 Profiles 4 and 5 were checked against the decode on 2026-09-11. The editor draws two traces — the
 square handles are the applied curve and the thin line beneath is the base — and the thin line exits
 the top of the chart near 930 mV in both, which is the sentinel base being plotted by Afterburner
-itself. The numbers are pinned by 25 checks in `analysis/models/test_predict_from_curve.py`.
+itself. The numbers are pinned by 36 checks in `analysis/models/test_predict_from_curve.py`.
 
 **The same screenshots confirm the mechanism result visually.** At the 0.720 V load floor Profile 5's
 handles sit exactly on the base trace (per-point offset **+0**) while Profile 4's sit **+478 MHz**

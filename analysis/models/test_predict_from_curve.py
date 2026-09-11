@@ -206,6 +206,55 @@ check("stock loses exactly five REAL points to the >3090 filter, not an artifact
 check("stock's decoded point count is the 122 CLAUDE.md quotes",
       len(stockDecoded) == 122, "got %d" % len(stockDecoded))
 
+# THE IDENTITY. Added after the first correction turned out to be wrong too. The impossible record
+# is not "the offset from the region below" - that is true only of Profile 5, and generalising from
+# it produced a confident, specific, wrong explanation. What holds in ALL FOUR tuned profiles is:
+#
+#     offset(935 mV) == plateau_clock - base(925 mV)
+#
+# i.e. the offset that would carry the PREVIOUS record's base to the plateau, which is a one-record
+# lag between the offset and base fields - invisible anywhere else, because shifting offsets inside
+# a constant-offset block changes nothing.
+for profileName in ("Profile1", "Profile2", "Profile4", "Profile5"):
+    points = snapshot[profileName]["curve_points"]
+    byVolt = {q["voltage_mv"]: q for q in points}
+    plateau = max(q["applied_mhz"] for q in points if q["applied_mhz"] <= 3090.0)
+    check(profileName + ": offset(935) is exactly plateau minus base(925), not the offset below",
+          byVolt[935.0]["offset_mhz"] == plateau - byVolt[925.0]["base_mhz"],
+          "stored %+.1f, identity %+.1f" % (byVolt[935.0]["offset_mhz"],
+                                            plateau - byVolt[925.0]["base_mhz"]))
+
+# Profile 2 refutes "the plateau is always a sentinel", which is why it is checked separately rather
+# than folded into the loop above. It writes a REAL repeated base for the bulk of its flat top and
+# only switches to a sentinel for the last 13 records.
+p2Points = snapshot["Profile2"]["curve_points"]
+p2ByVolt = {q["voltage_mv"]: q for q in p2Points}
+p2Flat = [q for q in p2Points if 940.0 <= q["voltage_mv"] <= 1160.0]
+check("Profile 2 stores its plateau as a REAL in-range base, not a sentinel",
+      all(q["base_mhz"] == 3022.0 and q["offset_mhz"] == 0.0 for q in p2Flat),
+      "got %s" % sorted({(q["base_mhz"], q["offset_mhz"]) for q in p2Flat}))
+p2Sentinel = [q for q in p2Points if q["base_mhz"] > 3090.0]
+check("Profile 2's sentinel block is 13 points and starts 230 mV higher, at 1165 mV",
+      len(p2Sentinel) == 13 and min(q["voltage_mv"] for q in p2Sentinel) == 1165.0,
+      "got %d points from %s mV" % (len(p2Sentinel),
+                                    min(q["voltage_mv"] for q in p2Sentinel)))
+check("Profile 2 has TWO records above the ceiling, at 935 and 1165 mV",
+      sorted(q["voltage_mv"] for q in p2Points if q["applied_mhz"] > 3090.0) == [935.0, 1165.0],
+      "got %s" % sorted(q["voltage_mv"] for q in p2Points if q["applied_mhz"] > 3090.0))
+check("Profile 2's second anomaly IS the plain lag - base switched, offset still 0",
+      p2ByVolt[1165.0]["offset_mhz"] == 0.0 and p2ByVolt[1170.0]["offset_mhz"] == -2586.0)
+
+# Stock is the control for the whole section: no plateau, no sentinel, no anomaly, and a top that
+# genuinely exceeds the lock-target ceiling. The screenshot in docs/figures/ shows exactly this.
+stockByVolt = sorted((q["voltage_mv"], q["base_mhz"]) for q in stockPoints)
+check("stock never plateaus - its curve rises all the way to the top of the range",
+      stockByVolt[-1][1] > stockByVolt[-20][1] > stockByVolt[-40][1],
+      "top three sampled: %s" % [stockByVolt[i][1] for i in (-40, -20, -1)])
+check("stock's highest point is 3135 MHz at 1240 mV, above the 3090 lock-target ceiling",
+      stockByVolt[-1] == (1240.0, 3135.0), "got %s" % (stockByVolt[-1],))
+check("stock has no record whose offset disagrees with its neighbours",
+      len({q["offset_mhz"] for q in stockPoints}) == 1)
+
 # What the two curve-editor screenshots show directly: Profile 5 leaves the floor region untouched
 # and Profile 4 lifts the whole of it. This is the manipulation arm of the mechanism test, readable
 # off the store with no benchmark at all.

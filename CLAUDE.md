@@ -150,20 +150,34 @@ applies and exits. **It has now driven three multi-hour runs with the operator a
 machine** (`abba-20260908`, `voltage-curve-20260908`, `stock-bracket-20260909`). Full decode and the
 five-profile table: `docs/AFTERBURNER-PROFILES.md`; verbatim snapshots: `data/afterburner-profiles/`.
 
-✅ **Filter to ≤3090 MHz on read.** The rule is right; ⛔ **the reason this file gave for it until
-2026-09-11 was wrong, and is struck.** It said "a naive stride-3 read mispairs at the zero-offset
-boundary". It does not. **The plateau is encoded with a SENTINEL** — one constant out-of-range base
-(5462 / 5530 / 5453 MHz on P1 / P4 / P5) repeated across all **50 points from 935 to 1240 mV**, plus
-one constant large negative offset (−2500 / −2500 / −2423) that lands the sum exactly on the plateau
-clock. **Fifty identical records is a design, not a pairing slip.** Exactly one record — the *first*
-of that block, at **935 mV** — carries the preceding offset instead, and it alone decodes impossibly.
-**It is nowhere near a zero-offset boundary**: P1 and P4 have no zero-offset point above 695 mV and
-P5's ends at 850 mV, yet all three put the artifact at 935 mV. ⚠️ **The filter does two different
-jobs** — on a tuned profile it drops one artifact, on **stock it drops five LEGITIMATE points**
-(1215–1240 mV, 3105–3135 MHz, genuinely above the lock-target ceiling), which is what makes the 122
-below a post-filter count rather than what the profile holds. Pinned by 25 checks in
-`analysis/models/test_predict_from_curve.py`; found by checking the decode against screenshots of
-Afterburner's own curve editor, which draws the sentinel base off the top of its own chart.
+✅ **Filter to ≤3090 MHz on read.** The rule has always been right. **The REASON has now been wrong
+twice, both on 2026-09-11, in opposite directions** — the history is kept because it is the useful
+part.
+
+**Verified.** The flat top is a block of identical records, a constant base plus a constant offset
+summing to the plateau. P1 / P4 / P5 use a deliberately out-of-range base (5462 / 5530 / 5453 MHz,
+offsets −2500 / −2500 / −2423, 50 points from 935 mV). ⚠️ **P2 does it differently** — a real base of
+3022 at offset 0 from 935 to 1160 mV, with a sentinel only for its last 13 points from 1165 mV — so
+"the plateau is a sentinel" is not a format-wide rule. **Stock has no plateau at all**, and its five
+points above 3090 MHz (1215–1240 mV, 3105–3135) are **REAL**: the factory curve genuinely runs past
+the lock-target ceiling. So the filter does two different jobs — one artifact on a tuned profile,
+five legitimate points on stock — and that is what makes the 122 below a **post-filter count**.
+
+**Exactly one record per tuned profile decodes impossibly, always at 935 mV, and it obeys an exact
+identity in all four: `offset(935) == plateau − base(925)`** — the offset that would carry the
+PREVIOUS record's base to the plateau. The offset field lags the base field by one record at that
+boundary, which is invisible everywhere else because a shift inside a constant-offset block changes
+nothing. **So it IS a pairing problem**, and only its location was ever misdescribed.
+
+⛔ **Both earlier explanations are struck.** The original — "a naive stride-3 read mispairs at the
+zero-offset boundary" — was right in kind, wrong in place: P1 and P4 have no zero-offset point above
+695 mV and P5's ends at 850 mV, yet all three put the artifact at 935. Its replacement, written hours
+later the same day, said the record "still carries the offset from the region below": **false for P1,
+P2 and P4** (+506, +567, +576 against preceding offsets of +478, 0, +478). It was generalised from
+P5, the one profile where the value coincides. 🔑 **A correction drawn from a single example is how
+the second error got in, and it read as more rigorous than what it replaced.** Pinned by 36 checks in
+`analysis/models/test_predict_from_curve.py`; curve-editor screenshots for all five slots in
+`docs/figures/`.
 
 🔑 **Profile 3 holds STOCK as of 2026-09-08, so stock is applicable from the command line.** Verified
 two ways on 2026-09-09 — on disk (122 curve points, **every per-point offset zero**, memory +0, core
@@ -461,7 +475,7 @@ analysis/          Python measurement + audit on the public V100 dataset
                       modules, split by hardware: _consumer (5060 Ti), _crosschip (3070 Ti),
                       _reference (public V100)
   models/             everything that PREDICTS rather than measures — has its own README
-  test_*.py           17 suites, 612 checks (610 without data/raw) - NOT pinned, see above
+  test_*.py           17 suites, 623 checks (621 without data/raw) - NOT pinned, see above
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset

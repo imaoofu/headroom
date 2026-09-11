@@ -149,22 +149,27 @@ def decodeCurve(profileName, snapshotPath=PROFILE_SNAPSHOT):
 
     ⚠️ THE FILTER DOES TWO DIFFERENT JOBS, and only one of them removes an artifact.
 
-    On a TUNED profile it drops exactly one record. The plateau is encoded with a sentinel - one
-    constant out-of-range base (5530 MHz on Profile 4) repeated across all 50 points from 935 to
-    1240 mV, plus a constant large negative offset (-2500) that lands the sum exactly on the
-    plateau clock. The first record of that block, at 935 mV, still carries the offset from the
-    region below, so it alone decodes impossibly high.
+    On a TUNED profile it drops exactly one record, always at 935 mV, which obeys an exact identity
+    in all four of them:
+
+        offset(935 mV) == plateau_clock - base(925 mV)
+
+    That is the offset which would carry the PREVIOUS record's base to the plateau, so the offset
+    field lags the base field by one record at that boundary. The lag is invisible everywhere else,
+    because shifting offsets inside a constant-offset block changes nothing - which is precisely why
+    the defect surfaces at one record and only one.
 
     On STOCK it drops five LEGITIMATE points - 1215-1240 mV at 3105-3135 MHz, where the factory
     curve genuinely runs past the lock-target ceiling. That is what makes stock decode to 122
     points rather than 127, so the "122 curve points" CLAUDE.md quotes is a post-filter count.
 
-    ⛔ CORRECTED 2026-09-11. This docstring said the impossible point came from "a naive stride-3
-    read [that] mispairs at the zero-offset boundary". It does not: Profile 4 has no zero-offset
-    point above 695 mV and Profile 5's zero-offset region ends at 850 mV, yet both put the artifact
-    at 935 mV - the first sentinel record in each case. Fifty identical triples is a design, not a
-    pairing slip. The filter was always right; only the reason was wrong. See
-    docs/AFTERBURNER-PROFILES.md and the 25 checks in test_predict_from_curve.py.
+    ⛔ CORRECTED TWICE ON 2026-09-11, and the second correction is the instructive one. The original
+    text blamed "a naive stride-3 read [that] mispairs at the zero-offset boundary" - right that it
+    is a pairing problem, wrong about where (Profile 4 has no zero-offset point above 695 mV). Its
+    replacement said the record "still carries the offset from the region below", which is FALSE for
+    Profiles 1, 2 and 4 and was generalised from Profile 5, the one case where it coincides. A
+    correction drawn from a single example read as more rigorous than the vague thing it replaced.
+    See docs/AFTERBURNER-PROFILES.md and the 36 checks in test_predict_from_curve.py.
     """
     import json
     blob = json.loads(Path(snapshotPath).read_text(encoding="utf-8"))
