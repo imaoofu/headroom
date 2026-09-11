@@ -149,6 +149,77 @@ check("the >3090 MHz decoder artifact is filtered out",
 check("curve is returned sorted by voltage",
       all(stockCurve[i][0] <= stockCurve[i + 1][0] for i in range(len(stockCurve) - 1)))
 
+print("\nhow the store encodes the plateau - and where the artifact actually is")
+# ADDED 2026-09-11, after screenshots of the Profile 4 and Profile 5 curve editors were checked
+# against this decode. The >3090 filter above is correct, but the reason recorded for it in three
+# documents was NOT: they said a "naive stride-3 read mispairs at the zero-offset boundary".
+#
+# The flat top is encoded with a SENTINEL - one constant out-of-range base repeated across every
+# point of the plateau, plus one constant large negative offset that lands the sum exactly on the
+# plateau clock. Fifty identical records is a design, not a pairing slip: a stride error corrupts a
+# boundary, not fifty consecutive triples. Pinned here so the old explanation cannot drift back.
+import json  # noqa: E402
+
+from predict_from_curve import PROFILE_SNAPSHOT  # noqa: E402
+
+snapshot = json.loads(Path(PROFILE_SNAPSHOT).read_text(encoding="utf-8"))["profiles"]
+
+for profileName in ("Profile1", "Profile4", "Profile5"):
+    points = snapshot[profileName]["curve_points"]
+    sentinel = [q for q in points if q["base_mhz"] > 3090.0]
+    bases = {q["base_mhz"] for q in sentinel}
+    offsets = {q["offset_mhz"] for q in sentinel}
+    impossible = [q for q in points if q["applied_mhz"] > 3090.0]
+    zeroOffset = [q["voltage_mv"] for q in points if q["offset_mhz"] == 0.0]
+
+    check(profileName + ": the plateau is a block of sentinel records, not one bad point",
+          len(sentinel) == 50, "got %d" % len(sentinel))
+    check(profileName + ": every sentinel record carries the SAME out-of-range base",
+          len(bases) == 1, "got %s" % sorted(bases))
+    check(profileName + ": all but one sentinel record shares one negative offset",
+          len(offsets) == 2 and sum(1 for q in sentinel if q["offset_mhz"] < 0) == 49,
+          "got %s" % sorted(offsets))
+    check(profileName + ": exactly one point decodes above the 3090 MHz ceiling",
+          len(impossible) == 1, "got %s" % [q["applied_mhz"] for q in impossible])
+    check(profileName + ": that point is at 935 mV, the FIRST record of the sentinel block",
+          impossible[0]["voltage_mv"] == 935.0 == min(q["voltage_mv"] for q in sentinel),
+          "got %s" % impossible[0]["voltage_mv"])
+    # The refutation, asserted rather than left in prose: Profile 4 carries no zero-offset point
+    # anywhere above 695 mV, so its 935 mV artifact cannot sit on a zero-offset boundary.
+    check(profileName + ": the artifact is nowhere near a zero-offset boundary",
+          max(zeroOffset) < 900.0 and impossible[0]["voltage_mv"] - max(zeroOffset) > 80.0,
+          "zero-offset region ends at %s mV" % max(zeroOffset))
+
+# Stock is the control: no sentinel, no artifact, and the five points it loses to the filter are
+# REAL - its curve genuinely exceeds the 3090 lock-target ceiling above 1215 mV. CLAUDE.md quotes
+# "122 curve points" for stock; this is what makes that 122 rather than 127.
+stockPoints = snapshot[CONFIGURATION_PROFILE["stock"]]["curve_points"]
+stockDecoded = decodeCurve(CONFIGURATION_PROFILE["stock"])
+check("stock carries no sentinel encoding at all",
+      all(q["base_mhz"] <= 3135.0 for q in stockPoints))
+check("every stock per-point offset is zero",
+      {q["offset_mhz"] for q in stockPoints} == {0.0},
+      "got %s" % sorted({q["offset_mhz"] for q in stockPoints}))
+check("stock loses exactly five REAL points to the >3090 filter, not an artifact",
+      len(stockPoints) - len(stockDecoded) == 5,
+      "got %d" % (len(stockPoints) - len(stockDecoded)))
+check("stock's decoded point count is the 122 CLAUDE.md quotes",
+      len(stockDecoded) == 122, "got %d" % len(stockDecoded))
+
+# What the two curve-editor screenshots show directly: Profile 5 leaves the floor region untouched
+# and Profile 4 lifts the whole of it. This is the manipulation arm of the mechanism test, readable
+# off the store with no benchmark at all.
+p4Points = {q["voltage_mv"]: q for q in snapshot["Profile4"]["curve_points"]}
+p5Points = {q["voltage_mv"]: q for q in snapshot["Profile5"]["curve_points"]}
+check("Profile 5 applies NO offset at the load floor",
+      p5Points[720.0]["offset_mhz"] == 0.0, "got %s" % p5Points[720.0]["offset_mhz"])
+check("Profile 4 applies a large positive offset at the load floor",
+      470.0 < p4Points[720.0]["offset_mhz"] < 490.0,
+      "got %s" % p4Points[720.0]["offset_mhz"])
+check("the two profiles' underlying BASE curves agree at the floor to within one clock bin",
+      abs(p4Points[720.0]["base_mhz"] - p5Points[720.0]["base_mhz"]) <= 15.0,
+      "got %s vs %s" % (p4Points[720.0]["base_mhz"], p5Points[720.0]["base_mhz"]))
+
 print("\nfloorExtentMhz - the four configurations")
 # These are the numbers the whole module rests on. If a snapshot is replaced or the decode
 # changes, these fail loudly rather than the predictor quietly picking a different frequency.

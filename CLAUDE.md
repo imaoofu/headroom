@@ -150,8 +150,20 @@ applies and exits. **It has now driven three multi-hour runs with the operator a
 machine** (`abba-20260908`, `voltage-curve-20260908`, `stock-bracket-20260909`). Full decode and the
 five-profile table: `docs/AFTERBURNER-PROFILES.md`; verbatim snapshots: `data/afterburner-profiles/`.
 
-⚠️ A naive stride-3 read mispairs at the zero-offset boundary and yields an impossible ~6000 MHz
-point near 937 mV. **Filter to ≤3090 MHz on read.**
+✅ **Filter to ≤3090 MHz on read.** The rule is right; ⛔ **the reason this file gave for it until
+2026-09-11 was wrong, and is struck.** It said "a naive stride-3 read mispairs at the zero-offset
+boundary". It does not. **The plateau is encoded with a SENTINEL** — one constant out-of-range base
+(5462 / 5530 / 5453 MHz on P1 / P4 / P5) repeated across all **50 points from 935 to 1240 mV**, plus
+one constant large negative offset (−2500 / −2500 / −2423) that lands the sum exactly on the plateau
+clock. **Fifty identical records is a design, not a pairing slip.** Exactly one record — the *first*
+of that block, at **935 mV** — carries the preceding offset instead, and it alone decodes impossibly.
+**It is nowhere near a zero-offset boundary**: P1 and P4 have no zero-offset point above 695 mV and
+P5's ends at 850 mV, yet all three put the artifact at 935 mV. ⚠️ **The filter does two different
+jobs** — on a tuned profile it drops one artifact, on **stock it drops five LEGITIMATE points**
+(1215–1240 mV, 3105–3135 MHz, genuinely above the lock-target ceiling), which is what makes the 122
+below a post-filter count rather than what the profile holds. Pinned by 25 checks in
+`analysis/models/test_predict_from_curve.py`; found by checking the decode against screenshots of
+Afterburner's own curve editor, which draws the sentinel base off the top of its own chart.
 
 🔑 **Profile 3 holds STOCK as of 2026-09-08, so stock is applicable from the command line.** Verified
 two ways on 2026-09-09 — on disk (122 curve points, **every per-point offset zero**, memory +0, core
@@ -449,7 +461,7 @@ analysis/          Python measurement + audit on the public V100 dataset
                       modules, split by hardware: _consumer (5060 Ti), _crosschip (3070 Ti),
                       _reference (public V100)
   models/             everything that PREDICTS rather than measures — has its own README
-  test_*.py           16 suites, 541 checks (539 without data/raw) - NOT pinned, see above
+  test_*.py           17 suites, 612 checks (610 without data/raw) - NOT pinned, see above
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset

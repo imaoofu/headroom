@@ -128,10 +128,53 @@ which the first 127 are real curve points and the remainder are zero padding. Ea
 **(offset, voltage_mV, base_clock_MHz)** and the applied clock is `base + offset`. Voltages run
 450–1240 mV.
 
-⚠️ **A naive stride-3 read mispairs at one record** — the boundary between the zero-offset and
-non-zero-offset regions — and renders a nonsensical ~6000 MHz point around 937 mV. Filter to the
-card's supported range (≤3090 MHz, the top of its supported-clock table) rather than trusting every
-decoded triple.
+### How the plateau is encoded, and the one record that decodes impossibly
+
+⚠️ **Filter to the card's supported range (≤3090 MHz, the top of its supported-clock table) rather
+than trusting every decoded triple.** That instruction has always been right. ⛔ **The explanation
+that stood here until 2026-09-11 was not, and is struck:** it said "a naive stride-3 read mispairs at
+one record — the boundary between the zero-offset and non-zero-offset regions — and renders a
+nonsensical ~6000 MHz point around 937 mV."
+
+**What the store actually does.** The flat top of a tuned curve is written with a **sentinel**: a
+single constant, deliberately out-of-range base clock repeated across every point of the plateau,
+paired with one constant large negative offset that lands `base + offset` exactly on the plateau
+clock.
+
+| profile | sentinel base | sentinel offset | block | applied |
+|---|---|---|---|---|
+| Profile 1 | 5462 MHz | −2500 | 50 points, 935–1240 mV | 2962 |
+| Profile 4 | 5530 MHz | −2500 | 50 points, 935–1240 mV | **3030** |
+| Profile 5 | 5453 MHz | −2423 | 50 points, 935–1240 mV | **3030** |
+| Profile 2 | 5608 MHz | −2586 | 13 points, 1165–1240 mV | 3022 |
+| **Profile 3 (stock)** | **none** | **all offsets 0** | — | base only |
+
+**Exactly one record per tuned profile decodes above the ceiling, and it is the FIRST of the
+sentinel block, at 935 mV** — its base has already switched to the sentinel while its offset is
+still the one from the region below, so the negative correction has not arrived yet.
+
+🔑 **That is not a zero-offset boundary, which is what refutes the old explanation.** Profile 1 and
+Profile 4 carry no zero-offset point anywhere above **695 mV**, and Profile 5's zero-offset region
+ends at **850 mV** — yet all three place the artifact at 935 mV. And a stride error corrupts a
+boundary, not **fifty consecutive identical triples**.
+
+⚠️ **The filter therefore does two different jobs, and only one of them is removing an artifact.**
+On a tuned profile it drops the single 935 mV record. On **stock it drops five entirely legitimate
+points** — 1215–1240 mV at 3105–3135 MHz, where the factory curve genuinely runs past the 3090 MHz
+lock-target ceiling. **This is why stock decodes to 122 points and not 127**, and the 122 quoted at
+the top of this file is a post-filter count rather than what the profile contains.
+
+**How this was caught.** Screenshots of Afterburner's own Voltage/Frequency curve editor for
+Profiles 4 and 5 were checked against the decode on 2026-09-11. The editor draws two traces — the
+square handles are the applied curve and the thin line beneath is the base — and the thin line exits
+the top of the chart near 930 mV in both, which is the sentinel base being plotted by Afterburner
+itself. The numbers are pinned by 25 checks in `analysis/models/test_predict_from_curve.py`.
+
+**The same screenshots confirm the mechanism result visually.** At the 0.720 V load floor Profile 5's
+handles sit exactly on the base trace (per-point offset **+0**) while Profile 4's sit **+478 MHz**
+above it, and the two base traces agree to within one clock bin. That is the manipulation arm of the
+load-floor experiment — `abba-20260908` moved the optimum **+465 MHz** — readable off the profile
+store with no benchmark run at all.
 
 `MSIAfterburner.exe -profileN -q` applies profile N and exits. Verified working 2026-09-08; it was
 used to apply Profile 5 and Profile 4 programmatically with the operator away from the machine, a

@@ -143,10 +143,28 @@ SUITE_WORKLOADS = ["copy", "reduce", "softmax", "layernorm", "bgemm32", "bgemm64
 def decodeCurve(profileName, snapshotPath=PROFILE_SNAPSHOT):
     """(voltage_mV, applied_MHz) pairs for one profile, sorted by voltage, from the snapshot.
 
-    ⚠️ A naive stride-3 read of the raw blob mispairs at the zero-offset boundary and yields an
-    impossible ~6000 MHz point near 937 mV. The snapshot stores points as decoded INCLUDING that
-    artifact, deliberately, so the capture stays lossless. Filtering is the reader's job, so it
-    happens here: 3090 MHz is the top of this card's supported-clock table.
+    The snapshot stores points as decoded INCLUDING everything the profile holds, deliberately, so
+    the capture stays lossless. Filtering is the reader's job, so it happens here: 3090 MHz is the
+    top of this card's supported-clock table.
+
+    ⚠️ THE FILTER DOES TWO DIFFERENT JOBS, and only one of them removes an artifact.
+
+    On a TUNED profile it drops exactly one record. The plateau is encoded with a sentinel - one
+    constant out-of-range base (5530 MHz on Profile 4) repeated across all 50 points from 935 to
+    1240 mV, plus a constant large negative offset (-2500) that lands the sum exactly on the
+    plateau clock. The first record of that block, at 935 mV, still carries the offset from the
+    region below, so it alone decodes impossibly high.
+
+    On STOCK it drops five LEGITIMATE points - 1215-1240 mV at 3105-3135 MHz, where the factory
+    curve genuinely runs past the lock-target ceiling. That is what makes stock decode to 122
+    points rather than 127, so the "122 curve points" CLAUDE.md quotes is a post-filter count.
+
+    ⛔ CORRECTED 2026-09-11. This docstring said the impossible point came from "a naive stride-3
+    read [that] mispairs at the zero-offset boundary". It does not: Profile 4 has no zero-offset
+    point above 695 mV and Profile 5's zero-offset region ends at 850 mV, yet both put the artifact
+    at 935 mV - the first sentinel record in each case. Fifty identical triples is a design, not a
+    pairing slip. The filter was always right; only the reason was wrong. See
+    docs/AFTERBURNER-PROFILES.md and the 25 checks in test_predict_from_curve.py.
     """
     import json
     blob = json.loads(Path(snapshotPath).read_text(encoding="utf-8"))
