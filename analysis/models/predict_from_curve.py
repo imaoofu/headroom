@@ -46,8 +46,27 @@ WHAT IT SCORES, AND THE DEFLATION THAT COMES WITH IT
 LIMITS
     One chip. Four configurations but only TWO distinct predicted values (1537 and 2002), so
     "configuration" is close to a binary variable here and the 61.9% should be read with that in
-    mind. The floor voltage was measured on this card and is assumed to transfer; whether it is a
-    property of the silicon, the vendor, or this board is not established.
+    mind.
+
+⛔ THE FLOOR VOLTAGE DOES NOT TRANSFER BETWEEN CARDS. CORRECTED 2026-09-10.
+    This docstring said the floor "was measured on this card and is assumed to transfer; whether it
+    is a property of the silicon, the vendor, or this board is not established." It is now
+    established, and the assumption was wrong.
+
+    An RTX 3060 (Ampere, 8 nm) has a load floor of 0.756 V, not 0.720. Its floor ends at 1260 MHz
+    and its efficiency optimum is 1260 MHz - the rule holds exactly, with a different constant.
+    See data/frequency-sweeps/rtx3060-20260910/.
+
+    🔑 THE RULE TRANSFERS; THE PARAMETER IS PER CARD. That is a better result than a shared
+    constant would have been - a shared value would most likely have meant a driver policy, where a
+    differing one means the floor is a property of the silicon and the relationship survives it
+    anyway.
+
+    ⚠️ SO FLOOR_VOLTAGE_MV BELOW IS A 5060 Ti CONSTANT, NOT A PROJECT CONSTANT. Applying this
+    predictor to a new card REQUIRES measuring that card's floor first. Borrowing 0.720 V for the
+    3060 would predict ~1530 MHz against a true optimum of 1260 - a 270 MHz error, worse than the
+    best single constant. The evaluation below is 5060 Ti data only and is correct as it stands;
+    nothing here is fitted across cards.
 """
 
 import sys
@@ -60,8 +79,12 @@ from audit_claims import sweep  # noqa: E402
 
 SWEEP_ROOT = REPO_ROOT / "data" / "frequency-sweeps"
 
-# The one measured constant. data/frequency-sweeps/voltage-curve-20260908/ observed 70 loaded
-# samples on the floor, every one of them exactly 0.720 V, on two configurations.
+# The one measured constant, FOR THIS CARD. data/frequency-sweeps/voltage-curve-20260908/ observed
+# 70 loaded samples on the floor, every one of them exactly 0.720 V, across two configurations;
+# voltage-curve-20260909 confirmed the same value on two more.
+#
+# ⛔ NOT A PROJECT CONSTANT. An RTX 3060 measures 0.756 V. Measure a new card's floor before
+# applying this predictor to it - see the LIMITS section of the module docstring.
 #
 # ⚠️ It is a LOAD floor, not the card's minimum voltage - the same log shows 0.650 V at idle.
 # "The card will not run loaded below 0.720 V" is what the data supports.

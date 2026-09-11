@@ -1,0 +1,42 @@
+label            : rtx3060-asfound
+collected_at     : 2026-09-10T18:56:11.3921661-07:00
+collected_by     : kit v2
+applied_settings : nothing applied, stock rtx 3060 pheonix card, OC STATUS UNKNOWN, MIGHT BE OC OR NOT OC VERSION
+                       ASSERTED BY THE OPERATOR, NOT VERIFIED.
+                       Nothing in nvidia-smi reports whether an Afterburner or
+                       vendor profile is applied, so this kit cannot check it.
+                       See measured_peak_sm_clock_mhz at the end of this file -
+                       that IS measured, and is the field to trust.
+
+measured_memory_clock_under_load_mhz : 405
+                       RECORDED, NOT VERIFIED - no -ExpectedMemoryClockMhz was given,
+                       so nothing compared this against the card's stock figure.
+
+--- GPU (nvidia-smi) ---
+name, driver_version, vbios_version, memory.total [MiB], power.limit [W], power.max_limit [W], pcie.link.gen.max, pcie.link.width.max
+NVIDIA GeForce RTX 3060, 616.92, 94.06.2f.00.ef, 12288 MiB, 170.00 W, 187.00 W, 4, 16
+
+--- CPU / RAM / OS ---
+cpu              : AMD Ryzen 5 5600X 6-Core Processor
+cpu_cores        : 6 cores / 12 threads
+ram_gb           : 15.9
+os               : Microsoft Windows 11 Pro 10.0.26200
+
+--- NOTE ---
+The tuning_state_claimed line above is what the operator was SUPPOSED to do, not
+something this kit confirmed. If a profile was applied and nobody noticed, that
+line is wrong and nothing in it would reveal the mistake.
+The measured peak clock appended below is the actual evidence. On a known GPU
+model, stock and tuned sustained clocks differ far more than run-to-run noise -
+measured on an RTX 5060 Ti: 2588 MHz stock against ~2950 MHz tuned, a 360 MHz
+gap. Classify the run from that number, not from the claim.
+
+--- MEASURED (this is evidence, unlike tuning_state_claimed) ---
+peak_sm_clock_mhz[20260910-185618_rtx3060-asfound-gemm_sweep] : 1,692
+peak_sm_clock_mhz[20260910-190308_rtx3060-asfound-membw_sweep] : 1,925
+  Highest sustained SM clock reached in each sweep. Compare EACH against the same
+  workload's known stock figure for this GPU model - never against the other
+  workload's. Materially above stock means a profile was applied and this is NOT a
+  stock baseline, whatever tuning_state_claimed says.
+  RTX 5060 Ti reference, measured: gemm 2588 stock / ~2950 tuned;
+  membw 2753 stock. Other models need their own reference before comparing.

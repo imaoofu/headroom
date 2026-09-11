@@ -56,7 +56,26 @@ noise, and it is a mechanism question rather than a modelling one.
 
 **Limits:** one chip; four configurations but only **two distinct predicted values** (1537 and
 2002), so "configuration" is close to a binary variable here and the 61.9% must be read with that in
-mind. The 0.720 V floor was measured on this card and is assumed to transfer.
+mind.
+
+### ⛔ The floor voltage does NOT transfer between cards — corrected 2026-09-10
+
+This section said the 0.720 V floor "was measured on this card and is assumed to transfer." **The
+assumption was wrong, and testing it produced a better result than confirming it would have.**
+
+An **RTX 3060 (Ampere, 8 nm) has a load floor of 0.756 V.** Its floor ends at **1260 MHz** and its
+efficiency optimum is **1260 MHz** — ten of twelve workloads land there individually. The rule holds
+exactly, with a different constant. Full record in `data/frequency-sweeps/rtx3060-20260910/`.
+
+🔑 **The rule transfers; the parameter is per card.** A shared constant would most likely have meant
+a driver policy. A differing one means the floor is a property of the silicon **and the relationship
+survives it anyway** — which is what turns this from a finding about one card into a finding about
+GPUs.
+
+⚠️ **So applying the predictor to a new card requires measuring that card's floor first.** Borrowing
+0.720 V for the 3060 predicts ~1530 MHz against a true optimum of 1260 — a **270 MHz error**, worse
+than the best single constant. The evaluation above is 5060 Ti data only and stands as written;
+nothing in it is fitted across cards.
 
 Each has a `test_*.py` beside it. All three are mutation-gated: the suites were accepted only
 after deliberate bugs were introduced and caught.

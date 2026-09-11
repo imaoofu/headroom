@@ -235,6 +235,47 @@ changed nothing. 0.925 V requested delivers 0.920 V under ~170 W load — vdroop
 voltage bin. **The deficit is real and reproduces, and is still unexplained.** Voltage, thermals,
 power and throttling are all eliminated. Do not re-run this test.
 
+### 🔑 The efficiency optimum is the last frequency on the V/F curve's LOAD FLOOR (2026-09-08 → 09-10)
+
+**The single most transferable result in the project, and the only one now confirmed on two chips
+and two architectures.** Do not re-derive it.
+
+> **The efficiency optimum is the highest frequency the applied V/F curve reaches at the card's
+> load-floor voltage.**
+
+| configuration | chip | arch | floor V | floor ends | measured optimum | |
+|---|---|---|---|---|---|---|
+| stock | 5060 Ti | Blackwell | 0.720 | 1537 | 1537 | ✅ |
+| split (P5) | 5060 Ti | Blackwell | 0.720 | 1530 | 1537 | ✅ |
+| repair (P2) | 5060 Ti | Blackwell | 0.720 | 1530 | 1537 | ✅ |
+| full tune (P4) | 5060 Ti | Blackwell | 0.720 | 2002 | 2002 | ✅ |
+| **stock** | **RTX 3060** | **Ampere** | **0.756** | **1260** | **1260** | ✅ |
+
+**It has been tested three ways, and the predictions were registered before the measurements:**
+- **Manipulation** — `abba-20260908` changed the *floor region* and the optimum moved **+465 MHz in
+  12 of 12 workloads**.
+- **Negative control** — `repair-suite-p2-20260909` changed the curve *above* the floor by up to
+  570 MHz and the optimum moved **by nothing**.
+- **Cross-architecture** — `rtx3060-20260910`, a different chip, node and vendor board.
+
+⛔ **THE FLOOR VOLTAGE IS PER CARD AND DOES NOT TRANSFER.** 0.720 V on the 5060 Ti, **0.756 V on the
+3060**. Borrowing 0.720 for the 3060 predicts ~1530 MHz against a true optimum of 1260 — a 270 MHz
+error. **Measure a new card's floor before predicting anything on it.**
+
+🔑 **A differing constant is the stronger outcome.** A shared value would most likely have meant a
+driver policy; a differing one means the floor is a property of the silicon **and the relationship
+survives it anyway.**
+
+⚠️ The grid is ~155 MHz wide (105 MHz on the 3060), so a prediction needs only to fall within half a
+step to select the right point. Genuine, and coarse. And the *extent* of the floor is still read
+from a decoded curve rather than set — the NVML offset ladder above is the experiment that would
+change that, and it has not been run.
+
+**Regret, not megahertz, is the honest metric** — `analysis/models/predict_from_curve.py` scores the
+predictor at **0.675% mean regret over 192 sweeps**, tying a hindsight-fitted per-configuration
+constant exactly while needing no measurement. ⚠️ **And the whole configuration axis is worth only
+1.29 points of regret against a 30–57 point headroom**, so do not oversell it.
+
 ---
 
 ## Ruled out — do not revisit without new information
