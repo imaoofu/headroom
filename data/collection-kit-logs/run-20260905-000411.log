@@ -1,0 +1,47 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260905000411
+Username: DESKTOP-M12FMDT\Raymond
+RunAs User: DESKTOP-M12FMDT\Raymond
+Configuration Name: 
+Machine: DESKTOP-M12FMDT (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command try { $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8' } catch {}; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { try { $OutputEncoding = [System.Text.UTF8Encoding]::new() } catch {}; if ($null -ne $PSStyle) { try { $PSStyle.OutputRendering = 'PlainText' } catch {} } }; cd F:\headroom-kit; "--- REFUSAL path (wrong expected value) ---"; .\Collect.ps1 -Label tol-refusal -ExpectedMemoryClockMhz 9251 -AppliedSettings "TEST: expecting REFUSAL at the widened 400 MHz tolerance." -NoPause 2>&1 | Select-Object -Last 6; "exit: $LASTEXITCODE"
+; $_ec = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+; (Get-Location).Path | Out-File -FilePath 'C:\Users\Raymond\AppData\Local\Temp\claude\claude-pwd-ps-76a3' -Encoding utf8 -NoNewline
+; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { $host.SetShouldExit($_ec) } else { exit $_ec }
+Process ID: 6944
+PSVersion: 5.1.26100.9168
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9168
+BuildVersion: 10.0.26100.9168
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+
+  Measuring the memory clock UNDER LOAD...
+  (clocks.max.memory reads the same on a stock and an overclocked card)
+  MEASURED MEMORY CLOCK UNDER LOAD: 13801 MHz
+
+STOPPED: REFUSING: memory clock under load is 13801 MHz, not 9251 +/- 400.
+
+The card is not in the configuration this run claims. Nothing was collected.
+Fix the card, or pass the right -ExpectedMemoryClockMhz if you meant to collect
+a tuned configuration.
+
+Nothing was changed. Fix the above and run RUN-ME.bat again.
+**********************
+Windows PowerShell transcript end
+End time: 20260905000436
+**********************

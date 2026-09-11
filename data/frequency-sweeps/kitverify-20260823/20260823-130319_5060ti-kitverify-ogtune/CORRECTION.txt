@@ -1,0 +1,51 @@
+CORRECTION TO THIS RUN'S applied_settings FIELD
+Written 2026-08-23, after the run, by the person who wrote the original declaration.
+
+WHAT THE FIELD SAYS
+  It opens "KIT VERIFICATION RUN - NOT USABLE AS DATA" and attributes that to the operator
+  actively using the machine, citing this project's 2026-08-22 finding of up to 6% depression
+  in the 1237-2010 MHz band and a roughly fivefold increase in run-to-run spread.
+
+WHY THAT REASONING WAS WRONG
+  The 2026-08-22 finding is about NVIDIA Instant Replay and, secondarily, Wallpaper Engine.
+  Instant Replay was OFF for this run and verified at 0% encoder before it started. Citing that
+  finding to justify a claim about ordinary desktop activity applies a measurement to a
+  condition it never measured.
+
+  The specific worry was that Opera, Discord and Spotify were open. That was checked against the
+  23 sweeps of 2026-08-22 and it does not hold: not one of those runs declares a browser closed.
+  What they control for is the measured idle baseline and the encoder. This run started at 4.2%
+  baseline with 0% encoder, which is cleaner than r3 (4.3%) and r6 (5.1%) - the two runs the
+  paper's clean dataset rests on.
+
+WHAT IS ACTUALLY TRUE ABOUT THIS RUN
+  Peak gemm 17.29 TFLOP/s at 2947.6 MHz achieved, memory 16301 MHz under load. The configuration
+  is confirmed identical to the tuned n=5 runs of paper section 5.7.6, which range 17.88 to 18.02
+  and mean 17.96. This run is 3.7% below that mean and 3.3% below the lowest of the five, at the
+  same achieved clock, at 62 C and 161.7 W of a 200 W budget, with no throttling.
+
+  So the run IS anomalous. The declaration reached the right conclusion from an argument that
+  does not support it, which is not the same as being right.
+
+WHAT CANNOT BE CONCLUDED, AND WHY
+  Two things differ from the n=5 runs and a single run cannot separate them:
+    1. The operator was actively working throughout.
+    2. The kit executes its own PyTorch copy from the F: drive rather than the installed one.
+       That copy was verified against the installed one on membw (412 vs 415 GB/s) and has
+       NEVER been verified on gemm.
+
+  Attributing the deficit to either one would repeat the error made on 2026-08-22, when a
+  throughput gain was credited to Wallpaper Engine while Instant Replay had changed at the same
+  time. The attribution was withdrawn. Do not make it again here.
+
+  A discriminating run was taken the same day with the machine idle and the operator away, under
+  otherwise identical conditions: 20260823-1354xx_5060ti-kitverify-idle. Compare against it
+  before drawing any conclusion from this folder.
+
+STATUS OF THIS RUN'S DATA
+  Usable for what it was for - proving the resynced collection kit runs end to end, which it did:
+  13/13 points on both sweeps, 12 locks held, correct filenames, applied_settings recorded.
+  Not usable as a throughput measurement until the deficit above is explained.
+
+  The applied_settings field is left exactly as written. It is the record of what was declared at
+  the time, and editing it after the fact would destroy the only thing that field is for.

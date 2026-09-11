@@ -1,0 +1,195 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260823144346
+Username: DESKTOP-M12FMDT\Raymond
+RunAs User: DESKTOP-M12FMDT\Raymond
+Configuration Name: 
+Machine: DESKTOP-M12FMDT (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command try { $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8' } catch {}; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { try { $OutputEncoding = [System.Text.UTF8Encoding]::new() } catch {}; if ($null -ne $PSStyle) { try { $PSStyle.OutputRendering = 'PlainText' } catch {} } }; $applied = "DISCRIMINATING RUN, machine idle and operator away. Identical configuration and protocol to 20260823-130319_5060ti-kitverify-ogtune, which peaked at 17.29 TFLOP/s against a tuned n=5 range of 17.88-18.02 in paper 5.7.6. That deficit had TWO candidate causes and this run separates them: the operator was actively working through the 13:03 run, AND the kit runs its own PyTorch copy from the F: drive rather than the installed one (verified on membw at 412 vs 415 GB/s, never verified on gemm). If this run returns to ~17.9-18.0 the cause was desktop activity; if it stays near 17.3 the kit toolchain reads low and every cross-machine comparison built on it carries that bias. CONFIG: original tune - memory +2500 MHz, VERIFIED at 16301 MHz under load in the 13:03 run; core V/F curve pinned flat ~3010 MHz above ~925 mV, VERIFIED by peak SM clock 2947.6 MHz. Power limit 200W. Instant Replay OFF, encoder 0% and decoder 0% over 8 samples immediately before start - note it had re-enabled itself at 14% earlier this session and was switched off again."
+& "F:\headroom-kit\Collect.ps1" -Label "5060ti-kitverify-idle" -AppliedSettings $applied -NoPause
+"COLLECT EXIT: $LASTEXITCODE"
+; $_ec = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+; (Get-Location).Path | Out-File -FilePath 'C:\Users\Raymond\AppData\Local\Temp\claude\claude-pwd-ps-2fda' -Encoding utf8 -NoNewline
+; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { $host.SetShouldExit($_ec) } else { exit $_ec }
+Process ID: 2592
+PSVersion: 5.1.26100.9168
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9168
+BuildVersion: 10.0.26100.9168
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+  [ok] compute capability: sm_120
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 5060 Ti
+  [ok] VRAM free: 15.8 GB
+  [ok] GPU is idle (10% used)
+
+Recording machine details...
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 2: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 610.88)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep floor: 1236 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: DISCRIMINATING RUN, machine idle and operator away. Identical configuration and protocol to 20260823-130319_5060ti-kitverify-ogtune, which peaked at 17.29 TFLOP/s against a tuned n=5 range of 17.88-18.02 in paper 5.7.6. That deficit had TWO candidate causes and this run separates them: the operator was actively working through the 13:03 run, AND the kit runs its own PyTorch copy from the F: drive rather than the installed one (verified on membw at 412 vs 415 GB/s, never verified on gemm). If this run returns to ~17.9-18.0 the cause was desktop activity; if it stays near 17.3 the kit toolchain reads low and every cross-machine comparison built on it carries that bias. CONFIG: original tune - memory +2500 MHz, VERIFIED at 16301 MHz under load in the 13:03 run; core V/F curve pinned flat ~3010 MHz above ~925 mV, VERIFIED by peak SM clock 2947.6 MHz. Power limit 200W. Instant Replay OFF, encoder 0% and decoder 0% over 8 samples immediately before start - note it had re-enabled itself at 14% earlier this session and was switched off again.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Baseline utilisation 3.6% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved   1236 MHz (held),  52.56 W [35 in-window of 40], 43.7 C, util 98.3%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1389.1 MHz (held),  57.89 W [31 in-window of 36], 46.1 C, util 97.2%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved   1537 MHz (held),  61.56 W [27 in-window of 32], 48.5 C, util  99%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved   1695 MHz (held),  66.24 W [25 in-window of 30], 50.4 C, util 97.6%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  69.92 W [23 in-window of 27], 52.4 C, util  99%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  74.95 W [21 in-window of 25], 51.2 C, util  99%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),  87.57 W [19 in-window of 24], 51.4 C, util 97.5%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held), 101.91 W [18 in-window of 22], 52.9 C, util  99%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved   2467 MHz (held), 121.91 W [16 in-window of 21], 55.1 C, util 96.6%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved   2606 MHz (held),  127.2 W [16 in-window of 21], 56.2 C, util 96.5%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved   2775 MHz (held), 142.84 W [15 in-window of 19], 59.5 C, util 96.7%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved 2916.5 MHz (held),  168.4 W [14 in-window of 18], 62.6 C, util  99%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved   2947 MHz (UNDERSHOT -143), 166.34 W [13 in-window of 18], 62.4 C, util 96.8%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3000 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: DISCRIMINATING RUN, machine idle and operator away. Identical configuration and protocol to 20260823-130319_5060ti-kitverify-ogtune, which peaked at 17.29 TFLOP/s against a tuned n=5 range of 17.88-18.02 in paper 5.7.6. That deficit had TWO candidate causes and this run separates them: the operator was actively working through the 13:03 run, AND the kit runs its own PyTorch copy from the F: drive rather than the installed one (verified on membw at 412 vs 415 GB/s, never verified on gemm). If this run returns to ~17.9-18.0 the cause was desktop activity; if it stays near 17.3 the kit toolchain reads low and every cross-machine comparison built on it carries that bias. CONFIG: original tune - memory +2500 MHz, VERIFIED at 16301 MHz under load in the 13:03 run; core V/F curve pinned flat ~3010 MHz above ~925 mV, VERIFIED by peak SM clock 2947.6 MHz. Power limit 200W. Instant Replay OFF, encoder 0% and decoder 0% over 8 samples immediately before start - note it had re-enabled itself at 14% earlier this session and was switched off again.
+[SWEEP] NOTE: 1 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260823-144349_5060ti-kitverify-idle\20260823-144356_5060ti-kitverify-idle-gemm_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260823-144349_5060ti-kitverify-idle\20260823-144356_5060ti-kitverify-idle-gemm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 2: membw
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 610.88)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep floor: 1236 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload membw --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: DISCRIMINATING RUN, machine idle and operator away. Identical configuration and protocol to 20260823-130319_5060ti-kitverify-ogtune, which peaked at 17.29 TFLOP/s against a tuned n=5 range of 17.88-18.02 in paper 5.7.6. That deficit had TWO candidate causes and this run separates them: the operator was actively working through the 13:03 run, AND the kit runs its own PyTorch copy from the F: drive rather than the installed one (verified on membw at 412 vs 415 GB/s, never verified on gemm). If this run returns to ~17.9-18.0 the cause was desktop activity; if it stays near 17.3 the kit toolchain reads low and every cross-machine comparison built on it carries that bias. CONFIG: original tune - memory +2500 MHz, VERIFIED at 16301 MHz under load in the 13:03 run; core V/F curve pinned flat ~3010 MHz above ~925 mV, VERIFIED by peak SM clock 2947.6 MHz. Power limit 200W. Instant Replay OFF, encoder 0% and decoder 0% over 8 samples immediately before start - note it had re-enabled itself at 14% earlier this session and was switched off again.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Baseline utilisation 3.6% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1235.4 MHz (held),  50.53 W [26 in-window of 30], 42.1 C, util 93.7%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.3 MHz (held),  52.92 W [24 in-window of 28],  41 C, util 97.7%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1539.7 MHz (held),  52.83 W [24 in-window of 28], 40.8 C, util 97.2%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1694.7 MHz (held),  53.33 W [24 in-window of 28],  40 C, util 98.6%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved 1845.2 MHz (held),  53.33 W [24 in-window of 28], 39.8 C, util 97.2%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  55.57 W [22 in-window of 25], 39.8 C, util 95.5%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),   60.3 W [20 in-window of 24], 39.9 C, util  96%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  65.59 W [19 in-window of 22], 40.7 C, util 98.9%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved   2467 MHz (held),  69.35 W [18 in-window of 21], 41.2 C, util 91.9%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2593.2 MHz (UNDERSHOT -31.8),  69.99 W [18 in-window of 22], 41.6 C, util 94.6%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved   2775 MHz (held),  77.37 W [18 in-window of 21], 42.6 C, util 98.7%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved   2925 MHz (held),  80.11 W [17 in-window of 21], 43.1 C, util 93.2%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 2985.4 MHz (UNDERSHOT -104.6),  82.08 W [17 in-window of 21], 43.6 C, util 97.1%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3000 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: DISCRIMINATING RUN, machine idle and operator away. Identical configuration and protocol to 20260823-130319_5060ti-kitverify-ogtune, which peaked at 17.29 TFLOP/s against a tuned n=5 range of 17.88-18.02 in paper 5.7.6. That deficit had TWO candidate causes and this run separates them: the operator was actively working through the 13:03 run, AND the kit runs its own PyTorch copy from the F: drive rather than the installed one (verified on membw at 412 vs 415 GB/s, never verified on gemm). If this run returns to ~17.9-18.0 the cause was desktop activity; if it stays near 17.3 the kit toolchain reads low and every cross-machine comparison built on it carries that bias. CONFIG: original tune - memory +2500 MHz, VERIFIED at 16301 MHz under load in the 13:03 run; core V/F curve pinned flat ~3010 MHz above ~925 mV, VERIFIED by peak SM clock 2947.6 MHz. Power limit 200W. Instant Replay OFF, encoder 0% and decoder 0% over 8 samples immediately before start - note it had re-enabled itself at 14% earlier this session and was switched off again.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260823-144349_5060ti-kitverify-idle\20260823-144845_5060ti-kitverify-idle-membw_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260823-144349_5060ti-kitverify-idle\20260823-144845_5060ti-kitverify-idle-membw_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+=======================================================
+  Checking what was collected
+=======================================================
+  [ok] 20260823-144356_5060ti-kitverify-idle-gemm_sweep.csv: 13 points, 13 with performance data, 12 locks held
+  [ok] 20260823-144845_5060ti-kitverify-idle-membw_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] peak SM clock, 20260823-144356_5060ti-kitverify-idle-gemm_sweep: 2,947 MHz (provenance evidence)
+  [ok] peak SM clock, 20260823-144845_5060ti-kitverify-idle-membw_sweep: 2,985 MHz (provenance evidence)
+
+  COLLECTION SUCCEEDED
+
+  Results are in:
+    F:\headroom-kit\results\20260823-144349_5060ti-kitverify-idle
+
+  Copy that whole folder off this machine, then delete the kit.
+
+  GPU clocks have been reset to normal automatically.
+  Verify with:  nvidia-smi -q -d CLOCK
+
+**********************
+Windows PowerShell transcript end
+End time: 20260823145322
+**********************

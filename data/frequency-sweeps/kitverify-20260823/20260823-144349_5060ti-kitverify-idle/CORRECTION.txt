@@ -1,0 +1,36 @@
+CORRECTION TO THIS RUN'S applied_settings FIELD
+Written 2026-08-23, immediately after the run, by the person who wrote the declaration.
+
+THE ERROR
+  The field ends: "note it had re-enabled itself at 14% earlier this session and was switched
+  off again."
+
+  "Re-enabled itself" is an attribution that was NOT established and should not have been
+  written. What was observed is only this: the encoder read 0% immediately before the 13:03 run
+  and a sustained 14% roughly forty minutes later, with no record of a deliberate change in
+  between. Two explanations fit - the operator switched it back on after a guard test, or it
+  came back on without being asked - and nothing distinguishes them.
+
+  The error is worse than a loose phrase, because the same session had just produced a written
+  warning against exactly this: crediting a cause when two candidates co-vary. That warning is in
+  CLAUDE.md. It was written about forty minutes before this field was composed.
+
+WHAT THE FIELD SHOULD HAVE SAID
+  "Encoder measured 0% over 8 samples immediately before start. Note it read a sustained 14%
+  earlier this session having been verified at 0% before the 13:03 run; cause not established."
+
+STATUS
+  The field is left unedited, as with the 13:03 run. It records what was declared at the time.
+  A record that is quietly corrected afterwards is not a record.
+
+  Nothing else in the declaration is affected. The encoder WAS verified at 0% over 8 samples
+  before this run started, the baseline WAS 3.6%, and the configuration figures were all measured
+  rather than assumed.
+
+RESOLVED, 2026-08-23, same day
+  The operator was asked and confirmed: he switched Instant Replay back on himself after the
+  deliberate guard test earlier that afternoon. It did NOT re-enable itself.
+
+  So the field's claim is simply false, and the softer version this note proposed - "cause not
+  established" - was true only until somebody asked. Asking took one sentence. It should have
+  come before the claim, not after it.

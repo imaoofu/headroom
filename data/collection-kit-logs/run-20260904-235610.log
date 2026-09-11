@@ -1,0 +1,187 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260904235610
+Username: DESKTOP-M12FMDT\Raymond
+RunAs User: DESKTOP-M12FMDT\Raymond
+Configuration Name: 
+Machine: DESKTOP-M12FMDT (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command try { $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8' } catch {}; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { try { $OutputEncoding = [System.Text.UTF8Encoding]::new() } catch {}; if ($null -ne $PSStyle) { try { $PSStyle.OutputRendering = 'PlainText' } catch {} } }; cd F:\headroom-kit; .\Collect.ps1 -Label stockcheck-falsepositive-test -ExpectedMemoryClockMhz 13801 -AppliedSettings "TEST: expecting this to PASS, since 13801 is this card's stock figure. If it refuses, the check has a false-positive bug." -NoPause 2>&1 | Select-Object -Last 12; "exit: $LASTEXITCODE"
+; $_ec = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+; (Get-Location).Path | Out-File -FilePath 'C:\Users\Raymond\AppData\Local\Temp\claude\claude-pwd-ps-2bdc' -Encoding utf8 -NoNewline
+; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { $host.SetShouldExit($_ec) } else { exit $_ec }
+Process ID: 9496
+PSVersion: 5.1.26100.9168
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9168
+BuildVersion: 10.0.26100.9168
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+
+  Measuring the memory clock UNDER LOAD...
+  (clocks.max.memory reads the same on a stock and an overclocked card)
+  MEASURED MEMORY CLOCK UNDER LOAD: 13801 MHz
+  [ok] matches the expected 13801 MHz
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+  [ok] compute capability: sm_120
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 5060 Ti
+  [ok] VRAM free: 15.8 GB
+  [ok] GPU is idle (3% used)
+
+Recording machine details...
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 2: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.56)
+[SWEEP] Max clock:  3090 MHz | power limit 180.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep floor: 1236 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: TEST: expecting this to PASS, since 13801 is this card's stock figure. If it refuses, the check has a false-positive bug.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Baseline utilisation 3.2% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1236.2 MHz (held),   53.3 W [35 in-window of 41], 46.4 C, util 96.6%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1388.3 MHz (held),  58.16 W [30 in-window of 37], 48.6 C, util 97.6%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved   1537 MHz (held),  64.93 W [27 in-window of 34], 50.6 C, util 98.6%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved   1695 MHz (held),  74.66 W [24 in-window of 31],  53 C, util 97.8%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  87.83 W [22 in-window of 28], 52.9 C, util  99%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held), 103.57 W [20 in-window of 26], 54.2 C, util  98%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved 2152.4 MHz (held), 112.05 W [19 in-window of 25], 54.3 C, util 96.7%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held), 117.82 W [18 in-window of 23], 56.2 C, util 94.7%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved   2467 MHz (held),  150.9 W [16 in-window of 27], 60.5 C, util 97.1%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2582.1 MHz (UNDERSHOT -42.9), 168.82 W [16 in-window of 22], 64.2 C, util 96.6%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2589.6 MHz (UNDERSHOT -192.4), 169.26 W [16 in-window of 22], 64.8 C, util 96.7%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved 2590.1 MHz (UNDERSHOT -341.9), 169.84 W [16 in-window of 22], 65.2 C, util 97.4%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 2588.1 MHz (UNDERSHOT -501.9), 167.67 W [16 in-window of 22], 64.9 C, util 96.6%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 2760 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: TEST: expecting this to PASS, since 13801 is this card's stock figure. If it refuses, the check has a false-positive bug.
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\20260904-235636_stockcheck-falsepositive-test-gemm_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\20260904-235636_stockcheck-falsepositive-test-gemm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 2: membw
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.56)
+[SWEEP] Max clock:  3090 MHz | power limit 180.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep floor: 1236 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload membw --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: TEST: expecting this to PASS, since 13801 is this card's stock figure. If it refuses, the check has a false-positive bug.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Baseline utilisation 3.4% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1234.8 MHz (held),  49.86 W [26 in-window of 32],  43 C, util 98.7%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1392.7 MHz (held),  51.61 W [24 in-window of 30],  42 C, util 97.9%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved   1537 MHz (held),  53.58 W [23 in-window of 28],  41 C, util 96.7%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved   1695 MHz (held),   56.9 W [21 in-window of 27],  41 C, util 98.9%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  60.92 W [21 in-window of 26], 40.8 C, util 92.2%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  65.46 W [20 in-window of 26], 41.6 C, util 97.4%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved 2156.9 MHz (held),  67.66 W [36 in-window of 41],  42 C, util 98.4%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  70.68 W [20 in-window of 26],  43 C, util 96.6%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved   2467 MHz (held),   74.9 W [20 in-window of 26], 43.6 C, util 98.8%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved   2617 MHz (held),  84.94 W [20 in-window of 26], 44.6 C, util 97.3%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2752.8 MHz (held),  89.67 W [20 in-window of 25], 45.5 C, util 95.4%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved 2753.2 MHz (UNDERSHOT -178.8),   88.8 W [20 in-window of 25], 46.1 C, util  96%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 2753.2 MHz (UNDERSHOT -336.8),  87.85 W [20 in-window of 25], 46.4 C, util 98.6%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 2760 MHz at idle/load.
+PS>TerminatingError(Export-Csv): "Could not find a part of the path 'F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\20260905-000142_stockcheck-falsepositive-test-membw_sweep.csv'."
+>> TerminatingError(Export-Csv): "Could not find a part of the path 'F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\20260905-000142_stockcheck-falsepositive-test-membw_sweep.csv'."
+  Sweep for membw failed: Could not find a part of the path 'F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\20260905-000142_stockcheck-falsepositive-test-membw_sweep.csv'.
+
+=======================================================
+  Checking what was collected
+=======================================================
+  [BAD] No sweep CSV files were written.
+PS>TerminatingError(Out-File): "Could not find a part of the path 'F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\machine-info.txt'."
+>> TerminatingError(Out-File): "Could not find a part of the path 'F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\machine-info.txt'."
+>> TerminatingError(Out-File): "Could not find a part of the path 'F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\machine-info.txt'."
+Out-File : Could not find a part of the path
+'F:\headroom-kit\results\20260904-235628_stockcheck-falsepositive-test\machine-info.txt'.
+At F:\headroom-kit\Collect.ps1:439 char:13
++ $evidence | Out-File -FilePath $infoPath -Encoding utf8 -Append
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OpenError: (:) [Out-File], DirectoryNotFoundException
+    + FullyQualifiedErrorId : FileOpenFailure,Microsoft.PowerShell.Commands.OutFileCommand
+
+PS>$global:?
+False
+**********************
+Windows PowerShell transcript end
+End time: 20260905000645
+**********************

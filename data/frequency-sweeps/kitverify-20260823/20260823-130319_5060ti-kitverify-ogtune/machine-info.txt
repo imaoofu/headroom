@@ -1,0 +1,38 @@
+﻿label            : 5060ti-kitverify-ogtune
+collected_at     : 2026-08-23T13:03:19.5283212-07:00
+collected_by     : kit v2
+applied_settings : KIT VERIFICATION RUN - NOT USABLE AS DATA. The operator was actively using the machine throughout (Opera, Discord, Spotify open, interactive work in progress), which by this project's own 2026-08-22 finding depresses measured throughput by up to 6% in the 1237-2010 MHz band and inflates run-to-run spread roughly fivefold. Do not compare these numbers against any other sweep. Purpose is to prove the resynced collection kit runs end to end. CONFIG: original tune, declared by the operator and confirmed against the Afterburner curve editor - memory +2500 MHz offset (expect 16301 under load against the 14001 rating), core V/F curve pinned flat at ~3010 MHz from ~925 mV upward, raised above stock below that (~1900 MHz at 700 mV where stock is ~1400), step at ~845-850 mV. NOT the split curve. Power limit 200W. Instant Replay OFF, encoder 0% and decoder 0% over 10 samples before start.
+                       ASSERTED BY THE OPERATOR, NOT VERIFIED.
+                       Nothing in nvidia-smi reports whether an Afterburner or
+                       vendor profile is applied, so this kit cannot check it.
+                       See measured_peak_sm_clock_mhz at the end of this file -
+                       that IS measured, and is the field to trust.
+
+--- GPU (nvidia-smi) ---
+name, driver_version, vbios_version, memory.total [MiB], power.limit [W], power.max_limit [W], pcie.link.gen.max, pcie.link.width.max
+NVIDIA GeForce RTX 5060 Ti, 610.88, 98.06.4e.40.b4, 16311 MiB, 200.00 W, 200.00 W, 5, 8
+
+--- CPU / RAM / OS ---
+cpu              : AMD Ryzen 7 9700X 8-Core Processor
+cpu_cores        : 8 cores / 16 threads
+ram_gb           : 31.1
+os               : Microsoft Windows 11 Pro 10.0.26200
+
+--- NOTE ---
+The tuning_state_claimed line above is what the operator was SUPPOSED to do, not
+something this kit confirmed. If a profile was applied and nobody noticed, that
+line is wrong and nothing in it would reveal the mistake.
+The measured peak clock appended below is the actual evidence. On a known GPU
+model, stock and tuned sustained clocks differ far more than run-to-run noise -
+measured on an RTX 5060 Ti: 2588 MHz stock against ~2950 MHz tuned, a 360 MHz
+gap. Classify the run from that number, not from the claim.
+
+--- MEASURED (this is evidence, unlike tuning_state_claimed) ---
+peak_sm_clock_mhz[20260823-130325_5060ti-kitverify-ogtune-gemm_sweep] : 2,948
+peak_sm_clock_mhz[20260823-130834_5060ti-kitverify-ogtune-membw_sweep] : 2,986
+  Highest sustained SM clock reached in each sweep. Compare EACH against the same
+  workload's known stock figure for this GPU model - never against the other
+  workload's. Materially above stock means a profile was applied and this is NOT a
+  stock baseline, whatever tuning_state_claimed says.
+  RTX 5060 Ti reference, measured: gemm 2588 stock / ~2950 tuned;
+  membw 2753 stock. Other models need their own reference before comparing.

@@ -1,0 +1,53 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260823125856
+Username: DESKTOP-M12FMDT\Raymond
+RunAs User: DESKTOP-M12FMDT\Raymond
+Configuration Name: 
+Machine: DESKTOP-M12FMDT (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command try { $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8' } catch {}; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { try { $OutputEncoding = [System.Text.UTF8Encoding]::new() } catch {}; if ($null -ne $PSStyle) { try { $PSStyle.OutputRendering = 'PlainText' } catch {} } }; $applied = "ORIGINAL TUNE, declared by the operator and confirmed against the Afterburner curve editor. Memory +2500 MHz offset (expect 16301 under load against the 14001 rating). Core V/F curve pinned flat at ~3010 MHz from ~925 mV upward; below that the curve is raised above stock throughout - ~1900 MHz at 700 mV where stock is ~1400 - rising to ~2900 MHz at 920 mV with a step at ~845-850 mV. NOT the split curve, which restores the stock slope below 845 mV. Power limit 200W. Instant Replay OFF, encoder 0% over 6 samples before start. KIT VERIFICATION RUN, not a data run."
+& "F:\headroom-kit\Collect.ps1" -Label "5060ti-kitverify-ogtune" -AppliedSettings $applied -NoPause
+"COLLECT EXIT: $LASTEXITCODE"
+; $_ec = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+; (Get-Location).Path | Out-File -FilePath 'C:\Users\Raymond\AppData\Local\Temp\claude\claude-pwd-ps-9511' -Encoding utf8 -NoNewline
+; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { $host.SetShouldExit($_ec) } else { exit $_ec }
+Process ID: 2684
+PSVersion: 5.1.26100.9168
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9168
+BuildVersion: 10.0.26100.9168
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+
+STOPPED: Something is recording or playing video on this GPU (encoder 0%, decoder 2%).
+
+The usual cause is an always-on clipper that has no window and that Task Manager's
+GPU column will NOT show:
+
+  - NVIDIA Instant Replay / ShadowPlay  <- ON BY DEFAULT, check this one first
+      NVIDIA app > Settings, or GeForce Experience > Share, turn Instant Replay OFF
+  - OBS replay buffer, Discord or Steam recording, Xbox Game Bar, AMD ReLive
+  - a browser tab or media player decoding video
+
+This is not a technicality. Measured on this project, Instant Replay cost 1.5% of peak
+throughput, 4.2% in the mid band, and made repeat runs FIFTY TIMES less consistent.
+A run collected with it on is not comparable to one collected with it off.
+
+Switch it off and run RUN-ME.bat again.
+
+Nothing was changed. Fix the above and run RUN-ME.bat again.
+**********************
+Windows PowerShell transcript end
+End time: 20260823125857
+**********************

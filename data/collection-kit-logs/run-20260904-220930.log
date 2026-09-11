@@ -1,0 +1,51 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260904220931
+Username: DESKTOP-M12FMDT\Raymond
+RunAs User: DESKTOP-M12FMDT\Raymond
+Configuration Name: 
+Machine: DESKTOP-M12FMDT (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command try { $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8' } catch {}; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { try { $OutputEncoding = [System.Text.UTF8Encoding]::new() } catch {}; if ($null -ne $PSStyle) { try { $PSStyle.OutputRendering = 'PlainText' } catch {} } }; cd F:\headroom-kit; .\Collect.ps1 -Label stockcheck-refusal-test -ExpectedMemoryClockMhz 9251 -AppliedSettings "TEST of the new stock check - expecting a REFUSAL, since 9251 is the 3070 Ti figure and this is a 5060 Ti at 13801." -NoPause 2>&1 | Select-Object -Last 22; "exit: $LASTEXITCODE"
+; $_ec = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+; (Get-Location).Path | Out-File -FilePath 'C:\Users\Raymond\AppData\Local\Temp\claude\claude-pwd-ps-ce41' -Encoding utf8 -NoNewline
+; if ($ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage') { $host.SetShouldExit($_ec) } else { exit $_ec }
+Process ID: 22172
+PSVersion: 5.1.26100.9168
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9168
+BuildVersion: 10.0.26100.9168
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+
+STOPPED: Something is recording or playing video on this GPU (encoder 0%, decoder 3%).
+
+The usual cause is an always-on clipper that has no window and that Task Manager's
+GPU column will NOT show:
+
+  - NVIDIA Instant Replay / ShadowPlay  <- ON BY DEFAULT, check this one first
+      NVIDIA app > Settings, or GeForce Experience > Share, turn Instant Replay OFF
+  - OBS replay buffer, Discord or Steam recording, Xbox Game Bar, AMD ReLive
+  - a browser tab or media player decoding video
+
+This is not a technicality. Measured on this project, Instant Replay cost 1.5% of peak
+throughput, 4.2% in the mid band, and made repeat runs FIFTY TIMES less consistent.
+A run collected with it on is not comparable to one collected with it off.
+
+Switch it off and run RUN-ME.bat again.
+
+Nothing was changed. Fix the above and run RUN-ME.bat again.
+**********************
+Windows PowerShell transcript end
+End time: 20260904220932
+**********************

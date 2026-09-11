@@ -1,0 +1,38 @@
+label            : 5060ti-kitverify-idle
+collected_at     : 2026-08-23T14:43:49.6599743-07:00
+collected_by     : kit v2
+applied_settings : DISCRIMINATING RUN, machine idle and operator away. Identical configuration and protocol to 20260823-130319_5060ti-kitverify-ogtune, which peaked at 17.29 TFLOP/s against a tuned n=5 range of 17.88-18.02 in paper 5.7.6. That deficit had TWO candidate causes and this run separates them: the operator was actively working through the 13:03 run, AND the kit runs its own PyTorch copy from the F: drive rather than the installed one (verified on membw at 412 vs 415 GB/s, never verified on gemm). If this run returns to ~17.9-18.0 the cause was desktop activity; if it stays near 17.3 the kit toolchain reads low and every cross-machine comparison built on it carries that bias. CONFIG: original tune - memory +2500 MHz, VERIFIED at 16301 MHz under load in the 13:03 run; core V/F curve pinned flat ~3010 MHz above ~925 mV, VERIFIED by peak SM clock 2947.6 MHz. Power limit 200W. Instant Replay OFF, encoder 0% and decoder 0% over 8 samples immediately before start - note it had re-enabled itself at 14% earlier this session and was switched off again.
+                       ASSERTED BY THE OPERATOR, NOT VERIFIED.
+                       Nothing in nvidia-smi reports whether an Afterburner or
+                       vendor profile is applied, so this kit cannot check it.
+                       See measured_peak_sm_clock_mhz at the end of this file -
+                       that IS measured, and is the field to trust.
+
+--- GPU (nvidia-smi) ---
+name, driver_version, vbios_version, memory.total [MiB], power.limit [W], power.max_limit [W], pcie.link.gen.max, pcie.link.width.max
+NVIDIA GeForce RTX 5060 Ti, 610.88, 98.06.4e.40.b4, 16311 MiB, 200.00 W, 200.00 W, 5, 8
+
+--- CPU / RAM / OS ---
+cpu              : AMD Ryzen 7 9700X 8-Core Processor
+cpu_cores        : 8 cores / 16 threads
+ram_gb           : 31.1
+os               : Microsoft Windows 11 Pro 10.0.26200
+
+--- NOTE ---
+The tuning_state_claimed line above is what the operator was SUPPOSED to do, not
+something this kit confirmed. If a profile was applied and nobody noticed, that
+line is wrong and nothing in it would reveal the mistake.
+The measured peak clock appended below is the actual evidence. On a known GPU
+model, stock and tuned sustained clocks differ far more than run-to-run noise -
+measured on an RTX 5060 Ti: 2588 MHz stock against ~2950 MHz tuned, a 360 MHz
+gap. Classify the run from that number, not from the claim.
+
+--- MEASURED (this is evidence, unlike tuning_state_claimed) ---
+peak_sm_clock_mhz[20260823-144356_5060ti-kitverify-idle-gemm_sweep] : 2,947
+peak_sm_clock_mhz[20260823-144845_5060ti-kitverify-idle-membw_sweep] : 2,985
+  Highest sustained SM clock reached in each sweep. Compare EACH against the same
+  workload's known stock figure for this GPU model - never against the other
+  workload's. Materially above stock means a profile was applied and this is NOT a
+  stock baseline, whatever tuning_state_claimed says.
+  RTX 5060 Ti reference, measured: gemm 2588 stock / ~2950 tuned;
+  membw 2753 stock. Other models need their own reference before comparing.
