@@ -9,7 +9,7 @@ and knowing the current state. `docs/PAPER_DRAFT.md` is the write-up; every numb
 sections is pinned by `analysis/audit_claims.py` and must not be edited by hand without re-running
 that.
 
-Last updated **2026-09-04**.
+Last updated **2026-09-10**.
 
 ---
 
@@ -65,7 +65,7 @@ proceed.
 python run_tests.py
 ```
 
-**`541 checks across 16 suite(s).`** then `All suites passed.` It is `539` where `data/raw/` was
+**`587 checks across 17 suite(s).`** then `All suites passed.` It is `585` where `data/raw/` was
 not fetched: two checks in `models/test_predict_constrained_frequency.py` skip without it. The
 runner also fails if it finds a
 `test_*.py` under a directory it is not running — that guard exists because moving the model suites
@@ -76,9 +76,10 @@ green result.
 python analysis/audit_claims.py
 ```
 
-**204 claims, 0 failures**, or **179** where `data/raw/` was not fetched - `claims_reference.py`
-registers its 24 claims only when the dataset is present, and `header-pinned-count` is guarded on
-the same condition because a claim counting the registry is otherwise environment-dependent. Every pinned number in the paper, recomputed from the CSVs and asserted
+**231 claims, 0 failures**, or **203** where `data/raw/` was not fetched - `claims_reference.py`
+registers its 24 claims only when the dataset is present, and FIVE more claims are guarded on the
+same condition because a claim counting the registry is otherwise environment-dependent, so the gap
+is 28 rather than 24. Every pinned number in the paper, recomputed from the CSVs and asserted
 present verbatim and exactly once. If a claim fails, the paper and the data disagree — that is the
 whole point of the tool, so read it as a real finding, not a broken script.
 
@@ -133,8 +134,18 @@ depends on it.
 ## Git access
 
 The original machine pushes with plain `git push` using a credential already in Windows Credential
-Manager. `gh` was installed but its auth flow never completed and it is **not** needed — don't route
-through it.
+Manager. **`gh` was authenticated on 2026-09-02** (account `imaoofu`, scopes `gist`, `read:org`,
+`repo`, `workflow`). Keep pushing with plain `git push` — but **`gh` is the only way to read CI**,
+because the repo is private and an unauthenticated API request returns `Not Found` rather than a
+useful error:
+
+```powershell
+gh run list --limit 10
+gh run view <run-id> --log-failed
+```
+
+⚠️ A `cancelled` run is usually not a failure — `ci.yml` sets `cancel-in-progress`, so a push that
+supersedes a running one cancels it.
 
 On a new machine, either set up `gh auth login` properly or let Git Credential Manager prompt on
 first push. Commit identity used:
@@ -176,79 +187,95 @@ utilisation and names the offending process.
 
 ---
 
-## State as of 2026-09-04
+## State as of 2026-09-10
 
-**Data.** 112 committed sweep CSVs across **two chips**: 99 on a Zotac RTX 5060 Ti Twin Edge OC 16 GB (Blackwell) and 13 on
-a Gigabyte RTX 3070 Ti GAMING OC (Ampere), collected 2026-08-25 on a third party's machine and
-returned to the state it was found in. Plus the stability logger's runs and the V100 public
-dataset, which is never pooled with either.
+**Data. 349 committed sweep CSVs across THREE chips**, of which **342 are dataset-grade** — the
+figure the paper's results rest on. The difference is three probe directories whose own READMEs
+mark them not dataset-grade, plus four kit-verification sweeps.
 
-**Established, and not to be re-derived:**
+| chip | arch / node | sweeps | what was done to it |
+|---|---|---|---|
+| Zotac RTX 5060 Ti Twin Edge OC 16 GB | Blackwell, 5 nm | 306 | everything, including all tuning |
+| Gigabyte RTX 3070 Ti GAMING OC | Ampere, 8 nm | 25 | stock + two vendor BIOS positions |
+| ASUS Phoenix RTX 3060 12 GB | Ampere, 8 nm | 14 | stock only |
+| unlabelled, 2026-08-15/16 | 5060 Ti | 4 | early harness verification |
 
-- **The 44.4% V100 headroom gap** and the **null** — per-workload prediction ties a fixed 952 MHz.
-- **The `membw` plateau**, traced to the core V/F curve, explained by core voltage and crossbar
-  clock through HWiNFO, and repaired by a change derived from that diagnosis (§5.7).
-- **The central result reproduces on a second architecture** — 21.7% throughput for 37.3% power on
-  the 3070 Ti (§5.5). Two chips is not a sample; every *tuning* result is still 5060 Ti only.
-- **The vendor OC BIOS costs 23.11% more power at matched frequency for 0.56% of peak compute**
-  (§5.5.1), and its clock ceiling is a `SwPowerCap`, not silicon (§5.5.3). **It is NOT voltage** —
-  this bullet said "almost entirely voltage" until 2026-08-28, which Session B refuted: both BIOSes
-  hold the same floor within one sensor step, the gap is a ~34 W additive offset that does not
-  scale with core clock, and it is excluded from being voltage, core dynamic power, memory clock,
-  crossbar or leakage. No mechanism is claimed (§5.5.1.1).
-- **The constrained result, added 2026-08-27** (§5.6.1 + `analysis/models/`): under a 95%
-  performance floor, probing beats a fixed frequency **25.4% to 4.9%** mean efficiency gain — 87%
-  of the available gap, zero floor violations. **But the fitting earns none of it**: straight-line
-  interpolation between four probes beats every fitted variant. Ridge only appears to win by
-  breaking the floor on 8 of 33 workloads; made to respect it, it does worse than the interpolation.
+The 3070 Ti (2026-08-25) and the 3060 (2026-09-10) were customer machines, collected with the USB
+kit and returned as found. **Every tuning result is 5060 Ti only**, and always will be on this route.
 
-**Repo structure note:** `analysis/models/` now holds everything that *predicts* rather than
-measures, with its own README giving each model's current verdict. `analysis/` keeps measurement
-and the audit.
+### Established, and not to be re-derived
+
+🔑 **THE CENTRAL RESULT — the efficiency optimum is the last frequency the V/F curve reaches at the
+card's LOAD-FLOOR voltage.** Confirmed on five configurations across two architectures, each
+prediction registered in the run's metadata *before* the measurement:
+
+| configuration | chip | floor | ends | optimum |
+|---|---|---|---|---|
+| stock / split / repair | 5060 Ti | 0.720 V | 1530-1537 | 1537 |
+| full tune | 5060 Ti | 0.720 V | 2002 | 2002 |
+| **stock** | **RTX 3060** | **0.756 V** | **1260** | **1260** |
+
+Tested by **manipulation** (move the floor region, optimum moves +465 MHz in 12 of 12 workloads),
+by **negative control** (move the curve above the floor by 570 MHz, optimum moves by nothing), and
+**across architectures**. ⛔ **The floor voltage is per card and does NOT transfer** — borrowing
+0.720 V for the 3060 costs a 270 MHz error.
+
+- **The 44.4% V100 headroom gap** and **the null** — per-workload prediction ties a fixed 952 MHz.
+  🔑 **The consumer data now explains the null**: 61.9% of the optimum's variance sits on the
+  *configuration* and 19.0% on the workload, and the V100 set has exactly one configuration, so 62%
+  of the signal is invisible in it by construction. `analysis/models/predict_from_curve.py` scores a
+  curve-reading predictor at **0.675% mean regret**, tying a hindsight-fitted per-configuration
+  constant exactly. ⚠️ The whole axis is worth 1.29 points against a 30-57 point headroom.
+- **The `membw` plateau**, traced to the core V/F curve and crossbar starvation, repaired by a change
+  derived from the diagnosis. ⚠️ The mechanism statement was **generalised 2026-09-09**: it is not
+  about flatness low down — *the crossbar tracks the core while voltage rises, and stops wherever
+  voltage plateaus while the core keeps climbing.*
+- **The first same-session stock-versus-tuned comparison**, 2026-09-09: gap **~23 points, ±1.3**,
+  stock higher in 12 of 12 workloads. Everything earlier was assembled across days.
+- **The vendor OC BIOS costs 23.11% more power at matched frequency for 0.56% of peak compute**, and
+  it is **NOT voltage** — a ~34 W additive offset excluded from voltage, core dynamic power, memory
+  clock, crossbar and leakage. No mechanism claimed.
+- **Stock is applicable from the command line** as of 2026-09-08 — Profile 3 holds it, verified on
+  disk and in application. That removed the constraint forcing every comparison to be tuned-vs-tuned.
+
+### Corrections made recently, so they are not re-introduced
+
+- ⛔ `abba-20260908`'s "the full tune reproduces to 0.04 points" is **retracted** — a second bracket
+  drifted −1.25. At n=2 the tuned side's session reproducibility is **±1.3 points**.
+- ⛔ CLAUDE.md's claim-count gap said 25; it is **28**. Five non-reference claims are guarded, not two.
+- ⛔ `predict_from_curve.py`'s "the floor is assumed to transfer" — **falsified**, see above.
 
 ---
 
 ## Not done — roughly in order of value
 
-1. ~~A fan-RPM log on the 3070 Ti~~ **DONE 2026-08-29 without the card** - the RPM was already in the raw HWiNFO logs and cooling is now excluded (§5.5.1.1). ⚠️ **The `membw` matched-2130 sweep this entry called never-collected WAS collected**, on 2026-08-25 (`hwinfo-oc/20260825-155312_rtx3070ti-oc-membw-matched2130-hwinfo_sweep.csv`). Session B ran
-   2026-08-27 and refuted its own registered prediction: the two BIOSes hold the same voltage
-   floor, and the ~34 W gap is an additive offset excluded from voltage, core dynamic power,
-   memory clock, crossbar and leakage (§5.5.1.1). The one live candidate is board-level — the
-   position drawing *more* power runs ~5 °C *cooler*, so the cooling system is doing more work and
-   fan power sits inside `nvidia-smi`'s board figure. **HWiNFO reports fan RPM and Session B did
-   not capture it.** That single addition would turn a set of exclusions into a mechanism, and it
-   needs the card. `membw` matched-2130 was also planned and never collected.
-2. ~~**Nothing has been stability-tested**~~ **DONE, three configurations** - split curve and the
-   original tune on 2026-08-23, a stock baseline on 2026-08-30, all under
-   `tools/stability-logger/Invoke-StabilityProtocol.ps1`. Say "no failure observed in thirty
-   minutes", never "stable". The ~2.5% split-curve outlier this entry cited as evidence was the
-   capture software of §5.4.4 and is retired, not outstanding.
-3. ~~**The failure detector has never seen a failure**~~ **DONE 2026-08-30, and it was worth the
-   hour.** An undervolt set deliberately past the edge - 875 mV at 3000 MHz - crashed the display
-   driver and the detector returned 11 events. The signature is a power collapse under sustained
-   *reported* utilisation, the reset silently cleared the Afterburner offsets, and it crashed
-   fourteen seconds before the benchmark process launched. The verdict was **reconstructed, not
-   emitted** - the run was stopped before either JSON was written (§3.5,
-   `data/stability-runs/README-uv-875mv-3ghz-20260830.md`).
-4. ~~**The paper does not yet carry the constrained result**~~ **DONE.** §5.6.2 carries both halves
-   and the abstract states the inversion in the sentence after the null. §5.6.2.1 retests it on
-   consumer silicon.
-5. **A voltage contradiction in the paper.** Lines 41 and 109 say voltage is "neither readable nor
-   writable" while §5.5.3 reports measured voltage. One of them is wrong and it is the early text.
-6. ~~**Two results exist only in working notes**~~ **DONE 2026-08-22** - both were re-measured
-   under the clean protocol and committed. The split curve's figure of record is 18.24 TFLOP/s.
-7. **Specs conditioning is stubbed.** `loadSpecFeatures()` in `analysis/models/curve_model.py`
-   returns `None` on purpose. The specs table exists (`data/external/all-gpus.json`), but fitting
-   specs → curve needs ~10+ distinct GPU models. Validate leave-one-*model*-out when activating, or
-   two cards of the same model leak across the split.
-8. ~~**Inspirit deliverable format still unknown**~~ **RETIRED 2026-08-23** - the premise was
-   wrong. There is no required format; the program's role is to support publication, so treat
-   publication rather than a submission as the target.
+1. **The NVML offset ladder.** The floor's *extent* is still read from a decoded curve rather than
+   **set**. `nvmlDeviceSetClockOffsets` reads back 0 mV with a profile live, so it stacks on top of
+   Afterburner and a negative offset slides the whole curve — four deliberate extents in one session.
+   ⛔ **The write has never been exercised.** Validate first: power at a locked *f* with a −300 offset
+   should match power at *f*+300 without one.
+2. **Nothing in the profile set is stability tested.** Two 30-minute runs exist from 2026-08-23 on
+   hand-set curves, and nothing verifies those match what is now in the slots.
+3. **`reduce` is sub-optimal in 16 of 16 sweeps** and carries most of the curve-predictor's residual.
+   Its throughput saturates just *past* where the voltage floor ends, so the optimum overshoots every
+   time. A mechanism question, not a modelling one.
+4. **More chips.** ROADMAP targets N=6-10 heterogeneous, stock-only; three are in. An RTX 2060 Super
+   is the highest-value next one — Turing, 12 nm (a third process node), and a same-day sibling of
+   the RTX 2070 Super whose published dataset swept the wrong range.
+5. **`conv` runs 1.6× faster per iteration on the 3060 than the 5060 Ti** and is unexplained.
+   Possibly TF32 gating differing on Ampere. **Do not use `conv` for cross-chip comparison until
+   someone looks.**
+6. **Specs conditioning is stubbed.** `loadSpecFeatures()` in `curve_model.py` returns `None` on
+   purpose; fitting specs → curve needs ~10+ distinct models. Validate leave-one-*model*-out when
+   activating, or two cards of one model leak across the split.
+7. **Paper coverage is uneven.** 20 numbered sections carry no claim at all, including 3.1, 3.2, 3.4
+   and 5.7. The three results from 2026-09-09/10 are in data READMEs and **not yet in the paper**.
+8. **32 loose sweep CSVs sit in `data/frequency-sweeps/` root** from August, in no directory.
+   Tidyable, but claims pin paths — move, run the auditor, fix references.
 
-**Live items after this sweep: 5 (the voltage wording, now fixed in the paper) and 7 (specs
-conditioning), plus running the twelve-workload suite on chips other than the 5060 Ti.** Everything
-else above closed between 2026-08-22 and 2026-08-30 and was still listed as open on 2026-09-04,
-which is the same drift this project audits the paper for and does not audit here.
+⚠️ **The raw HWiNFO logs (35 MB, 17 files) are gitignored and exist on one disk only.** The distilled
+extracts are committed, so nothing published depends on them — but a re-join with different binning
+would need them. Worth a manual backup.
 
 **To run a sweep**, from an elevated shell on a quiet GPU (close games, browsers, Discord — the
 sweep refuses above 10% baseline utilisation and will tell you what to close):

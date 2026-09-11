@@ -1,43 +1,35 @@
 # Headroom
 
-**Quantifying the gap between conservative stock GPU behaviour and the empirically-found safe optimum.**
+**Quantifying the gap between conservative stock GPU behaviour and the empirically-found safe
+optimum — and explaining what sets it.**
 
 > ## ⚠️ Scope and status — read before citing anything here
 >
-> Original data now exists and the central mechanism has been measured. What follows is what that
-> does and does not license.
+> Updated 2026-09-10. Original data exists on three GPUs, and the central mechanism has been
+> measured on two architectures. What follows is what that does and does not license.
 >
-> - **Two chips, one unit each — which is not a sample.** Most consumer results come from one
->   **Zotac RTX 5060 Ti Twin Edge OC 16 GB** (Blackwell) - a factory-overclocked partner board,
->   not a reference card, which is why its observed 3090 MHz maximum exceeds the 2572 MHz the
->   spec database lists for the model. A Gigabyte RTX 3070 Ti GAMING OC (Ampere) was measured on 2026-08-25
->   on a third party's machine and returned; the central result reproduces there — running the
->   compute workload at its efficiency optimum rather than its peak-throughput point costs **21.7%**
->   throughput and saves **37.3%** power. The magnitude differs from the 5060 Ti's; the shape does
->   not. That is one unit of each of two architectures, so it says the *effect* is not an artifact
->   of one board and says nothing about either model line. Chip-to-chip variation on this class of
->   part is published at roughly 11% and remains unmeasured here, because it needs repeat units of
->   one SKU that the project controls.
-> - **Everything about *tuning* is still one chip.** §5.7's two-knob decomposition, the split-region
->   curve, and every overclocked measurement are 5060 Ti only. The 3070 Ti was a customer machine:
->   its curves were never touched, only its two vendor BIOS positions compared.
-> - **The V100 analysis is a separate dataset** — 33 workloads, one chip, published by others.
->   It is never pooled with the consumer data, and the two are reported side by side rather than
->   merged.
-> - **The prediction model lost.** Leave-one-workload-out, it gives 0.883% mean regret against
->   0.837% for a best-fixed-frequency lookup table. That null is the result and is reported as one.
-> - **Configuration runs are not contemporaneous.** Switching profiles needs a manual Afterburner
->   change, so comparisons are separated by hours. Effect sizes are far outside plausible drift;
->   the precise percentages are not defended to the last decimal.
-> - **Nothing here has been stability-tested yet**, including the configurations producing the best
->   numbers. See the roadmap.
-> - Interfaces, file layout, and metrics still move.
+> - **Three chips, one unit each — which is not a sample.** Most results come from one **Zotac
+>   RTX 5060 Ti Twin Edge OC 16 GB** (Blackwell, 5 nm). A **Gigabyte RTX 3070 Ti GAMING OC**
+>   (Ampere, 8 nm) was measured 2026-08-25 on a third party's machine, and an **ASUS Phoenix
+>   RTX 3060** (Ampere, 8 nm) on 2026-09-10. One unit of each says the *effect* is not an artifact
+>   of one board; it says nothing about any model line. **Chip-to-chip variation is published at
+>   roughly 11% and remains unmeasured here**, because it needs repeat units of one SKU the project
+>   controls — which the customer-machine route structurally cannot provide.
+> - **Everything about *tuning* is still one chip.** The two-knob decomposition, the split-region
+>   curve, the ABBA manipulation and the negative control are 5060 Ti only. The other two were
+>   customer machines: stock, nothing applied.
+> - **The V100 analysis is a separate dataset** — 33 workloads, one chip, published by others. It is
+>   never pooled with the consumer data.
+> - **The prediction model lost**, and that null is a headline result rather than a footnote. See
+>   [The prediction result](#the-prediction-result-a-null-that-now-has-a-mechanism).
+> - ⚠️ **Nothing in the tuned profile set has been stability tested**, including the configurations
+>   producing the best numbers.
+> - ⚠️ **The efficiency figures carry an uncontrolled-load history.** Ordinary desktop capture
+>   software was found to depress measured throughput by up to 10% in the mid-band; every
+>   measurement before 2026-08-22 predates that discovery. Provenance is recorded per directory.
+> - Interfaces, file layout and metrics still move.
 >
-> Two results discussed in working notes — the split-region curve's `gemm` peak and a tuned
-> control re-run — were taken as ad-hoc single points and never written to disk. They are
-> excluded from this README and must be re-measured before being cited anywhere.
->
-> See [ROADMAP.md](ROADMAP.md) for what needs to happen next and in what order.
+> See [ROADMAP.md](ROADMAP.md) for what is open, and [HANDOFF.md](HANDOFF.md) for current state.
 
 ---
 
@@ -47,18 +39,144 @@ Vendor boost algorithms are not naive. NVIDIA and AMD already account for indivi
 factory ASIC binning is why two "identical" cards clock differently out of the box. **This project
 does not try to beat that engineering, and any version of it that claims to should be rejected.**
 
-What vendors deliberately do not publish is an open, reproducible account of *how much* headroom
-their conservative, warranty-safe defaults leave on the table, or what predicts it. Stock behaviour
-has to be safe across millions of unknown units, in unknown cases, for years. That forces real
-margin, and the overclocking community's consistent ability to beat stock is the everyday evidence
-of it.
-
-So the claim is narrow and checkable:
+What vendors do not publish is an open, reproducible account of *how much* headroom their
+conservative, warranty-safe defaults leave on the table, or what predicts it. Stock behaviour has to
+be safe across millions of unknown units, in unknown cases, for years. That forces real margin.
 
 > Measure the gap between stock behaviour and the efficiency optimum, explain what drives it, and
 > show the work — on hardware whose results nobody has published.
 
 Not "we built a better GPU Boost."
+
+### 🔑 Why this is not already answered by the published data
+
+Two consumer GPU DVFS datasets exist publicly. **Both sweep the wrong range.** Placed on a common
+axis — swept range as a percentage of each card's rated boost clock:
+
+| dataset | swept range | mean gap found |
+|---|---|---|
+| GTX 1080 Ti | **101–126%** of boost | 1.00% |
+| RTX 2070 Super | **95–118%** of boost | 3.34% |
+| Tesla V100 (datacenter) | **55–111%** of boost | **44.40%** |
+
+Both consumer sets start at or above stock and go **up**. They are overclocking sweeps, and they
+structurally cannot locate an efficiency optimum, because the optimum lives *below* stock — the
+V100's sat at 62% of its maximum.
+
+🛑 **Their small measured gaps are NOT evidence that consumer GPUs lack headroom.** They are evidence
+that nobody swept the range where headroom lives. Reproduce with `python analysis/compare_consumer.py`.
+
+That is the contribution, stated checkably: **the consumer data that exists sweeps the wrong range.**
+
+---
+
+## 🔑 The central result: the optimum sits at the end of the voltage floor
+
+> **The efficiency optimum is the highest frequency the applied V/F curve reaches at the card's
+> load-floor voltage.**
+
+A GPU will not run an active SM below a floor voltage. Across the span where the curve is still at
+that floor, frequency rises while voltage does not — so power rises roughly linearly and efficiency
+improves. The moment the curve leaves the floor, voltage starts climbing, `P = C·V²·f` turns
+quadratic, and efficiency falls. **The optimum is the last point before that happens.**
+
+| configuration | chip | arch | floor | floor ends | measured optimum | |
+|---|---|---|---|---|---|---|
+| stock | 5060 Ti | Blackwell | 0.720 V | 1537 MHz | 1537 | ✅ |
+| split curve | 5060 Ti | Blackwell | 0.720 V | 1530 | 1537 | ✅ |
+| repaired curve | 5060 Ti | Blackwell | 0.720 V | 1530 | 1537 | ✅ |
+| full tune | 5060 Ti | Blackwell | 0.720 V | 2002 | 2002 | ✅ |
+| **stock** | **RTX 3060** | **Ampere** | **0.756 V** | **1260** | **1260** | ✅ |
+
+**Tested three ways, with each prediction registered in the run's own metadata before the
+measurement existed:**
+
+- **Manipulation** — change the *floor region* of the curve and the optimum moved **+465 MHz in 12
+  of 12 workloads** (`data/frequency-sweeps/abba-20260908/`).
+- **Negative control** — change the curve *above* the floor by up to 570 MHz and the optimum moved
+  **by nothing** (`repair-suite-p2-20260909/`).
+- **Cross-architecture** — a different chip, node and vendor board, hit exactly
+  (`rtx3060-20260910/`).
+
+⛔ **The floor voltage is per card and does not transfer.** 0.720 V on the 5060 Ti, **0.756 V on the
+3060**. Borrowing the wrong one costs a 270 MHz error. 🔑 **That is the stronger outcome** — a shared
+constant would most likely have meant a driver policy, where a differing one means the floor is a
+property of the silicon **and the relationship survives it anyway**.
+
+⚠️ The frequency grid is ~155 MHz wide (105 on the 3060), so a prediction need only land within half
+a step. Genuine, and coarse. And the floor's *extent* is still read from a decoded curve rather than
+set by the experimenter.
+
+### The mechanism's other half: crossbar starvation
+
+Pinning voltage low across a wide frequency range does not only save power. The **crossbar clock**
+— the SM-to-memory-controller path, invisible to `nvidia-smi` and readable only via HWiNFO — tracks
+the core *while voltage is rising*. Where voltage plateaus and the core keeps climbing, the crossbar
+stops, and bandwidth-bound work plateaus with it.
+
+That unified two findings that had looked unrelated: the same flattened curve is **pure benefit** to
+compute-bound work (−18% to −26% power at matched clock on `gemm`, 1365 FLOP/byte) and **pure cost**
+to bandwidth-bound work (up to −29.6% throughput on `membw`, 0.167 FLOP/byte). One mechanism, seen
+from two workloads.
+
+---
+
+## Results
+
+### The headroom gap, three chips
+
+| card | arch | node | TDP | mean efficiency gain at the optimum |
+|---|---|---|---|---|
+| RTX 5060 Ti | Blackwell | 5 nm | 180 W | **55.9%** |
+| RTX 3060 | Ampere | 8 nm | 170 W | **42.2%** |
+| RTX 3070 Ti | Ampere | 8 nm | 290 W | **38.9%** |
+
+⚠️ **n=1 per chip. Do not read an architecture trend from three points** — this data cannot separate
+node, power budget and architecture. What it supports is that a large gap is present on all three
+and is not a peculiarity of one board.
+
+### Stock versus tuned, measured in one session
+
+The first same-session comparison in the project, with the stock leg centred between two tuned legs
+so linear drift cancels (`stock-bracket-20260909/`):
+
+| | mean efficiency gain |
+|---|---|
+| stock | 56.99% |
+| full tune | 34.16% |
+| **gap** | **~23 points, ±1.3** |
+
+Stock has more headroom in **12 of 12 workloads**. Every earlier stock-versus-tuned figure here was
+assembled across days and carries the ~1.47% cross-session drift the project measures on a single
+*unchanged* configuration; this one does not.
+
+### The prediction result: a null that now has a mechanism
+
+On the public V100 set, a probe-based Ridge model scores **0.883%** mean regret against a
+best-fixed-frequency baseline's **0.837%**. **The model loses**, and 952 MHz is optimal for 24 of 33
+workloads.
+
+🔑 **The consumer data explains why.** Across 192 sweeps under four applied curves, a variance
+decomposition puts **61.9%** of the optimum's variance on the **configuration** and **19.0%** on the
+workload. The V100 set contains exactly **one** configuration — so 62% of the signal is invisible in
+it by construction. **"The model loses" is a property of that dataset, not a failure of modelling.**
+
+What follows is a predictor that reads the V/F curve instead of measuring the workload
+(`analysis/models/predict_from_curve.py`):
+
+| strategy | mean regret | exactly optimal |
+|---|---|---|
+| oracle | 0.000% | 100% |
+| **read the curve at the load floor** | **0.675%** | **74.0%** |
+| best constant per configuration, fitted with hindsight | **0.675%** | 74.0% |
+| best single constant, fitted with hindsight | 1.961% | 60.9% |
+
+It beats the best single constant **2.90×** — and **ties a hindsight-fitted per-configuration
+constant exactly**, because it picks the identical frequency every time. **It extracts everything the
+configuration axis holds and nothing beyond it; its value is needing no measurement.**
+
+🛑 **And the whole axis is worth 1.29 points of regret against a 30–57 point headroom.** Predictor
+choice barely matters. Anyone quoting the 2.90× without that sentence is overselling it.
 
 ---
 
@@ -66,228 +184,82 @@ Not "we built a better GPU Boost."
 
 ```
 headroom/
-├── analysis/                     Python — measurement, and the audit that checks the paper
-│   ├── load_data.py              loading + a validation check against the published files
+├── CLAUDE.md                     what is established and must not be re-derived, plus the standards
+├── ROADMAP.md                    what is open, in what order, and what is closed with why
+├── CONTEXT.md                    why this project exists and how to work on it
+├── HANDOFF.md                    how to get running, and the current state
+├── run_tests.py                  every suite, one verdict
+├── analysis/
 │   ├── characterize.py           measures the stock-vs-optimum gap directly, before any model
-│   ├── analyze_constrained.py    best efficiency subject to a performance floor — the useful form
-│   ├── analyze_sweep.py          frequency sweeps; analyze_fine_sweep.py for the dense grids
+│   ├── compare_consumer.py       the wrong-range comparison above
+│   ├── analyze_constrained.py    best efficiency subject to a performance floor
 │   ├── audit_claims.py           asserts every pinned number in the paper against the CSVs
-│   ├── claims_consumer.py        the 5060 Ti claims
-│   ├── claims_crosschip.py       the 3070 Ti claims, kept SEPARATE on purpose — see below
-│   └── models/                   everything that PREDICTS rather than measures — see its README
-│       ├── predict_optimal_frequency.py      which frequency is most efficient?
-│       ├── predict_constrained_frequency.py  the same, subject to a performance floor
-│       └── curve_model.py                    reconstruct a whole curve from a few probes
+│   ├── claims_consumer.py        5060 Ti  ─┐ three modules, split by HARDWARE, so a claim
+│   ├── claims_crosschip.py       3070 Ti   ├─ cannot reach the wrong card through a
+│   ├── claims_reference.py       V100     ─┘ shared constant
+│   └── models/                   everything that PREDICTS rather than measures — has its own README
+│       └── predict_from_curve.py the curve-reading predictor above
 ├── tools/
-│   ├── stability-logger/         PowerShell — original data collection
-│   ├── frequency-sweep/          PowerShell — the sweep harness
+│   ├── frequency-sweep/          the sweep harness — CHANGES GPU STATE, always resets
+│   ├── stability-logger/         observes only, never applies settings
 │   ├── collection-kit/           what goes on the USB stick for a machine that is not this one
 │   └── local-model/              delegating mechanical work to a local LLM, and grading it
 ├── docs/
-│   └── PAPER_DRAFT.md            the write-up — every consumer measurement lives here, not below
-├── scripts/
-│   └── Get-Dataset.ps1           downloads the public dataset (not redistributed here)
+│   ├── PAPER_DRAFT.md            the write-up the auditor checks
+│   └── AFTERBURNER-PROFILES.md   the five V/F curves, decoded from the profile store
 └── data/
-    ├── raw/                      the downloaded public CSVs (gitignored)
-    ├── frequency-sweeps/         sweep output, one directory per collection session
-    └── stability-runs/           output from the logger — this becomes the original dataset
+    ├── frequency-sweeps/         349 sweeps, one directory per session, each with its own README
+    ├── afterburner-profiles/     verbatim curve snapshots, so a configuration stays reconstructible
+    ├── stability-runs/           logger output
+    └── raw/, external/           third-party data, gitignored and fetched, never redistributed
 ```
 
-`claims_crosschip.py` is a separate module rather than a section of `claims_consumer.py` so that a
-cross-chip claim **cannot** reach a 5060 Ti sweep through a shared constant. Same-file would have
-made that a one-character mistake.
+**Every data directory carries its own README** explaining what is dataset-grade and what is not.
+Several are explicitly marked *not* dataset-grade, and one records a verdict later shown to be wrong.
+**Those notes are part of the data.**
 
-Two languages on purpose. The modelling is Python because that is the ecosystem for it. The logger
-is PowerShell because it has to run on a shop machine with **no setup at all** — no interpreter, no
-package install, no virtualenv. It calls `nvidia-smi`, which ships with the driver.
-
-### Delegating to a local model
-
-`tools/local-model/ask_local.py` sends a specification to a local LLM and saves what comes back.
-Nothing it returns is ever committed without being run — for claims work that means `audit_claims.py`,
-for a test file it means the mutation gate. Two of the specifications written for it turned out to
-contain errors of their own, so the checking catches both sides.
-
-It talks to **llama.cpp** by default and Ollama with `--backend ollama`. llama.cpp is the default
-because it is the only one of the two that can use the multi-token-prediction head the model ships
-with: **40.0 tok/s against 28.9** on one RTX 5060 Ti, n=5 each, spreads 3.1% and 0.9%, and
-byte-identical greedy output, so the speedup is free. Sampling is sent explicitly to both backends
-from one constant — a bare GGUF has no baked-in Modelfile, so leaving it to the backend's default
-would have quietly changed the sampler and nothing in the output would have shown it.
-
-The same delegation is what the 27B model is graded by, and the grading needed **n=13 per model**
-before it separated: two quantisations of one model read as 20/21 against 17/21 with overlapping
-ranges at n=3, and only at n=13 did it resolve to 87/91 against 71/91, p = 0.0057 by permutation
-test. That is the same lesson as §5.7.6 in a different domain, and it is why the harness runs
-repeats by default.
+Two languages on purpose. Modelling is Python. The collection tools are PowerShell because they must
+run on a shop machine with **no setup at all** — no interpreter, no packages. They call `nvidia-smi`,
+which ships with the driver.
 
 ---
 
-## The dataset, and what it cannot do
+## The auditor, and why the paper cannot drift
 
-[GPU-DVFS-Dataset](https://github.com/zyjopensource/GPU-DVFS-Dataset) — a single NVIDIA V100,
-33 workloads, 13 core frequencies from 757 to 1530 MHz.
+`analysis/audit_claims.py` mechanically checks `docs/PAPER_DRAFT.md` against the CSVs.
 
-**1530 MHz is the V100's stock boost clock.** Every measurement is at or below stock, so this
-dataset says nothing whatsoever about overclocking headroom. It supports underclocking and
-efficiency questions only. It also contains no voltage column and no workload feature columns —
-just workload name, frequency, performance, and power.
-
-That last point shaped the modelling task. With no workload descriptors available, "predict the
-optimum from workload characteristics" is not possible. What *is* possible, and is what
-`predict_optimal_frequency.py` does, is: **measure a workload at a few cheap probe frequencies,
-then predict where its efficiency peaks** — so you don't have to sweep all thirteen.
-
-Run it and see:
-
-```bash
-python analysis/characterize.py
-```
-
-```bash
-python analysis/models/predict_optimal_frequency.py
-```
-
-"Best efficiency at any cost" is rarely the objective anyone actually has. This asks the constrained
-version — most efficiency subject to keeping ≥95% (or 90%, 85%) of stock performance — across both
-datasets, and reports the assumption checks alongside the answer:
-
-```bash
-python analysis/analyze_constrained.py
-```
-
-The paper cites eight frequency sweeps, and prose drifts away from data quietly. Each claim below
-is a function that *renders* the string the document should contain, computed from the CSVs at run
-time; the audit asserts that string is present verbatim and exactly once, so changing either side
-breaks it. `--coverage` also lists every number in an audited section that nothing pins:
+**A claim stores no expected number.** It stores a function that *renders the exact string the
+document must contain*, computed from the data at audit time. The engine asserts that string appears
+verbatim and **exactly once**. Edit the paper and the claim fails; change the data and the claim
+fails. A stored expected value would only catch the first.
 
 ```bash
 python analysis/audit_claims.py --coverage
 ```
 
-### Getting the data
+It has caught wrong numbers in the paper repeatedly, including the sweep count drifting four times
+in one day as data landed. **Matching twice is `AMBIGUOUS`, not a pass.**
 
-The public CSVs are **not redistributed in this repo**, and now cannot be: the license check found
-that the two DVFS datasets state no terms at all, which under default copyright means all rights
-reserved. See [Third-party data](#third-party-data). Download them yourself:
+| | |
+|---|---|
+| claims green, with `data/raw/` | **231 of 231** |
+| without it, as CI's checks leg runs | **203 of 203** |
+| test checks across 17 suites | **587** |
 
-```powershell
-.\scripts\Get-Dataset.ps1
-```
-
----
-
-## The stability logger
-
-Records what the GPU actually did during a stress test, and writes a verdict plus a machine-readable
-session record.
-
-```powershell
-.\tools\stability-logger\Log-GpuStability.ps1 -SessionLabel "build07-uv900" -AppliedSettings "900mV @ 2700MHz, mem +500" -TestMethod "OCCT 3D Adaptive" -DurationSeconds 900
-```
-
-**It observes. It does not apply settings.** You set the clocks and voltage by hand in MSI
-Afterburner first, then tell the logger what you set. That is deliberate — a script that sweeps
-voltage unattended can hard-lock a machine, and on a customer's build that is not an acceptable
-failure mode. Automating the sweep is a decision to make on purpose later, not one to inherit by
-accident from a logging tool.
-
-Full detail: [tools/stability-logger/README.md](tools/stability-logger/README.md).
+**Green means every claim that exists passes, not that the paper is covered.** 20 numbered sections
+still carry no claim at all.
 
 ---
 
 ## What has actually been verified
 
-Being explicit, because "it's written" and "it's known to work" are different things.
-
 | Component | Status |
 |---|---|
-| Stability logger | **Tested** on an RTX 5060 Ti (driver 610.88). Two 8–12 s idle runs, CSV + JSON output confirmed well-formed. Two bugs found and fixed this way: an `[ordered]`-dictionary positional-lookup bug that mislabelled every throttle reason, and a `Select-Object` pipeline-stop that killed `nvidia-smi` and produced spurious exit 255. |
-| Logger under real load | **Not tested.** Only idle. Verdict logic for thermal throttling and driver crashes has never fired against a real event. |
-| Frequency-sweep harness | **Tested on two machines and two architectures** — 64 committed sweeps across an RTX 5060 Ti and an RTX 3070 Ti. It refuses to start when another process is using the GPU, and that guard has fired on a real run (an idle browser at 11%). Its session JSON records the enforced power limit as of 2026-08-27; runs collected before that date record only the maximum settable one and cannot be repaired. |
-| Dataset loading + validation | **Schema verified** against the real downloaded files. The efficiency identity (`performance / power`, normalised to 1530 MHz) was confirmed by hand on one row before the check was written into code. |
-| Python analysis scripts | **Run** on Python 3.12.10 / pandas 3.0.5 / numpy 2.5.2 / scikit-learn 1.9.0. Both scripts execute clean. Results below. |
-
----
-
-## First results (public dataset only)
-
-Two findings, one of which is a null. Both are from `analysis/`, on the V100 dataset — one chip, so
-neither transfers to consumer hardware without being retested there.
-
-### 1. The gap is large — 44.4% mean efficiency
-
-Running each of the 33 workloads at stock (1530 MHz) rather than at its own efficiency optimum gives
-up a mean of **44.4% efficiency** (median 45.7%, range 15.1%–62.8%). Those optima cost a mean of
-**13.7% performance** and save a mean of **40.1% power**.
-
-Measured directly from the published data. No model involved.
-
-### 2. Unconstrained, per-workload prediction does not beat a fixed frequency — a null
-
-| Strategy | Mean regret | Exact-match rate |
-|---|---|---|
-| Stock — do nothing | 44.396% | 0.0% |
-| **Best fixed frequency (952 MHz)** | **0.837%** | **72.7%** |
-| Probe model (Ridge, 4 probes) | 0.883% | 69.7% |
-
-*Regret = efficiency given up versus that workload's true optimum. Leave-one-workload-out.*
-
-Simply running everything at **952 MHz** recovers 43.56 of the 44.4 available percentage points. The
-probe model does not improve on that — it is marginally worse, and its deviations from 952 MHz hurt
-more often than they help.
-
-The mechanism is visible in the data: 952 MHz is optimal for **24 of 33 workloads (73%)**, so there
-is very little per-workload variation left for a model to exploit. Workload sensitivity is real and
-behaves as the literature predicts — the correlation between performance retained at the lowest
-frequency and the optimal frequency is **−0.666**, meaning memory-bound workloads prefer lower
-clocks — but that signal is not strong enough to beat the constant.
-
-### 3. Under a performance floor it inverts — and the model still loses
-
-The null above is about the *unconstrained* problem, where the curve is flat and one frequency
-serves almost everything. Add a floor and the picture reverses, because a fixed policy must hold
-its guarantee on **every** workload it might meet and is therefore pinned by the most sensitive one
-(`BiCG` needs 1462 MHz; `ViT_t` would be fine at 757).
-
-Leave-one-workload-out, at a **95% performance floor** (`analysis/models/predict_constrained_frequency.py`):
-
-| Strategy | Mean efficiency gain | Floor violations |
-|---|---|---|
-| stock — do nothing | 0.0% | 0 |
-| best fixed frequency | 4.9% | 0 |
-| **interpolation between 4 probes (no model)** | **25.4%** | **0** |
-| probe model (Ridge) | 28.1% | **8 of 33** — disqualified |
-| probe model (Ridge, calibrated to respect the floor) | 19.6% | 0 |
-| oracle (upper bound) | 28.5% | 0 |
-
-So **probing is worth its cost under a constraint** — 25.4% against 4.9% is 87% of the gap between
-the fixed policy and the oracle, and it holds at 90% and 85% floors too. But **the fitting is not
-what earns it.** Straight lines between the same four probes beat every fitted variant. Ridge only
-appears to win by breaking the floor it was supposed to respect; made to respect it, it does worse
-than the interpolation.
-
-Efficiency collected below the floor is not efficiency the constraint permits, so those rows are
-disqualified rather than ranked — the giveaway is *negative* regret against the oracle, which at a
-90% floor is exactly what Ridge produces.
-
-**Why interpolation is the safe one is measured, not assumed.** Performance is predominantly
-concave (64.1% of second differences curve downward), so a straight line between probes sits below
-the true curve and under-estimates performance 88% of the time. That biases every choice upward,
-and under a floor an upward bias is free safety. **On a convex performance curve the sign flips and
-interpolation would violate the floor more often than the fitted model** — so "interpolate the
-probes" is a consequence of curve shape here, not a general recommendation. The diagnostic prints
-on every run.
-
-Taken together: the project's premise survives — knowing the workload is worth most of the
-available gain once anyone attaches a performance guarantee to it — while its *modelling* result
-gets stronger rather than weaker. A model that ties a lookup table has not earned a slide; one that
-loses to linear interpolation has earned less.
-
-**This makes the collected consumer-GPU data more important, not less.** The open question becomes
-whether one frequency is similarly dominant on consumer silicon, or whether chip-to-chip variance
-makes per-chip tuning worth it there. That is the silicon-lottery question, and this dataset — one
-V100 — structurally cannot answer it.
+| Frequency-sweep harness | **Tested across three machines and three architectures** — 346 committed sweeps. Refuses to start when another process is using the GPU, and that guard has fired on real runs, including one at 22.6% from background webviews on 2026-09-10. |
+| Stability logger | **Tested, and it has now seen a real failure.** An undervolt deliberately set past the edge (875 mV at 3000 MHz) crashed the display driver on 2026-08-30; 11 events were caught. ⚠️ The UNSTABLE verdict was **reconstructed** from the event log, not emitted by the tool — the operator stopped the run first. |
+| Voltage telemetry | **Load-bearing and confirmed on two architectures.** HWiNFO supplies core voltage and the crossbar clock; NVML exposes neither. |
+| Tuned configurations | ⚠️ **Not stability tested.** Two 30-minute protocol runs exist from 2026-08-23 on hand-set curves, and nothing verifies those are identical to what is now saved in the profile slots. |
+| Python analysis | **Run** on Python 3.12.10 / pandas 3.0.5 / numpy 2.5.2 / scikit-learn 1.9.0. |
 
 ---
 
@@ -297,50 +269,43 @@ Carried over from a previous research project, because they were learned the exp
 
 1. **Baselines first, and pick ones that could embarrass you.** A model that ties a lookup table has
    not earned a slide. `predict_optimal_frequency.py` prints that verdict about itself.
-2. **Never claim a number without running the thing that produces it.** The table above exists
-   because of this rule.
+2. **Never claim a number without running the thing that produces it.**
 3. **Say the sample size out loud, every time.** N=1 chip is N=1 chip.
-4. **A null result is a result.** If probing doesn't beat a fixed frequency, report it.
-5. **Separate measured from inferred in the same breath.** The gap in `characterize.py` is measured.
-   Anything a model outputs is inferred.
+4. **A null result is a result.**
+5. **Separate measured from inferred in the same breath.**
+6. **Record the corrections, not just the conclusions.** Several directory READMEs exist mainly to
+   document a result that was wrong and how it was caught. The retraction history is deliberate —
+   a reader who can see what changed knows which numbers to trust.
 
 ---
 
 ## Related work
 
-Checked directly, not just found by search title, before being trusted enough to list here.
+Checked directly, not just found by search title.
 
 **Prior art — read this one first.** ["Predictable GPUs Frequency Scaling for Energy and
-Performance"](https://dl.acm.org/doi/10.1145/3337821.3337833) (ICPP 2019) predicts optimal core
-*and* memory frequency from static code features across three architectures (Kepler, Maxwell,
-Volta), trained on 106 micro-benchmarks. The [follow-up](https://www.mdpi.com/2079-3197/8/2/37)
-reports XGBoost at R²=0.9646 on Volta. This is the closest existing work to what this project does
-— read it before claiming anything here is new, and cite it regardless.
+Performance"](https://dl.acm.org/doi/10.1145/3337821.3337833) (ICPP 2019) predicts optimal core *and*
+memory frequency from static code features across three architectures, trained on 106
+micro-benchmarks. The [follow-up](https://www.mdpi.com/2079-3197/8/2/37) reports XGBoost at R²=0.9646
+on Volta. **Read it before claiming anything here is new, and cite it regardless.**
 
-**Independent corroboration of the headroom-gap magnitude.**
-[arXiv:2501.08219](https://arxiv.org/abs/2501.08219), LLM inference under DVFS, frequency swept
-180–2842 MHz on modern hardware, found **42% energy savings for a 1–6% latency increase**. Different
-hardware, different workload class, same order of magnitude as this repo's measured 44.4% figure.
-Worth a line in the results section as a cross-check, not as data to build on.
+**Independent corroboration of the gap's magnitude.**
+[arXiv:2501.08219](https://arxiv.org/abs/2501.08219) — LLM inference under DVFS, 180–2842 MHz on
+modern hardware, **42% energy savings for a 1–6% latency increase.** Different hardware, different
+workload class, same order of magnitude.
 
-**Methods citation this project actually needs.**
-[JimZeyuYang/GPU_Power_Benchmark](https://github.com/JimZeyuYang/GPU_Power_Benchmark) — companion
-to *"Accurate and Convenient Energy Measurements for GPUs: A Detailed Study of NVIDIA GPU's
-Built-in Power Sensor"* (2024). Documents that `nvidia-smi` power readings carry a boxcar averaging
-window, a specific update rate, and transient response lag. `Log-GpuStability.ps1` samples power
-from `nvidia-smi` at 1 Hz — this paper is the honest account of what those numbers do and don't
-mean, and belongs in the methods section of any write-up.
+**Methods citation this project needs.**
+[JimZeyuYang/GPU_Power_Benchmark](https://github.com/JimZeyuYang/GPU_Power_Benchmark) — documents
+that `nvidia-smi` power readings carry a boxcar averaging window and transient response lag. This is
+the honest account of what those numbers mean.
 
 **Independent sanity-check numbers for this exact card.**
-[hholtmann/llm-consumer-gpu-benchmark](https://github.com/hholtmann/llm-consumer-gpu-benchmark)
-covers RTX 5060 Ti/5070 Ti/5090 with committed power, temperature, and throttle results. It is
-**fixed-clock, no DVFS** — not usable as training data — but its published power draw and thermal
-numbers for the 5060 Ti are worth comparing collected data against.
+[hholtmann/llm-consumer-gpu-benchmark](https://github.com/hholtmann/llm-consumer-gpu-benchmark) —
+fixed-clock, no DVFS, so not training data, but its 5060 Ti power and thermal figures are worth
+comparing against.
 
-**Broader context, not per-chip data.**
-[MLPerf Power](https://mlcommons.org/2025/03/ml-commons-power-hpca/) has 1,841 public submissions
-with measured energy, but it's system wall-plug energy — MLCommons explicitly says a per-chip
-figure isn't a metric they define. Useful for framing, not for training.
+**Broader context, not per-chip data.** [MLPerf Power](https://mlcommons.org/2025/03/ml-commons-power-hpca/)
+— 1,841 submissions with measured energy, but system wall-plug. Useful for framing.
 
 **Checked and ruled out.** `shashikantilager/gpu-ddvfs` — code only, no dataset committed.
 
@@ -348,46 +313,36 @@ figure isn't a metric they define. Useful for framing, not for training.
 
 ## License
 
-Split, because the code and the data are different contributions with different reuse needs.
-
 | | License | Covers |
 |---|---|---|
 | Software | [MIT](LICENSE) | `tools/`, `analysis/`, `scripts/` |
 | Data | [CC BY 4.0](LICENSE-DATA) | `data/frequency-sweeps/`, `data/stability-runs/`, `data/probes/` |
 
-The dataset is the part of this project nobody else can replicate, so it carries an attribution
-requirement; the tooling does not.
-
-**Before using any run, read the README in its data directory.** Several are explicitly marked not
-dataset-grade, and one carries a verdict later shown to be wrong. Those notes are part of the data.
+The dataset is the part nobody else can replicate, so it carries an attribution requirement; the
+tooling does not.
 
 ## Third-party data
 
-No third-party data is redistributed in this repository. `data/raw/` and `data/external/` are
-gitignored and populated locally by `scripts/Get-Dataset.ps1`, which downloads from each upstream
-project. Licenses were checked on 2026-08-18:
+No third-party data is redistributed here. `data/raw/` and `data/external/` are gitignored and
+populated by `scripts/Get-Dataset.ps1`. Licenses checked 2026-08-18:
 
 | Source | License | Status |
 |---|---|---|
 | [GPU-DVFS-Dataset](https://github.com/zyjopensource/GPU-DVFS-Dataset) | **None stated** | Redistribution not permitted |
 | [HKBU-HPML/GPU-DVFS-Job-Schedule](https://github.com/HKBU-HPML/GPU-DVFS-Job-Schedule) | **None stated** | Redistribution not permitted |
-| [RightNow-AI/RightNow-GPU-Database](https://github.com/RightNow-AI/RightNow-GPU-Database) | Apache-2.0 | Redistribution permitted with notice |
-| [kylemcdonald/ethereum-emissions](https://github.com/kylemcdonald/ethereum-emissions) | MIT | Redistribution permitted with notice |
+| [RightNow-AI/RightNow-GPU-Database](https://github.com/RightNow-AI/RightNow-GPU-Database) | Apache-2.0 | Permitted with notice |
+| [kylemcdonald/ethereum-emissions](https://github.com/kylemcdonald/ethereum-emissions) | MIT | Permitted with notice |
 
-**The two DVFS datasets have no license file at all.** Both repositories exist and are public, and
-neither states terms — which under default copyright means all rights reserved, so the CSVs must not
-be redistributed. The fetch-don't-vendor arrangement already in place is what makes this fine, and it
-needs to stay that way. Citing them and reporting findings derived from them is ordinary academic
-use and is unaffected.
+**The two DVFS datasets have no license file at all**, which under default copyright means all
+rights reserved. The fetch-don't-vendor arrangement is what makes use of them fine, and it needs to
+stay that way. Citing them and reporting derived findings is ordinary academic use.
 
-The GPU-DVFS-Dataset's README asks that its paper be cited, which costs nothing and is done:
+The GPU-DVFS-Dataset's README asks that its paper be cited:
 
 > Zhang, Wang, Lin, Xu, Wang. *Improving GPU Energy Efficiency through an Application-transparent
-> Frequency Scaling Policy with Performance Assurance.* EuroSys '24, pp. 769–785. ACM.
+> Frequency Scaling Policy with Performance Assurance.* EuroSys '24, pp. 769–785.
 > [doi:10.1145/3627703.3629584](https://doi.org/10.1145/3627703.3629584)
 
-Worth knowing what that paper reports, because it is the closest published comparison to this
-project's own numbers: their GEEPAFS policy improves V100 energy efficiency by **26.7% on average
-for 5.8% performance loss**. That is a *performance-constrained* result. This project's 44.4% figure
-is the unconstrained per-workload optimum and is not the same quantity — any write-up must not
-present the two as if one beats the other.
+⚠️ Their GEEPAFS policy improves V100 energy efficiency by **26.7% for 5.8% performance loss** — a
+*performance-constrained* result. This project's 44.4% is the unconstrained per-workload optimum.
+**They are not the same quantity and must not be presented as if one beats the other.**

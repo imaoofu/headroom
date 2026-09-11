@@ -1941,8 +1941,17 @@ def headerSweepCount():
         # marker that collides with the text describing it is not a marker.
         if "<!-- dataset-grade: no -->" in readme.read_text(encoding="utf-8", errors="replace"):
             excluded.add(readme.parent)
+    # ⚠️ ANY ANCESTOR, NOT JUST THE IMMEDIATE PARENT. This read `p.parent not in excluded` until
+    # 2026-09-10, which silently counted four sweeps from `kitverify-20260823/` - a directory whose
+    # README carries the marker, but whose sweeps sit one level down in per-run subfolders. Every
+    # excluded directory until that day happened to be flat, so the bug could not fire and the
+    # claim looked correct for as long as the convention stayed accidentally uniform.
+    #
+    # A marker that only works at one nesting depth is not a marker. The fix is four characters of
+    # logic and it moved the published count by four sweeps.
     sweeps = [p for p in root.rglob("*_sweep.csv")
-              if not p.name.endswith("_sweep_voltage.csv") and p.parent not in excluded]
+              if not p.name.endswith("_sweep_voltage.csv")
+              and not any(ancestor in excluded for ancestor in p.parents)]
     return f"**{len(sweeps)} committed"
 
 
