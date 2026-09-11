@@ -57,7 +57,12 @@ $files = @(
     @{ From = "tools\collection-kit\Calibrate-Suite.ps1";        To = "Calibrate-Suite.ps1" },
     @{ From = "tools\collection-kit\RUN-ME.bat";                 To = "RUN-ME.bat" },
     @{ From = "tools\collection-kit\preflight.py";               To = "preflight.py" },
-    @{ From = "tools\collection-kit\CHECKLIST.txt";              To = "CHECKLIST.txt" }
+    @{ From = "tools\collection-kit\CHECKLIST.txt";              To = "CHECKLIST.txt" },
+    # HWiNFO's own config, which sets SensorInterval and therefore the sampling rate of every
+    # voltage measurement taken through the kit. It lived only on the USB drive until 2026-09-11,
+    # so a rate change on one machine could not be seen from the repository. Synced like any other
+    # tool for exactly that reason.
+    @{ From = "tools\collection-kit\HWiNFO64.INI";               To = "HWiNFO64.INI" }
 )
 
 function Say([string]$text, [string]$colour = "White") {

@@ -138,7 +138,7 @@ attribute nothing to it. Read the driver off a sweep JSON, never off this file.
 | `nvmlDeviceSetClockOffsets` (per-P-state) | ✅ Available. Graphics ±1000 MHz, memory −2000/+6000. Writes return `NO_PERMISSION` un-elevated — **not** `NOT_SUPPORTED`, so it works with elevation. |
 | `nvmlDeviceGetGpcClkVfOffset` (global V/F) | ❌ **NOT_SUPPORTED** on this card. Closed on consumer Blackwell. |
 | **Read or write voltage via NVML** | ❌ **Impossible.** Zero voltage exports across all 260 NVML device functions; a scan of field IDs 1–259 returns 44 readable fields and no voltage at any scale. |
-| **Read voltage via HWiNFO** | ✅ **Works, and is load-bearing.** Core voltage and crossbar clock at 2 s polling, joined to sweeps by timestamp. Five runs carry it. This is the project's central mechanism result — see below. |
+| **Read voltage via HWiNFO** | ✅ **Works, and is load-bearing.** Core voltage and crossbar clock, **binned onto sweeps by CORE CLOCK, not by timestamp** — `join_hwinfo_voltage.py` rejects a time join because the sweep CSV records durations rather than absolute timestamps. **16 voltage extracts across 6 directories and 3 chips.** ⚠️ Sampling rate is **NOT** one number: the main machine logs at **2.00 s** and the USB collection kit at **0.50 s** (`HWiNFO64.INI`, `SensorInterval=500`), so kit runs carry ~4x the samples per frequency bin. This is the project's central mechanism result — see below. |
 | `nvidia-smi -svfd` | ❌ Rubin+ only. Not Blackwell. |
 | Per-point V/F curve reshaping | ⚠️ Undocumented NVAPI only (`ClockClientClkVfPointsSetControl`, `0x0733E009`). Out of scope — breaks on driver updates. |
 

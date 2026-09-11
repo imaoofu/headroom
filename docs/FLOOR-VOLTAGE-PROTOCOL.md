@@ -68,11 +68,20 @@ efficiency curve, and that curve is contaminated without this step.
 
 ### 2. Start HWiNFO logging
 
-`HWiNFO64.exe` ships on the kit. Sensors-only mode, **2-second polling**, logging to CSV:
+`HWiNFO64.exe` ships on the kit. Sensors-only mode, logging to CSV:
 
 ```
 F:\headroom-kit\HWiNFO64.exe
 ```
+
+The kit's `HWiNFO64.INI` sets `SensorInterval=500`, so it samples at **0.50 s** — about 56 samples
+per 28-second frequency point, which is ample for a per-point median.
+
+⚠️ **The rate is not the same everywhere, and it is worth knowing which you have.** The 5060 Ti's
+own logs were taken at **2.00 s** on the main machine, giving ~14 samples per point. Both work; the
+kit's is better. Verified by measuring the timestamp spacing of all 17 committed HWiNFO logs rather
+than by reading a setting — `CLAUDE.md` asserted "2 s polling" as a single project-wide figure until
+2026-09-11 and it was never true of the kit.
 
 Start the CSV log **before** the sweep and stop it **after**. ⛔ **One log must never span a
 settings change** — the join bins samples by core clock, and a log covering two configurations
