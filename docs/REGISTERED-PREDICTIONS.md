@@ -162,6 +162,87 @@ claims the floor extent is sufficient. Any movement refutes it regardless.
 
 ---
 
+## 3. RTX 2060 Super — PENDING, registered 2026-09-11
+
+**Status: card available, nothing measured.** Turing, **TSMC 12 nm**, 34 SMs, 175 W TDP, 256-bit
+GDDR6, 1650 MHz rated boost. A **third architecture and a third process node**, and the first
+Turing part this project will sweep itself.
+
+Procedure: `docs/FLOOR-VOLTAGE-PROTOCOL.md`. ⚠️ **Measure the floor FIRST, register the derived
+prediction, and only then read the efficiency optimum** — the whole value of this run is that the
+prediction is made between two measurements rather than after both.
+
+### 3a. The floor voltage — DECLINED, deliberately
+
+> **This project cannot predict the RTX 2060 Super's load-floor voltage, and does not try.**
+
+Registering a refusal matters as much as registering a number. The floor voltage does **not**
+transfer — 0.720 V on Blackwell, 0.756 V on Ampere — and borrowing either would be the exact error
+`predict_from_curve.py` warns about. If this run later looks like a success, this paragraph is the
+record that the constant was measured and not foreseen.
+
+### 3b. A node hypothesis, registered ONLY so it can be refuted
+
+> **Weak hypothesis, n = 2: floor voltage rises with process node size. 4N reads 0.720 V and
+> Samsung 8 nm reads 0.756 V, so 12 nm Turing should read ABOVE 0.756 V.**
+
+⛔ **Two points define a line trivially and this is barely a hypothesis.** It is written down because
+a cheap prediction that can be killed is worth more than an expensive one that cannot, and because
+if the 2060 Super reads *below* 0.756 the node story is dead on the third card instead of surviving
+to a paper. **Refuted by any reading at or below 0.756 V.**
+
+### 3c. The mechanism — the real test
+
+> **Once the floor voltage and floor extent are measured, the median efficiency optimum across the
+> workload set will be the grid point nearest the floor extent.**
+
+Held on **5 of 5** configurations across two architectures. This is the first chance to break it on
+a third. **Refuted by a median landing on any other grid point.**
+
+⚠️ **Stated as a rule rather than a number because the grid is not known until the card reports its
+supported clocks.** The derived number goes in the Result block below, written **before** the
+efficiency column is read.
+
+### 3d. 🔑 The wrong-range prediction — the sharpest thing this card can do
+
+This is the one worth caring about. `data/external/gtx2070s-*.csv` is a **published** DVFS dataset
+for the RTX 2070 Super: same architecture, same 12 nm node, same generation, a near-sibling part. It
+sweeps **95–118% of rated boost** and reports a mean headroom gap of **3.34%**, with 20% of apps
+optimal at its ceiling.
+
+`CLAUDE.md` argues that figure is an artefact of sweeping the wrong range — that the optimum lives
+*below* stock, where that dataset never goes. That argument has never been tested on the same
+architecture.
+
+> **Sweeping a 12 nm Turing card from 40% of its supported range will find a stock-to-optimum
+> efficiency gap far larger than the 3.34% the published 2070 Super dataset reports — specifically,
+> greater than 15 points.**
+
+Basis for 15: the V100 gave 44.4 points and the 5060 Ti's own headroom runs 30–57 points. Fifteen is
+deliberately conservative, well under every consumer measurement this project has made.
+
+⛔ **What refutes it:** a gap at or below 15 points would mean Turing genuinely lacks the headroom
+this project claims consumer silicon has, and the "published consumer datasets sweep the wrong
+range" contribution would need rewriting rather than defending.
+
+⚠️ **It is a sibling, not the same chip.** The 2060 Super has 34 SMs against the 2070 Super's 40 and
+a lower boost clock, so this compares architecture-and-range, not part-for-part. A difference could
+in principle be the part rather than the range — but the published sweep's floor sits *above* stock,
+so it structurally cannot locate an optimum below stock regardless of which part it ran on. That
+asymmetry is what makes the comparison worth making anyway.
+
+### Safety
+
+Stock only. No profile, no curve, no overclock, no power-limit change. The card is **underclocked
+throughout** — the protocol probes the lower half of the range. Clock locks reset through
+`try/finally` and do not survive a reboot.
+
+### Result
+
+*(empty — floor voltage and extent to be written here BEFORE the efficiency optimum is read)*
+
+---
+
 ## Prior registrations, recorded elsewhere
 
 Kept here as pointers so the practice is visible in one place. These were registered in their own

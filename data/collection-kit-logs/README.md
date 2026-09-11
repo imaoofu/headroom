@@ -3,8 +3,8 @@
 <!-- dataset-grade: no -->
 
 Not measurements. These are the **console transcripts** `Collect.ps1` writes on the collection
-kit's USB drive, one per invocation, covering runs on the 5060 Ti and the 3070 Ti between
-2026-08-23 and 2026-09-05.
+kit's USB drive, one per invocation, covering runs on the 5060 Ti, the 3070 Ti and the RTX 3060
+between 2026-08-23 and 2026-09-10.
 
 ## Why they are here
 
@@ -19,6 +19,18 @@ ingestion took the files someone thought to look for.
 
 **Before wiping a collection kit, hash every file on it against the repository.** Do not assume the
 sweeps were the only thing worth keeping.
+
+⛔ **AND THAT RESCUE ITSELF MISSED TWO FILES — found 2026-09-11, one day later.**
+`run-20260910-185301.log` and `run-20260910-191417.log`, the two RTX 3060 session transcripts, were
+still present only on the drive when it was checked again while preparing the kit for an RTX 2060
+Super run. They were missed for an ordinary reason: **the 3060 session ran after the sweep that
+rescued everything else**, so a rescue that was complete when it was performed was already
+incomplete by the end of the same day.
+
+🔑 **The lesson is not "check harder", it is that a one-off audit expires.** The hash comparison has
+to run immediately before the drive is reused, every time, and never be trusted from a previous
+session. A second check found 126 files on the drive, of which 121 were committed, 3 matched
+gitignored HWiNFO logs, and 2 existed nowhere else.
 
 ## What is in them
 

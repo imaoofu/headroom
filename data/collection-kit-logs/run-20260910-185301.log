@@ -1,0 +1,200 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260910185301
+Username: DESKTOP-B5NPFQJ\user
+RunAs User: DESKTOP-B5NPFQJ\user
+Configuration Name: 
+Machine: DESKTOP-B5NPFQJ (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+Process ID: 3372
+PSVersion: 5.1.26100.9168
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9168
+BuildVersion: 10.0.26100.9168
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+
+  Measuring the memory clock UNDER LOAD...
+  (clocks.max.memory reads the same on a stock and an overclocked card)
+  MEASURED MEMORY CLOCK UNDER LOAD: 405 MHz
+  [!] No -ExpectedMemoryClockMhz given, so this is RECORDED, NOT VERIFIED.
+      Check it against the card's stock figure before trusting the run.
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+  [ok] compute capability: sm_86
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 3060
+  [ok] VRAM free: 11.7 GB
+  [ok] GPU is idle (4% used)
+
+What is applied to this GPU right now?
+If nothing has been touched, type:  stock
+Otherwise describe it - core offset, memory offset, power limit, V/F curve,
+vendor profile, fan curve. Whatever you type is stored with the data and is
+the only record of it that will exist.
+
+Recording machine details...
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 2: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3060 (driver 616.92)
+[SWEEP] Max clock:  2100 MHz | power limit 170.00 W enforced (170.00 W default, 187.00 W max)
+[SWEEP] Supported:  227 discrete graphics clocks, 405-2100 MHz
+[SWEEP] Sweep floor: 840 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 840, 945, 1050, 1155, 1260, 1365, 1470, 1575, 1680, 1785, 1890, 1995, 2100 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: nothing applied, stock rtx 3060 pheonix card, OC STATUS UNKNOWN, MIGHT BE OC OR NOT OC VERSION
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 11563 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 840 MHz
+[SWEEP]       840 MHz -> achieved    840 MHz (held),  66.49 W [53 in-window of 62], 38.6 C, util 98.3%
+[SWEEP] --> locking 945 MHz
+[SWEEP]       945 MHz -> achieved    945 MHz (held),  72.58 W [47 in-window of 56],  42 C, util 98.1%
+[SWEEP] --> locking 1050 MHz
+[SWEEP]      1050 MHz -> achieved   1050 MHz (held),  80.22 W [42 in-window of 51], 44.8 C, util 98.7%
+[SWEEP] --> locking 1155 MHz
+[SWEEP]      1155 MHz -> achieved   1155 MHz (held),  88.78 W [38 in-window of 47], 47.2 C, util 98.3%
+[SWEEP] --> locking 1260 MHz
+[SWEEP]      1260 MHz -> achieved   1260 MHz (held),  96.06 W [35 in-window of 44], 48.8 C, util 97.8%
+[SWEEP] --> locking 1365 MHz
+[SWEEP]      1365 MHz -> achieved   1365 MHz (held), 106.81 W [33 in-window of 41], 51.4 C, util 98.3%
+[SWEEP] --> locking 1470 MHz
+[SWEEP]      1470 MHz -> achieved   1470 MHz (held), 117.38 W [31 in-window of 38], 54.1 C, util 97.3%
+[SWEEP] --> locking 1575 MHz
+[SWEEP]      1575 MHz -> achieved   1575 MHz (held), 138.33 W [28 in-window of 36], 57.5 C, util 100%
+[SWEEP] --> locking 1680 MHz
+[SWEEP]      1680 MHz -> achieved   1680 MHz (held), 159.71 W [26 in-window of 34], 61.5 C, util 99.2%
+[SWEEP] --> locking 1785 MHz
+[SWEEP]      1785 MHz -> achieved 1686.1 MHz (UNDERSHOT -98.9), 166.34 W [26 in-window of 34], 63.3 C, util 98.6%
+[SWEEP] --> locking 1890 MHz
+[SWEEP]      1890 MHz -> achieved 1691.6 MHz (UNDERSHOT -198.4), 165.34 W [26 in-window of 34], 64.5 C, util 97.1%
+[SWEEP] --> locking 1995 MHz
+[SWEEP]      1995 MHz -> achieved   1687 MHz (UNDERSHOT -308), 166.35 W [27 in-window of 34], 65.2 C, util 98.4%
+[SWEEP] --> locking 2100 MHz
+[SWEEP]      2100 MHz -> achieved   1678 MHz (UNDERSHOT -422), 164.86 W [26 in-window of 34], 65.4 C, util  99%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1920 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: nothing applied, stock rtx 3060 pheonix card, OC STATUS UNKNOWN, MIGHT BE OC OR NOT OC VERSION
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260910-185611_rtx3060-asfound\20260910-185618_rtx3060-asfound-gemm_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260910-185611_rtx3060-asfound\20260910-185618_rtx3060-asfound-gemm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 2: membw
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3060 (driver 616.92)
+[SWEEP] Max clock:  2100 MHz | power limit 170.00 W enforced (170.00 W default, 187.00 W max)
+[SWEEP] Supported:  227 discrete graphics clocks, 405-2100 MHz
+[SWEEP] Sweep floor: 840 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 840, 945, 1050, 1155, 1260, 1365, 1470, 1575, 1680, 1785, 1890, 1995, 2100 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload membw --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: nothing applied, stock rtx 3060 pheonix card, OC STATUS UNKNOWN, MIGHT BE OC OR NOT OC VERSION
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 11657 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 840 MHz
+[SWEEP]       840 MHz -> achieved    840 MHz (held),  64.39 W [31 in-window of 39], 48.4 C, util 97.6%
+[SWEEP] --> locking 945 MHz
+[SWEEP]       945 MHz -> achieved    945 MHz (held),  67.65 W [27 in-window of 35], 45.5 C, util 96.4%
+[SWEEP] --> locking 1050 MHz
+[SWEEP]      1050 MHz -> achieved   1050 MHz (held),  71.71 W [25 in-window of 33],  44 C, util 96.6%
+[SWEEP] --> locking 1155 MHz
+[SWEEP]      1155 MHz -> achieved   1155 MHz (held),   73.3 W [24 in-window of 31], 43.2 C, util 93.1%
+[SWEEP] --> locking 1260 MHz
+[SWEEP]      1260 MHz -> achieved   1260 MHz (held),  75.67 W [22 in-window of 29], 42.7 C, util 98.4%
+[SWEEP] --> locking 1365 MHz
+[SWEEP]      1365 MHz -> achieved   1365 MHz (held),  78.93 W [22 in-window of 28],  43 C, util 95.9%
+[SWEEP] --> locking 1470 MHz
+[SWEEP]      1470 MHz -> achieved   1470 MHz (held),     84 W [21 in-window of 28], 43.8 C, util 98.1%
+[SWEEP] --> locking 1575 MHz
+[SWEEP]      1575 MHz -> achieved   1575 MHz (held),  89.09 W [22 in-window of 28], 44.7 C, util 96.8%
+[SWEEP] --> locking 1680 MHz
+[SWEEP]      1680 MHz -> achieved   1680 MHz (held),  94.56 W [22 in-window of 27], 46.2 C, util 99.9%
+[SWEEP] --> locking 1785 MHz
+[SWEEP]      1785 MHz -> achieved   1785 MHz (held), 100.44 W [22 in-window of 27], 47.9 C, util 93.8%
+[SWEEP] --> locking 1890 MHz
+[SWEEP]      1890 MHz -> achieved   1890 MHz (held), 114.29 W [22 in-window of 26],  51 C, util  98%
+[SWEEP] --> locking 1995 MHz
+[SWEEP]      1995 MHz -> achieved 1924.6 MHz (UNDERSHOT -70.4), 116.57 W [22 in-window of 26], 52.5 C, util  94%
+[SWEEP] --> locking 2100 MHz
+[SWEEP]      2100 MHz -> achieved 1922.7 MHz (UNDERSHOT -177.3), 118.25 W [22 in-window of 27], 53.1 C, util  93%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: nothing applied, stock rtx 3060 pheonix card, OC STATUS UNKNOWN, MIGHT BE OC OR NOT OC VERSION
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260910-185611_rtx3060-asfound\20260910-190308_rtx3060-asfound-membw_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260910-185611_rtx3060-asfound\20260910-190308_rtx3060-asfound-membw_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+=======================================================
+  Checking what was collected
+=======================================================
+  [ok] 20260910-185618_rtx3060-asfound-gemm_sweep.csv: 13 points, 13 with performance data, 9 locks held
+  [ok] 20260910-190308_rtx3060-asfound-membw_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] peak SM clock, 20260910-185618_rtx3060-asfound-gemm_sweep: 1,692 MHz (provenance evidence)
+  [ok] peak SM clock, 20260910-190308_rtx3060-asfound-membw_sweep: 1,925 MHz (provenance evidence)
+
+  COLLECTION SUCCEEDED
+
+  Results are in:
+    F:\headroom-kit\results\20260910-185611_rtx3060-asfound
+
+  Copy that whole folder off this machine, then delete the kit.
+
+  GPU clocks have been reset to normal automatically.
+  Verify with:  nvidia-smi -q -d CLOCK
+
+**********************
+Windows PowerShell transcript end
+End time: 20260910190825
+**********************
