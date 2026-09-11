@@ -475,7 +475,7 @@ analysis/          Python measurement + audit on the public V100 dataset
                       modules, split by hardware: _consumer (5060 Ti), _crosschip (3070 Ti),
                       _reference (public V100)
   models/             everything that PREDICTS rather than measures — has its own README
-  test_*.py           17 suites, 623 checks (621 without data/raw) - NOT pinned, see above
+  test_*.py           18 suites, 658 checks (656 without data/raw) - NOT pinned, see above
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset

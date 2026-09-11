@@ -15,6 +15,71 @@ scattered across ten files.
 | `predict_constrained_frequency.py` | Same, subject to keeping ≥95% of stock performance | **Loses** to straight-line interpolation between the same probes |
 | `curve_model.py` | Can a few probes reconstruct the *whole* curve? | **Reconstruction works** (MAE 0.0261); frequency *selection* ties |
 | `predict_from_curve.py` | Can the applied **V/F curve** predict the optimum with no workload measurement at all? | **Ties a hindsight-fitted per-configuration constant exactly** — 0.675% vs 0.675% — while needing no data |
+| `select_probes.py` | How **few** frequencies must be measured, and does choosing *which* ones beat not choosing? | **Selection wins on the curve** (14–18% over even spacing) and **changes the decision by nothing at all** |
+
+## Reconstruction accuracy and decision quality are not the same quantity (2026-09-11)
+
+`select_probes.py` asks the follow-up `curve_model.py` never did: how few probes, which ones, and
+does selecting them cleverly beat not selecting at all? The baseline is deliberately the no-thought
+one — frequencies spaced **evenly** across the range, which is what anyone characterising a new card
+would do without any analysis.
+
+Probes selected **inside each fold**, on training units only. 33 workloads, one V100.
+
+| probes | reconstruction MAE | evenly spaced | regret | where the argmax lands |
+|---|---|---|---|---|
+| 1 | 0.0336 | 0.0336 *(tie — same frequency)* | **0.84** | 952 MHz, 33 of 33 |
+| 2 | 0.0290 | 0.0336 | **0.84** | 952 MHz, 33 of 33 |
+| 3 | 0.0261 | 0.0318 | **0.84** | 952 MHz, 33 of 33 |
+| 4 | 0.0243 | 0.0294 | **0.84** | 952 MHz, 33 of 33 |
+| 5 | 0.0230 | 0.0281 | **0.84** | 952 MHz, 33 of 33 |
+
+🔑 **Going from one probe to five improves the reconstructed curve by 31% and improves the decision
+by 0.00 points.** The argmax lands on 952 MHz in 33 of 33 folds at every probe count — and 0.84 is
+also exactly what the best fixed frequency scores with no probing whatsoever. The efficiency curve
+is flat near its peak, so a measurably better curve produces an identical choice.
+
+**This is the V100 null in its sharpest available form, and it is a warning about a common
+shortcut.** "Our model reconstructs the curve to MAE 0.023" sounds like progress and is, for the
+curve. It is worth nothing for the decision the curve exists to inform. Any claim that better
+curve-fitting yields better tuning has to show the decision moving, not the fit improving.
+
+✅ **Probe SELECTION does earn something — on the curve, from k=2 up**, beating even spacing by
+14–18%. The reason is mechanical: per-frequency variance across units falls monotonically from
+0.142 at 757 MHz to **exactly zero** at 1530, so selection piles probes at the low end while even
+spacing wastes them near the top. At k=1 the two strategies pick the same frequency and tie, which
+is a tie and is reported as one.
+
+⚠️ **No probe count tested reconstructs to inside this project's own measurement noise.** Five
+probes give 0.0230 against the 0.0076 within-session spread `CLAUDE.md` records — still 3× outside
+it. So "characterise a card from a handful of probes" is **not** supported at the curve level by
+this data, only at the level of the single decision, where one probe is already as good as thirteen.
+
+### Two audit findings that came out of building it
+
+⛔ **`curve_model.evaluate()` selects its probes with hindsight**, on all 33 units, then scores the
+model on those same units — the selection sits outside the fold even though the reconstruction
+error inside it is leave-one-out. ✅ **Measured at exactly 0.0000 at every k**, because all 33 folds
+choose the identical probe set (1 distinct set in 33, every time). Wrong in principle, free in
+practice, annotated rather than rewritten — the fix lives in `select_probes.py`, which is nested by
+construction and has a spy test proving the held-out unit never reaches the selector.
+
+⚠️ **The published "four probes" are three.** Curves are normalised to the top frequency, so that
+column is exactly 1.0 for all 33 units — zero variance, no information — and `alwaysIncludeTop=True`
+spends a slot on it. Free in wall-clock terms, worthless in information terms, and it means probe
+counts across this directory are not counting the same thing.
+
+✅ **Greedy selection is optimal here**, matching an exhaustive search over every subset to six
+decimal places at k=1, 2 and 3. Not checked at k=4 or 5, and the docstring now says so.
+
+🛑 **And the test suite for this file initially failed its own mutation gate.** The fold-isolation
+check built an outlier and asserted that selecting with and without it agreed, reasoning that a leak
+would pull the selection toward the outlier. Reintroducing the exact leak did not fail it — one
+outlier in twelve does not change which single column wins. **A test whose premise is "the defect
+would change the answer" is only as good as that premise.** It was replaced with a spy that asserts
+what the selector is *handed*, which fails on the mutation immediately.
+
+---
 
 ## The fourth file asks a different question, and it changes what the null means
 

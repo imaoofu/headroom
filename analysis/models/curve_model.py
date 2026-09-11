@@ -177,6 +177,13 @@ def selectProbeFrequencies(frequencies, curves, probeCount, alwaysInclude=None):
     """
     Greedily pick the probe frequencies that best reconstruct the full curve.
 
+    ✅ GREEDY MATCHES EXHAUSTIVE HERE, checked 2026-09-11 rather than assumed. Brute-forcing every
+    subset in select_probes.py reaches the identical probe set and error to six decimal places at
+    k=1, 2 and 3 - [757], [757, 825], [757, 825, 885] MHz. ⚠️ k=4 and k=5 were NOT brute-forced,
+    so greedy is verified optimal only where an exhaustive search actually ran. The docstring below
+    correctly says greedy is "not guaranteed optimal"; on these 33 workloads, at those three
+    counts, it happens to be.
+
     Greedy forward selection: start from the mandatory probes, then repeatedly add whichever
     remaining frequency most reduces held-out reconstruction error. Not guaranteed optimal,
     but it is deterministic, cheap, and vastly better than evenly-spaced guessing.
@@ -248,7 +255,32 @@ def regretPercent(trueCurve, chosenIndex):
 
 
 def evaluate(frequencies, curves, names, probeCount, alwaysIncludeTop=True):
-    """Leave-one-unit-out comparison of the probe model against no-model baselines."""
+    """Leave-one-unit-out comparison of the probe model against no-model baselines.
+
+    ⚠️ THE PROBE SELECTION BELOW IS HINDSIGHT, AND THE DOCSTRING SAID NOTHING ABOUT IT UNTIL
+    2026-09-11. selectProbeFrequencies() is called ONCE, on all units, and the leave-one-unit-out
+    loop underneath then scores the model on units the selection already saw. The inner
+    reconstruction error is itself leave-one-out, which is what made this look clean for so long -
+    but choosing WHICH columns to use is part of fitting, and it happened outside the fold.
+
+    ✅ MEASURED, AND IT COSTS NOTHING HERE. analysis/models/select_probes.py re-runs the selection
+    inside each fold on training units only. The honest and hindsight errors agree to four decimal
+    places at every probe count from 1 to 5, because all 33 folds select the IDENTICAL probe set -
+    1 distinct set in 33 folds, at every k. The shortcut was wrong in principle and worth 0.0000 in
+    practice.
+
+    ⛔ Do NOT read that as permission to keep it. Nothing guarantees stability in advance; it was
+    checked afterwards, on one dataset, and a dataset with more spread between units would not
+    behave this way. It is left unchanged because rewriting it would invalidate the published
+    numbers for a correction measured at zero - the fix lives in select_probes.py, which is
+    nested-by-construction and has a spy test proving the held-out unit never reaches the selector.
+
+    ⚠️ alwaysIncludeTop SPENDS A PROBE SLOT ON A CONSTANT. Every curve is normalised to the top
+    frequency, so that column is exactly 1.0 for all 33 units - zero variance, no information. The
+    "four probes" this function reports are three informative measurements plus a free one. That
+    is not a bug, since the top measurement genuinely costs nothing to take, but a reader comparing
+    probe COUNTS across this directory needs to know they are not counting the same thing.
+    """
     unitCount, frequencyCount = curves.shape
     topIndex = int(np.argmax(frequencies))
     alwaysInclude = [topIndex] if alwaysIncludeTop else []
