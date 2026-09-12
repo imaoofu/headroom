@@ -191,6 +191,32 @@ a cheap prediction that can be killed is worth more than an expensive one that c
 if the 2060 Super reads *below* 0.756 the node story is dead on the third card instead of surviving
 to a paper. **Refuted by any reading at or below 0.756 V.**
 
+#### ⛔ Correction, same day: this was registered on a miscounted sample, and existing data already weakens it
+
+**The wording above stands unedited, as the rules of this file require.** What follows is the record
+that it was written badly.
+
+**n was 3, not 2.** The RTX 3070 Ti's floor — **0.812 V**, holding to 1500 MHz — was already measured
+in `data/frequency-sweeps/rtx3070ti-20260825/` and already stated in §5.5 of the paper when the
+hypothesis above was written. It was not consulted. **A sample size was asserted rather than
+counted**, which is the exact failure this project has a rule against.
+
+🔑 **And the omitted card contradicts the hypothesis.** The RTX 3060 and the RTX 3070 Ti are **the
+same architecture on the same process node**, and their floors differ by **56 mV** — larger than the
+**36 mV** between the 8 nm parts and the 5 nm one. **Within-node spread exceeds between-node
+difference, so node alone cannot determine the floor voltage.** The prediction "12 nm should read
+above 0.756 V" may still come true, but it would no longer be evidence for the reason it was
+offered.
+
+**Revised, and deliberately weaker:** among the two Ampere parts the floor rises with die size and
+power class — 28 SMs / 170 W at 0.756, 48 SMs / 290 W at 0.812 — with architecture plausibly setting
+an offset on top. ⚠️ **That is monotone across two points and is a direction to test, not a
+prediction.** The 2060 Super at 34 SMs / 175 W on an older node is a reasonable probe of it, and
+**no point estimate is registered for it.**
+
+⚠️ **The original 3b remains the thing to score.** If the card reads at or below 0.756 V, 3b is
+refuted outright. If above, 3b survives on a test it was too weak to deserve.
+
 ### 3c. The mechanism — the real test
 
 > **Once the floor voltage and floor extent are measured, the median efficiency optimum across the

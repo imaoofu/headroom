@@ -5,14 +5,26 @@ the project and the one with the most leverage, because the load-floor voltage i
 parameter that **does not transfer between cards** and therefore gates every application of the
 load-floor mechanism to hardware it has not seen.
 
-| card | arch | node | floor voltage |
-|---|---|---|---|
-| Zotac RTX 5060 Ti Twin Edge OC | Blackwell (GB206) | TSMC 4N | **0.720 V** |
-| ASUS RTX 3060 Phoenix 12 GB | Ampere (GA106) | Samsung 8 nm | **0.756 V** |
+| card | arch | node | SMs | TDP | memory | floor voltage | floor holds to |
+|---|---|---|---|---|---|---|---|
+| Zotac RTX 5060 Ti Twin Edge OC | Blackwell (GB206) | 5 nm | 36 | 180 W | GDDR7 | **0.720 V** | 1552 MHz |
+| ASUS RTX 3060 Phoenix 12 GB | Ampere (GA106) | 8 nm | 28 | 170 W | GDDR6 | **0.756 V** | 1260 MHz |
+| RTX 3070 Ti | Ampere (GA104) | 8 nm | 48 | 290 W | GDDR6X | **0.812 V** | 1500 MHz |
 
-🔑 **n = 2.** Two points is not a dataset and nothing should be fitted to it. The purpose of this
-protocol is to make n grow one card at a time, at a cost low enough that any machine passing
-through the bench can contribute.
+⛔ **This table said "n = 2" and omitted the 3070 Ti when this file was written on 2026-09-11.** That
+was wrong, and wrong in the way this project keeps warning about: the third measurement was already
+in the paper (§5.5) and in `data/frequency-sweeps/rtx3070ti-20260825/`, and I asserted a sample size
+without counting it. **n = 3.**
+
+🔑 **AND THE THIRD CARD IS THE INTERESTING ONE, because it breaks the obvious story.** The 3060 and
+the 3070 Ti are **the same architecture on the same process node** and their floors differ by
+**56 mV** — a larger gap than the **36 mV** between the 8 nm parts and the 5 nm one.
+
+> **Within-node spread exceeds between-node difference. Process node alone does not determine the
+> load-floor voltage.**
+
+Three points is still not a dataset. But it is enough to rule something out, which is worth more
+than enough to fit something.
 
 ---
 
@@ -148,20 +160,27 @@ Into the run's README, alongside the sweep:
 
 ## What this feeds
 
-Each card is **one row** toward asking whether floor voltage is predictable from specs. The obvious
-candidates, in rough order of plausibility:
+Each card is **one row** toward asking whether floor voltage is predictable from specs. Revised
+2026-09-11 once the 3070 Ti was counted, because the ordering it implies is not the one this section
+originally listed:
 
-1. **Process node.** 4N reads 0.720, Samsung 8 nm reads 0.756. ⚠️ Two points define a line
-   trivially and this ordering could reverse on the third card.
-2. **Architecture / vendor library**, which is confounded with node in both samples so far.
-3. **Memory type**, GDDR6 vs GDDR6X vs GDDR7.
-4. **Board binning**, which would show up as spread between two samples of the same model — and
-   nothing in this project has yet measured the same model twice.
+1. ⛔ **Process node, ALONE — already insufficient at n = 3.** Two 8 nm Ampere dies read 0.756 and
+   0.812, a 56 mV spread against 36 mV between 8 nm and 5 nm. Node may still set a *level*; it
+   cannot be the whole model.
+2. ✅ **Die size / power class WITHIN an architecture** — the one relationship that is monotone in
+   the data so far. Among the two Ampere parts: 28 SMs / 170 W reads 0.756, 48 SMs / 290 W reads
+   0.812. ⚠️ Monotone across **two points**, which is not evidence, only a direction to test.
+3. **Architecture as an offset on top of that**, which would explain why the 5 nm Blackwell part
+   sits below both Ampere parts despite a mid-sized die.
+4. **Memory type**, confounded with everything else here — GDDR6, GDDR6X and GDDR7 appear once each.
+5. **Individual-die binning**, which nothing in this project can see, because **no model has been
+   measured twice**.
 
-🔑 **The fourth is the one worth reaching first.** Two cards of the same model would separate "the
-floor is a property of the silicon design" from "the floor is a property of the individual die", and
-that distinction decides whether a spec-sheet model is possible at all. It costs two ten-minute runs.
+🔑 **The fifth is still the cheapest thing that would change what is knowable.** Two samples of the
+same model separate "the floor is a property of the design" from "a property of the individual die".
+If it is the latter, no spec-sheet model can work at all, and two ten-minute runs would establish
+that before any effort goes into building one.
 
-⛔ **Until n is 5 or more, this file records measurements and states no relationship.** Any card
-added should have its numbers written into `data/frequency-sweeps/<run>/README.md` and the summary
-table at the top of this file updated — nothing else.
+⛔ **Until n is 5 or more, this file records measurements and rules things OUT. It states no
+relationship.** Any card added should have its numbers written into
+`data/frequency-sweeps/<run>/README.md` and the table at the top of this file updated.
