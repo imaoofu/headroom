@@ -1,11 +1,38 @@
 """
-Claims about the RTX 5060 Ti consumer measurements, checked against their source CSVs.
+Claims about the sweeps THIS PROJECT collected, checked against their source CSVs.
 
 READ audit_claims.py FIRST. The short version: each function below returns the exact string
 its document must contain, computed from the data. The engine asserts that string appears
 verbatim and exactly once. Nothing here stores an expected number.
 
-WHICH RUNS THESE REFER TO
+THIS MODULE IS NOT ONE CARD, AND ITS OPENING LINE SAID IT WAS UNTIL 2026-09-12
+    It read "Claims about the RTX 5060 Ti consumer measurements" while already reading the
+    RTX 3060 through SUITE_3060 and the RTX 3070 Ti through SUITE_3070_SWEEPS and
+    _VOLT_3070_SILENT. The 2060 Super belongs here too when it is pinned.
+
+    CLAUDE.md described the three claims modules as "split by which hardware the data came
+    from", and that was the intent, but it is not what the files do and it cannot be. The
+    cross-chip claims - 5.5.4's rank correlation, 5.5.7's knee table - compare cards to each
+    other INSIDE ONE CLAIM. A claim spanning four chips has no per-card module to live in.
+
+    THE HONEST SPLIT IS BY STUDY, NOT BY CARD:
+
+      claims_consumer.py    the sweeps this project ran: the 5060 Ti configuration work of
+                            5.4, 5.7 and 5.8, plus every claim that sets cards side by side
+                            (5.5.4, 5.5.6, 5.5.7, 5.5.8)
+      claims_crosschip.py   the 3070 Ti two-BIOS study of 2.6 and 5.5-5.5.3, self-contained
+      claims_reference.py   the public V100 dataset, published by others and never pooled
+                            with the above
+
+    ⚠️ SO THE 3070 Ti IS REACHED FROM TWO MODULES, through two independent sets of constants
+    into the same rtx3070ti-20260825/ tree. The stated reason for keeping the modules apart
+    was that "a shared constant is how a claim silently reads the wrong hardware" - and the
+    arrangement that actually exists is the one that reasoning warns about. Nothing is known
+    to be wrong today; the guard is that every path here is a literal, so a wrong card is
+    visible in the diff rather than inherited. Do not add a helper that resolves a card name
+    to a directory.
+
+WHICH RUNS THE 5060 Ti CONFIGURATION CLAIMS REFER TO
     Eight sweeps, in the order they were taken, all on the same card:
 
       1  stock         gemm    2026-08-19 14:28   no memory OC, stock V/F curve

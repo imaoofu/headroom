@@ -459,9 +459,26 @@ travels with the number, in `claims_repo.sectionFamilyCounts`.
 different runner counting a different thing, and a second implementation inside the auditor would be
 two methods that can disagree - the exact failure this project keeps finding elsewhere.
 
-Claims live in **THREE** modules, split by which hardware the data came from - `claims_consumer.py`
-for the 5060 Ti, `claims_crosschip.py` for the 3070 Ti, and `claims_reference.py` for the public
-V100 set. Keep them apart; a shared constant is how a claim would silently read the wrong hardware.
+⛔ **Claims live in THREE data modules, and this paragraph said they were "split by which hardware
+the data came from" until 2026-09-12. THEY ARE NOT, AND THEY CANNOT BE.** `claims_consumer.py` was
+already reading the 3070 Ti and the 3060 when that sentence was being relied on, because **5.5.4's
+rank correlation and 5.5.7's knee table compare four chips inside ONE claim** - a cross-card claim
+has no per-card module to live in.
+
+**The split that exists is by STUDY:**
+
+| module | what it holds |
+|---|---|
+| `claims_consumer.py` | the sweeps this project ran - 5060 Ti configuration work in 5.4, 5.7, 5.8 - **plus every claim that sets cards side by side** |
+| `claims_crosschip.py` | the 3070 Ti two-BIOS comparison, 2.6 and 5.5-5.5.3, self-contained |
+| `claims_reference.py` | the public V100 set, published by others and never pooled with the rest |
+
+⚠️ **So the 3070 Ti is reached from two modules**, through two independent sets of constants into
+one `rtx3070ti-20260825/` tree. The stated reason for the split - "a shared constant is how a claim
+silently reads the wrong hardware" - is a real hazard that this arrangement does **not** address.
+What does address it is that every path in both files is a literal, so a wrong card appears in the
+diff. 🔑 **Do not add a helper that resolves a card name to a directory**; that is the change that
+would turn this from untidy into dangerous.
 
 ---
 
@@ -472,8 +489,10 @@ run_tests.py       runs every suite, one verdict - `python run_tests.py`
 analysis/          Python measurement + audit on the public V100 dataset
   audit_claims.py     mechanical paper auditor — see "The claims auditor" above
   claims_*.py         the claims themselves, one function per sentence of the paper - THREE
-                      modules, split by hardware: _consumer (5060 Ti), _crosschip (3070 Ti),
-                      _reference (public V100)
+                      data modules split by STUDY, not by card (see above): _consumer (this
+                      project's sweeps + all cross-card claims), _crosschip (the 3070 Ti
+                      two-BIOS study), _reference (public V100). _repo is a fourth, on a
+                      different axis - it audits the repository's own state
   models/             everything that PREDICTS rather than measures — has its own README
   test_*.py           18 suites, 665 checks (663 without data/raw) - NOT pinned, see above
 tools/

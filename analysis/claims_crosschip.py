@@ -5,11 +5,23 @@ READ audit_claims.py FIRST. Each function below returns the exact string its doc
 contain, computed from the data. Nothing here stores an expected number.
 
 WHY THIS IS A SEPARATE MODULE FROM claims_consumer.py
-    That file's docstring opens "Claims about the RTX 5060 Ti consumer measurements" and its
-    constants are named for one card's configurations - STOCK_GEMM, TUNED_GEMM, SPLIT_MEMBW_RUNS.
-    A second chip does not belong inside it. Keeping them apart also means the cross-chip claims
-    cannot accidentally read a 5060 Ti sweep through a shared constant, which is the class of
-    mistake 5.7.6 spent 2026-08-24 recovering from.
+    ⛔ THE REASON RECORDED HERE WAS OVERTAKEN AND IS CORRECTED, 2026-09-12. It argued that
+    claims_consumer.py "opens 'Claims about the RTX 5060 Ti consumer measurements'" and is
+    therefore one card's file, so "a second chip does not belong inside it". By the time that
+    was written the 3070 Ti suite was ALREADY being read from claims_consumer.py through
+    SUITE_3070_SWEEPS, and the 3060 followed. The premise was false when it was relied on.
+
+    THE SPLIT THAT ACTUALLY EXISTS IS BY STUDY. This module is the self-contained two-BIOS
+    comparison on one 3070 Ti, sections 2.6 and 5.5-5.5.3. claims_consumer.py holds the sweeps
+    this project ran on its own card plus every claim that sets cards SIDE BY SIDE - 5.5.4's
+    rank correlation and 5.5.7's knee table compare four chips inside one claim and could never
+    have lived in a per-card module.
+
+    ⚠️ SO THE 3070 Ti IS REACHED FROM TWO MODULES, through two independent sets of constants
+    into the same rtx3070ti-20260825/ tree. The original worry - that a shared constant lets a
+    claim silently read the wrong hardware - is not addressed by the arrangement that exists.
+    What does address it is that every path in both files is a literal, so a wrong card shows up
+    in the diff. Do not add a helper that resolves a card name to a directory.
 
 WHAT THESE RUNS ARE
     Five sweeps on one Gigabyte RTX 3070 Ti GAMING OC rev2.0, collected 2026-08-25 on a third
