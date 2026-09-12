@@ -1,6 +1,6 @@
 # Headroom — paper draft
 
-> **Status: complete in structure, still a draft in places.** Results rest on **342 committed
+> **Status: complete in structure, still a draft in places.** Results rest on **359 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
 > **256 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
@@ -35,9 +35,9 @@ headroom, when what they show is a truncated measurement range.
 
 This work contributes an open dataset of consumer-GPU frequency, power and performance
 measurements swept across 40–100% of maximum core clock, released with its collection tooling and
-a locked protocol: **342 dataset-grade sweeps across three chips** — 300 on an RTX 5060 Ti
-(Blackwell GB206), 25 on an RTX 3070 Ti (Ampere GA104), 14 on an RTX 3060 (Ampere GA106), and
-three early three-point verification runs.
+a locked protocol: **359 dataset-grade sweeps across four chips and three architectures** — 300 on
+an RTX 5060 Ti (Blackwell GB206), 25 on an RTX 3070 Ti (Ampere GA104), 17 on an RTX 2060 Super
+(Turing TU106), 14 on an RTX 3060 (Ampere GA106), and three early three-point verification runs.
 
 On a public V100 reference set, running each of 33 workloads at its own efficiency optimum rather
 than at stock recovers 44.4% efficiency on average. Per-workload *prediction*, however, does not
@@ -1853,6 +1853,22 @@ which voltage is still falling.** It does, on all three chips:
 | RTX 5060 Ti (Blackwell GB206) | **1537 MHz** | **1552 MHz** | 0.720 V | — |
 | RTX 3070 Ti (Ampere GA104) | **1485 MHz** | **1500 MHz** | 0.812 V | 7 of 12 |
 | **RTX 3060 (Ampere GA106)** | **1260 MHz** | **1260 MHz** | **0.756 V** | **9 of 12** |
+| **RTX 2060 Super (Turing TU106)** | **1065 MHz** | **975 or 1035 MHz — see below** | **0.631 V** | 5 of 12 |
+
+⛔ **The fourth card does not confirm the relationship, and it does not refute it. It cannot decide
+it**, and that is a boundary condition on the rule rather than a result about the card. Its floor is
+**0.631 V held across more than 570 MHz**, and it leaves that floor **6 mV at a time** — one step of
+this sensor's resolution. Read strictly, the floor ends at 975 MHz and the nearest grid point is 960,
+one step below the measured 1065. Allow a single sensor step and it ends at 1035, whose nearest grid
+point is 1065 exactly. **The verdict turns on 6 mV.**
+
+🔑 **The rule needs a crisp exit from the floor, and not every card provides one.** The RTX 3060
+jumps 0.756 → 0.787 V, a 31 mV step with no ambiguity anywhere. Stating the rule without this
+condition would make it look more portable than it is. The ambiguity is visible in the voltage
+column itself, not inferred from the answer it produces.
+
+⚠️ This card also has the loosest per-workload agreement in the study — **5 of 12**, against 6 to 10
+elsewhere — so its median is doing more work than the others'.
 
 On the 5060 Ti the optimum is **1537 MHz against a voltage floor holding to 1552 MHz**; on the
 3070 Ti, **1485 MHz against a floor holding to 1500 MHz**; on the 3060, **1260 MHz** against a floor

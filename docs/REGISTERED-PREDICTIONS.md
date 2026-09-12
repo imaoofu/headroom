@@ -326,6 +326,72 @@ separate HWiNFO log per workload, which no run in this study has.**
 
 ---
 
+## Outcomes — RTX 2060 Super, scored 2026-09-12
+
+**Two refuted, one held, one correctly declined.** Full record in
+`data/frequency-sweeps/rtx2060s-20260912/README.md`. Nothing above this line has been edited.
+
+### 3a — floor voltage declined ✅ correctly
+
+The measured floor is **0.631 V**, **89 mV below the next lowest of four cards**. Nothing in this
+project would have predicted that, and the entry declining to try is the record that it was measured
+rather than foreseen.
+
+### 3b — "12 nm should read above 0.756 V" ⛔ REFUTED
+
+**0.631 V. Not above 0.756 — the lowest of all four cards, by a wide margin.** The oldest and
+largest process node returned the *lowest* floor voltage, which is the opposite of the direction
+registered.
+
+🔑 **The node hypothesis is dead, and it was already weak.** The correction appended to 3b on the day
+it was written noted that two Ampere parts sharing an architecture *and* a node differ by 56 mV. A
+Turing part now reads 89 mV below either. **Process node does not determine the load-floor voltage,
+in any direction, and the four measurements are 0.631 / 0.720 / 0.756 / 0.812 V against nodes of
+12 / 5 / 8 / 8 nm.**
+
+### 3c — "median optimum lands on the grid point nearest the floor extent" ⛔ REFUTED AS REGISTERED
+
+Registered: **855 or 960 MHz.** Measured: **1065 MHz**, 5 of 12 workloads on the median.
+
+⚠️ **It was refuted for a reason worth keeping: the prediction was made from a sweep that never
+reached the floor.** The `asfound` grid starts at 855 MHz, the floor's top edge is near 975, and the
+voltage column read as "still falling" when it was in fact already flat. I recorded "no floor
+observed" and derived "floor at or below 960" from it. A low-range sweep from 405 MHz found the
+floor immediately.
+
+🔑 **And with the floor located, the rule is neither confirmed nor refuted — it is UNDECIDABLE here**,
+which is a third outcome this project had not met:
+
+| floor extent as read | nearest grid point | vs measured 1065 |
+|---|---|---|
+| 975 MHz — strict, last point at the 0.631 V minimum | 960 | ✗ one step out |
+| 1035 MHz — allowing one 6 mV sensor step | 1065 | ✅ exact |
+
+**The verdict turns on a single step of sensor resolution.** The card holds 0.631 V across
+**570+ MHz** and leaves it 6 mV at a time; the RTX 3060 by contrast jumps 0.756 → 0.787 V, a 31 mV
+step with no ambiguity. **The rule needs a crisp exit from the floor and this card does not supply
+one.** That is a boundary condition on the mechanism, not a failure of it — and it is not a
+retrofitted excuse, because the ambiguity is visible in the voltage column itself rather than
+inferred from the answer.
+
+⛔ **The registration stands refuted regardless.** A prediction that needed a second sweep to become
+arguable was wrong when it was made.
+
+### 3d — "gap greater than 15 points" ✅ HELD, and it is the day's strongest result
+
+**41.57% mean efficiency gain**, median 37.22%, every one of twelve workloads above 19%, `copy` at
+83.81%.
+
+Against the published **RTX 2070 Super** dataset — same architecture, same 12 nm node, near-sibling
+die — which sweeps 95–118% of boost and reports **3.34%**. **A factor of 12.4.**
+
+🔑 **This is the wrong-range argument tested on the architecture it criticises.** Until today it
+compared different architectures and asserted the swept range was the difference. A Turing card
+swept from 40% now returns a Turing number twelve times the published Turing number, and the
+threshold was registered before the card was measured.
+
+---
+
 ## Prior registrations, recorded elsewhere
 
 Kept here as pointers so the practice is visible in one place. These were registered in their own

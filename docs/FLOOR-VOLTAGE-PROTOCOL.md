@@ -7,6 +7,7 @@ load-floor mechanism to hardware it has not seen.
 
 | card | arch | node | SMs | TDP | memory | floor voltage | floor holds to |
 |---|---|---|---|---|---|---|---|
+| MSI Ventus 2X RTX 2060 Super | Turing (TU106) | 12 nm | 34 | 175 W | GDDR6 | **0.631 V** | ⚠️ 975 or 1035 |
 | Zotac RTX 5060 Ti Twin Edge OC | Blackwell (GB206) | 5 nm | 36 | 180 W | GDDR7 | **0.720 V** | 1552 MHz |
 | ASUS RTX 3060 Phoenix 12 GB | Ampere (GA106) | 8 nm | 28 | 170 W | GDDR6 | **0.756 V** | 1260 MHz |
 | RTX 3070 Ti | Ampere (GA104) | 8 nm | 48 | 290 W | GDDR6X | **0.812 V** | 1500 MHz |
@@ -20,11 +21,20 @@ without counting it. **n = 3.**
 the 3070 Ti are **the same architecture on the same process node** and their floors differ by
 **56 mV** — a larger gap than the **36 mV** between the 8 nm parts and the 5 nm one.
 
-> **Within-node spread exceeds between-node difference. Process node alone does not determine the
-> load-floor voltage.**
+> **Process node does not determine the load-floor voltage, in any direction.**
 
-Three points is still not a dataset. But it is enough to rule something out, which is worth more
-than enough to fit something.
+⛔ **n = 4 as of 2026-09-12, and the node story is dead.** The 12 nm Turing part returns the
+**lowest** floor of the four, 89 mV below the next. Ordered by node — 12, 8, 8, 5 nm — the floors run
+0.631, 0.756, 0.812, 0.720 V: not monotone, and not monotone in the reverse direction either. Two
+parts sharing an architecture *and* a node already differed by 56 mV before this card was measured.
+
+⚠️ **A fourth card also found the limit of the measurement itself.** The 2060 Super holds its floor
+across **more than 570 MHz** and leaves it **6 mV at a time**, so where the floor *ends* — the
+quantity the mechanism actually needs — is undecidable at this sensor's resolution. Record the span
+and the exit step, not just the value: a floor is only useful if the curve leaves it sharply.
+
+Four points is still not a dataset. But it is enough to rule things out, which is worth more than
+enough to fit something.
 
 ---
 
