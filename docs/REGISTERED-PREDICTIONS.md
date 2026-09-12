@@ -263,9 +263,66 @@ Stock only. No profile, no curve, no overclock, no power-limit change. The card 
 throughout** — the protocol probes the lower half of the range. Clock locks reset through
 `try/finally` and do not survive a reboot.
 
-### Result
+### Result — floor reading, 2026-09-12
 
-*(empty — floor voltage and extent to be written here BEFORE the efficiency optimum is read)*
+**Written before any efficiency optimum was computed, which is the point of the entry.** Collected
+on an MSI Ventus 2X RTX 2060 Super, driver **616.92** — the same driver as the RTX 3060 run. Power
+limit **175 W default / 185 W maximum**; the default matches the reference 175 W TDP exactly, so
+there is no raised board power and the card is **consistent with reference trim, not confirmed**.
+Die **TU106-410**, 34 of the 2070's 36 SMs.
+
+Joined from the `asfound` `gemm` sweep, with the HWiNFO log **truncated to the sweep window
+(11:47:25–12:01:25)** because the log ran on through the suite calibration afterwards and that
+free-boost load would otherwise have polluted the clock bins.
+
+| target MHz | 855 | 960 | 1065 | 1170 | 1275 | 1380 | 1485 | 1590 |
+|---|---|---|---|---|---|---|---|---|
+| core V | 0.637 | **0.631** | 0.644 | 0.669 | 0.694 | 0.725 | 0.769 | 0.819 |
+
+⛔ **NO FLOOR WAS OBSERVED INSIDE THE SWEPT RANGE.** The protocol anticipates this case and requires
+it be recorded rather than papered over. Voltage rises essentially from the first grid point: the two
+lowest readings are 0.637 V at 855 MHz and 0.631 V at 960 MHz, **6 mV apart, which is one step of
+this sensor's resolution**, and from 1065 MHz upward it climbs monotonically with no flat region
+anywhere.
+
+**This is the first of four cards not to show a floor**, against 0.720 V holding to 1552 MHz on the
+5060 Ti, 0.756 V to 1260 MHz on the 3060, and 0.812 V to 1500 MHz on the 3070 Ti. Its lowest reading
+is also far below all three.
+
+### The prediction this licenses, registered now
+
+The mechanism says the optimum is the highest frequency the curve reaches at the load floor. If this
+card's floor sits **at or below ~0.631 V and therefore at or below 960 MHz** — the reading the data
+supports — then:
+
+> **The median suite optimum should land at the BOTTOM of the grid, 855 or 960 MHz.**
+
+⛔ **What refutes it:** a median optimum materially above 960 MHz. That would mean either the rule
+fails on Turing, or the floor lies below the swept range and the rule cannot be applied without
+sweeping lower — and those two are **not distinguishable from this data**, which is a limit of this
+run rather than a hedge.
+
+⚠️ **The swept range starts at 855 MHz** (`-MinFrequencyPercent 40` of a ~2115 MHz ceiling). A floor
+below that is invisible here. **A confirmation would therefore be weaker evidence than the 3060's**,
+where the floor was visible as five flat points *inside* the range with the optimum at their top
+edge. Landing on the bottom grid point is consistent with the mechanism; it is also what a card
+would do if its efficiency simply kept improving all the way down.
+
+### ⚠️ And one methodological finding from this run
+
+The `asfound` run's `gemm` and `membw` joins return **byte-identical voltages and byte-identical
+sample counts** for every point where their achieved clocks match. They are not two measurements —
+`join_hwinfo_voltage.py` bins by core clock with no time filter, one log covered both sweeps, and
+both visit the same targets, so the two joins read **the same pooled samples**.
+
+🔑 **This retracts a claim written into §5.5.7 of the paper the previous day**, where the same
+artifact on the 3060's `gemm` and `copy` joins was presented as confirming the floor is
+workload-independent. The floor *values* are unaffected — voltage at a locked clock is a property of
+the applied curve and pooling samples taken there reads it correctly. What is gone is any use of two
+joins from one log as independent confirmation. **Demonstrating workload-independence needs a
+separate HWiNFO log per workload, which no run in this study has.**
+
+---
 
 ---
 

@@ -1,0 +1,203 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260912112507
+Username: DESKTOP-650UVL9\user
+RunAs User: DESKTOP-650UVL9\user
+Configuration Name: 
+Machine: DESKTOP-650UVL9 (Microsoft Windows NT 10.0.26200.0)
+Host Application: powershell -NoProfile -ExecutionPolicy Bypass -File D:\headroom-kit\Collect.ps1
+Process ID: 15524
+PSVersion: 5.1.26100.8875
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8875
+BuildVersion: 10.0.26100.8875
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+
+  Measuring the memory clock UNDER LOAD...
+  (clocks.max.memory reads the same on a stock and an overclocked card)
+  MEASURED MEMORY CLOCK UNDER LOAD: 405 MHz
+  [!] No -ExpectedMemoryClockMhz given, so this is RECORDED, NOT VERIFIED.
+      Check it against the card's stock figure before trusting the run.
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+  [ok] compute capability: sm_75
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 2060 SUPER
+  [ok] VRAM free: 7.4 GB
+  [ok] GPU is idle (0% used)
+
+Name this machine. Use the GPU model, no spaces.
+Examples:  rtx4070-super   rx7800xt   rtx3060ti-build12
+
+What is applied to this GPU right now?
+If nothing has been touched, type:  stock
+Otherwise describe it - core offset, memory offset, power limit, V/F curve,
+vendor profile, fan curve. Whatever you type is stored with the data and is
+the only record of it that will exist.
+
+Recording machine details...
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 2: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: stock msi ventus card (OC STATUS UNKOWN)
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7427 MB - clear to start.
+[SWEEP] Baseline utilisation 7.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  72.66 W [65 in-window of 76], 45.3 C, util 97.7%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  75.41 W [57 in-window of 68], 49.8 C, util  98%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  90.31 W [51 in-window of 62],  54 C, util 97.8%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 101.56 W [47 in-window of 57], 57.3 C, util 96.8%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 115.27 W [44 in-window of 54], 60.1 C, util 97.5%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 126.47 W [40 in-window of 50], 62.6 C, util 96.5%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 146.14 W [38 in-window of 47], 65.2 C, util  98%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved 1589.6 MHz (held), 169.03 W [36 in-window of 45], 68.6 C, util 96.2%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved 1617.1 MHz (UNDERSHOT -77.9), 168.57 W [36 in-window of 46], 69.1 C, util 96.9%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1608.3 MHz (UNDERSHOT -191.7),  169.4 W [36 in-window of 46], 69.6 C, util 97.7%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved   1618 MHz (UNDERSHOT -287), 168.68 W [37 in-window of 47], 69.7 C, util  95%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   1610 MHz (UNDERSHOT -400), 167.58 W [36 in-window of 46],  70 C, util 96.2%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1617.9 MHz (UNDERSHOT -497.1), 166.59 W [36 in-window of 46],  70 C, util  97%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: stock msi ventus card (OC STATUS UNKOWN)
+[SWEEP] NOTE: 5 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-113119_rtx2060-super\20260912-113127_rtx2060-super-gemm_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-113119_rtx2060-super\20260912-113127_rtx2060-super-gemm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 2: membw
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload membw --json   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: stock msi ventus card (OC STATUS UNKOWN)
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7501 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),   85.5 W [19 in-window of 28], 57.4 C, util 90.4%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  83.43 W [18 in-window of 27], 55.8 C, util 91.3%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  90.83 W [18 in-window of 27], 55.3 C, util 94.2%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  94.65 W [18 in-window of 26], 55.1 C, util 86.4%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  96.59 W [18 in-window of 26], 55.6 C, util 87.7%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 102.44 W [17 in-window of 26], 56.4 C, util 90.5%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 104.33 W [18 in-window of 26], 57.3 C, util 87.8%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 115.72 W [18 in-window of 26], 58.7 C, util 87.6%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved   1695 MHz (held), 125.24 W [17 in-window of 26], 60.8 C, util 90.3%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved   1800 MHz (held), 137.67 W [18 in-window of 26], 62.4 C, util  86%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved   1905 MHz (held), 164.16 W [18 in-window of 26], 67.6 C, util 87.4%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1906.7 MHz (UNDERSHOT -103.3), 164.73 W [18 in-window of 26], 67.8 C, util 85.3%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved   1905 MHz (UNDERSHOT -210),  166.5 W [17 in-window of 26], 68.1 C, util 93.3%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: stock msi ventus card (OC STATUS UNKOWN)
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-113119_rtx2060-super\20260912-113951_rtx2060-super-membw_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-113119_rtx2060-super\20260912-113951_rtx2060-super-membw_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+=======================================================
+  Checking what was collected
+=======================================================
+  [ok] 20260912-113127_rtx2060-super-gemm_sweep.csv: 13 points, 13 with performance data, 8 locks held
+  [ok] 20260912-113951_rtx2060-super-membw_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] peak SM clock, 20260912-113127_rtx2060-super-gemm_sweep: 1,618 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-113951_rtx2060-super-membw_sweep: 1,907 MHz (provenance evidence)
+
+  COLLECTION SUCCEEDED
+
+  Results are in:
+    D:\headroom-kit\results\20260912-113119_rtx2060-super
+
+  Copy that whole folder off this machine, then delete the kit.
+
+  GPU clocks have been reset to normal automatically.
+  Verify with:  nvidia-smi -q -d CLOCK
+
+**********************
+Windows PowerShell transcript end
+End time: 20260912114452
+**********************

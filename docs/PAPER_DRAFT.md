@@ -1915,9 +1915,25 @@ configuration**. Joined against two suite workloads independently:
 | core V, `gemm` | 0.756 | 0.756 | 0.756 | 0.756 | **0.756** | 0.787 | 0.831 |
 | core V, `copy` | 0.756 | 0.756 | 0.756 | 0.756 | **0.756** | 0.787 | 0.831 |
 
-🔑 **The two workloads agree to the millivolt at every point**, which is what confirms the floor is
-a property of the card rather than of what is running on it. The suite's median optimum is
+⛔ **AN EARLIER VERSION OF THIS PARAGRAPH READ THAT AGREEMENT AS EVIDENCE. IT IS NOT. RETRACTED
+2026-09-12, the day after it was written.** It said the two workloads "agree to the millivolt at
+every point, which is what confirms the floor is a property of the card rather than of what is
+running on it." They do agree — and they agree **tautologically**.
+
+`join_hwinfo_voltage.py` bins samples onto a sweep **by core clock, with no time filtering**. One
+HWiNFO log covered the whole twelve-workload suite, and every workload visits the same locked
+targets, so both joins drew from **the same pooled samples**. The identical sample count on all
+thirteen rows is the tell. The two columns diverge only above 1680 MHz, where `gemm` power-caps and
+`copy` does not, so their achieved clocks finally differ and the bins separate.
+
+🔑 **The floor value itself stands.** Voltage at a locked clock is a property of the applied V/F
+curve, and pooling samples taken at that clock reads it correctly. What does **not** stand is using
+two joins from one log as independent confirmation of anything. The suite's median optimum is
 **1260 MHz** — the last point on that floor.
+
+⚠️ **Demonstrating workload-independence requires a separate HWiNFO log per workload**, which no run
+in this study has. It remains plausible — a V/F curve is a property of the card — but it is
+untested here and is not claimed.
 
 ⚠️ **This does not refute the leakage account, and is not offered as an alternative to it.** P_fixed
 contains leakage along with memory refresh, display output, VRM losses and fan power, none of which

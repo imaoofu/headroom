@@ -1,0 +1,854 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260912124117
+Username: DESKTOP-650UVL9\user
+RunAs User: DESKTOP-650UVL9\user
+Configuration Name: 
+Machine: DESKTOP-650UVL9 (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+Process ID: 10904
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+
+  Measuring the memory clock UNDER LOAD...
+  (clocks.max.memory reads the same on a stock and an overclocked card)
+  MEASURED MEMORY CLOCK UNDER LOAD: 7000 MHz
+  [!] No -ExpectedMemoryClockMhz given, so this is RECORDED, NOT VERIFIED.
+      Check it against the card's stock figure before trusting the run.
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+  [ok] compute capability: sm_75
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 2060 SUPER
+  [ok] VRAM free: 7.4 GB
+  [ok] GPU is idle (10% used)
+
+Recording machine details...
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 12: copy
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload copy --json --iterations 2936   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7591 MB - clear to start.
+[SWEEP] Baseline utilisation 1.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  80.71 W [18 in-window of 25], 46.9 C, util 89.1%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  81.65 W [17 in-window of 24], 48.2 C, util 92.1%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  86.91 W [17 in-window of 23], 49.3 C, util 88.7%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),   91.2 W [16 in-window of 23], 50.7 C, util 89.4%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  93.33 W [17 in-window of 23], 51.8 C, util 87.9%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held),  97.16 W [17 in-window of 24], 53.1 C, util 85.5%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 104.78 W [16 in-window of 35], 54.1 C, util 87.7%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 107.73 W [17 in-window of 23], 55.9 C, util 88.4%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved   1695 MHz (held), 118.96 W [16 in-window of 23], 58.2 C, util 88.2%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved   1800 MHz (held), 132.69 W [17 in-window of 24], 60.3 C, util 84.8%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved   1905 MHz (held), 155.76 W [17 in-window of 24], 64.2 C, util 87.5%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1907.6 MHz (UNDERSHOT -102.4), 156.28 W [17 in-window of 23], 65.4 C, util 89.2%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved   1905 MHz (UNDERSHOT -210),  157.3 W [17 in-window of 24], 65.7 C, util 89.8%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1920 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-124145_rtx2060super-suite-copy_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-124145_rtx2060super-suite-copy_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 12: reduce
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload reduce --json --iterations 3180   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 5% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  83.12 W [18 in-window of 26], 53.8 C, util 89.6%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  86.22 W [18 in-window of 26], 53.1 C, util 90.9%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  92.86 W [18 in-window of 24], 53.2 C, util 86.3%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),   93.5 W [17 in-window of 23], 53.8 C, util 88.3%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 100.27 W [17 in-window of 23], 54.3 C, util 87.6%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 103.73 W [16 in-window of 23], 55.1 C, util 88.6%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 106.75 W [17 in-window of 23], 56.6 C, util 88.4%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 114.57 W [16 in-window of 23], 58.4 C, util 88.4%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved   1695 MHz (held), 126.06 W [17 in-window of 24], 59.8 C, util 86.1%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved   1800 MHz (held), 139.62 W [16 in-window of 23], 62.6 C, util 85.9%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved   1905 MHz (held), 163.81 W [17 in-window of 23], 66.2 C, util 88.2%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1905.9 MHz (UNDERSHOT -104.1), 160.08 W [17 in-window of 24], 66.2 C, util 84.5%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1897.5 MHz (UNDERSHOT -217.5), 162.02 W [16 in-window of 24], 66.9 C, util 89.1%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1920 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-124640_rtx2060super-suite-reduce_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-124640_rtx2060super-suite-reduce_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 3 of 12: softmax
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload softmax --json --iterations 2377   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 1.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  81.63 W [25 in-window of 32], 55.1 C, util 91.7%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  85.81 W [22 in-window of 29], 54.7 C, util  92%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  92.95 W [20 in-window of 27], 55.3 C, util 87.5%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  99.24 W [19 in-window of 26],  56 C, util 89.7%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 106.98 W [18 in-window of 25], 57.1 C, util 86.1%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 117.16 W [17 in-window of 23], 58.6 C, util 86.3%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),  127.2 W [17 in-window of 23], 59.7 C, util 85.4%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 140.03 W [16 in-window of 23], 61.6 C, util 84.8%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved   1695 MHz (held), 159.51 W [16 in-window of 22], 64.5 C, util 86.2%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1784.1 MHz (held), 170.39 W [16 in-window of 23], 66.1 C, util 85.5%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1785.9 MHz (UNDERSHOT -119.1), 171.37 W [16 in-window of 23], 67.1 C, util 88.4%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1780.3 MHz (UNDERSHOT -229.7), 171.16 W [16 in-window of 23], 66.9 C, util 84.1%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1773.8 MHz (UNDERSHOT -341.2), 171.38 W [16 in-window of 23],  67 C, util 88.1%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-125127_rtx2060super-suite-softmax_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-125127_rtx2060super-suite-softmax_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 4 of 12: layernorm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload layernorm --json --iterations 1628   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  86.47 W [22 in-window of 29], 55.7 C, util  91%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  90.02 W [20 in-window of 28], 55.2 C, util 92.2%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  92.52 W [20 in-window of 26], 55.4 C, util 90.3%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 102.13 W [18 in-window of 25], 55.9 C, util 88.6%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 107.62 W [18 in-window of 24], 56.8 C, util 85.9%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 115.11 W [17 in-window of 24], 57.8 C, util 89.4%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 123.41 W [16 in-window of 23], 59.4 C, util 88.2%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 135.66 W [16 in-window of 23], 61.2 C, util 86.7%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved   1695 MHz (held), 147.76 W [16 in-window of 22], 63.5 C, util 87.9%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved   1800 MHz (held), 172.94 W [16 in-window of 22], 66.2 C, util 85.3%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1815.9 MHz (UNDERSHOT -89.1), 170.71 W [16 in-window of 23], 67.3 C, util 87.5%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1809.4 MHz (UNDERSHOT -200.6), 171.35 W [16 in-window of 23], 67.2 C, util 84.4%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1818.8 MHz (UNDERSHOT -296.2), 170.04 W [16 in-window of 23], 67.2 C, util 86.2%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-125620_rtx2060super-suite-layernorm_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-125620_rtx2060super-suite-layernorm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 5 of 12: bgemm32
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm32 --json --iterations 1163   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  69.94 W [33 in-window of 40], 54.8 C, util 93.5%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),   71.5 W [30 in-window of 36], 53.8 C, util 92.5%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  77.12 W [27 in-window of 33], 54.3 C, util 89.5%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  86.41 W [24 in-window of 31], 55.1 C, util 92.6%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  91.82 W [22 in-window of 29],  56 C, util 91.5%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 101.41 W [20 in-window of 27], 57.2 C, util 89.6%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 112.53 W [19 in-window of 26],  59 C, util 88.3%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held),  128.5 W [18 in-window of 25], 60.7 C, util 88.8%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved   1695 MHz (held), 147.58 W [17 in-window of 24], 63.4 C, util 87.8%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1796.5 MHz (held), 171.58 W [17 in-window of 23],  66 C, util 88.1%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1800.9 MHz (UNDERSHOT -104.1),  170.6 W [16 in-window of 23], 66.6 C, util 86.1%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1799.1 MHz (UNDERSHOT -210.9), 166.72 W [17 in-window of 24], 66.9 C, util 87.5%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1797.4 MHz (UNDERSHOT -317.6), 162.33 W [17 in-window of 24], 66.6 C, util 83.8%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-130111_rtx2060super-suite-bgemm32_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-130111_rtx2060super-suite-bgemm32_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 6 of 12: bgemm64
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm64 --json --iterations 2986   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 0% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),   94.7 W [27 in-window of 33],  56 C, util 91.4%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 101.83 W [24 in-window of 30],  56 C, util 89.1%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 108.31 W [22 in-window of 28], 56.7 C, util 88.2%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 122.71 W [20 in-window of 26],  58 C, util 90.5%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 135.01 W [18 in-window of 25], 59.4 C, util 88.2%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 146.21 W [17 in-window of 24],  61 C, util 86.1%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 162.81 W [17 in-window of 24], 62.6 C, util 85.1%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved 1559.1 MHz (UNDERSHOT -30.9), 170.31 W [17 in-window of 23], 63.8 C, util 86.8%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved 1556.2 MHz (UNDERSHOT -138.8), 172.44 W [16 in-window of 23], 64.4 C, util 86.5%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1574.1 MHz (UNDERSHOT -225.9), 167.55 W [17 in-window of 23], 64.8 C, util 86.3%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1571.5 MHz (UNDERSHOT -333.5), 170.96 W [17 in-window of 24], 64.5 C, util 85.6%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   1575 MHz (UNDERSHOT -435), 171.36 W [17 in-window of 24], 65.2 C, util 87.9%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1575.9 MHz (UNDERSHOT -539.1), 169.57 W [17 in-window of 24], 64.5 C, util  87%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-130628_rtx2060super-suite-bgemm64_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-130628_rtx2060super-suite-bgemm64_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 7 of 12: bgemm128
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm128 --json --iterations 1935   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 1% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  84.62 W [28 in-window of 34], 55.8 C, util 92.5%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  92.17 W [24 in-window of 31], 55.6 C, util 89.8%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  99.13 W [22 in-window of 29], 56.3 C, util 88.5%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),    111 W [20 in-window of 27], 57.4 C, util 89.6%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 122.63 W [19 in-window of 26], 58.7 C, util  90%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 136.14 W [17 in-window of 24], 60.4 C, util  87%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 155.28 W [16 in-window of 23], 62.1 C, util 86.1%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved 1579.7 MHz (held), 170.07 W [16 in-window of 23], 63.4 C, util 89.1%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved 1583.4 MHz (UNDERSHOT -111.6), 170.15 W [16 in-window of 23], 64.1 C, util 85.5%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1583.4 MHz (UNDERSHOT -216.6), 168.54 W [16 in-window of 23], 63.6 C, util 86.2%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1574.1 MHz (UNDERSHOT -330.9), 170.22 W [16 in-window of 23], 64.8 C, util 87.2%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1590.9 MHz (UNDERSHOT -419.1), 168.74 W [16 in-window of 23], 64.3 C, util 86.9%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1580.6 MHz (UNDERSHOT -534.4), 172.87 W [16 in-window of 23], 64.9 C, util 86.5%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 5 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-131127_rtx2060super-suite-bgemm128_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-131127_rtx2060super-suite-bgemm128_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 8 of 12: bgemm256
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm256 --json --iterations 1076   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 3.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),     83 W [29 in-window of 36], 55.3 C, util 90.9%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  87.12 W [26 in-window of 33], 54.7 C, util 90.6%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  92.76 W [24 in-window of 31], 55.2 C, util 89.1%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 105.06 W [21 in-window of 28], 56.4 C, util 89.6%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  114.2 W [20 in-window of 27], 57.8 C, util 90.8%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 121.84 W [19 in-window of 25], 59.3 C, util 87.2%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),  144.3 W [17 in-window of 24], 61.4 C, util 85.6%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 168.55 W [16 in-window of 23], 63.9 C, util 86.2%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved 1627.5 MHz (UNDERSHOT -67.5), 167.46 W [16 in-window of 23], 64.1 C, util 87.3%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1630.3 MHz (UNDERSHOT -169.7), 169.26 W [16 in-window of 23], 64.4 C, util 85.9%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1622.8 MHz (UNDERSHOT -282.2), 170.91 W [16 in-window of 23], 64.9 C, util 86.3%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1615.3 MHz (UNDERSHOT -394.7), 169.78 W [16 in-window of 23],  65 C, util 85.2%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved   1620 MHz (UNDERSHOT -495), 166.14 W [16 in-window of 23],  65 C, util 86.5%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1920 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 5 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-131626_rtx2060super-suite-bgemm256_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-131626_rtx2060super-suite-bgemm256_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 9 of 12: bgemm1024
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm1024 --json --iterations 297   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  73.07 W [30 in-window of 38], 54.9 C, util  97%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  76.28 W [28 in-window of 35], 54.2 C, util 91.8%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  85.07 W [24 in-window of 32], 54.8 C, util 95.5%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  97.08 W [23 in-window of 30], 55.8 C, util 90.6%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  106.2 W [20 in-window of 28], 57.2 C, util 93.6%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 120.11 W [19 in-window of 26], 58.7 C, util 87.2%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 136.49 W [18 in-window of 25], 60.3 C, util 88.9%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 156.21 W [17 in-window of 24], 62.3 C, util 87.9%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved 1662.4 MHz (UNDERSHOT -32.6), 169.84 W [17 in-window of 24], 64.2 C, util 89.9%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1655.3 MHz (UNDERSHOT -144.7),  170.4 W [17 in-window of 24], 64.9 C, util 85.4%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1664.1 MHz (UNDERSHOT -240.9), 164.61 W [17 in-window of 24], 64.8 C, util 86.5%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1652.6 MHz (UNDERSHOT -357.4), 168.92 W [17 in-window of 24], 65.2 C, util 89.6%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1657.9 MHz (UNDERSHOT -457.1), 168.84 W [17 in-window of 24], 65.6 C, util 86.7%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 540 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 5 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-132131_rtx2060super-suite-bgemm1024_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-132131_rtx2060super-suite-bgemm1024_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 10 of 12: attention
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload attention --json --iterations 88   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 0% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  57.87 W [35 in-window of 44], 52.9 C, util 96.7%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  59.53 W [31 in-window of 39], 51.9 C, util 97.8%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  66.32 W [27 in-window of 36], 51.9 C, util 97.9%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  71.94 W [25 in-window of 34], 52.5 C, util 96.2%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  76.01 W [24 in-window of 31], 53.4 C, util 94.1%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held),  87.66 W [22 in-window of 30], 54.5 C, util 93.7%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),  99.62 W [20 in-window of 28], 56.4 C, util 94.2%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 113.16 W [19 in-window of 27], 58.9 C, util 92.5%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved   1695 MHz (held),  137.9 W [17 in-window of 25], 61.8 C, util 94.5%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1792.9 MHz (held), 158.71 W [17 in-window of 24], 64.6 C, util 92.8%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1805.3 MHz (UNDERSHOT -99.7), 162.41 W [17 in-window of 25], 65.2 C, util 93.7%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1805.3 MHz (UNDERSHOT -204.7), 161.66 W [17 in-window of 25], 65.4 C, util 90.6%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1805.3 MHz (UNDERSHOT -309.7), 163.12 W [17 in-window of 25], 65.6 C, util 92.2%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-132644_rtx2060super-suite-attention_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-132644_rtx2060super-suite-attention_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 11 of 12: conv
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload conv --json --iterations 223   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  72.89 W [30 in-window of 38], 53.9 C, util 93.9%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  75.09 W [27 in-window of 35], 53.6 C, util 95.3%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  84.52 W [24 in-window of 32], 54.1 C, util 95.3%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  91.95 W [22 in-window of 30], 54.9 C, util 92.9%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  99.21 W [21 in-window of 28], 56.2 C, util 90.8%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 113.01 W [19 in-window of 27], 57.9 C, util 91.7%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 125.55 W [19 in-window of 26], 59.8 C, util 90.2%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved   1590 MHz (held), 142.33 W [17 in-window of 25], 61.8 C, util 91.4%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved 1694.1 MHz (held), 164.28 W [17 in-window of 25], 64.6 C, util 90.6%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved   1725 MHz (UNDERSHOT -75), 170.39 W [17 in-window of 24], 65.1 C, util 85.9%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1721.5 MHz (UNDERSHOT -183.5), 169.14 W [17 in-window of 24], 65.5 C, util 86.8%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1722.4 MHz (UNDERSHOT -287.6), 169.89 W [17 in-window of 24], 66.4 C, util 91.2%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1720.6 MHz (UNDERSHOT -394.4), 169.67 W [17 in-window of 24], 66.2 C, util 88.2%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1920 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-133217_rtx2060super-suite-conv_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-133217_rtx2060super-suite-conv_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 12 of 12: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 2060 SUPER (driver 616.92)
+[SWEEP] Max clock:  2115 MHz | power limit 175.00 W enforced (175.00 W default, 185.00 W max)
+[SWEEP] Supported:  122 discrete graphics clocks, 300-2115 MHz
+[SWEEP] Sweep floor: 846 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1590, 1695, 1800, 1905, 2010, 2115 MHz
+[SWEEP] Workload:   D:\HEADRO~1\python\python.exe D:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json --iterations 120   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7608 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  73.21 W [66 in-window of 75],  55 C, util 98.4%
+[SWEEP] --> locking 960 MHz
+[SWEEP]       960 MHz -> achieved    960 MHz (held),  78.14 W [59 in-window of 68],  55 C, util 97.9%
+[SWEEP] --> locking 1065 MHz
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  91.66 W [52 in-window of 61], 56.6 C, util 96.8%
+[SWEEP] --> locking 1170 MHz
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  99.97 W [48 in-window of 57], 58.3 C, util 97.8%
+[SWEEP] --> locking 1275 MHz
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 114.96 W [45 in-window of 54], 60.5 C, util 97.6%
+[SWEEP] --> locking 1380 MHz
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 128.64 W [41 in-window of 50], 62.4 C, util 97.7%
+[SWEEP] --> locking 1485 MHz
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),  145.3 W [38 in-window of 47], 64.8 C, util 97.8%
+[SWEEP] --> locking 1590 MHz
+[SWEEP]      1590 MHz -> achieved 1589.6 MHz (held), 168.71 W [37 in-window of 45], 67.7 C, util 95.8%
+[SWEEP] --> locking 1695 MHz
+[SWEEP]      1695 MHz -> achieved 1618.4 MHz (UNDERSHOT -76.6), 168.23 W [37 in-window of 45], 68.2 C, util 95.2%
+[SWEEP] --> locking 1800 MHz
+[SWEEP]      1800 MHz -> achieved 1617.6 MHz (UNDERSHOT -182.4), 169.22 W [37 in-window of 45], 68.6 C, util 97.3%
+[SWEEP] --> locking 1905 MHz
+[SWEEP]      1905 MHz -> achieved 1615.9 MHz (UNDERSHOT -289.1), 167.65 W [37 in-window of 45], 69.1 C, util 95.9%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved 1618.4 MHz (UNDERSHOT -391.6), 167.68 W [37 in-window of 45],  69 C, util 97.6%
+[SWEEP] --> locking 2115 MHz
+[SWEEP]      2115 MHz -> achieved 1618.3 MHz (UNDERSHOT -496.7), 165.98 W [36 in-window of 45], 69.1 C, util 98.2%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1905 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK - describe the card and what was closed
+[SWEEP] NOTE: 5 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-133734_rtx2060super-suite-gemm_sweep.csv
+[SWEEP] JSON: D:\headroom-kit\results\20260912-124138_rtx2060super-suite\20260912-133734_rtx2060super-suite-gemm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+=======================================================
+  Checking what was collected
+=======================================================
+  [ok] 20260912-124145_rtx2060super-suite-copy_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] 20260912-124640_rtx2060super-suite-reduce_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] 20260912-125127_rtx2060super-suite-softmax_sweep.csv: 13 points, 13 with performance data, 10 locks held
+  [ok] 20260912-125620_rtx2060super-suite-layernorm_sweep.csv: 13 points, 13 with performance data, 10 locks held
+  [ok] 20260912-130111_rtx2060super-suite-bgemm32_sweep.csv: 13 points, 13 with performance data, 10 locks held
+  [ok] 20260912-130628_rtx2060super-suite-bgemm64_sweep.csv: 13 points, 13 with performance data, 7 locks held
+  [ok] 20260912-131127_rtx2060super-suite-bgemm128_sweep.csv: 13 points, 13 with performance data, 8 locks held
+  [ok] 20260912-131626_rtx2060super-suite-bgemm256_sweep.csv: 13 points, 13 with performance data, 8 locks held
+  [ok] 20260912-132131_rtx2060super-suite-bgemm1024_sweep.csv: 13 points, 13 with performance data, 8 locks held
+  [ok] 20260912-132644_rtx2060super-suite-attention_sweep.csv: 13 points, 13 with performance data, 10 locks held
+  [ok] 20260912-133217_rtx2060super-suite-conv_sweep.csv: 13 points, 13 with performance data, 9 locks held
+  [ok] 20260912-133734_rtx2060super-suite-gemm_sweep.csv: 13 points, 13 with performance data, 8 locks held
+  [ok] peak SM clock, 20260912-124145_rtx2060super-suite-copy_sweep: 1,908 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-124640_rtx2060super-suite-reduce_sweep: 1,906 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-125127_rtx2060super-suite-softmax_sweep: 1,786 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-125620_rtx2060super-suite-layernorm_sweep: 1,819 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-130111_rtx2060super-suite-bgemm32_sweep: 1,801 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-130628_rtx2060super-suite-bgemm64_sweep: 1,576 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-131127_rtx2060super-suite-bgemm128_sweep: 1,591 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-131626_rtx2060super-suite-bgemm256_sweep: 1,630 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-132131_rtx2060super-suite-bgemm1024_sweep: 1,664 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-132644_rtx2060super-suite-attention_sweep: 1,805 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-133217_rtx2060super-suite-conv_sweep: 1,725 MHz (provenance evidence)
+  [ok] peak SM clock, 20260912-133734_rtx2060super-suite-gemm_sweep: 1,618 MHz (provenance evidence)
+
+  COLLECTION SUCCEEDED
+
+  Results are in:
+    D:\headroom-kit\results\20260912-124138_rtx2060super-suite
+
+  Copy that whole folder off this machine, then delete the kit.
+
+  GPU clocks have been reset to normal automatically.
+  Verify with:  nvidia-smi -q -d CLOCK
+
+**********************
+Windows PowerShell transcript end
+End time: 20260912134543
+**********************

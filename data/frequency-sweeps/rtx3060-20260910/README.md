@@ -30,10 +30,15 @@ because a count is a property of a card and one calibrated elsewhere measures so
 
 ✅ **Two suite-concurrent voltage extracts were added 2026-09-11**, joined from
 `hwinfo-rtx3060fullsuite.csv` — which covers the twelve-workload suite itself — against the suite's
-`gemm` and `copy` sweeps. **They agree to the millivolt at every grid point**, which is what
-establishes the floor as a property of the card rather than of the workload, and it makes this the
-only card in the study whose floor and optimum come from **one session on one configuration**. The
-5060 Ti and 3070 Ti both read voltage on separate `gemm`/`membw` runs.
+`gemm` and `copy` sweeps. ⛔ **Their agreement is an artifact and was briefly written up as
+evidence — retracted 2026-09-12.** `join_hwinfo_voltage.py` bins by core clock with no time
+filtering, one log covered the whole suite, and every workload visits the same targets, so the two
+joins read **the same pooled samples**. Identical sample counts on all thirteen rows is the tell.
+
+✅ **What survives:** the floor value is correctly read, because voltage at a locked clock is a
+property of the applied curve and pooling samples taken there reads it fine. And this is still the
+only card whose floor and optimum come from **one session on one configuration** — the 5060 Ti and
+3070 Ti read voltage on separate runs.
 
 **The 3060's load floor is 0.756 V, not 0.720.** It holds flat across five grid points — 840, 945,
 1050, 1155, 1260 MHz — and the next point reads **0.794 V**. The `gemm` efficiency optimum is
