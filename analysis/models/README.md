@@ -129,7 +129,7 @@ This section said the 0.720 V floor "was measured on this card and is assumed to
 assumption was wrong, and testing it produced a better result than confirming it would have.**
 
 An **RTX 3060 (Ampere, 8 nm) has a load floor of 0.756 V.** Its floor ends at **1260 MHz** and its
-efficiency optimum is **1260 MHz** — ten of twelve workloads land there individually. The rule holds
+efficiency optimum is **1260 MHz** — nine of twelve workloads land there individually. The rule holds
 exactly, with a different constant. Full record in `data/frequency-sweeps/rtx3060-20260910/`.
 
 🔑 **The rule transfers; the parameter is per card.** A shared constant would most likely have meant

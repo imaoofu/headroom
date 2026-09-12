@@ -2560,3 +2560,277 @@ def bracketPower2010():
 def bracketR9Row():
     """the stock leg's mean efficiency gain, recomputed from its twelve sweep CSVs rather than read back from the table it checks."""
     return f"| r9 (this run) | {_bracketMeanGain(BRACKET_STOCK):.2f}% |"
+
+# --------------------------------------------------------------------------------------
+# 5.5.7 third chip and 5.5.8 - the intervention arms, 2026-09-08 .. 09-10
+#
+# Paths are listed explicitly rather than globbed. That is the convention in this file and it
+# exists because of a real collision: suite-replicate-r2-20260830/ holds bgemm64 sweeps tagged
+# -r3 and -r4 from a separate early set, so a glob can silently resolve to the wrong file. A
+# model may fail loudly on ambiguity; a claim may not take the risk at all.
+# --------------------------------------------------------------------------------------
+
+# abba-20260908 a1 -> 12 files
+ABBA_A1 = {
+    "copy":      "abba-20260908/20260908-115201_5060ti-fulltune-suite-copy-a1_sweep.csv",
+    "reduce":    "abba-20260908/20260908-115601_5060ti-fulltune-suite-reduce-a1_sweep.csv",
+    "softmax":   "abba-20260908/20260908-120014_5060ti-fulltune-suite-softmax-a1_sweep.csv",
+    "layernorm": "abba-20260908/20260908-120410_5060ti-fulltune-suite-layernorm-a1_sweep.csv",
+    "bgemm32":   "abba-20260908/20260908-120811_5060ti-fulltune-suite-bgemm32-a1_sweep.csv",
+    "bgemm64":   "abba-20260908/20260908-121207_5060ti-fulltune-suite-bgemm64-a1_sweep.csv",
+    "bgemm128":  "abba-20260908/20260908-121603_5060ti-fulltune-suite-bgemm128-a1_sweep.csv",
+    "bgemm256":  "abba-20260908/20260908-122024_5060ti-fulltune-suite-bgemm256-a1_sweep.csv",
+    "bgemm1024": "abba-20260908/20260908-122509_5060ti-fulltune-suite-bgemm1024-a1_sweep.csv",
+    "attention": "abba-20260908/20260908-122955_5060ti-fulltune-suite-attention-a1_sweep.csv",
+    "conv":      "abba-20260908/20260908-123446_5060ti-fulltune-suite-conv-a1_sweep.csv",
+    "gemm":      "abba-20260908/20260908-123934_5060ti-fulltune-suite-gemm-a1_sweep.csv",
+}
+
+# abba-20260908 b1 -> 12 files
+ABBA_B1 = {
+    "copy":      "abba-20260908/20260908-125526_5060ti-splitcurve-suite-copy-b1_sweep.csv",
+    "reduce":    "abba-20260908/20260908-125922_5060ti-splitcurve-suite-reduce-b1_sweep.csv",
+    "softmax":   "abba-20260908/20260908-130325_5060ti-splitcurve-suite-softmax-b1_sweep.csv",
+    "layernorm": "abba-20260908/20260908-130718_5060ti-splitcurve-suite-layernorm-b1_sweep.csv",
+    "bgemm32":   "abba-20260908/20260908-131114_5060ti-splitcurve-suite-bgemm32-b1_sweep.csv",
+    "bgemm64":   "abba-20260908/20260908-131508_5060ti-splitcurve-suite-bgemm64-b1_sweep.csv",
+    "bgemm128":  "abba-20260908/20260908-131901_5060ti-splitcurve-suite-bgemm128-b1_sweep.csv",
+    "bgemm256":  "abba-20260908/20260908-132322_5060ti-splitcurve-suite-bgemm256-b1_sweep.csv",
+    "bgemm1024": "abba-20260908/20260908-132807_5060ti-splitcurve-suite-bgemm1024-b1_sweep.csv",
+    "attention": "abba-20260908/20260908-133253_5060ti-splitcurve-suite-attention-b1_sweep.csv",
+    "conv":      "abba-20260908/20260908-133745_5060ti-splitcurve-suite-conv-b1_sweep.csv",
+    "gemm":      "abba-20260908/20260908-134234_5060ti-splitcurve-suite-gemm-b1_sweep.csv",
+}
+
+# abba-20260908 b2 -> 12 files
+ABBA_B2 = {
+    "copy":      "abba-20260908/20260908-135801_5060ti-splitcurve-suite-copy-b2_sweep.csv",
+    "reduce":    "abba-20260908/20260908-140157_5060ti-splitcurve-suite-reduce-b2_sweep.csv",
+    "softmax":   "abba-20260908/20260908-140600_5060ti-splitcurve-suite-softmax-b2_sweep.csv",
+    "layernorm": "abba-20260908/20260908-140952_5060ti-splitcurve-suite-layernorm-b2_sweep.csv",
+    "bgemm32":   "abba-20260908/20260908-141349_5060ti-splitcurve-suite-bgemm32-b2_sweep.csv",
+    "bgemm64":   "abba-20260908/20260908-141743_5060ti-splitcurve-suite-bgemm64-b2_sweep.csv",
+    "bgemm128":  "abba-20260908/20260908-142136_5060ti-splitcurve-suite-bgemm128-b2_sweep.csv",
+    "bgemm256":  "abba-20260908/20260908-142557_5060ti-splitcurve-suite-bgemm256-b2_sweep.csv",
+    "bgemm1024": "abba-20260908/20260908-143042_5060ti-splitcurve-suite-bgemm1024-b2_sweep.csv",
+    "attention": "abba-20260908/20260908-143529_5060ti-splitcurve-suite-attention-b2_sweep.csv",
+    "conv":      "abba-20260908/20260908-144020_5060ti-splitcurve-suite-conv-b2_sweep.csv",
+    "gemm":      "abba-20260908/20260908-144510_5060ti-splitcurve-suite-gemm-b2_sweep.csv",
+}
+
+# abba-20260908 a2 -> 12 files
+ABBA_A2 = {
+    "copy":      "abba-20260908/20260908-150036_5060ti-fulltune-suite-copy-a2_sweep.csv",
+    "reduce":    "abba-20260908/20260908-150437_5060ti-fulltune-suite-reduce-a2_sweep.csv",
+    "softmax":   "abba-20260908/20260908-150849_5060ti-fulltune-suite-softmax-a2_sweep.csv",
+    "layernorm": "abba-20260908/20260908-151249_5060ti-fulltune-suite-layernorm-a2_sweep.csv",
+    "bgemm32":   "abba-20260908/20260908-151702_5060ti-fulltune-suite-bgemm32-a2_sweep.csv",
+    "bgemm64":   "abba-20260908/20260908-152111_5060ti-fulltune-suite-bgemm64-a2_sweep.csv",
+    "bgemm128":  "abba-20260908/20260908-152519_5060ti-fulltune-suite-bgemm128-a2_sweep.csv",
+    "bgemm256":  "abba-20260908/20260908-152953_5060ti-fulltune-suite-bgemm256-a2_sweep.csv",
+    "bgemm1024": "abba-20260908/20260908-153454_5060ti-fulltune-suite-bgemm1024-a2_sweep.csv",
+    "attention": "abba-20260908/20260908-153957_5060ti-fulltune-suite-attention-a2_sweep.csv",
+    "conv":      "abba-20260908/20260908-154506_5060ti-fulltune-suite-conv-a2_sweep.csv",
+    "gemm":      "abba-20260908/20260908-155014_5060ti-fulltune-suite-gemm-a2_sweep.csv",
+}
+
+# repair-suite-p2-20260909 p2t1 -> 12 files
+REPAIR_P2T1 = {
+    "copy":      "repair-suite-p2-20260909/20260909-202923_5060ti-repair3022-suite-copy-p2t1_sweep.csv",
+    "reduce":    "repair-suite-p2-20260909/20260909-193955_5060ti-repair3022-suite-reduce-p2t1_sweep.csv",
+    "softmax":   "repair-suite-p2-20260909/20260909-194400_5060ti-repair3022-suite-softmax-p2t1_sweep.csv",
+    "layernorm": "repair-suite-p2-20260909/20260909-194753_5060ti-repair3022-suite-layernorm-p2t1_sweep.csv",
+    "bgemm32":   "repair-suite-p2-20260909/20260909-195150_5060ti-repair3022-suite-bgemm32-p2t1_sweep.csv",
+    "bgemm64":   "repair-suite-p2-20260909/20260909-195543_5060ti-repair3022-suite-bgemm64-p2t1_sweep.csv",
+    "bgemm128":  "repair-suite-p2-20260909/20260909-195937_5060ti-repair3022-suite-bgemm128-p2t1_sweep.csv",
+    "bgemm256":  "repair-suite-p2-20260909/20260909-200359_5060ti-repair3022-suite-bgemm256-p2t1_sweep.csv",
+    "bgemm1024": "repair-suite-p2-20260909/20260909-200845_5060ti-repair3022-suite-bgemm1024-p2t1_sweep.csv",
+    "attention": "repair-suite-p2-20260909/20260909-201331_5060ti-repair3022-suite-attention-p2t1_sweep.csv",
+    "conv":      "repair-suite-p2-20260909/20260909-201820_5060ti-repair3022-suite-conv-p2t1_sweep.csv",
+    "gemm":      "repair-suite-p2-20260909/20260909-202310_5060ti-repair3022-suite-gemm-p2t1_sweep.csv",
+}
+
+SPLIT_S2 = {
+    "copy":      "splitcurve-suite-s2-20260908/20260908-101152_5060ti-splitcurve-suite-copy-s2_sweep.csv",
+    "reduce":    "splitcurve-suite-s2-20260908/20260908-101557_5060ti-splitcurve-suite-reduce-s2_sweep.csv",
+    "softmax":   "splitcurve-suite-s2-20260908/20260908-102018_5060ti-splitcurve-suite-softmax-s2_sweep.csv",
+    "layernorm": "splitcurve-suite-s2-20260908/20260908-102416_5060ti-splitcurve-suite-layernorm-s2_sweep.csv",
+    "bgemm32":   "splitcurve-suite-s2-20260908/20260908-102812_5060ti-splitcurve-suite-bgemm32-s2_sweep.csv",
+    "bgemm64":   "splitcurve-suite-s2-20260908/20260908-103206_5060ti-splitcurve-suite-bgemm64-s2_sweep.csv",
+    "bgemm128":  "splitcurve-suite-s2-20260908/20260908-103559_5060ti-splitcurve-suite-bgemm128-s2_sweep.csv",
+    "bgemm256":  "splitcurve-suite-s2-20260908/20260908-104020_5060ti-splitcurve-suite-bgemm256-s2_sweep.csv",
+    "bgemm1024": "splitcurve-suite-s2-20260908/20260908-104504_5060ti-splitcurve-suite-bgemm1024-s2_sweep.csv",
+    "attention": "splitcurve-suite-s2-20260908/20260908-104951_5060ti-splitcurve-suite-attention-s2_sweep.csv",
+    "conv":      "splitcurve-suite-s2-20260908/20260908-105441_5060ti-splitcurve-suite-conv-s2_sweep.csv",
+    "gemm":      "splitcurve-suite-s2-20260908/20260908-105931_5060ti-splitcurve-suite-gemm-s2_sweep.csv",
+}
+
+SUITE_3060 = {
+    "copy":      "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-191442_rtx3060-suite-copy_sweep.csv",
+    "reduce":    "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-191911_rtx3060-suite-reduce_sweep.csv",
+    "softmax":   "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-192343_rtx3060-suite-softmax_sweep.csv",
+    "layernorm": "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-192823_rtx3060-suite-layernorm_sweep.csv",
+    "bgemm32":   "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-193259_rtx3060-suite-bgemm32_sweep.csv",
+    "bgemm64":   "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-193815_rtx3060-suite-bgemm64_sweep.csv",
+    "bgemm128":  "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-194321_rtx3060-suite-bgemm128_sweep.csv",
+    "bgemm256":  "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-194812_rtx3060-suite-bgemm256_sweep.csv",
+    "bgemm1024": "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-195309_rtx3060-suite-bgemm1024_sweep.csv",
+    "attention": "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-195811_rtx3060-suite-attention_sweep.csv",
+    "conv":      "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-200310_rtx3060-suite-conv_sweep.csv",
+    "gemm":      "rtx3060-20260910/20260910-191436_rtx3060-suite/20260910-200806_rtx3060-suite-gemm_sweep.csv",
+}
+
+
+
+def _voltageFloorValue(relativePath):
+    """The floor voltage itself - the minimum core voltage the joined extract contains."""
+    import csv
+    import io as _io
+    with _io.open(_REPO_ROOT / "data" / "frequency-sweeps" / relativePath,
+                  encoding="utf-8-sig", newline="") as handle:
+        return min(float(r["voltage"]) for r in csv.DictReader(handle))
+
+
+def _suiteAgreement(table):
+    """(how many of the twelve workloads pick the suite median, how many there are).
+
+    "The median is 1260" is a much weaker statement than "ten workloads chose it separately" - a
+    median can be produced by a scatter with nothing at its centre. Pinned for that reason.
+    """
+    perWorkload = [max(sweep(path).values(), key=lambda row: row["efficiency"])["mhz"]
+                   for path in table.values()]
+    middle = median(perWorkload)
+    return sum(1 for m in perWorkload if abs(m - middle) < 5), len(perWorkload)
+
+
+def _perWorkloadShifts():
+    """Per-workload optimum shift, full tune minus split, averaged over each ABBA pair."""
+    shifts = []
+    for name in ABBA_A1:
+        tune = mean(max(sweep(t[name]).values(), key=lambda r: r["efficiency"])["mhz"]
+                    for t in (ABBA_A1, ABBA_A2))
+        split = mean(max(sweep(t[name]).values(), key=lambda r: r["efficiency"])["mhz"]
+                     for t in (ABBA_B1, ABBA_B2))
+        shifts.append(tune - split)
+    return shifts
+
+
+_VOLT_3060_SUITE = ("rtx3060-20260910/20260910-191436_rtx3060-suite/"
+                    "20260910-200806_rtx3060-suite-gemm_sweep_voltage.csv")
+
+
+@claim("5.5.7-knee-3060", PAPER, "5.5.7")
+def kneeThirtySixty():
+    """Third chip, third architecture: the row that tests the rule out of sample.
+
+    Voltage and optimum come from the SAME session here, unlike the other two cards - the HWiNFO
+    log covers the twelve-workload suite itself.
+    """
+    agree, total = _suiteAgreement(SUITE_3060)
+    return (f"| RTX 3060 (Ampere GA106) | {_medianSuiteOptimum(SUITE_3060):.0f} MHz | "
+            f"{_voltageFloorTop(_VOLT_3060_SUITE):.0f} MHz | "
+            f"{_voltageFloorValue(_VOLT_3060_SUITE):.3f} V | {agree} of {total} |")
+
+
+@claim("5.5.8-abba-split", PAPER, "5.5.8")
+def abbaSplitMedian():
+    """The unmodified low-voltage region's median optimum, over both ABBA split legs."""
+    return (f"| Profile 5 (factory low-voltage region) | "
+            f"{_medianSuiteOptimum((ABBA_B1, ABBA_B2)):.0f} MHz |")
+
+
+@claim("5.5.8-abba-tune", PAPER, "5.5.8")
+def abbaTuneMedian():
+    """The lifted low-voltage region's median optimum, over both ABBA full-tune legs."""
+    shift = _medianSuiteOptimum((ABBA_A1, ABBA_A2)) - _medianSuiteOptimum((ABBA_B1, ABBA_B2))
+    return (f"| Profile 4 (low-voltage region +{shift:.0f} MHz) | "
+            f"{_medianSuiteOptimum((ABBA_A1, ABBA_A2)):.0f} MHz |")
+
+
+@claim("5.5.8-abba-shift", PAPER, "5.5.8")
+def abbaShift():
+    """The measured shift. The prediction was that it equals the curve's own +465 MHz offset."""
+    shift = _medianSuiteOptimum((ABBA_A1, ABBA_A2)) - _medianSuiteOptimum((ABBA_B1, ABBA_B2))
+    return f"| shift | +{shift:.0f} MHz |"
+
+
+@claim("5.5.8-abba-exact-count", PAPER, "5.5.8")
+def abbaExactCount():
+    """How many workloads moved by EXACTLY the predicted amount - not the same as how many moved.
+
+    Pinned because an earlier draft of this section, and the run's own README, both said
+    "+465 MHz in 12 of 12 workloads". Twelve of twelve moved UP; six moved by exactly 465.
+    """
+    shifts = _perWorkloadShifts()
+    median_ = median(shifts)
+    return (f"{sum(1 for s in shifts if abs(s - median_) < 1e-9)} of the {len(shifts)} moved by "
+            f"exactly {median_:.0f} MHz")
+
+
+@claim("5.5.8-abba-shift-range", PAPER, "5.5.8")
+def abbaShiftRange():
+    """The spread of per-workload shifts, which is what makes the median the honest statistic."""
+    shifts = _perWorkloadShifts()
+    return f"range from {min(shifts):.0f} to {max(shifts):.0f} MHz"
+
+
+@claim("5.5.8-control-measured", PAPER, "5.5.8")
+def controlMeasured():
+    """The negative control's outcome: a 570 MHz change above the floor moved the optimum by 0."""
+    return f"| measured | {_medianSuiteOptimum(REPAIR_P2T1):.0f} MHz |"
+
+
+@claim("5.5.8-control-agreement", PAPER, "5.5.8")
+def controlAgreement():
+    """How many of the twelve independently pick the control's unmoved median."""
+    agree, total = _suiteAgreement(REPAIR_P2T1)
+    return (f"{agree} of {total} workloads land on {_medianSuiteOptimum(REPAIR_P2T1):.0f} MHz "
+            f"individually")
+
+
+@claim("5.5.8-agreement-range", PAPER, "5.5.8")
+def agreementRange():
+    """Per-workload agreement across every single twelve-workload suite in the study.
+
+    This exists to stop the control's 9 of 12 being called exceptional, which an earlier draft did.
+    """
+    counts = [_suiteAgreement(t)[0] for t in
+              (BRACKET_STOCK, BRACKET_TUNE_1, BRACKET_TUNE_2,
+               ABBA_A1, ABBA_A2, ABBA_B1, ABBA_B2, SPLIT_S2, REPAIR_P2T1)]
+    return f"from {min(counts)} to {max(counts)} of 12"
+
+
+@claim("5.5.8-config-stock", PAPER, "5.5.8")
+def configStock():
+    """Stock: floor at 1530, optimum 1537, and the largest headroom of any configuration."""
+    return (f"| stock (Profile 3) | 1530 | {_medianSuiteOptimum(BRACKET_STOCK):.0f} | "
+            f"{_bracketMeanGain(BRACKET_STOCK):.2f}% |")
+
+
+@claim("5.5.8-config-split-b1", PAPER, "5.5.8")
+def configSplitB1():
+    """Split curve, ABBA leg b1."""
+    return (f"| split (Profile 5, run `b1`) | 1530 | {_medianSuiteOptimum(ABBA_B1):.0f} | "
+            f"{_bracketMeanGain(ABBA_B1):.2f}% |")
+
+
+@claim("5.5.8-config-split-s2", PAPER, "5.5.8")
+def configSplitS2():
+    """Split curve, the separate s2 suite - a different session, same applied curve."""
+    return (f"| split (Profile 5, run `s2`) | 1530 | {_medianSuiteOptimum(SPLIT_S2):.0f} | "
+            f"{_bracketMeanGain(SPLIT_S2):.2f}% |")
+
+
+@claim("5.5.8-config-repair", PAPER, "5.5.8")
+def configRepair():
+    """The negative control's own row."""
+    return (f"| repair (Profile 2) | 1530 | {_medianSuiteOptimum(REPAIR_P2T1):.0f} | "
+            f"{_bracketMeanGain(REPAIR_P2T1):.2f}% |")
+
+
+@claim("5.5.8-config-fulltune", PAPER, "5.5.8")
+def configFullTune():
+    """The one configuration whose floor ends elsewhere - and whose optimum is there instead."""
+    return (f"| full tune (Profile 4) | {_medianSuiteOptimum(BRACKET_TUNE_1):.0f} | "
+            f"{_medianSuiteOptimum(BRACKET_TUNE_1):.0f} | "
+            f"{_bracketMeanGain(BRACKET_TUNE_1):.2f}% |")

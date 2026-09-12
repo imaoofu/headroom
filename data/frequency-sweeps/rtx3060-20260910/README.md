@@ -28,9 +28,16 @@ because a count is a property of a card and one calibrated elsewhere measures so
 | full tune (P4) | 5060 Ti | Blackwell | **0.720** | 2002 | 2002 | ✅ |
 | **stock** | **RTX 3060** | **Ampere** | **0.756** | **1260** | **1260** | ✅ |
 
+✅ **Two suite-concurrent voltage extracts were added 2026-09-11**, joined from
+`hwinfo-rtx3060fullsuite.csv` — which covers the twelve-workload suite itself — against the suite's
+`gemm` and `copy` sweeps. **They agree to the millivolt at every grid point**, which is what
+establishes the floor as a property of the card rather than of the workload, and it makes this the
+only card in the study whose floor and optimum come from **one session on one configuration**. The
+5060 Ti and 3070 Ti both read voltage on separate `gemm`/`membw` runs.
+
 **The 3060's load floor is 0.756 V, not 0.720.** It holds flat across five grid points — 840, 945,
 1050, 1155, 1260 MHz — and the next point reads **0.794 V**. The `gemm` efficiency optimum is
-**1260 MHz**. The twelve-workload suite's median optimum is **1260 MHz**, with **ten of twelve
+**1260 MHz**. The twelve-workload suite's median optimum is **1260 MHz**, with **nine of twelve
 workloads landing on it individually.**
 
 🔑 **A different floor voltage is the better outcome.** Had the 3060 also read 0.720 V, the honest

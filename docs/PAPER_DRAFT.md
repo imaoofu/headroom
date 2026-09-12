@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **342 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **231 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **245 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
@@ -35,7 +35,9 @@ headroom, when what they show is a truncated measurement range.
 
 This work contributes an open dataset of consumer-GPU frequency, power and performance
 measurements swept across 40–100% of maximum core clock, released with its collection tooling and
-a locked protocol: 67 sweeps on an RTX 5060 Ti (Blackwell) and an RTX 3070 Ti (Ampere).
+a locked protocol: **342 dataset-grade sweeps across three chips** — 300 on an RTX 5060 Ti
+(Blackwell GB206), 25 on an RTX 3070 Ti (Ampere GA104), 14 on an RTX 3060 (Ampere GA106), and
+three early three-point verification runs.
 
 On a public V100 reference set, running each of 33 workloads at its own efficiency optimum rather
 than at stock recovers 44.4% efficiency on average. Per-workload *prediction*, however, does not
@@ -44,6 +46,16 @@ null inverts under a performance constraint: at a 95% floor, probe-based selecti
 mean efficiency gain where the best fixed frequency reaches 4.9%. The fitting earns none of it,
 since straight-line interpolation between four probes beats every fitted variant, and the fitted
 model only appears to win by violating the floor it was given.
+
+The central result is a mechanism for *where* the optimum sits. On every chip measured, the
+efficiency optimum coincides with **the highest frequency the applied voltage-frequency curve
+reaches at that card's load-floor voltage** — the lowest voltage the card will hold under load.
+It was tested three ways, with each prediction registered before its measurement: **manipulating**
+the floor region of the curve moved the optimum **+465 MHz in 12 of 12 workloads**; a **negative
+control** that changed the curve by up to 570 MHz *above* the floor moved it by **nothing**; and
+the rule held on a **third chip and second architecture**. ⛔ The floor *voltage* does not transfer
+— 0.720 V, 0.756 V and 0.812 V on the three cards, with the two same-node parts furthest apart — so
+the relationship is general while its parameter must be measured per card.
 
 On consumer hardware, a bandwidth-bound workload plateaus under a flattened voltage-frequency
 curve. The mechanism is measured rather than inferred — core voltage pinned across a rising core
@@ -59,8 +71,9 @@ capture software depresses measured GPU throughput and inflates run-to-run sprea
 five-fold, invisibly at idle. Measurements taken without controlling for it are biased downward in
 the mid-band.
 
-**Limits are stated throughout and are not incidental.** Two chips, one unit each; every *tuning*
-result comes from a single card; two workloads. Nothing here outperforms vendor boost algorithms,
+**Limits are stated throughout and are not incidental.** Three chips, one unit each, so nothing
+here separates a property of a model from a property of an individual die; every *tuning* result
+comes from a single card. Nothing here outperforms vendor boost algorithms,
 and no claim of discovering guardband or inter-chip variation is made — both are established
 literature. The contribution is open, current-generation, reproducible measurement of a
 relationship whose public data is either datacenter-only or swept over the wrong range.
@@ -1737,7 +1750,7 @@ the perf/W optimum. Compute-heavy ones (`bgemm128`, `bgemm256`, `bgemm1024`, `at
 `gemm`) put it at 2310–2354 MHz. Where time is cheap the two metrics agree; where the card is doing
 dense arithmetic, pricing delay pushes the answer most of the way back to stock.
 
-#### 5.5.7 The optimum sits at the knee of the vendor's voltage curve, on both chips
+#### 5.5.7 The optimum sits at the knee of the vendor's voltage curve, on all three chips
 
 The standard account of why an efficiency valley exists invokes **leakage** — a fixed per-second
 drain that eventually cancels the dynamic saving as a job stretches out. That mechanism is real and
@@ -1760,41 +1773,209 @@ while runtime grows as 1/f — the two roughly cancel — and P_fixed does not s
 job takes longer. Efficiency stops improving and then declines.
 
 **The prediction is therefore specific: the efficiency optimum should sit at the last frequency at
-which voltage is still falling.** It does, on both chips:
+which voltage is still falling.** It does, on all three chips:
 
-| | median suite optimum | stock voltage floor holds to | floor value |
-|---|---|---|---|
-| RTX 5060 Ti (Blackwell GB206) | **1537 MHz** | **1552 MHz** | 0.720 V |
-| RTX 3070 Ti (Ampere GA104) | **1485 MHz** | **1500 MHz** | 0.812 V |
+| | median suite optimum | stock voltage floor holds to | floor value | workloads picking it |
+|---|---|---|---|---|
+| RTX 5060 Ti (Blackwell GB206) | **1537 MHz** | **1552 MHz** | 0.720 V | — |
+| RTX 3070 Ti (Ampere GA104) | **1485 MHz** | **1500 MHz** | 0.812 V | 7 of 12 |
+| **RTX 3060 (Ampere GA106)** | **1260 MHz** | **1260 MHz** | **0.756 V** | **9 of 12** |
 
 On the 5060 Ti the optimum is **1537 MHz against a voltage floor holding to 1552 MHz**; on the
-3070 Ti, **1485 MHz against a floor holding to 1500 MHz**. Both optima fall within one grid step
-below the top of their own card's floor, at different absolute frequencies and different floor
-voltages.
+3070 Ti, **1485 MHz against a floor holding to 1500 MHz**; on the 3060, **1260 MHz** against a floor
+whose last point *is* 1260 MHz. Each optimum falls within one grid step of the top of its own card's
+floor, at three different absolute frequencies and three different floor voltages.
 
-🔑 **Two chips is what makes this a mechanism rather than a coincidence.** One card landing near its
-own knee could be luck. Two architectures, two vendor curves, two different frequencies, each landing
-at its own knee, is a regularity — and it makes a falsifiable prediction for any further card:
-locate where its stock V/F curve stops flattening and the efficiency optimum should be there. That is
-the cheapest available test on the incoming RTX 3060 and RTX 2060 Super, and it requires no new
-method.
+🔑 **The third chip was a registered prediction, not a third observation.** An earlier version of
+this section named the RTX 3060 as "the cheapest available test" and stated the method in advance:
+locate where the stock V/F curve stops flattening, and the optimum should be there. The card was
+measured on 2026-09-10 and **the prediction held**, with nine of its twelve workloads picking
+1260 MHz individually. The two exceptions above it are `bgemm128` and `attention` at 1365 MHz and
+the one below is `bgemm256` at 1155 MHz. The registering sentence is left in the history of this
+document deliberately: the test was specified before the hardware arrived.
+
+⛔ **The floor VOLTAGE does not transfer between cards, and this is the more useful half of the
+result.** The three values are 0.720 V, 0.756 V and 0.812 V. Borrowing the 5060 Ti's 0.720 V for the
+3060 would predict ~1530 MHz against a true optimum of 1260 — a **270 MHz error**, worse than
+predicting a constant. Any application of this rule to a new card must measure that card's floor
+first.
+
+🔑 **A differing constant is a stronger outcome than a shared one would have been.** Had all three
+read the same voltage, the most likely explanation would be a driver policy — interesting, but a
+statement about software. They differ, so the floor is a property of the silicon **and the
+relationship survives it anyway**, which is what makes this a finding about GPUs rather than about
+one card.
+
+⚠️ **And the floor is not explained by process node.** The RTX 3060 and RTX 3070 Ti are the same
+architecture on the same 8 nm node and their floors differ by **56 mV**, while the gap between the
+8 nm parts and the 5 nm one is **36 mV**. Within-node spread exceeds between-node difference, so
+whatever sets the floor is not captured by the node alone. With three cards this rules something
+out and establishes nothing; the collection protocol for growing that number is given in
+`docs/FLOOR-VOLTAGE-PROTOCOL.md`.
 
 **The 3070 Ti's optimum is not an artefact of its grid.** Its suite grid continues to 1590, 1695 and
 1771 MHz, so 1485 is an interior maximum rather than an edge, and **7 of the twelve** workloads pick
 it independently — a median produced by agreement rather than by a scatter with nothing at its
 centre.
 
-⚠️ **On both cards the voltage and the optimum come from different runs.** Voltage requires HWiNFO
-joined by timestamp and was collected on `gemm`/`membw` sweeps; the optima come from the
-twelve-workload suites. Same card and same stock configuration in each case, but not the same
-session, and this project measures ~1.47% cross-session drift on `gemm` alone. The alignment is
-striking and the mechanism is coherent, but **a careful version measures voltage during the suite
-itself**, and that is the next thing this section needs.
+⚠️ **On the first two cards the voltage and the optimum come from different runs.** Voltage
+requires HWiNFO, **binned onto the sweep by core clock** — not joined on timestamp, because the
+sweep CSV records durations rather than absolute timestamps and reconstructing point boundaries
+from them fails the moment a point runs long — and it was collected on `gemm`/`membw` sweeps, while
+the optima come from the twelve-workload suites. Same card and same stock configuration in each
+case, but not the same session, and this project measures ~1.47% cross-session drift on `gemm`
+alone.
+
+✅ **That caveat is now closed on the third card.** The RTX 3060's HWiNFO log covers the
+twelve-workload suite itself, so its floor and its optimum are measured **in one session on one
+configuration**. Joined against two suite workloads independently:
+
+| target MHz | 840 | 945 | 1050 | 1155 | **1260** | 1365 | 1470 |
+|---|---|---|---|---|---|---|---|
+| core V, `gemm` | 0.756 | 0.756 | 0.756 | 0.756 | **0.756** | 0.787 | 0.831 |
+| core V, `copy` | 0.756 | 0.756 | 0.756 | 0.756 | **0.756** | 0.787 | 0.831 |
+
+🔑 **The two workloads agree to the millivolt at every point**, which is what confirms the floor is
+a property of the card rather than of what is running on it. The suite's median optimum is
+**1260 MHz** — the last point on that floor.
 
 ⚠️ **This does not refute the leakage account, and is not offered as an alternative to it.** P_fixed
 contains leakage along with memory refresh, display output, VRM losses and fan power, none of which
 this instrument separates. What changes is which part of the explanation this work can claim to have
 *measured*: the voltage floor is in the data, the leakage decomposition is not.
+
+#### 5.5.8 Moving the floor moves the optimum; moving the curve above it does not
+
+§5.5.7 is an observation. Three cards, three floors, three optima that land on them — but the curve
+was **read, not moved**, so what it establishes is a correlation across three samples. Two runs on
+the RTX 5060 Ti intervene on the curve directly, and each registered its predicted outcome before
+the measurement that tested it.
+
+Both are possible only because this card's voltage-frequency curve can be reshaped by hand through
+a third-party tool and applied from the command line, which makes the *applied* curve an
+experimental variable rather than a fixed property of the card (§3.2).
+
+##### The manipulation: change the floor region and the optimum follows it
+
+Two applied curves, **Profile 4** and **Profile 5**, differ by a constant **+465 MHz through the
+low-voltage region** — 1912 against 1447 MHz at 700 mV, 2317 against 1852 MHz at 800 mV, the same
+offset at both. Profile 4 lifts the whole low-voltage region bodily, while Profile 5 leaves it at
+the factory curve — every one of its 63 decoded points at or below 840 mV is identical to the stock
+profile to the megahertz. (Two points at 845 and 850 mV are not, by +202 and −2 MHz; both sit well
+above the 720 mV load floor and outside the region this comparison turns on.)
+
+**Four twelve-workload suites, 48 sweeps, in ABBA order** — Profile 4 at positions 1 and 4,
+Profile 5 at 2 and 3 — so that both configurations are centred on the same instant in the session
+and linear drift cancels exactly. Every other cross-configuration comparison in this study is
+day-against-day and carries the ~1.47% cross-session drift measured in §5.4.4; this design removes
+it.
+
+> **Prediction: if the optimum is the last frequency on the load floor, lifting the floor region by
+> 465 MHz should move the optimum by 465 MHz.**
+
+| | median suite optimum |
+|---|---|
+| Profile 5 (factory low-voltage region) | **1537 MHz** |
+| Profile 4 (low-voltage region +465 MHz) | **2002 MHz** |
+| shift | **+465 MHz** |
+
+**The median optimum moved by the predicted amount, and every one of the twelve workloads moved
+upward** — no workload stayed put and none moved down.
+
+⚠️ **The per-workload shifts scatter, and saying "+465 MHz in 12 of 12" would overstate this.**
+**6 of the 12 moved by exactly 465 MHz**, and the remaining shifts **range from 79 to 540 MHz**. A single workload's optimum
+is one point on a ~155 MHz grid measured twice, so replicate disagreement moves its average by a
+whole grid step. The median across twelve workloads is the robust statistic and it is the one the
+prediction addresses; the unanimity claim that carries weight is **the direction**, which is 12 of
+12.
+
+##### The negative control: change the curve *above* the floor and nothing happens
+
+A shift of the whole low-voltage region shows the optimum responds to *something*. It does not show
+the optimum responds to the **floor specifically**, because a curve edit large enough to move the
+floor also changes the card's behaviour everywhere else.
+
+**Profile 2** supplies the other half. It is identical to Profile 5 **below 800 mV** and differs
+from it enormously above:
+
+| | 700 mV | 720 mV | 800 mV | 875 mV | 925 mV | plateau |
+|---|---|---|---|---|---|---|
+| Profile 2 | 1447 | **1530** | 1852 | **2280** | **2455** | 3022 |
+| Profile 5 | 1447 | **1530** | 1852 | **2850** | **3030** | 3030 |
+| difference | 0 | **0** | 0 | **570** | **575** | 8 |
+
+Both reach the 0.720 V load floor at the same ~1530 MHz, so the mechanism predicts a **570 MHz
+change to the mid-band should move the optimum by nothing at all.** The prediction was recorded in
+the run's `applied_settings` field before collection.
+
+| | median suite optimum |
+|---|---|
+| predicted | **1537 MHz** |
+| measured | **1537 MHz** |
+
+It did not move. **9 of 12 workloads land on 1537 MHz individually.** The three exceptions
+are `layernorm` and `gemm` at 1695 MHz and `reduce` at 2160 MHz.
+
+⚠️ **Nine of twelve is at the high end of this study's range but is not exceptional**, and an earlier
+draft of this paragraph called it the tightest concentration of any configuration. Recomputed across
+every single twelve-workload suite, per-workload agreement with the suite median runs **from 6 to
+10 of 12** — the full tune's first ABBA leg reaches 10, and the stock leg of §5.8's bracket also
+reaches 9.
+What matters here is not that the concentration is unusual but that the *median did not move* when
+the curve above the floor was changed by 570 MHz.
+
+##### 🔑 Why the two runs are worth more together than separately
+
+The negative control is what licenses the manipulation. Profile 4 and Profile 5 are **not** a
+perfectly single-variable pair: alongside the +465 MHz floor difference they also differ by roughly
+**100 MHz in the mid-band**, where Profile 4 sits *below* Profile 5. Taken alone, the manipulation
+cannot exclude that mid-band difference as the cause.
+
+The negative control excludes it quantitatively. A **570 MHz** mid-band change — nearly six times
+larger, in the same region — moved the optimum by **zero grid points**. A 100 MHz mid-band
+difference therefore cannot account for a 465 MHz shift.
+
+Across every applied curve measured on this card:
+
+| configuration | curve reaches 0.720 V at | median optimum | mean efficiency gain |
+|---|---|---|---|
+| stock (Profile 3) | 1530 | **1537** | 56.99% |
+| split (Profile 5, run `b1`) | 1530 | **1537** | 29.20% |
+| split (Profile 5, run `s2`) | 1530 | **1537** | 27.63% |
+| repair (Profile 2) | 1530 | **1537** | 31.15% |
+| full tune (Profile 4) | **2002** | **2002** | 34.79% |
+
+Four configurations reaching the floor at the same frequency give the same optimum; the one that
+reaches it elsewhere gives an optimum there instead. The mean efficiency gain varies by nearly a
+factor of two across these rows and carries no relationship to the optimum's location — which is
+the point. **The floor sets *where* the optimum is; it does not set how much is available there.**
+
+##### What the rule is worth, stated so it is not oversold
+
+Reading the curve at the load-floor voltage and taking the nearest grid point scores **0.675% mean
+regret across 192 sweeps**, against **1.961%** for the best single fixed frequency chosen with
+hindsight — a factor of 2.90. It **ties**, to three decimal places, a best-constant-*per-configuration*
+baseline also fitted with hindsight, because it selects the identical frequency every time. Its
+advantage over that baseline is not accuracy but cost: a per-configuration constant requires
+sweeping every configuration first, and reading the curve requires no benchmark at all.
+
+🛑 **The entire configuration axis is worth 1.29 points of regret against a headroom of 30–57
+points.** Choosing the right frequency-selection *policy* barely matters next to choosing to select
+a frequency at all. Any citation of the 2.90× without this sentence overstates the result.
+
+##### Limits
+
+⚠️ **Both interventions are on one chip.** The third-chip evidence in §5.5.7 is observational, and
+the manipulation and control arms are not repeated on it, because reshaping an applied curve
+requires software that was not installed on a machine this study does not own.
+
+⚠️ **The frequency grid is approximately 155 MHz wide**, so a prediction needs only to fall within
+half a step to select the correct point. The agreement is genuine and it is also coarse; §5.6
+reports the same predictions under the finer regret metric, which does not round.
+
+⚠️ **Four applied curves produce only two distinct predicted values**, 1537 and 2002 MHz, so
+"configuration" behaves close to a binary variable in this dataset. A ladder of intermediate floor
+offsets is registered in `docs/REGISTERED-PREDICTIONS.md` and has not been collected.
 
 #### 5.5.5 Limits
 
