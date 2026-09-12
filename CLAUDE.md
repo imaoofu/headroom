@@ -427,9 +427,9 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` | **256 of 256** |
+| claims green, 0 failures, with `data/raw/` | **262 of 262** |
 | ...and where `data/raw/` is absent, as CI's "checks" leg runs | **224 of 224** |
-| sections with no claim at all | **20 numbered sections are still unaudited** |
+| sections with no claim at all | **19 numbered sections are still unaudited** |
 | §5.7 and its subsections carry | **84 claims between them and §5.5 carries 54** |
 
 ⚠️ **THE TOTAL WENT STALE FOUR TIMES BEFORE IT WAS PINNED: 87 -> 119 -> 185 -> 204**, and on
@@ -896,13 +896,16 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   🔑 **CI does NOT see `data/raw/`, and that changes the claim count.** The dataset is gitignored
   and fetched, so `claims_reference.py` registers its 24 claims only in the "V100 reference
   claims" job. Both legs are green, and **their two totals are in the canonical coverage block
-  above rather than here.** ⛔ **The gap between them is 32, and this paragraph said 25 until
-  2026-09-09 - in the same block that claims its numbers cannot go stale.** The reasoning it gave
-  was right and its inventory was short by three. **Five** non-reference claims are guarded on the
-  same condition and register only alongside the reference set, not two: `header-pinned-count`,
-  `header-unaudited-count`, `claudemd-claims-with-reference`, `claudemd-section-families` and
-  `claudemd-unaudited-sections`. So 28 + 5 = 33 register only when `data/raw/` is present, exactly
-  one (`claudemd-claims-without-reference`) registers only when it is absent, and 33 - 1 = 32.
+  above rather than here.** ⛔ **The gap between them is 38, it was 32 until 2026-09-12, and it
+  said 25 until 2026-09-09 - in the same block that claims its numbers cannot go stale.** The
+  reasoning the 25 gave was right and its inventory was short by three. **Five** non-reference
+  claims are guarded on the same condition and register only alongside the reference set, not two:
+  `header-pinned-count`, `header-unaudited-count`, `claudemd-claims-with-reference`,
+  `claudemd-section-families` and `claudemd-unaudited-sections`. So 34 + 5 = 39 register only when
+  `data/raw/` is present, exactly one (`claudemd-claims-without-reference`) registers only when it
+  is absent, and 39 - 1 = 38. 🔑 **The number moves whenever a claim is added to
+  `claims_reference.py`, so it is a maintenance cost, not a constant** - 5.6.3's six fleet-resizing
+  claims are what moved it on 2026-09-12, and 224 did not move at all.
   `claims_repo.py` splits this way because `len(CLAIMS)` can only honestly report the environment it
   is running in. **Verify this by diffing the two registries, not by reasoning about it** - the
   arithmetic here was internally consistent and still wrong, because the premise was an

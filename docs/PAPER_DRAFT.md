@@ -2,11 +2,11 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **359 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **256 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **262 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
-> alone. No `[PENDING]` placeholders remain, but **20 numbered sections carry no claims at all** —
+> alone. No `[PENDING]` placeholders remain, but **19 numbered sections carry no claims at all** —
 > `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
 > too**, as of 2026-09-05.
 >
@@ -2376,10 +2376,10 @@ The two operating points in this section answer it directly, using only measured
 |---|---|---|---|---|
 | stock | 100% | 100% | 1.000 | 100% |
 | unconstrained optimum (5.1) | 86.3% | 59.9% | **1.159** | **69.4%** |
-| 95% floor (5.6) | 96.7% | 76.6% | **1.034** | **79.2%** |
+| 95% floor (5.6) | 96.7% | 76.6% | **1.035** | **79.2%** |
 
 The unconstrained optimum trades **15.9% more units for 30.6% less fleet power**. The 95% floor
-trades **3.4% more units for 20.8% less**. Both rows follow arithmetically from the measured
+trades **3.5% more units for 20.8% less**. Both rows follow arithmetically from the measured
 performance cost and power saving; nothing is assumed yet.
 
 **That converts to a single break-even ratio, which is the useful form.** The extra hardware is paid
@@ -2387,7 +2387,7 @@ once and the energy is saved continuously, so the trade pays exactly when lifeti
 exceeds a fixed fraction of purchase price:
 
     unconstrained   0.159 / 0.306 = lifetime energy must exceed 52% of unit price
-    95% floor       0.034 / 0.208 = lifetime energy must exceed 16% of unit price
+    95% floor       0.035 / 0.208 = lifetime energy must exceed 17% of unit price
 
 **The constrained point is roughly three times easier to justify than the unconstrained one**, and
 that gap is wider than the efficiency difference between them would suggest. Giving up two-thirds of
