@@ -138,7 +138,7 @@ attribute nothing to it. Read the driver off a sweep JSON, never off this file.
 | `nvmlDeviceSetClockOffsets` (per-P-state) | ✅ Available. Graphics ±1000 MHz, memory −2000/+6000. Writes return `NO_PERMISSION` un-elevated — **not** `NOT_SUPPORTED`, so it works with elevation. |
 | `nvmlDeviceGetGpcClkVfOffset` (global V/F) | ❌ **NOT_SUPPORTED** on this card. Closed on consumer Blackwell. |
 | **Read or write voltage via NVML** | ❌ **Impossible.** Zero voltage exports across all 260 NVML device functions; a scan of field IDs 1–259 returns 44 readable fields and no voltage at any scale. |
-| **Read voltage via HWiNFO** | ✅ **Works, and is load-bearing.** Core voltage and crossbar clock, **binned onto sweeps by CORE CLOCK, not by timestamp** — `join_hwinfo_voltage.py` rejects a time join because the sweep CSV records durations rather than absolute timestamps. **16 voltage extracts across 6 directories and 3 chips.** ⚠️ Sampling rate is **NOT** one number: the main machine logs at **2.00 s** and the USB collection kit at **0.50 s** (`HWiNFO64.INI`, `SensorInterval=500`), so kit runs carry ~4x the samples per frequency bin. This is the project's central mechanism result — see below. |
+| **Read voltage via HWiNFO** | ✅ **Works, and is load-bearing.** Core voltage and crossbar clock, **binned onto sweeps by CORE CLOCK, not by timestamp** — `join_hwinfo_voltage.py` rejects a time join because the sweep CSV records durations rather than absolute timestamps. **18 voltage extracts across 7 directories and 3 chips.** ⚠️ Sampling rate is **NOT** one number: the main machine logs at **2.00 s** and the USB collection kit at **0.50 s** (`HWiNFO64.INI`, `SensorInterval=500`), so kit runs carry ~4x the samples per frequency bin. This is the project's central mechanism result — see below. |
 | `nvidia-smi -svfd` | ❌ Rubin+ only. Not Blackwell. |
 | Per-point V/F curve reshaping | ⚠️ Undocumented NVAPI only (`ClockClientClkVfPointsSetControl`, `0x0733E009`). Out of scope — breaks on driver updates. |
 
@@ -427,8 +427,8 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` | **245 of 245** |
-| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **217 of 217** |
+| claims green, 0 failures, with `data/raw/` | **256 of 256** |
+| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **224 of 224** |
 | sections with no claim at all | **20 numbered sections are still unaudited** |
 | §5.7 and its subsections carry | **84 claims between them and §5.5 carries 54** |
 
@@ -896,13 +896,13 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   🔑 **CI does NOT see `data/raw/`, and that changes the claim count.** The dataset is gitignored
   and fetched, so `claims_reference.py` registers its 24 claims only in the "V100 reference
   claims" job. Both legs are green, and **their two totals are in the canonical coverage block
-  above rather than here.** ⛔ **The gap between them is 28, and this paragraph said 25 until
+  above rather than here.** ⛔ **The gap between them is 32, and this paragraph said 25 until
   2026-09-09 - in the same block that claims its numbers cannot go stale.** The reasoning it gave
   was right and its inventory was short by three. **Five** non-reference claims are guarded on the
   same condition and register only alongside the reference set, not two: `header-pinned-count`,
   `header-unaudited-count`, `claudemd-claims-with-reference`, `claudemd-section-families` and
-  `claudemd-unaudited-sections`. So 24 + 5 = 29 register only when `data/raw/` is present, exactly
-  one (`claudemd-claims-without-reference`) registers only when it is absent, and 29 - 1 = 28.
+  `claudemd-unaudited-sections`. So 28 + 5 = 33 register only when `data/raw/` is present, exactly
+  one (`claudemd-claims-without-reference`) registers only when it is absent, and 33 - 1 = 32.
   `claims_repo.py` splits this way because `len(CLAIMS)` can only honestly report the environment it
   is running in. **Verify this by diffing the two registries, not by reasoning about it** - the
   arithmetic here was internally consistent and still wrong, because the premise was an

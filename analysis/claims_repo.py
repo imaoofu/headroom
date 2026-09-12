@@ -25,7 +25,7 @@ WHY CLAUDE.md IS AUDITED AT ALL
     `run_tests.py` for that one instead.
 
 🔑 THE ENVIRONMENT SPLIT, AND WHY IT IS ONE CLAIM PER LEG RATHER THAN TWO EVERYWHERE
-    `data/raw/` is gitignored and fetched, so claims_reference registers its 24 claims only when it
+    `data/raw/` is gitignored and fetched, so claims_reference registers its 28 claims only when it
     is present, and the registry is 25 larger there once header-pinned-count is counted. A claim
     can therefore only honestly pin the total for the environment it is RUNNING in - `len(CLAIMS)`
     is the with-reference total in one leg and the without-reference total in the other, and there

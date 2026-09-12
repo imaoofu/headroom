@@ -65,7 +65,7 @@ proceed.
 python run_tests.py
 ```
 
-**`587 checks across 17 suite(s).`** then `All suites passed.` It is `585` where `data/raw/` was
+**`658 checks across 18 suite(s).`** then `All suites passed.` It is `656` where `data/raw/` was
 not fetched: two checks in `models/test_predict_constrained_frequency.py` skip without it. The
 runner also fails if it finds a
 `test_*.py` under a directory it is not running — that guard exists because moving the model suites
@@ -76,10 +76,10 @@ green result.
 python analysis/audit_claims.py
 ```
 
-**231 claims, 0 failures**, or **203** where `data/raw/` was not fetched - `claims_reference.py`
-registers its 24 claims only when the dataset is present, and FIVE more claims are guarded on the
+**256 claims, 0 failures**, or **224** where `data/raw/` was not fetched - `claims_reference.py`
+registers its 28 claims only when the dataset is present, and FIVE more claims are guarded on the
 same condition because a claim counting the registry is otherwise environment-dependent, so the gap
-is 28 rather than 24. Every pinned number in the paper, recomputed from the CSVs and asserted
+is 32 rather than 28. Every pinned number in the paper, recomputed from the CSVs and asserted
 present verbatim and exactly once. If a claim fails, the paper and the data disagree — that is the
 whole point of the tool, so read it as a real finding, not a broken script.
 
@@ -177,7 +177,7 @@ already.
 The analysis half is fully portable. Only the data-collection tools are tied to Windows and NVIDIA.
 
 **Before any sweep on a new machine:** re-verify the control APIs there. The findings in `CLAUDE.md`
-were probed on one specific card and driver (RTX 5060 Ti / 610.88). A different GPU or driver may
+were probed on one specific card and driver (RTX 5060 Ti / 610.88 at the time of probing; the card has run 616.56 since 2026-09-02 and the probes have not been repeated on it). A different GPU or driver may
 support a different set — `nvmlDeviceGetGpcClkVfOffset` returned `NOT_SUPPORTED` on the 5060 Ti but
 may not elsewhere. Never assume; probe.
 
@@ -269,7 +269,9 @@ by **negative control** (move the curve above the floor by 570 MHz, optimum move
    purpose; fitting specs → curve needs ~10+ distinct models. Validate leave-one-*model*-out when
    activating, or two cards of one model leak across the split.
 7. **Paper coverage is uneven.** 20 numbered sections carry no claim at all, including 3.1, 3.2, 3.4
-   and 5.7. The three results from 2026-09-09/10 are in data READMEs and **not yet in the paper**.
+   and 5.7. ✅ **The 2026-09-08..10 results ARE now in the paper** as of 2026-09-11 - the load-floor
+   mechanism with its manipulation and negative-control arms (§5.5.8), the third chip (§5.5.7), the
+   same-session stock bracket (§5.8) and probe selection (§5.3.1), all pinned.
 8. **32 loose sweep CSVs sit in `data/frequency-sweeps/` root** from August, in no directory.
    Tidyable, but claims pin paths — move, run the auditor, fix references.
 

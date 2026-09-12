@@ -13,9 +13,12 @@ This covers *why this project exists and how to work on it*.
 ## The project's actual goals, in priority order
 
 1. **A finished, rigorous, differentiated project** for the Inspirit AI mentorship program.
-   ~3 month window. The deliverable format (paper / poster / journal / symposium) is **still
-   unconfirmed** despite being asked several times — worth pinning down early, since it changes
-   how the write-up is structured.
+   ~3 month window. ⛔ **The deliverable-format question is RETIRED, 2026-08-23** — this file
+   carried it as open for weeks afterwards, including through an edit made four days after the
+   retirement was recorded in `CLAUDE.md`. There is no presentation and no required format: the
+   program's role is to support **publishing** this research. That raises the bar rather than
+   lowering it — provenance has to survive a reviewer, and n = 1 chip is the weakness any reader
+   names first.
 2. **College application strength.** Stated directly. This sets the bar: the work has to survive
    someone knowledgeable poking at it. It does *not* need to advance the field, and pretending
    otherwise would be the fastest way to lose credibility. No project can be promised to move an

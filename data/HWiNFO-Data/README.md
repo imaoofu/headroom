@@ -4,7 +4,7 @@
 
 This directory holds raw HWiNFO sensor dumps. It is **not dataset-grade**: the files are
 unprocessed input, and the whole directory is gitignored (`data/HWiNFO-Data/`), not just a file
-pattern. Seven CSV files, about 9.6 MB.
+pattern. **17 CSV files, about 34 MB.** ⚠️ This line said "Seven CSV files, about 9.6 MB" until 2026-09-11 and the table below still inventories only the first seven - the directory grew with every HWiNFO run and nothing updated it. Count the files rather than trusting either.
 
 🔑 The distilled extracts are what the project actually uses, and they live beside their sweep,
 committed, as `*_sweep_voltage.csv`. This directory is the unprocessed input to that step, kept

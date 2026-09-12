@@ -242,9 +242,9 @@ in one day as data landed. **Matching twice is `AMBIGUOUS`, not a pass.**
 
 | | |
 |---|---|
-| claims green, with `data/raw/` | **231 of 231** |
-| without it, as CI's checks leg runs | **203 of 203** |
-| test checks across 17 suites | **587** |
+| claims green, with `data/raw/` | **256 of 256** |
+| without it, as CI's checks leg runs | **224 of 224** |
+| test checks across 18 suites | **658** (656 without `data/raw/`) |
 
 **Green means every claim that exists passes, not that the paper is covered.** 20 numbered sections
 still carry no claim at all.
@@ -255,7 +255,7 @@ still carry no claim at all.
 
 | Component | Status |
 |---|---|
-| Frequency-sweep harness | **Tested across three machines and three architectures** — 346 committed sweeps. Refuses to start when another process is using the GPU, and that guard has fired on real runs, including one at 22.6% from background webviews on 2026-09-10. |
+| Frequency-sweep harness | **Tested across three machines and three architectures** — 349 committed sweeps, 342 of them dataset-grade. Refuses to start when another process is using the GPU, and that guard has fired on real runs, including one at 22.6% from background webviews on 2026-09-10. |
 | Stability logger | **Tested, and it has now seen a real failure.** An undervolt deliberately set past the edge (875 mV at 3000 MHz) crashed the display driver on 2026-08-30; 11 events were caught. ⚠️ The UNSTABLE verdict was **reconstructed** from the event log, not emitted by the tool — the operator stopped the run first. |
 | Voltage telemetry | **Load-bearing and confirmed on two architectures.** HWiNFO supplies core voltage and the crossbar clock; NVML exposes neither. |
 | Tuned configurations | ⚠️ **Not stability tested.** Two 30-minute protocol runs exist from 2026-08-23 on hand-set curves, and nothing verifies those are identical to what is now saved in the profile slots. |

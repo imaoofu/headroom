@@ -1,5 +1,13 @@
 # Suite pilot — RTX 5060 Ti at stock, 2026-08-29
 
+⚠️ **This directory carries NO `dataset-grade: no` marker, and that is a live contradiction rather than an oversight.**
+The prose below says these four sweeps are validation and not dataset-grade. The claims registry uses
+them anyway: `REPLICATES_5060[0]` in `analysis/claims_consumer.py` is this run, and roughly eight
+live claims average over all six stock replicates including it. Adding the marker would change the
+published sweep count and several pinned numbers at once. **Resolve deliberately** - either the
+prose below is too strong, or those claims should move to `REPLICATES_5060[1:]`, which the drift
+and optimum claims already do.
+
 **VALIDATION, NOT DATASET-GRADE.** Read this before using any number here.
 
 Four sweeps run to check that the extended workload suite works end to end in the sweep harness —

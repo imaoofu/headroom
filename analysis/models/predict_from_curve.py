@@ -169,7 +169,7 @@ def decodeCurve(profileName, snapshotPath=PROFILE_SNAPSHOT):
     replacement said the record "still carries the offset from the region below", which is FALSE for
     Profiles 1, 2 and 4 and was generalised from Profile 5, the one case where it coincides. A
     correction drawn from a single example read as more rigorous than the vague thing it replaced.
-    See docs/AFTERBURNER-PROFILES.md and the 36 checks in test_predict_from_curve.py.
+    See docs/AFTERBURNER-PROFILES.md and the 82 checks in test_predict_from_curve.py.
     """
     import json
     blob = json.loads(Path(snapshotPath).read_text(encoding="utf-8"))

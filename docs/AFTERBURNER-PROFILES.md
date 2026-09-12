@@ -229,7 +229,7 @@ source of any number.
 Profiles 4 and 5 were checked against the decode on 2026-09-11. The editor draws two traces — the
 square handles are the applied curve and the thin line beneath is the base — and the thin line exits
 the top of the chart near 930 mV in both, which is the sentinel base being plotted by Afterburner
-itself. The numbers are pinned by 36 checks in `analysis/models/test_predict_from_curve.py`.
+itself. The numbers are pinned by 82 checks in `analysis/models/test_predict_from_curve.py`.
 
 **The same screenshots confirm the mechanism result visually.** At the 0.720 V load floor Profile 5's
 handles sit exactly on the base trace (per-point offset **+0**) while Profile 4's sit **+478 MHz**

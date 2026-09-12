@@ -23,6 +23,23 @@ Read these three fields in the session JSON, in this order:
 Prefer the `*_loaded_*` statistics over the whole-run ones. Whole-run averages blend load with idle
 and describe neither.
 
+## ⚠️ Inventory gap, recorded 2026-09-11
+
+**The list below names one run. The directory holds six, plus two subdirectories.** Missing from it:
+
+| run | what it is |
+|---|---|
+| `20260823-183256_splitcurve` | the split curve's 30-minute OCCT protocol run - **dataset-grade**, and the evidence behind `CLAUDE.md`'s "the split curve passed its first stability run" |
+| `20260823-192719_ogtune` | the original tune's run forty minutes later - **dataset-grade**, the other half of that pair |
+| `20260830-114549_stock-baseline-20260830` | the stock baseline taken before the undervolt test |
+| `20260830-123609_uv-875mv-3ghz` | **the real driver crash**, 875 mV at 3000 MHz. Has its own `README-uv-875mv-3ghz-20260830.md`, which was not linked from here |
+| `harness-development-20260823/` | subdirectory, own README |
+| `logger-selftest-20260820/` | subdirectory, own README |
+
+🔑 **The two dataset-grade stability runs this project cites most were absent from its own
+inventory.** A reader working from this README alone would not have known they existed. Stating the
+gap is not closing it; each still needs a proper entry below.
+
 ## Runs
 
 ### `20260816-135029_5060ti-oc-llm-load` — first run under real load

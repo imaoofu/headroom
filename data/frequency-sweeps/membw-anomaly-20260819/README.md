@@ -1,5 +1,12 @@
 # Separating the two tuning knobs — 2026-08-19 / 2026-08-20
 
+⚠️ **One sweep here is not described below, recorded 2026-09-11.**
+`20260821-222416_5060ti-splitcurve-membw_sweep.csv`, with a paired voltage extract, is a
+genuine 10-point 1400-2100 MHz `membw` sweep of the **split curve**, taken a day after the
+last run this README walks through. This file numbers every other run individually and
+skips that one. It is collected data rather than scaffolding - its JSON carries
+`session_label: "5060ti-splitcurve-membw"`.
+
 > **Folder name is narrower than its contents.** It began as a `membw` investigation and now
 > also holds the `gemm` separation run. Kept as-is so existing links stay valid.
 

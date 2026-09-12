@@ -52,7 +52,7 @@ built on that constraint.
 
 🔑 **Consequence: stock is applicable programmatically for the first time.** Every ABBA and
 cross-configuration comparison in this repository has been tuned-versus-tuned because stock could not
-be reached from the command line. It can now. ⚠️ Verified **on disk only** — see the application
+be reached from the command line. It can now. ✅ **Verified in application too, 2026-09-09 at 11:38**, before the stock-bracket run: power limit fell 200 → 180 W, peak memory clock under load read 13801 rather than 16301, and peak core clock 2640 against Profile 4's ~2976. This line said "verified on disk only" until 2026-09-11; the check had already been done and recorded in `data/frequency-sweeps/stock-bracket-20260909/README.md` the same day. See the application
 check flagged in `docs/AFTERBURNER-PROFILES.md`.
 
 **Re-decoded 2026-09-09 10:47:** the live store is sha256 `e5cbe0ec`, **byte-identical to the

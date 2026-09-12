@@ -24,6 +24,18 @@ Check `distinct_clocks_measured` against `frequencies_planned` in the session JS
 
 Reset any overclocking utility to stock before collecting data intended for the dataset.
 
+## ⚠️ Inventory gap, recorded 2026-09-11
+
+**32 `*_sweep.csv` files sit directly in this directory and are NOT listed below.** Most are
+dated 2026-08-22 - the clean-protocol reruns (`splitcurve-gemm-r1..r5`, `tuned-gemm-clean-r1..r5`,
+`stock-gemm-clean`, `memonly-gemm-clean`, and five fine-grid `-rerun` sweeps). They are not
+leftovers: several are cited by timestamp from other READMEs in this tree and from
+`CORRECTION-20260822-splitcurve-membw-r2.txt` beside them, and they count toward the published
+dataset-grade total.
+
+**They need either entries here or a directory of their own.** Stating the gap is not the same as
+closing it, and this note exists so a reader is not misled into thinking the list below is complete.
+
 ## Runs
 
 ### `20260816-124651` / `125959` / `130549` / `131140` — `*-fine-p1/p2` — the two optima, separated

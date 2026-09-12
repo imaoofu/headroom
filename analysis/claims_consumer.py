@@ -2387,8 +2387,11 @@ def ed2pGain():
 # landing on their own respective knees is a testable regularity - and it predicts where a third
 # card's optimum will be, which is the cheapest possible check on the 3060 and 2060 Super.
 #
-# ⚠️ THE VOLTAGE AND THE OPTIMUM COME FROM DIFFERENT RUNS ON BOTH CARDS. Voltage needs HWiNFO joined
-# by timestamp and was collected on gemm/membw sweeps; the optima come from the 12-workload suites.
+# ⚠️ THE VOLTAGE AND THE OPTIMUM COME FROM DIFFERENT RUNS ON THE FIRST TWO CARDS. Voltage needs
+# HWiNFO binned onto the sweep by CORE CLOCK - NOT joined on timestamp, which join_hwinfo_voltage.py
+# rejects because the sweep CSV records durations rather than absolute timestamps - and it was
+# collected on gemm/membw sweeps; the optima come from the 12-workload suites. The 3060 is the
+# exception: its HWiNFO log covers the suite itself, so its floor and optimum share one session.
 # Same card and same stock configuration in each case, but not the same session. The claims below
 # render both numbers so the gap between them is visible rather than asserted, and 5.5.7 says plainly
 # that a careful version measures voltage during the suite itself.
@@ -2834,3 +2837,82 @@ def configFullTune():
     return (f"| full tune (Profile 4) | {_medianSuiteOptimum(BRACKET_TUNE_1):.0f} | "
             f"{_medianSuiteOptimum(BRACKET_TUNE_1):.0f} | "
             f"{_bracketMeanGain(BRACKET_TUNE_1):.2f}% |")
+
+
+# --------------------------------------------------------------------------------------
+# 5.8 in the PAPER - the same-session stock bracket, 2026-09-11
+#
+# The 5.8-bracket-* claims above pin the run's own README. These pin the paper's account of it,
+# which is a separate document and can drift from the README independently.
+# --------------------------------------------------------------------------------------
+
+
+def _bracketTuneMean():
+    return (_bracketMeanGain(BRACKET_TUNE_1) + _bracketMeanGain(BRACKET_TUNE_2)) / 2.0
+
+
+def _bracketPerWorkloadGaps():
+    """Stock minus tuned, per workload, with the tuned side averaged over both bracket legs."""
+    gaps = []
+    for name in BRACKET_STOCK:
+        tuned = (suiteRowFigures(BRACKET_TUNE_1[name])[1]
+                 + suiteRowFigures(BRACKET_TUNE_2[name])[1]) / 2.0
+        gaps.append(suiteRowFigures(BRACKET_STOCK[name])[1] - tuned)
+    return gaps
+
+
+@claim("5.8-paper-gap", PAPER, "5.8")
+def paperBracketGap():
+    """The headline: stock gives up more efficiency than the tuned card, measured in one session."""
+    return f"| **gap** | **{_bracketMeanGain(BRACKET_STOCK) - _bracketTuneMean():.2f} points** |"
+
+
+@claim("5.8-paper-unanimous", PAPER, "5.8")
+def paperBracketUnanimous():
+    """Unanimity of DIRECTION. Checked per workload rather than asserted from the means."""
+    gaps = _bracketPerWorkloadGaps()
+    return (f"more headroom than the tuned card in {sum(1 for g in gaps if g > 0)} of {len(gaps)} "
+            f"workloads")
+
+
+@claim("5.8-paper-gap-range", PAPER, "5.8")
+def paperBracketGapRange():
+    """The spread behind that unanimity - the narrowest margin is close to session noise."""
+    gaps = _bracketPerWorkloadGaps()
+    return f"span **{min(gaps):.2f} to {max(gaps):.2f} points**"
+
+
+@claim("5.8.1-cross-session-gap", PAPER, "5.8.1")
+def paperCrossSessionGap():
+    """The same comparison assembled across days, which is how every earlier one was built."""
+    crossStock = mean(_bracketMeanGain(t) for t in REPLICATES_5060[1:])
+    crossTune = mean(_bracketMeanGain(t) for t in (ABBA_A1, ABBA_A2))
+    return (f"gives **{crossStock - crossTune:.2f} points** against this run's "
+            f"**{_bracketMeanGain(BRACKET_STOCK) - _bracketTuneMean():.2f}**")
+
+
+@claim("5.8.1-cross-session-error", PAPER, "5.8.1")
+def paperCrossSessionError():
+    """How much the cross-session construction understated the gap - the bound this run supplies."""
+    crossStock = mean(_bracketMeanGain(t) for t in REPLICATES_5060[1:])
+    crossTune = mean(_bracketMeanGain(t) for t in (ABBA_A1, ABBA_A2))
+    inSession = _bracketMeanGain(BRACKET_STOCK) - _bracketTuneMean()
+    return f"low by {inSession - (crossStock - crossTune):.2f} points"
+
+
+@claim("5.8.2-drift-abba", PAPER, "5.8.2")
+def paperDriftAbba():
+    """The fortunate sample: same configuration twice, 2.5 h apart, agreeing to 0.04 points."""
+    return (f"| §5.5.8's ABBA run, legs `a1` → `a2`, ~2.5 h | "
+            f"**{_bracketMeanGain(ABBA_A2) - _bracketMeanGain(ABBA_A1):+.2f} points** |")
+
+
+@claim("5.8.2-drift-bracket", PAPER, "5.8.2")
+def paperDriftBracket():
+    """The one that retracts it. Thirty times larger, same card, same profile, similar interval."""
+    drift = _bracketMeanGain(BRACKET_TUNE_2) - _bracketMeanGain(BRACKET_TUNE_1)
+    # The paper sets negatives with a typographic minus (U+2212), not a hyphen. Rendering the sign
+    # explicitly rather than via {:+.2f} keeps the claim matching the document it audits, and unlike
+    # the abs() in 5.8-bracket-drift above it does not assume which way the drift went.
+    sign = "−" if drift < 0 else "+"
+    return f"| this run, legs `p4t1` → `p4t2`, ~2 h | **{sign}{abs(drift):.2f} points** |"

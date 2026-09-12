@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **342 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **245 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **256 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
@@ -51,11 +51,12 @@ The central result is a mechanism for *where* the optimum sits. On every chip me
 efficiency optimum coincides with **the highest frequency the applied voltage-frequency curve
 reaches at that card's load-floor voltage** — the lowest voltage the card will hold under load.
 It was tested three ways, with each prediction registered before its measurement: **manipulating**
-the floor region of the curve moved the optimum **+465 MHz in 12 of 12 workloads**; a **negative
-control** that changed the curve by up to 570 MHz *above* the floor moved it by **nothing**; and
-the rule held on a **third chip and second architecture**. ⛔ The floor *voltage* does not transfer
-— 0.720 V, 0.756 V and 0.812 V on the three cards, with the two same-node parts furthest apart — so
-the relationship is general while its parameter must be measured per card.
+the floor region of the curve moved the median optimum by the predicted **+465 MHz**, with all 12
+workloads moving upward; a **negative control** that changed the curve by up to 570 MHz *above* the
+floor moved it by **nothing**; and the rule held on a **third chip and second architecture**. ⛔ The
+floor *voltage* does not transfer — 0.720 V, 0.756 V and 0.812 V on the three cards, and two cards
+sharing an architecture and a process node differ by 56 mV — so the relationship is general while
+its parameter must be measured per card.
 
 On consumer hardware, a bandwidth-bound workload plateaus under a flattened voltage-frequency
 curve. The mechanism is measured rather than inferred — core voltage pinned across a rising core
@@ -493,7 +494,7 @@ on the boundary share — which is corroborating on one card and weak on the oth
 |---|---|
 | GPU | NVIDIA GeForce RTX 5060 Ti 16 GB (Blackwell, GB206, compute capability 12.0) |
 | **Board** | **Zotac Twin Edge OC**, a dual-fan partner card |
-| Driver | 610.88 |
+| Driver | **610.88 for the earliest measurements; 616.56 from 2026-09-02 onward**, which covers the majority of the collected data. §5.4.5 records the change falling between suite replicates r1 and r2, and §5.5.4 marks the affected comparisons driver-mixed. Read the driver off a sweep's JSON rather than off this table. |
 | Rated clocks | Base 2407 MHz, boost 2572 MHz (reference). **Measured stock boost ~2584 MHz** under a compute load |
 | Lock-target ceiling | **3090 MHz** — the highest value the driver accepts for `-lgc`, *not* a clock the card runs at |
 | Power limit | 180 W default, 200 W configured, adjustable range 150–200 W |
@@ -913,6 +914,70 @@ accurately, which reduces measurement cost:
 These are distinct claims and are not conflated: reconstruction succeeds while selection ties,
 because when one frequency is optimal for most units a constant is already near-optimal.
 
+#### 5.3.1 How few probes, which ones, and whether choosing them matters
+
+The table above fixes the probe count and reports what it achieves. Three further questions decide
+whether probing is a useful protocol rather than an observation, and all three are answered on the
+same 33-workload reference set. Reproduce with `python analysis/models/select_probes.py`.
+
+**Probe selection must happen inside the fold, and here it makes no difference.** Choosing which
+frequencies to probe is part of fitting, so choosing them once over all 33 workloads and then
+scoring leave-one-workload-out lets the selection see every unit it is later judged on. Re-running
+the selection inside each fold, on the 32 training units only, gives **identical error to four
+decimal places at every probe count**, because all 33 folds select the same frequencies — one
+distinct probe set in 33 folds. ⚠️ **The shortcut was wrong in principle and worth 0.0000 here.**
+Nothing guaranteed that in advance; it was checked afterwards, on one dataset.
+
+**Selecting probes beats spacing them evenly, on the curve.** The no-analysis alternative is
+frequencies spread evenly across the swept range:
+
+| informative probes | selected, error | evenly spaced, error | selected frequencies (MHz) |
+|---|---|---|---|
+| 1 | 0.0336 | 0.0336 | 757 |
+| 2 | **0.0290** | 0.0336 | 757, 825 |
+| 3 | **0.0261** | 0.0318 | 757, 825, 885 |
+| 4 | **0.0243** | 0.0294 | 757, 825, 885, 952 |
+| 5 | **0.0230** | 0.0281 | 757, 825, 885, 952, 1012 |
+
+Selection wins by 14–18% from two probes upward and ties at one, where both strategies pick the
+same frequency. The reason is mechanical rather than clever: per-frequency variance across units
+falls monotonically from 0.142 at 757 MHz to **exactly zero** at 1530 MHz, so selection concentrates
+probes at the low end while even spacing spends them near the top.
+
+⚠️ **"Informative probes" is one fewer than the probe count in §5.3's table, and the difference is
+not cosmetic.** Every curve is normalised to the highest frequency, so that column is exactly 1.0
+for all 33 workloads — zero variance, no information as a regression feature. The measurement is
+still genuinely required, because it *is* the normalisation reference, so the cost figures in §5.3
+are right; but a "four-probe" model is fitting on three features. Probe counts quoted anywhere in
+this work should be read with that distinction in mind.
+
+##### 🔑 Reconstruction accuracy and decision quality are not the same quantity
+
+Going from one probe to five improves the reconstructed curve by **31%**. It improves the decision
+made from that curve by **nothing at all**:
+
+| informative probes | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| curve error | 0.0336 | 0.0290 | 0.0261 | 0.0243 | 0.0230 |
+| **mean regret, %** | **0.837** | **0.837** | **0.837** | **0.837** | **0.837** |
+
+🔑 **The regret is not merely similar across probe counts, it is identical — and identical to §5.2's
+fixed-frequency baseline, 0.837%, to four decimal places.** The reconstruction's peak lands on
+**952 MHz in 33 of 33 folds at every probe count**, and 952 MHz is that baseline. The probe model
+does not approximate the constant; it reproduces it exactly, because the efficiency curve is flat
+near its maximum and a measurably better curve selects the identical operating point.
+
+**This is the §5.2 null restated in its sharpest form, and it generalises past this dataset as a
+warning.** "The model reconstructs the curve to MAE 0.023" reads as progress and is progress, for
+the curve. It is worth nothing for the choice the curve exists to inform. **Any claim that better
+curve-fitting yields better tuning has to demonstrate the decision moving, not the fit improving** —
+and on this data it does not move at all.
+
+⚠️ **No probe count tested reconstructs to within this work's own measurement noise.** Five probes
+give 0.0230 against the ~0.0076 within-session spread of §5.4.5 — still three times outside it. So
+"characterise a card from a handful of probes" is supported here only at the level of the single
+decision, where one probe already equals thirteen, and not at the level of the curve.
+
 ### 5.4 Consumer hardware measurements
 
 `[n = 1 unit, 2 workloads, 13 frequencies each. Single-chip result; no cross-unit claim.]`
@@ -931,10 +996,18 @@ Thirteen-point sweeps on an RTX 5060 Ti, stock V/F curve, 464–3090 MHz request
 
 **The V100 headroom result reproduces on consumer silicon.** The reference dataset gives a 44.4%
 mean efficiency gain for a 13.7% performance cost and 40.1% power saving, with its optimum at 62%
-of maximum (§5.1). The `membw` figures here — 41.6%, 11.3%, 37.4%, at 56% of sustained maximum —
-are more favourable than that on two of four axes, on a 2025 consumer part measured
-independently seven years and four
-architectural generations later. This is the central empirical claim of the work: the efficiency
+of maximum (§5.1). The `membw` figures here — a **50.1%** efficiency gain for a **9.8%**
+performance cost, saving **39.9%** of power, at 56% of sustained maximum — exceed the reference
+set's efficiency gain and cost less performance, while saving almost exactly the same power
+(39.9% against 40.1%), on a 2025 consumer part measured independently seven years and four
+architectural generations later.
+
+⛔ **This sentence quoted 41.6%, 11.3% and 37.4% until 2026-09-11, which were the superseded
+numbers.** They came from the 2026-08-16 sweep, taken before the capture-software contamination of
+§5.4.4 was known and controlled for; the table above is the clean 2026-08-22 rerun and is pinned by
+the auditor, so the table and the prose beneath it disagreed for three weeks. **The prose was not
+covered by any claim, which is exactly how it drifted** - and it is the clearest argument in this
+work for pinning sentences rather than tables. This is the central empirical claim of the work: the efficiency
 headroom identified on datacentre hardware is not an artefact of datacentre hardware.
 
 **The compute/memory distinction appears in what the optimum costs, not where it sits.** Both
@@ -942,7 +1015,7 @@ optima land on the same grid point, so at this resolution they are *indistinguis
 not the same as equal, and separating them requires a finer sweep around 1300–1800 MHz rather than
 a wider one. What does separate cleanly is the price of operating there: `gemm` surrenders 40.6% of
 its throughput to reach its optimum, `membw` only 9.8%. For bandwidth-bound work, running at 56%
-of maximum clock is close to free — 37.4% less power for an 11.3% slowdown. For compute-bound work
+of maximum clock is close to free — 39.9% less power for a 9.8% slowdown. For compute-bound work
 it is a genuine trade. Any recommender built on this must therefore be workload-aware in its
 *advice*, even where the optimal frequency itself is common.
 
@@ -1806,11 +1879,18 @@ statement about software. They differ, so the floor is a property of the silicon
 relationship survives it anyway**, which is what makes this a finding about GPUs rather than about
 one card.
 
-⚠️ **And the floor is not explained by process node.** The RTX 3060 and RTX 3070 Ti are the same
-architecture on the same 8 nm node and their floors differ by **56 mV**, while the gap between the
-8 nm parts and the 5 nm one is **36 mV**. Within-node spread exceeds between-node difference, so
-whatever sets the floor is not captured by the node alone. With three cards this rules something
-out and establishes nothing; the collection protocol for growing that number is given in
+⚠️ **And the floor is not explained by process node alone.** The RTX 3060 and the RTX 3070 Ti are
+the same architecture on the same 8 nm node, and their floors differ by **56 mV**. Two parts that
+share both an architecture and a process node cannot be told apart by either, so neither is
+sufficient to determine the floor voltage.
+
+⛔ **That is the whole of what three cards support, and an earlier version of this paragraph claimed
+more.** It said "within-node spread exceeds between-node difference", comparing the 56 mV same-node
+gap against the 36 mV gap between the 3060 and the 5060 Ti. **That is one of two available
+between-node pairings and it is the smaller.** The three pairwise gaps are 36 mV, 56 mV and 92 mV,
+the largest being the 5060 Ti against the 3070 Ti — a cross-node pair. With one sample per
+architecture-node combination, no ranking of within-node against between-node variation is
+available at all, in either direction. The collection protocol for growing n is given in
 `docs/FLOOR-VOLTAGE-PROTOCOL.md`.
 
 **The 3070 Ti's optimum is not an artefact of its grid.** Its suite grid continues to 1590, 1695 and
@@ -2902,8 +2982,14 @@ the crossbar starves is unmapped; only the two endpoints have been measured.
 #### 5.7.7 Caveats
 
 The three configurations were **not** measured contemporaneously: stock at 14:33 on 2026-08-19, full
-tuned at 20:42 the same day, memory-only at 18:13 the next - switching configurations requires a
-manual Afterburner change that cannot be scripted here. Idle temperature was 40-42 C at the start of
+tuned at 20:42 the same day, memory-only at 18:13 the next - switching configurations required a
+manual Afterburner change when these runs were collected.
+
+⛔ **That constraint expired on 2026-09-08 and this paragraph asserted it as permanent.** Afterburner
+applies a stored profile from the command line, so configuration is now a scriptable variable; §5.8
+is the first comparison collected that way and §5.5.8's ABBA design depends on it. The caveat below
+still describes *these* runs correctly - it is a fact about when they were taken, not about what the
+method can do. Idle temperature was 40-42 C at the start of
 each, the only cross-run control available. Effect sizes up to 29.6% are far outside plausible
 day-to-day drift so the direction is safe, but the precise percentages are softer than they look.
 
@@ -2920,6 +3006,72 @@ this is unexplained and recorded rather than trimmed.
 ---
 
 ---
+
+### 5.8 Stock against tuned, measured in one session
+
+`[n = 1 chip, 12 workloads, 36 sweeps. Single-chip result; no cross-unit claim.]`
+
+Every stock-versus-tuned figure elsewhere in this work is assembled from sweeps taken on **different
+days**, because stock could not be applied without touching the machine: all five Afterburner
+profile slots carried offsets, so there was no scriptable stock configuration. On 2026-09-09 one
+slot was found to hold the factory curve unmodified — every per-point offset zero, memory offset
+zero, the default power limit — which made the comparison collectable in a single session for the
+first time.
+
+**Three twelve-workload suites, 36 sweeps, 10:38 to 13:39, zero failures**, with the stock leg
+**centred between two tuned legs** so that linear session drift cancels on the tuned side:
+
+| leg | configuration | enforced power limit |
+|---|---|---|
+| 1 | full tune | 200 W |
+| 2 | **stock** | **180 W, the factory default** |
+| 3 | full tune | 200 W |
+
+| | mean efficiency gain |
+|---|---|
+| stock | **56.99%** |
+| full tune, mean of both legs | **34.16%** |
+| **gap** | **22.83 points** |
+
+**Stock has more headroom than the tuned card in 12 of 12 workloads**, with no exceptions — one of
+the few genuinely unanimous results in this work.
+
+⚠️ **The margin is not uniform and the unanimity should not be read as uniformity.** Per-workload
+gaps span **0.49 to 41.11 points**. The narrowest is well inside the ~0.76% within-session spread of
+§5.4.5, so for that workload the direction is what survives, not the magnitude.
+
+**This is the expected direction, not a surprise.** A tuned card already runs closer to its
+efficiency optimum at stock settings, so less remains to recover by lowering its clock. The value of
+the measurement is the size and the cleanliness, not the sign.
+
+#### 5.8.1 What the bracket says about every cross-session comparison in this work
+
+The same gap assembled the old way — stock from the five suite replicates of §5.4.5, tuned from the
+ABBA run of §5.5.8, different days — gives **21.60 points** against this run's **22.83**.
+
+🔑 **The cross-session construction was low by 1.23 points, not wrong.** That matters more than the
+new number does: it means the day-against-day comparisons throughout this work are **less precise
+than they appear but not invalidated**, and it puts a measured bound on how much less precise.
+
+#### 5.8.2 The bracket audited itself, and retracted a figure from §5.5.8
+
+A bracket measures drift as a by-product: the two tuned legs are the same configuration, so
+whatever separates them is session drift rather than effect.
+
+| same configuration, measured twice | drift |
+|---|---|
+| §5.5.8's ABBA run, legs `a1` → `a2`, ~2.5 h | **+0.04 points** |
+| this run, legs `p4t1` → `p4t2`, ~2 h | **−1.25 points** |
+
+⛔ **The ABBA run's +0.04 was quoted as evidence that the tuned configuration reproduces to within
+a rounding error. It does not.** Two brackets of comparable length on the same card and the same
+profile disagree by a factor of thirty, so **±1.3 points is the honest figure for same-configuration
+reproducibility over a couple of hours**, and the 0.04 was a single fortunate sample. Every
+same-configuration agreement quoted in this work should be read against ±1.3 rather than against the
+best case observed.
+
+⚠️ **Two brackets is not a distribution either.** What is established is that same-configuration
+drift can reach 1.25 points, not what it typically is.
 
 ## 6. Limitations
 

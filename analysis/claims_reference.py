@@ -111,8 +111,8 @@ DATA = _load()
 
 if DATA is None:
     print("  [SKIP] claims_reference: the public V100 dataset is not downloaded - run "
-          "scripts/Get-Dataset.ps1. The Abstract and sections 5.1, 5.2, 5.3, 5.6, 5.6.1 and "
-          "5.6.2 are NOT audited in this run.")
+          "scripts/Get-Dataset.ps1. The Abstract and sections 5.1, 5.2, 5.3, 5.3.1, 5.6, "
+          "5.6.1 and 5.6.2 are NOT audited in this run.")
 else:
     SUMMARY = DATA["summary"]
 
@@ -305,3 +305,87 @@ else:
         # scaled again here. The share beside it is a fraction and is.
         return (f"under-estimate {100 * DATA['bias']['under_estimate_share']:.0f}% of the time, "
                 f"by a mean of {abs(DATA['bias']['mean_error_pp']):.2f} points")
+
+
+    # --------------------------------------------------------------------------------------
+    # 5.3.1 - probe selection, 2026-09-11
+    #
+    # Fixed probe sets, not a re-run of the selection search. select_probes.py does the searching and
+    # reports which frequencies win; these claims pin what those frequencies ACHIEVE, which is 33 Ridge
+    # fits per set and cheap enough to run inside the auditor.
+    # --------------------------------------------------------------------------------------
+
+    _PROBE_SETS_MHZ = {
+        1: (757,),
+        2: (757, 825),
+        3: (757, 825, 885),
+        4: (757, 825, 885, 952),
+        5: (757, 825, 885, 952, 1012),
+    }
+
+
+    def _probeContext():
+        """(frequencies, curves, index-by-MHz) for the public V100 matrix."""
+        import sys as _sys
+        from pathlib import Path as _Path
+        _sys.path.insert(0, str(_Path(__file__).resolve().parent / "models"))
+        from curve_model import loadUnitsFromPublicDataset  # noqa: E402
+        frequencies, curves, _ = loadUnitsFromPublicDataset()
+        return frequencies, curves, {int(f): i for i, f in enumerate(frequencies)}
+
+
+    def _probeIndices(probeCount):
+        _, _, byMhz = _probeContext()
+        return [byMhz[m] for m in _PROBE_SETS_MHZ[probeCount]]
+
+
+    def _probeScores(probeIndices):
+        """(mean curve MAE, mean regret, modal picked frequency, how many folds picked it)."""
+        import numpy as np
+        import sys as _sys
+        from pathlib import Path as _Path
+        _sys.path.insert(0, str(_Path(__file__).resolve().parent / "models"))
+        from select_probes import scoreProbeSet  # noqa: E402
+        frequencies, curves, _ = _probeContext()
+        scored = [scoreProbeSet(curves, probeIndices, held) for held in range(curves.shape[0])]
+        picks = [row[2] for row in scored]
+        modal = max(set(picks), key=picks.count)
+        return (float(np.mean([row[0] for row in scored])),
+                float(np.mean([row[1] for row in scored])),
+                int(frequencies[modal]), picks.count(modal), len(picks))
+
+
+    @claim("5.3.1-selected-vs-even-3", PAPER, "5.3.1")
+    def probeSelectedVsEvenThree():
+        """Three informative probes: chosen by search against spread evenly across the range."""
+        import sys as _sys
+        from pathlib import Path as _Path
+        _sys.path.insert(0, str(_Path(__file__).resolve().parent / "models"))
+        from select_probes import evenlySpacedProbes, informativeIndices, reconstructionErrorForProbes
+        _, curves, byMhz = _probeContext()
+        chosen = reconstructionErrorForProbes(curves, _probeIndices(3))
+        even = reconstructionErrorForProbes(curves, evenlySpacedProbes(informativeIndices(curves), 3))
+        return f"| 3 | {chosen:.4f} | {even:.4f} | 757, 825, 885 |"
+
+
+    @claim("5.3.1-regret-is-flat", PAPER, "5.3.1")
+    def probeRegretIsFlat():
+        """The whole point of the section: five probe counts, one regret, to four decimal places."""
+        regrets = [_probeScores(_probeIndices(k))[1] for k in sorted(_PROBE_SETS_MHZ)]
+        return "| **mean regret, %** | " + " | ".join(f"**{r:.3f}**" for r in regrets) + " |"
+
+
+    @claim("5.3.1-argmax-unchanging", PAPER, "5.3.1")
+    def probeArgmaxUnchanging():
+        """The decision does not move because the reconstruction's peak does not move."""
+        scores = [_probeScores(_probeIndices(k)) for k in sorted(_PROBE_SETS_MHZ)]
+        assert len({s[2] for s in scores}) == 1, "probe counts disagree on the picked frequency"
+        return f"**{scores[0][2]} MHz in {scores[0][3]} of {scores[0][4]} folds at every probe count**"
+
+
+    @claim("5.3.1-dead-column", PAPER, "5.3.1")
+    def probeDeadColumn():
+        """Why selection favours the low end, and why the top probe carries no information."""
+        _, curves, byMhz = _probeContext()
+        return (f"from {curves[:, byMhz[757]].std():.3f} at 757 MHz to **exactly zero** at "
+                f"{max(byMhz):.0f} MHz")
