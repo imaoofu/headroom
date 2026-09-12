@@ -244,7 +244,7 @@ in one day as data landed. **Matching twice is `AMBIGUOUS`, not a pass.**
 |---|---|
 | claims green, with `data/raw/` | **256 of 256** |
 | without it, as CI's checks leg runs | **224 of 224** |
-| test checks across 18 suites | **658** (656 without `data/raw/`) |
+| test checks across 18 suites | **665** (663 without `data/raw/`) |
 
 **Green means every claim that exists passes, not that the paper is covered.** 20 numbered sections
 still carry no claim at all.

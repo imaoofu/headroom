@@ -1917,6 +1917,18 @@ def agreeWhereVoltagesAgree():
 # the number is the same with or without data/raw.
 # --------------------------------------------------------------------------------------
 
+NOT_DATASET_GRADE_MARKER = "<!-- dataset-grade: no -->"
+
+
+def hasNotDatasetGradeMarker(readmeText):
+    """True only when the marker stands ALONE on a line.
+
+    Separated from headerSweepCount so it can be tested without a filesystem, because both ways
+    this has been got wrong are about text rather than about counting.
+    """
+    return any(line.strip() == NOT_DATASET_GRADE_MARKER for line in readmeText.splitlines())
+
+
 @claim("header-sweep-count", PAPER)
 def headerSweepCount():
     """The header's advertised sweep count, recomputed from the committed CSVs.
@@ -1935,11 +1947,17 @@ def headerSweepCount():
     root = _REPO_ROOT / "data" / "frequency-sweeps"
     excluded = set()
     for readme in root.rglob("README.md"):
-        # An HTML comment, not prose. The first attempt matched the string "NOT DATASET-GRADE"
-        # anywhere in the file and excluded 36 sweeps, because most of these READMEs discuss the
-        # CONCEPT - "what is dataset-grade and what is not" is the convention's own wording. A
-        # marker that collides with the text describing it is not a marker.
-        if "<!-- dataset-grade: no -->" in readme.read_text(encoding="utf-8", errors="replace"):
+        # An HTML comment ON ITS OWN LINE, not prose and not a mention. Two earlier versions of
+        # this test were both defeated by READMEs discussing the convention rather than invoking
+        # it. The first matched "NOT DATASET-GRADE" anywhere in the file and excluded 36 sweeps,
+        # because "what is dataset-grade and what is not" is the convention's own wording. The
+        # second required the exact HTML comment but still matched it ANYWHERE, so on 2026-09-11 a
+        # README that quoted the marker inside a code span while explaining why it must NOT be
+        # applied excluded itself - four sweeps, silently, from a published count.
+        #
+        # A marker that fires when it is merely named is not a marker. Every genuine one in this
+        # repository sits alone on a line, so that is what is required.
+        if hasNotDatasetGradeMarker(readme.read_text(encoding="utf-8", errors="replace")):
             excluded.add(readme.parent)
     # ⚠️ ANY ANCESTOR, NOT JUST THE IMMEDIATE PARENT. This read `p.parent not in excluded` until
     # 2026-09-10, which silently counted four sweeps from `kitverify-20260823/` - a directory whose

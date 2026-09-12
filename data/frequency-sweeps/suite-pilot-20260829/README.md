@@ -1,28 +1,44 @@
 # Suite pilot — RTX 5060 Ti at stock, 2026-08-29
 
-⚠️ **This directory carries NO `dataset-grade: no` marker, and that is a live contradiction rather than an oversight.**
-The prose below says these four sweeps are validation and not dataset-grade. The claims registry uses
-them anyway: `REPLICATES_5060[0]` in `analysis/claims_consumer.py` is this run, and roughly eight
-live claims average over all six stock replicates including it. Adding the marker would change the
-published sweep count and several pinned numbers at once. **Resolve deliberately** - either the
-prose below is too strong, or those claims should move to `REPLICATES_5060[1:]`, which the drift
-and optimum claims already do.
+⛔ **THE HEADLINE BELOW IS STALE, AND THE MARKER MUST NOT BE ADDED. Corrected 2026-09-11.**
 
-**VALIDATION, NOT DATASET-GRADE.** Read this before using any number here.
+These four sweeps began as validation, which is what the text below describes. **They were then
+completed into a full replicate.** The eight remaining workloads were collected the same day into
+`../stock-suite-20260829/`, whose README says so directly: "With the four in
+`../suite-pilot-20260829/` this is all eleven suite workloads plus `gemm` on one card at one
+configuration." Together the two directories are **replicate r1** - `REPLICATES_5060[0]` in
+`analysis/claims_consumer.py` - and around eight live claims average over it.
+
+🔑 **So excluding these four would make the published count LESS accurate, not more.** The
+`<!-- dataset-grade: no -->` marker is read in exactly one place, `headerSweepCount()`, and its only
+effect is to subtract a directory from the dataset-grade total. Adding it here would drop that total
+by four while the sweeps stayed in use - which is the opposite of what the marker is for.
+
+⚠️ **What IS true of r1, and why several claims exclude it.** The concerns listed below are
+real and did not go away when the suite was completed: iteration counts calibrated at a 7% baseline
+on a different day, and a remote-controlled machine during the run. r1 also sits on driver 610.88
+while r2-r6 are on 616.56. That is why the drift and optimum claims use `REPLICATES_5060[1:]`.
+**"Excluded from some analyses for stated reasons" is not the same as "not dataset-grade"**, and
+conflating the two is what produced the headline below.
+
+
+**WRITTEN AS VALIDATION, SUBSEQUENTLY COMPLETED INTO REPLICATE r1.** Read this before using any number here, and read the correction above first - the four sweeps are dataset-grade as part of r1, with the caveats in this section applying to r1 as a whole.
 
 Four sweeps run to check that the extended workload suite works end to end in the sweep harness —
 that the kernels run under a locked clock, that the units come out right, and that the throughputs
 are physically possible. That is what these are for. They are **not** a designed collection and the
 directory README convention requires saying so.
 
-## Why they are not dataset-grade
+## What was provisional about them, and what still applies to r1
 
-- **n = 1 per workload.** No replicates, so nothing here has an error bar and no comparison between
-  configurations is possible.
+- **n = 1 per workload**, as written. ⚠️ **This reason did not survive**: every stock
+  replicate is n = 1 per workload, and r1 through r6 together are what supply the error bars. It
+  distinguished these sweeps only while they stood alone.
 - **Iteration counts were calibrated at a 7% baseline**, above the protocol's ~5%, and on a
   different day from these sweeps. Counts are a setup constant so this is tolerable for a
   validation run and would not be for a collection.
-- **Only four of the eleven suite workloads**, chosen to span the axis rather than to cover it.
+- **Only four of the eleven suite workloads** when this was written. ⚠️ **Also no longer
+  true**: the other eight were collected the same day into `../stock-suite-20260829/`.
 - **The machine was being remote-controlled during the run.** Encoder and decoder were verified at
   0% across repeated samples and no NVENC-using remote tool was present, so the video-engine class
   of contamination is excluded — but it was not the undisturbed machine a collection wants.

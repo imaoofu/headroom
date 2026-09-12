@@ -1196,6 +1196,30 @@ testContaminationSignatureExcludesTheDipPoints()
 testClockMatchGuardRejectsAChangedGrid()
 
 
+
+print("\nthe not-dataset-grade marker must stand alone on a line")
+# Regression test for 2026-09-11. The marker is what removes a directory from the published sweep
+# count, and it has now been defeated TWICE by READMEs that discuss the convention instead of
+# invoking it: once by matching "NOT DATASET-GRADE" as prose, and once by matching the exact HTML
+# comment ANYWHERE in the file, so a README quoting the marker inside a code span - while
+# explaining that it must NOT be applied - excluded its own four sweeps from a published number.
+from claims_consumer import hasNotDatasetGradeMarker as _marker  # noqa: E402
+
+check("a marker alone on its line is detected",
+      _marker("# Title\n\n<!-- dataset-grade: no -->\n"))
+check("leading and trailing whitespace around it still counts",
+      _marker("   <!-- dataset-grade: no -->   "))
+check("it is detected on the very first line",
+      _marker("<!-- dataset-grade: no -->\nrest of the file"))
+check("a README that merely QUOTES the marker is NOT excluded",
+      not _marker("the `<!-- dataset-grade: no -->` marker is read in exactly one place"))
+check("prose discussing the concept is not a marker",
+      not _marker("## Why they are not dataset-grade\n\nn = 1 per workload."))
+check("the marker with text after it on the same line does not count",
+      not _marker("<!-- dataset-grade: no --> but see the correction above"))
+check("a file with no marker at all is not excluded",
+      not _marker("# An ordinary README\n\nTwelve sweeps, 13 of 13 frequencies."))
+
 if failures:
     print(f"{len(failures)} check(s) failed.")
     raise SystemExit(1)

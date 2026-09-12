@@ -65,7 +65,7 @@ proceed.
 python run_tests.py
 ```
 
-**`658 checks across 18 suite(s).`** then `All suites passed.` It is `656` where `data/raw/` was
+**`665 checks across 18 suite(s).`** then `All suites passed.` It is `663` where `data/raw/` was
 not fetched: two checks in `models/test_predict_constrained_frequency.py` skip without it. The
 runner also fails if it finds a
 `test_*.py` under a directory it is not running — that guard exists because moving the model suites
