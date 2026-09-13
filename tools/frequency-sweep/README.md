@@ -159,6 +159,38 @@ gap. The bug would have understated the consumer headroom gap by more than half.
 `membw` is *insensitive* — the contrast the whole compute-vs-memory-bound comparison rests on —
 has not been swept yet.
 
+### ⚠️ A sweep whose workload never launched used to look exactly like a good one
+
+**Added 2026-09-12, after it happened.** A sweep locked clocks, sampled telemetry at every
+frequency, wrote a CSV, printed a normal summary and exited **0** — having never once launched
+its benchmark. The `-WorkloadCommand` named an interpreter on one drive and a script on another,
+so every invocation failed instantly. The card sat at ~18 W for the whole run.
+
+**Nothing in the tool noticed, and nothing downstream would have.** The power column is real —
+it is the genuine idle draw of a locked card — so the file parses, plots and joins like any
+other. Only the empty `bench_throughput` column gives it away, and only if someone looks. It is
+the same shape as the 2026-08-16 sampling defect that recorded idle power at every frequency.
+
+Two guards now exist, both in `WorkloadResultVerdict.ps1`:
+
+| guard | when it fires |
+|---|---|
+| **fail fast** | the FIRST measured point returns no benchmark result — the sweep stops there rather than spending the remaining hour measuring an idle card |
+| **final verdict** | at the end, classifying the run `ok` / `partial` / `none` / `not-applicable`, printed and written to the session JSON as `workload_result_verdict` |
+
+**A run with no benchmark result at any point now exits 7**, so `Invoke-SuiteReplicate.ps1` and
+anything else driving this in a loop can tell. A run with SOME missing points exits 0 and warns:
+one frequency can legitimately fail while the rest of the curve is sound.
+
+⛔ **A sweep with no `-WorkloadCommand` is `not-applicable`, not a failure.** Sampling an
+external load is a legitimate mode, and failing it would make the guard something operators
+route around rather than read.
+
+⚠️ **It answers one question only: did a measurement come back at all.** A workload that ran
+badly and returned a wrong-but-positive number passes. And **sweeps collected before this date
+carry no `workload_result_verdict` field**, so they cannot be audited for it retrospectively —
+the same unfixable cost as the VRAM-occupancy guard that shipped late.
+
 ### Grid resolution matters more than grid floor
 
 An earlier 3-point sweep found efficiency highest at its lowest point and this file concluded

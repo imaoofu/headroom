@@ -653,8 +653,20 @@ if (Test-Path $quickEditGuard) {
     Write-Host "[SWEEP] NOTE: tools\Disable-QuickEdit.ps1 not found - DO NOT CLICK IN THIS WINDOW while the sweep runs."
 }
 
+# Whether the benchmark actually produced numbers. A sweep that never launched its workload
+# wrote a clean CSV and exited 0 on 2026-09-12; see WorkloadResultVerdict.ps1 for the story.
+$verdictHelper = Join-Path $PSScriptRoot "WorkloadResultVerdict.ps1"
+$workloadVerdictAvailable = Test-Path $verdictHelper
+if ($workloadVerdictAvailable) {
+    . $verdictHelper
+} else {
+    Write-Host "[SWEEP] NOTE: WorkloadResultVerdict.ps1 not found - this run will NOT check that the"
+    Write-Host "[SWEEP] benchmark produced any result. A workload that fails to launch will look normal."
+}
+
 $results = New-Object System.Collections.ArrayList
 $abortedByUser = $false
+$workloadNeverRan = $false
 
 # --- Sweep ---------------------------------------------------------------------------
 
@@ -847,6 +859,27 @@ try {
         }
         [void]$results.Add($row)
 
+        # Fail on the FIRST point rather than at the end. A workload that cannot launch fails
+        # identically at every frequency, so continuing buys nothing and costs the rest of the
+        # run - an hour, on the sweep that prompted this. The throw unwinds through the finally
+        # block below, so clocks are still reset.
+        if ($workloadVerdictAvailable -and $WorkloadCommand -ne "" -and $results.Count -eq 1) {
+            if (-not (Test-RowHasBenchResult -Row $row)) {
+                Write-Host ""
+                Write-Host "[SWEEP] *** THE WORKLOAD PRODUCED NO RESULT AT THE FIRST FREQUENCY. ***"
+                Write-Host ("[SWEEP] Command: {0}" -f $WorkloadCommand)
+                Write-Host "[SWEEP] The process was launched and the card was sampled, but no benchmark JSON"
+                Write-Host "[SWEEP] came back, so there is no performance metric. The usual cause is a command"
+                Write-Host "[SWEEP] line whose interpreter and script are on different drives."
+                Write-Host "[SWEEP] Stopping now rather than measuring an idle card at every remaining point."
+                # break rather than throw, so the one bad point is still written out. The CSV is
+                # evidence of what went wrong; the non-zero exit below is what stops it being
+                # mistaken for data.
+                $workloadNeverRan = $true
+                break
+            }
+        }
+
         $heldNote = "held"
         if ($row.lock_miss_direction -eq "above") { $heldNote = "OVERSHOT +$($row.lock_miss_mhz)" }
         elseif ($row.lock_miss_direction -eq "below") { $heldNote = "UNDERSHOT $($row.lock_miss_mhz)" }
@@ -872,6 +905,13 @@ if ($results.Count -eq 0) {
 }
 
 $results | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
+
+# Computed HERE, above the session hashtable, because that hashtable records it. An earlier
+# arrangement assigned it below and wrote null into every JSON, healthy runs included.
+$workloadVerdict = $null
+if ($workloadVerdictAvailable) {
+    $workloadVerdict = Get-WorkloadResultVerdict -Rows @($results) -WorkloadCommanded ($WorkloadCommand -ne "")
+}
 
 $driftedPoints = @($results | Where-Object { -not $_.lock_held })
 $undilutedPoints = @($results | Where-Object { -not $_.power_window_applied })
@@ -924,6 +964,11 @@ $session = [ordered]@{
     aborted_by_user      = $abortedByUser
     frequencies_planned  = $targets.Count
     frequencies_measured = $results.Count
+    # Added 2026-09-12. Sweeps taken before this carry no record of whether their workload
+    # produced anything, exactly as pre-0.3.2 sweeps carry no VRAM occupancy - the field did not
+    # exist, so they cannot be audited for it retrospectively.
+    workload_result_verdict = if ($workloadVerdictAvailable) { $workloadVerdict.verdict } else { $null }
+    frequencies_with_bench_result = if ($workloadVerdictAvailable) { $workloadVerdict.withResult } else { $null }
     # Band provenance. A fine sweep and a full-range sweep produce structurally identical CSVs
     # and must never be pooled or compared as if they covered the same thing.
     sweep_band_min_mhz   = $floorMhz
@@ -984,6 +1029,18 @@ if ($WorkloadCommand -ne "" -and $undilutedPoints.Count -gt 0) {
     Write-Host "[SWEEP] Their power_avg_w is averaged over the whole workload process, so it includes"
     Write-Host "[SWEEP] CUDA init at idle and understates load power. Check power_window_applied in the CSV."
 }
+if ($workloadVerdictAvailable) {
+    if ($workloadVerdict.verdict -eq "none") {
+        Write-Host ""
+        Write-Host "[SWEEP] *** THIS RUN HAS NO PERFORMANCE DATA. ***"
+        Write-Host ("[SWEEP] {0}" -f $workloadVerdict.message)
+        Write-Host "[SWEEP] The power column is real - it is the idle draw of a locked card - so nothing"
+        Write-Host "[SWEEP] downstream will fail on this file. Do not treat it as a sweep."
+    } elseif ($workloadVerdict.verdict -eq "partial") {
+        Write-Host ""
+        Write-Host ("[SWEEP] WARNING: {0}" -f $workloadVerdict.message)
+    }
+}
 if ($WorkloadCommand -eq "") {
     Write-Host "[SWEEP] No workload command was given, so there is NO performance metric in this data."
     Write-Host "[SWEEP] You have a power-vs-frequency curve. Efficiency needs performance too - re-run with -WorkloadCommand."
@@ -994,5 +1051,13 @@ Write-Host "[SWEEP] =================================================="
 Write-Host ""
 Write-Host "[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's"
 Write-Host "[SWEEP] clocks after this, reboot and it returns to stock."
+
+# A run whose benchmark never produced a number is a failure, and it used to exit 0. Anything
+# driving this in a loop - Invoke-SuiteReplicate.ps1 above all - can now tell.
+# 7, because 2 through 6 are taken above - 3 in particular already means "not elevated", and
+# two meanings for one code is how a caller silently mishandles the rarer of them.
+if ($workloadNeverRan -or ($workloadVerdictAvailable -and $workloadVerdict.verdict -eq "none")) {
+    exit 7
+}
 
 exit 0
