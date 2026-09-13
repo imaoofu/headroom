@@ -212,10 +212,39 @@ the bandwidth chain is not).
 
 | dataset | what it is |
 |---|---|
-| [HKBU-HPML/GPU-DVFS-Job-Schedule](https://github.com/HKBU-HPML/GPU-DVFS-Job-Schedule), [NV-DVFS-Benchmark](https://github.com/HKBU-HPML/NV-DVFS-Benchmark) | ⚠️ **`master` branch, not `main`** — raw URLs 404 silently otherwise |
+| [HKBU-HPML/NV-DVFS-Benchmark](https://github.com/HKBU-HPML/NV-DVFS-Benchmark) | ⚠️ **`master` branch, not `main`.** 🔑 **This is the origin of the GTX 1080 Ti dataset this project uses** — `csvs/gtx1080ti-dvfs-real-features.csv` — which the prior-art log had recorded as never located. It belongs to **Wang & Chu, ICPADS 2018**, *GPGPU Performance Estimation with Core and Memory Frequency Scaling*, NOT to Mei's papers. Also holds GTX 980, Titan X, P100 and V100 files |
+| [HKBU-HPML/GPU-DVFS-Job-Schedule](https://github.com/HKBU-HPML/GPU-DVFS-Job-Schedule) | Later scheduling work, same group |
 | [zyjopensource/GPU-DVFS-Dataset](https://github.com/zyjopensource/GPU-DVFS-Dataset) | **No license stated.** Not redistributed here; fetched by `scripts/Get-Dataset.ps1` |
 | V100 reference set (33 workloads × 13 frequencies) | The project's original basis. Core clock only, **no voltage column** |
 | GTX 1080 Ti / RTX 2070 Super consumer sweeps | The two datasets the wrong-range argument is about. ⚠️ Their originating paper was **never located** — see the prior-art log |
+
+---
+
+## ✅ Did Mei release raw data? Checked 2026-09-13. **No — and that matters.**
+
+The open question left after the survey read. Answered three ways:
+
+1. **Mei's own papers release nothing.** The 2017 survey's full text contains **no data-availability
+   statement and no dataset URL** — every link in it is a vendor or tool page. HotPower 2013 has no
+   such statement either.
+2. **The same group DID release consumer DVFS data**, but under different papers: Wang & Chu's
+   ICPADS 2018 work, via `HKBU-HPML/NV-DVFS-Benchmark`. That repo holds GTX 980, GTX 1080 Ti,
+   Titan X, P100 and V100 CSVs.
+3. ⛔ **And those released files sweep the WRONG WAY.** In
+   `gtx980-low-dvfs-real-small-workload-features.csv` the `coreF` and `memF` columns are
+   **normalised multipliers taking exactly the values 1.0, 1.2, 1.4, 1.6, 1.8, 2.0** — from base
+   *upward*, with no below-base point anywhere. Same signature this project already measured in the
+   1080 Ti file (101–126% of rated boost).
+
+🔑 **So the below-default measurement in the 2017 survey's Figures 7–8 — 30 of 42 kernels
+minimising below the default clock — was never released as data.** The finding is published; the
+data behind it is not.
+
+**This sharpens the dataset contribution rather than weakening it.** The claim is no longer "nobody
+has measured below stock on consumer GPUs" (false since 2013) but **"the open, reusable consumer
+DVFS data that exists sweeps at or above stock, so nobody can re-analyse the region where the
+optimum lives"** — which is checkable by anyone in about five minutes, against files this project
+already reads.
 
 ---
 
