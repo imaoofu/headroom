@@ -261,6 +261,60 @@ changed nothing. 0.925 V requested delivers 0.920 V under ~170 W load — vdroop
 voltage bin. **The deficit is real and reproduces, and is still unexplained.** Voltage, thermals,
 power and throttling are all eliminated. Do not re-run this test.
 
+### ⛔ THE LOAD-FLOOR RULE IS PUBLISHED PRIOR ART. Found 2026-09-12 by searching, not by a reviewer.
+
+**It is called the RIDGE POINT, and the mechanism below was stated in the same terms in 2022.**
+
+van Werkhoven et al., *"Going green: optimizing GPUs for energy efficiency through model-steered
+auto-tuning"* (arXiv [2211.07260](https://arxiv.org/abs/2211.07260), Kernel Tuner), defines the
+ridge point as the frequency at which core voltage stops being constant and begins rising, and
+states the consequence directly:
+
+> "Reducing the clock frequency beyond the ridge point does not make the GPU more energy
+> efficient, as performance drops with f while v is constant below the ridge point."
+
+That is this project's rule. Their measurements: **Tesla A100 ridge at 1025 MHz (70% of peak),
+RTX A4000 ridge at 1290 MHz (72%)**, with predicted energy-optimal clocks of 985 and 1298 MHz -
+"close to the observed ridge points". A second paper,
+[2607.00819](https://arxiv.org/html/2607.00819v1), models the same transition as a piecewise
+power fit on A40 / A100 / H100 / H200 and finds the efficiency optimum "clusters near f_t but does
+not necessarily coincide".
+
+🛑 **So "the efficiency optimum is the highest frequency the V/F curve reaches at the load floor"
+MUST NOT be presented as new.** This is the second time this project has had to retract a novelty
+claim after searching - the first was the voltage guardband on 2026-08-14 - and the lesson is the
+same one CLAUDE.md already states: **search before claiming, not after writing.**
+
+#### What actually survives, and it is not nothing
+
+The rule is prior art. These are not, as far as the 2026-09-12 search reached:
+
+1. 🔑 **The manipulation and its negative control.** Every prior result OBSERVES the correlation
+   between ridge point and optimum on the vendor's shipped curve. This project MOVES the floor by
+   hand - `abba-20260908` - and the optimum moves **+465 MHz in 12 of 12 workloads**; then changes
+   the curve **above** the floor by 570 MHz and the optimum moves by **nothing**. That is a causal
+   test of the mechanism rather than a correlation across cards, and the predictions were
+   registered before collection.
+2. **Consumer silicon.** The A100 is datacenter and the A4000 is a workstation card. The four
+   chips here are consumer parts across three architectures, including Blackwell.
+3. ⛔ **That the floor voltage is per card and does NOT transfer** - 0.631 / 0.720 / 0.756 /
+   0.812 V. The ridge-point work reports ridge FREQUENCIES, not floor voltages, and nothing found
+   says the voltage is unportable.
+4. **The boundary condition.** The RTX 2060 Super leaves its floor 6 mV at a time, which makes the
+   rule undecidable on that card. A rule stated without that condition looks more portable than it
+   is.
+5. **The crossbar-starvation result.** No prior work found linking a flattened V/F curve to a
+   pinned interconnect clock and a bandwidth plateau.
+
+⚠️ **It also STRENGTHENS the wrong-range argument rather than weakening it.** If the ridge point
+sits at 70-72% of peak clock, then the published consumer datasets that sweep 95-126% of boost are
+entirely above it - which is exactly why they find ~1-3% and this project finds 40%+.
+
+**Where this leaves the contribution:** not "we found the rule", but "we tested the rule causally,
+on consumer parts, and found where it breaks". That is a smaller claim and a defensible one.
+⚠️ **This paragraph is a search result, not a literature review.** Sections 2.1-2.5 of the paper
+need rewriting against it, and the search was four queries by one person in one sitting.
+
 ### 🔑 The efficiency optimum is the last frequency on the V/F curve's LOAD FLOOR (2026-09-08 → 09-10)
 
 **The single most transferable result in the project, and the only one now confirmed on two chips
