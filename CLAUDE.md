@@ -185,8 +185,24 @@ Mei et al. (HotPower 2013) reported ~19% savings below default on a GTX 480.
 
 **What survives is narrower and still worth stating:** the two *downloadable, reusable* datasets
 this project places on a common axis sweep a window only 22 points wide around their own default,
-so **they** cannot locate an optimum, and no prior source was found making that specific criticism
-of those specific artifacts. ⚠️ **The
+so **they** cannot locate an optimum.
+
+⛔ **THE SECOND HALF OF THAT SENTENCE - "no prior source was found making that specific criticism
+of those specific artifacts" - IS FALSE, FOUND 2026-09-13.** The criticism is made by the dataset's
+own authors, in the paper that releases it. Wang, Mei, Liu, Leung, Li & Chu, TPDS
+([arXiv:2104.00486](https://arxiv.org/abs/2104.00486)), §5.1.1 and §5.2, **read in full and every
+quotation verified against the PDF**: they publish the interval `f^Gc ∈ [0.89, g1(V^Gc)]` - **the
+0.89 is theirs** - attribute their 4.3% measured saving on the GTX 1080 Ti partly to *"The scaling
+intervals of f^Gc and f^Gm are narrow"*, and simulate a widened interval that reaches **36.4%**,
+noting the optimum sits *"close to the allowed lowest setting"* in both cases.
+
+✅ **This is the stronger position, and it is how the paper now states it.** Their 4.3% → 36.4% is
+structurally this project's 1.00% → 44.40%. **Cite them against their own artifact rather than
+claiming the observation** - prior art that corroborates cannot be lost to a paper turning up.
+⚠️ Their energy is SYSTEM-SCOPE at the wall against a 37 W idle floor, and their wide case is a
+SIMULATION with static power shrunk. **Never equate their 4.3% with this project's 1.00%.**
+🔑 What this project contributes is that wide sweep MEASURED on consumer silicon, where they
+could only simulate it. ⚠️ **The
 broad form — "the energy-optimal frequency on consumer GPUs lies below stock and nobody has measured
 it" — is refuted and must not be written anywhere.** Say "these datasets", never "nobody".
 
@@ -352,7 +368,12 @@ power and throttling are all eliminated. Do not re-run this test.
 
 **It is called the RIDGE POINT, and the mechanism below was stated in the same terms in 2022.**
 
-van Werkhoven et al., *"Going green: optimizing GPUs for energy efficiency through model-steered
+⛔ **IT IS "SCHOONHOVEN ET AL.", NOT "van WERKHOVEN ET AL."** - this file said the latter until
+2026-09-13 and the paper's reference list invented two co-authors. The arXiv author list is
+**Schoonhoven, Veenboer, van Werkhoven, Batenburg**; van Werkhoven is third. Verified against arXiv
+metadata, not against a summary, which is how the error got in.
+
+Schoonhoven et al., *"Going green: optimizing GPUs for energy efficiency through model-steered
 auto-tuning"* (arXiv [2211.07260](https://arxiv.org/abs/2211.07260), Kernel Tuner), defines the
 ridge point as the frequency at which core voltage stops being constant and begins rising, and
 states the consequence directly:
@@ -413,9 +434,27 @@ per-card" but **"borrowing another card's floor voltage mispredicts its optimum 
 amount"** (270 MHz, 3060 against 5060 Ti). ⚠️ Vmin and load-floor voltage are related but NOT the
 same quantity, and that distinction has not yet been read carefully in the source.
 
-**4. ✅ SURVIVES — the boundary condition.** The RTX 2060 Super leaves its floor 6 mV at a time,
-making the rule undecidable there. Nothing found reports the rule failing or being ambiguous on any
-hardware. ⚠️ An absence in a search, again, not a demonstrated gap.
+**4. ✅ SURVIVES, AND IS NOW MUCH STRONGER THAN AN ABSENCE (2026-09-13).** The RTX 2060 Super
+leaves its floor 6 mV at a time, making the rule undecidable there.
+
+🔑 **THE RIDGE-POINT LITERATURE HAS NEVER MEASURED A TURING V/F CURVE.** Verified by reading
+Schoonhoven et al. in full: voltage readback *"is only available with fairly recent NVIDIA drivers
+(510 and newer) **in combination with Ampere GPUs** (e.g. A100, A4000, A6000)"*. Their only Turing
+part, the Titan RTX, is in the group that cannot be read - *"For GPUs that do not support voltage
+readings, such as the Tesla V100 and Titan RTX, we extend the methodology... **We assume** based on
+our observations that for these GPUs there exists a threshold τf_t after which the voltage increases
+with a rate β"*. Their Equation 3 is a flat floor **by construction**, fitted from POWER, not
+voltage. Ridge points are reported for the A100 and A4000 only - both Ampere.
+
+⚠️ **A piecewise fit cannot detect the ABSENCE of a floor.** Fit two regimes to power data and it
+returns a breakpoint whatever the curve does. So neither Schoonhoven et al. nor Afzal et al. had a
+method that could have reported a 2060-Super-style ambiguity even if they had hit one. *(That is an
+inference from the form of both models, not a statement either paper makes - label it as such.)*
+
+✅ **So state what was DONE, not what was not found:** the 2060 Super is a MEASURED Turing V/F
+curve, on an architecture whose floor the ridge-point literature assumed rather than observed. That
+cannot be refuted by a paper turning up. **Retire the old wording** - "nothing found reports the
+rule failing" rested on an absence and was the weaker claim.
 
 **5. 🟡 PARTLY — the crossbar result.** The specific causal chain (flattened curve → pinned crossbar
 → bandwidth plateau, with a stock control, a quantified ratio collapse and a predicted repair) was
@@ -444,12 +483,18 @@ a description of the experiment cannot be refuted by a paper turning up. The cau
 negative control and the boundary condition are all in it; the rule itself is credited to the
 ridge-point literature above.
 
-⚠️ **What it must NOT grow back into:** not "we found the rule" (van Werkhoven 2022), not "we found
+⚠️ **What it must NOT grow back into:** not "we found the rule" (Schoonhoven 2022), not "we found
 it on consumer parts" (Mei 2013, Tang 2019), not "the floor voltage is per-card" (Leng 2015,
 Trakosa 2025). Full index of who owns what: `docs/RELATED-WORK.md`. Sections 2.1-2.5 of the paper need rewriting
 against all of this.
 
-📄 **The full log is `docs/PRIOR-ART-20260912.md`** - 8 agents, five search angles plus two
+📄 **There are now TWO logs, and the second corrects the first.**
+`docs/PRIOR-ART-20260913.md` is the post-rewrite pass - 3 agents, 55 queries - which found that
+§2.7's criticism is published by the dataset's own authors, that the ridge-point paper never
+measured a Turing V/F curve, and that two author attributions in the 09-12 log were wrong. ⚠️ Its
+largest hole: ~95 citing papers judged by TITLE ONLY, and forums and video barely reached.
+
+📄 **The first log is `docs/PRIOR-ART-20260912.md`** - 8 agents, five search angles plus two
 adversarial refutation passes, every citation marked full-text / abstract / snippet, and a limits
 section listing the venues, vocabularies and blocked sources it never reached.
 
@@ -486,7 +531,7 @@ Inspector for coarse. Same tool lineage; what changed is what it exposes. On Fer
 core voltage; on current consumer parts voltage cannot be set at all, only a per-point curve
 reshaped. That is the accurate statement, and the earlier one was written before anyone read the
 paper. ⚠️ Also unsearched: IEEE Xplore,
-the ACM DL directly, any citation-graph traversal of van Werkhoven, and Chinese-language venues -
+the ACM DL directly, Chinese-language venues -
 where a meaningful share of GPU DVFS measurement work, including HKBU's own, is published.
 
 ### 🔑 The efficiency optimum is the last frequency on the V/F curve's LOAD FLOOR (2026-09-08 → 09-10)

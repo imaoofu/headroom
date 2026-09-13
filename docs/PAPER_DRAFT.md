@@ -51,7 +51,7 @@ model only appears to win by violating the floor it was given.
 The central result concerns *where* the optimum sits, and it is a **causal test of a published
 relationship rather than a new one**. That the optimum coincides with the highest frequency the
 voltage-frequency curve reaches at its flat low-voltage region — the **ridge point** — was reported
-by van Werkhoven et al. (arXiv:2211.07260) on an A100 and an RTX A4000. Every prior treatment we
+by Schoonhoven et al. (arXiv:2211.07260) on an A100 and an RTX A4000. Every prior treatment we
 found *observes* that correspondence on the vendor's shipped curve. This work intervenes on it:
 
 > **On four consumer GPUs across three architectures, we reshape the vendor's voltage-frequency
@@ -220,7 +220,7 @@ benchmark workloads.
 
 ### 2.1.1 The ridge point
 
-The shape behind that savings curve is a published mechanism, not folklore. van Werkhoven et al.
+The shape behind that savings curve is a published mechanism, not folklore. Schoonhoven et al.
 [18] (*Going green: optimizing GPUs for energy efficiency through model-steered auto-tuning*,
 Kernel Tuner, arXiv:2211.07260) define the **ridge point** — the frequency at which core voltage stops
 being constant and begins rising — and state the consequence directly:
@@ -234,6 +234,21 @@ ridge points. **Both parts are datacenter and workstation silicon; neither is a 
 models the same transition as a piecewise power fit with a transition frequency f_t on A40, A100,
 H100 and H200, and reports that the energy optimum "clusters near f_t but does not necessarily
 coincide" — a qualification §5.5 also makes about its own result, on different hardware.
+
+**What their method can and cannot see.** Their voltage readback is architecture-limited, and they
+say so: querying core voltage *"is only available with fairly recent NVIDIA drivers (510 and newer)
+in combination with **Ampere** GPUs (e.g. A100, A4000, A6000)"*. For the rest — *"such as the Tesla
+V100 and Titan RTX"* — they do not measure voltage at all but estimate it, assuming *"there exists
+a threshold τf_t after which the voltage increases with a rate β"* and fitting that two-regime form
+to **power** data (their Equation 3). **The flat floor is an assumption of the model for those
+parts, not an observation of them**, and the two ridge points they report are both Ampere.
+
+Two consequences matter for §5.5. First, **no Turing voltage-frequency curve has been measured in
+this literature** — their one Turing part is in the group whose voltage could not be read — which is
+the architecture on which §5.5.7 reports the rule becoming undecidable. Second, a piecewise fit
+returns a breakpoint whatever the underlying curve does, so this class of method has no failure mode
+that reports "no floor here". *That second point is our inference from the form of the model, not a
+limitation either paper states.*
 
 **Positioning.** The mechanism, and its location on datacenter and workstation parts, is
 established. §5.5 tests it causally on consumer silicon rather than locating it: it reshapes the
@@ -465,6 +480,37 @@ datasets report — 1.00% and 3.34% — are bounded by that window rather than b
 remain unusable as evidence that consumer GPUs lack headroom, which is the only load this section
 needs them to bear. For consumer parts from Pascal onward, no released sweep descends far enough
 below default for the region to be re-analysed at all.
+
+⛔ **And this work does not get to claim that observation. The dataset's own authors made it first,
+in the paper that releases the artifact.** A draft of this section asserted that no prior source
+had criticised these specific artifacts on these grounds. That was false, and the refutation is in
+[22] §5.1.1 and §5.2. They state the interval:
+
+> "On our real GPU platform, the scaling interval is: V^Gc ∈ [0.8, 1.24], f^Gc ∈ [0.89, g1(V^Gc)],
+> f^Gm ∈ [0.8, 1.1]."
+
+— the **0.89 lower bound is their own published figure**, not an independent derivation here. They
+name the window as the cause of their small measured saving:
+
+> "Our realistic experiments show that the average energy conservation of 20 benchmarks is 4.3% for
+> GTX 1080Ti... The reason for this low effect is (1) The static power P_G0 takes a big portion in
+> the total power consumption; (2) **The scaling intervals of f^Gc and f^Gm are narrow.**"
+
+And they run the widened-window counterfactual, reporting that with `f^Gc ∈ [0.5, ...]` the average
+energy conservation "finally achieves an average value of **36.4%**", noting that in both cases "the
+optimal core voltage/frequency is relatively low, **close to the allowed lowest setting**" — a
+boundary optimum, which is what a window too narrow to contain the answer looks like from inside.
+
+**Their 4.3% → 36.4% is structurally the same argument as this work's 1.00% → 44.40%.** ⚠️ It is
+not the same measurement: theirs is **system energy at the wall** against a 37 W idle floor (24 W
+CPU, 13 W GPU), and their wide case is a **simulation with static power artificially shrunk**, not a
+measurement. Do not equate the two figures.
+
+✅ **This strengthens the section rather than weakening it, and it is the form to state.** The
+criticism is not this work's to claim — it is corroboration from the people who produced the data,
+and their own conclusion is that the honest version of the experiment requires a wider sweep than
+their platform allowed. **What this work contributes is that sweep, measured on real consumer
+silicon across four chips and three architectures, where [22] could only simulate it.**
 
 Both halves are checkable: the ranges via `analysis/compare_consumer.py`, which now prints each
 sweep against both reference boost and declared default, and the GTX 980 counter-example by opening
@@ -1972,7 +2018,7 @@ while runtime grows as 1/f — the two roughly cancel — and P_fixed does not s
 job takes longer. Efficiency stops improving and then declines.
 
 **The prediction is therefore specific: the efficiency optimum should sit at the last frequency at
-which voltage is still falling.** This relationship is not new: van Werkhoven et al. define it as the
+which voltage is still falling.** This relationship is not new: Schoonhoven et al. define it as the
 **ridge point** and state the same consequence — "reducing the clock frequency beyond the ridge point
 does not make the GPU more energy efficient, as performance drops with f while v is constant below
 the ridge point" (*Going green: optimizing GPUs for energy efficiency through model-steered
@@ -3450,8 +3496,13 @@ claimed for it, which is a different state from an open measurement.
 
 **Verified** — primary source opened, quoted figures confirmed against it:
 
-- [18] **van Werkhoven, Willemsen, Schoonhoven, Nieuwpoort.** *Going green: optimizing GPUs for
+- [18] **Schoonhoven, Veenboer, van Werkhoven, Batenburg.** *Going green: optimizing GPUs for
   energy efficiency through model-steered auto-tuning.* arXiv:2211.07260, 2022 (Kernel Tuner).
+  ⛔ **This entry read "van Werkhoven, Willemsen, Schoonhoven, Nieuwpoort" for one day.** Two of
+  those names do not appear on the paper and the author order was wrong; Schoonhoven is first
+  author. Verified against arXiv metadata 2026-09-13. The short form is **Schoonhoven et al.**, and
+  this project called it "Schoonhoven et al." throughout for the same reason the ICPP paper was
+  "Guerreiro" for months - a name repeated from a summary and never checked against the source.
   *Read in full 2026-09-12.* 🛑 **The source of this project's largest retraction.** Defines the
   **ridge point** — the frequency at which core voltage stops being constant and begins rising —
   and states the consequence this project had believed was its own: *"Reducing the clock frequency
@@ -3497,7 +3548,14 @@ claimed for it, which is a different state from an open measurement.
   2070 Super 1880 / 6300 — and those are the numbers that corrected §2.7.** Scored against them
   rather than against a specs-database reference clock, neither sweep is an overclocking sweep:
   each brackets its own default, two of five core points below it. Every declared value lands
-  exactly on a swept grid point in both axes.
+  exactly on a swept grid point in both axes. ⛔ **It is also the source of §2.7's central
+  observation, which this work briefly claimed as its own** - §5.1.1 states the 0.89 lower bound,
+  §5.2 attributes their 4.3% measured saving on the GTX 1080 Ti partly to "the scaling intervals
+  ... are narrow", and simulates a widened interval reaching 36.4%. *Read in full 2026-09-13; every
+  quotation verified against the PDF.* ⚠️ Their energy is **system-scope at the wall** against a
+  37 W idle floor, and the wide case is simulated with static power shrunk - not comparable to this
+  work's board-power figures. ⚠️ The paper's own reported experiments are the GTX 1080 Ti; the
+  RTX 2070 Super appears in the repository's configuration table, not in the arXiv text.
 
 - [3] Maliakel, Ilager, Brandic. *Characterizing LLM Inference Energy-Performance Tradeoffs across
   Workloads and GPU Scaling.* arXiv:2501.08219.

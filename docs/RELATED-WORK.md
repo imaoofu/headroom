@@ -23,7 +23,7 @@ here; the links below are how you get them back.
 These four decide what can and cannot be claimed. Read these before writing any contribution
 statement.
 
-### ⛔ van Werkhoven et al. — the ridge point. **THE retraction source.**
+### ⛔ Schoonhoven et al. — the ridge point. **THE retraction source.**
 *Going green: optimizing GPUs for energy efficiency through model-steered auto-tuning* (Kernel
 Tuner). arXiv **[2211.07260](https://arxiv.org/abs/2211.07260)**, 2022. **Read in full.**
 
@@ -271,6 +271,83 @@ GTX 980 counter-example by opening
 
 ---
 
+## 7. Found 2026-09-13, in the post-rewrite search pass
+
+### ⛔ Wang, Mei, Liu, Leung, Li, Chu — TPDS. **The narrow-window criticism is THEIRS.**
+
+[arXiv:2104.00486](https://arxiv.org/abs/2104.00486) — **read in full; every quotation below
+verified against the PDF, not a summary.** Artifact: `HKBU-HPML/GPU-DVFS-Job-Schedule`, the repo
+`scripts/Get-Dataset.ps1` downloads both consumer CSVs from.
+
+§5.1.1 publishes the platform interval `V^Gc ∈ [0.8, 1.24], f^Gc ∈ [0.89, g1(V^Gc)], f^Gm ∈
+[0.8, 1.1]` and the default `(1.05 V, 1800 MHz, 5000 MHz)`. **The 0.89 and the 1800 MHz are their
+figures.** §5.2 attributes their low measured saving to the window — *"the average energy
+conservation of 20 benchmarks is 4.3% for GTX 1080Ti... The reason for this low effect is (1) The
+static power P_G0 takes a big portion...; (2) The scaling intervals of f^Gc and f^Gm are narrow"* —
+then simulates a widened interval reaching **36.4%**, with the optimum *"close to the allowed lowest
+setting"* in both cases.
+
+🔑 **Cite them FOR the argument, never claim it.** Their 4.3% → 36.4% is structurally this
+project's 1.00% → 44.40%. ⚠️ **System-scope energy** at the wall against a 37 W idle floor (24 W
+CPU, 13 W GPU), and the wide case is a **simulation with static power shrunk** — not comparable to
+board-power figures, and not a measurement. That last point is the opening: they could only simulate
+the wide window; this project measures it.
+
+### 🟡 Price, Clark, Barsdell, Babich, Greenhill — K20 firmware voltage tables, 2014
+
+[arXiv:1407.8116](https://arxiv.org/abs/1407.8116) — **read in full.** ⛔ `PRIOR-ART-20260912.md`
+calls this "Mei et al.'s K20 firmware study". **It is not a Mei paper** — Harvard-Smithsonian CfA,
+with two NVIDIA co-authors. Verified against arXiv metadata.
+
+They reprogrammed a K20's firmware with **GPU-Z + Kepler BIOS Tweaker** so core voltages V1–V5 were
+**fixed to 900 / 912.5 / 925 / 950 / 987.5 mV**. That is a **per-point voltage-table edit**, closer
+to this project's method than HotPower 2013's global voltage setting. Headline: **37–48% perf/W**
+over default by combining undervolt, overclock and cooling.
+
+✅ **The causal claim survives, narrowly.** Under the *modified* table they hold frequency
+**constant at 800 MHz** and sweep temperature; they never sweep frequency under an edited table, and
+report no interior optimum (efficiency rises monotonically to their stability edge). So the optimum
+is never shown to MOVE. ⚠️ **But "nobody edits a voltage table per point" was never true** — do
+not write it. 🔑 Their Figure 4a also reports **unexplained repeatable power drops** under a
+modified voltage table, attributed to regulator efficiency — worth reading against this project's
+still-unexplained ~71 MHz curve-fixed `gemm` ceiling deficit.
+
+### ⚠️ The XBAR domain was public EARLIER than §4 of this file records
+
+§4 dates the XBAR prior art to LACT #1147 (2026-08-10). **A GIGAZINE news report dated 2026-06-08**
+— `gigazine.net/gsc_news/en/20260608-rtx-5090-external-clock/` — describes RTX 5090 vBIOS work in
+which *"the crossbar clock, which affects the connection speed inside the GPU, can only be partially
+adjusted by swapping the vBIOS"*, treats it as a binning indicator (~2700 MHz a good bin), and
+reports a modified card reaching ~2920 MHz. **Two months earlier than the date currently recorded.**
+
+⚠️ **READ AS A NEWS REPORT ONLY.** The primary source is work by "PickleRick" on the XtremeSystems
+forum, which was **not reached** — that forum thread is the highest-priority follow-up, because the
+GIGAZINE summary contains no bandwidth measurement, no crossbar/core ratio, and no coupling to
+voltage. **The causal chain is untouched; only the date on the domain fact moves.** A third
+independent source (`kovasky.me`, Blackwell XBAR via direct ioctl) also exists, snippet only.
+
+### ⚠️ mVolt+ — an undocumented voltage WRITE path now exists publicly on RTX 50-series
+
+`github.com/b00nz/mVolt`, covered by igor'sLAB / VideoCardz / KitGuru — **snippet only, not
+tested.** Exposes Core, XBAR, SYS and Video domain voltage controls plus curve editing on Blackwell.
+🔑 **Operationally relevant, not prior art.** CLAUDE.md's "voltage cannot be written through any
+*documented* API" stays true as written, but an undocumented public write path on this exact
+architecture changes what is feasible. Coverage notes its wattage figures are community results,
+"not repeatable lab validation". Related: **LACT issue #936** (2026-03-07, full text) —
+reverse-engineered 128-point V/F curve read and per-point offsets via `ClockClientClkVfPointsSetControl`,
+the same undocumented entry point CLAUDE.md lists as out of scope. **No efficiency measurements in
+either.**
+
+🔑 **And the technique is not novel even in the enthusiast world.** Region-by-region curve
+reshaping — raise a chosen mV point, flatten everything above it — is the standard undervolting
+recipe since GPU Boost 3.0, documented by igor'sLAB among others. **The contribution sentence's
+"we reshape the curve region by region" describes a Tuesday to anyone who undervolts.** The
+load-bearing half is what follows it: that the optimum tracks the floor region and not the region
+above, measured, with a control. Nothing found measures where the optimum LANDS under different
+reshapes; enthusiast sources measure "same FPS, less power" at one operating point.
+
+---
+
 ## Corrections made while verifying citations
 
 **Kept because the pattern is the point: every one came from a second-hand summary.**
@@ -286,6 +363,18 @@ GTX 980 counter-example by opening
   content less wrong.**
 - ⛔ **"They had more control than this project does ... which is why this project uses
   Afterburner"** — **wrong.** HotPower 2013 used Afterburner too. Written before anyone read it.
+- ⛔ **arXiv 2211.07260 attributed to "van Werkhoven et al."**, and its reference entry listed
+  **"van Werkhoven, Willemsen, Schoonhoven, Nieuwpoort"** — **wrong twice.** Two of those names are
+  not on the paper, and van Werkhoven is the THIRD author. It is **Schoonhoven, Veenboer, van
+  Werkhoven, Batenburg**. 🔑 **This is the source of the project's largest retraction, and its
+  author list was invented** - written from memory of a summary, in the same hours the search rule
+  was being celebrated for catching things.
+- ⛔ **arXiv 1407.8116 attributed to "Mei et al."** in `PRIOR-ART-20260912.md` — **wrong.** It is
+  Price, Clark, Barsdell, Babich & Greenhill. Caught only because a later pass opened it, and the
+  paper turned out to matter more than the log had judged.
+- ⛔ **Reference [10] carried NO author at all** (Afzal et al.) while this index recorded one the
+  whole time. 🔑 **The index and the bibliography were never reconciled**, which is the same gap
+  the Guerreiro error lived in.
 - ⛔ **ICPP 2019 attributed to "Guerreiro et al."** — **wrong.** It is Fan, Cosenza and Juurlink.
   🔑 **The wrong name sat under a note saying "read this before finalising any novelty claim",
   for months, while two novelty claims fell.** A citation nobody can look up is a citation nobody
