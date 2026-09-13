@@ -33,11 +33,34 @@ Run: python tools/frequency-sweep/test_workload_result_verdict.py
 """
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 HELPER = Path(__file__).resolve().parent / "WorkloadResultVerdict.ps1"
+
+# Windows PowerShell 5.1 FIRST, because that is what the sweep actually runs under and several of
+# its behaviours are version-specific. pwsh is a fallback so the suite is not simply absent on a
+# Linux runner - but a pass under pwsh is weaker evidence, and the banner below says which ran
+# rather than letting the distinction disappear into a green tick.
+SHELL = shutil.which("powershell") or shutil.which("pwsh")
+
+if SHELL is None:
+    # CI runs this matrix on ubuntu-latest as well as windows-latest, and neither shell need be
+    # present. Exiting 0 with an explicit sentence is deliberate: the alternative is a red build
+    # on a platform the tool under test cannot run on, which trains people to ignore red.
+    print("[SKIP] test_workload_result_verdict: no PowerShell on this platform, so "
+          "WorkloadResultVerdict.ps1 was NOT exercised in this run. The sweep's guard against a "
+          "workload that never launched is therefore unverified here - it is verified on the "
+          "windows-latest leg, which is the platform the sweep runs on.")
+    raise SystemExit(0)
+
+print(f"[INFO] Exercising WorkloadResultVerdict.ps1 through {Path(SHELL).name}.")
+if Path(SHELL).name.lower().startswith("pwsh"):
+    print("[INFO] This is PowerShell 7, NOT the 5.1 the sweep runs under. Version-specific "
+          "behaviour - notably how @() enumerates ConvertFrom-Json output - differs between "
+          "them, so a pass here does not stand in for the windows-latest leg.")
 
 failures = []
 
@@ -69,10 +92,16 @@ def verdictFor(rows, workloadCommanded=True):
     # -ExecutionPolicy Bypass applies to THIS process only and changes no system setting. It is
     # needed because the default policy refuses to dot-source a .ps1 from a freshly spawned
     # shell, which is how this suite differs from an operator running the sweep interactively.
+    #
+    # It is WINDOWS ONLY. Execution policy does not exist on Linux or macOS, and pwsh there
+    # rejects the switch outright rather than ignoring it - which would fail the ubuntu leg of CI
+    # for a reason that has nothing to do with the code under test.
+    command = [SHELL, "-NoProfile", "-NonInteractive"]
+    if sys.platform == "win32":
+        command += ["-ExecutionPolicy", "Bypass"]
+    command += ["-Command", script]
     completed = subprocess.run(
-        ["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-         "-Command", script],
-        input=json.dumps(rows), capture_output=True, text=True, timeout=120)
+        command, input=json.dumps(rows), capture_output=True, text=True, timeout=120)
     # PowerShell returned exit 0 while failing to load the script at all when this was written,
     # so the exit code is not sufficient evidence that anything ran. Empty stdout is.
     if completed.returncode != 0 or not completed.stdout.strip():
