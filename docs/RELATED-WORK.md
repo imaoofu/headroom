@@ -230,21 +230,38 @@ The open question left after the survey read. Answered three ways:
 2. **The same group DID release consumer DVFS data**, but under different papers: Wang & Chu's
    ICPADS 2018 work, via `HKBU-HPML/NV-DVFS-Benchmark`. That repo holds GTX 980, GTX 1080 Ti,
    Titan X, P100 and V100 CSVs.
-3. ⛔ **And those released files sweep the WRONG WAY.** In
-   `gtx980-low-dvfs-real-small-workload-features.csv` the `coreF` and `memF` columns are
-   **normalised multipliers taking exactly the values 1.0, 1.2, 1.4, 1.6, 1.8, 2.0** — from base
-   *upward*, with no below-base point anywhere. Same signature this project already measured in the
-   1080 Ti file (101–126% of rated boost).
+3. ⛔ **A claim stood here saying those released files sweep the wrong way. It was FALSE and is
+   retracted.** See the box below.
 
-🔑 **So the below-default measurement in the 2017 survey's Figures 7–8 — 30 of 42 kernels
-minimising below the default clock — was never released as data.** The finding is published; the
-data behind it is not.
+⛔ **RETRACTED 2026-09-13, hours after it was written, by the person who wrote it.** The claim
+was: *"the open, reusable consumer DVFS data that exists sweeps at or above stock"*, on the evidence
+that `coreF`/`memF` in the HKBU release are normalised multipliers 1.0 to 2.0. **That was read off a
+`*-features.csv`. The `*-Performance-Power.csv` files — the ones this project actually analyses —
+carry absolute megahertz, and the two GTX 980 files sweep 500-1000 MHz and 700-1500 MHz against a
+950 MHz default.** Below-stock consumer data is released, downloadable, and was released in 2018.
 
-**This sharpens the dataset contribution rather than weakening it.** The claim is no longer "nobody
-has measured below stock on consumer GPUs" (false since 2013) but **"the open, reusable consumer
-DVFS data that exists sweeps at or above stock, so nobody can re-analyse the region where the
-optimum lives"** — which is checkable by anyone in about five minutes, against files this project
-already reads.
+🔑 **A conclusion drawn from one file of the wrong kind. The fifth retraction in two days and the
+only one that was self-inflicted rather than inherited** - and it reached CLAUDE.md, the roadmap,
+the paper's abstract and conclusion, a to-do list and four commit messages before `compare_consumer`
+was opened and found to read a different file than the one that had been sampled.
+
+**What survives is generational and narrower.** Every consumer part in that release later than
+Maxwell sweeps at or above stock - GTX 1080 Ti and Titan X at 1600-2000 MHz, RTX 2070 Super at
+95-118% of boost. **The below-stock consumer releases stop at the GTX 980, a 2014 part.** So for
+Pascal onward there is no released sweep of the region where the optimum sits, which is what this
+project's four chips across Turing, Ampere and Blackwell provide.
+
+**The dataset contribution survives in its generational form**, and is checkable both ways: the
+above-stock ranges via `analysis/compare_consumer.py`, and the GTX 980 counter-example by opening
+`csvs/raw/gtx980-low-dvfs-real-small-workload-Performance-Power.csv` in that same repository.
+
+| released consumer file | coreF range | vs its default |
+|---|---|---|
+| `gtx980-low-...-Performance-Power` | **500–1000 MHz** | **below** (950 MHz default) |
+| `gtx980-high-...-Performance-Power` | **700–1500 MHz** | spans it |
+| `gtx1080ti-dvfs-real-Performance-Power` | 1600–2000 MHz | at/above |
+| Titan X | 1600–2000 MHz | at/above |
+| RTX 2070 Super | 95–118% of boost | at/above |
 
 ---
 

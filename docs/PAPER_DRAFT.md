@@ -26,11 +26,11 @@ Graphics processors ship with conservative default operating points, because a v
 voltage-frequency behaviour must hold across millions of individually varying dies for a warranty
 period measured in years. That margin, and the fact that a GPU's energy-optimal core frequency
 lies below its default clock, are established results on hardware from 2013 through 2022 — on
-consumer parts as well as datacenter ones. What is not available is the **data**. The consumer DVFS
-measurements we could locate are published as figures rather than as released sweeps, and the
-consumer collections that *are* downloadable sweep core frequency at and above the card's rated
-boost clock — 101–126% and 95–118% of it — while the efficiency optimum lies *below* stock. A
-reader wishing to re-analyse the region where the optimum sits, on current silicon, has nothing to
+consumer parts as well as datacenter ones. **What is not available, for silicon later than 2014, is
+the data.** The one released consumer collection that sweeps below stock covers a GTX 980; every
+consumer part released alongside it from Pascal onward is swept at or above rated boost — 101–126%
+and 95–118% of it — while the efficiency optimum lies *below* stock. A reader wanting to re-analyse
+the region where the optimum sits, on any consumer architecture after Maxwell, has nothing to
 re-analyse.
 
 This work contributes an open dataset of consumer-GPU frequency, power and performance
@@ -411,15 +411,42 @@ it assumes corruption will occur and engineers around it. This work stays inside
 and treats a driver crash as a failure rather than an input (§3.5), so the two are not alternatives
 to one another.
 
-### 2.7 Existing public datasets, and why they are insufficient
+### 2.7 Existing public datasets, and the gap between measurement and release
+
+The below-stock efficiency optimum on consumer silicon is not an unmeasured quantity. Mei, Wang and
+Chu [19] swept an ASUS Strix GTX 980 from 480 to 1080 MHz against a 950 MHz default and found 30 of
+42 kernels minimising GPU-level energy below that default, half of them between 680 and 880 MHz —
+board-level, below-default, on a GeForce card, in 2017. Mei, Yung, Zhao and Chu [20] preceded it in
+2013, sweeping a GTX 560 Ti through Afterburner. **What is missing from both is not the measurement
+— it is a downloadable file that contains it.** Neither carries a data-availability statement or a
+dataset link; every reference in both resolves to a vendor page or a measurement tool, never to
+data.
 
 | Dataset | Hardware | Core sweep (% of rated boost) | Suitable for efficiency-optimum questions? |
 |---|---|---|---|
 | GPU-DVFS-Dataset [6] | 1× Tesla V100 | 55–111% | **Yes** — spans below stock |
-| HKBU-HPML [7] | GTX 1080 Ti | 101–126% | **No** — at/above stock only |
-| HKBU-HPML [7] | RTX 2070 Super | 95–118% | **No** — at/above stock only |
+| Wang & Chu [21] | GTX 1080 Ti | 101–126% | **No** — at/above stock only |
+| Wang & Chu [21] | RTX 2070 Super | 95–118% | **No** — at/above stock only |
 
-This is a contribution in its own right and is reproducible via `analysis/compare_consumer.py`.
+The two consumer rows are not [19]'s data. They come from a later, separate paper by the same
+research group — Wang & Chu, ICPADS 2018, released as `HKBU-HPML/NV-DVFS-Benchmark` [21].
+
+⚠️ **That artifact DOES contain below-stock consumer sweeps, and an earlier draft of this section
+claimed otherwise.** Its two GTX 980 files sweep core frequency **500–1000 MHz** and
+**700–1500 MHz** against a 950 MHz default — comfortably below stock, released, and downloadable.
+The error came from reading a companion *features* file in the same repository, whose frequency
+columns are normalised multipliers rather than absolute megahertz, and generalising from it.
+
+**The gap is therefore generational, and narrower than "the data sweeps the wrong range".** Every
+consumer part in that release later than Maxwell sweeps at or above stock: the GTX 1080 Ti and
+Titan X files both cover 1600–2000 MHz, and the RTX 2070 Super covers 95–118% of rated boost. The
+below-stock consumer releases stop at the GTX 980, a 2014 part.
+
+So for consumer silicon from Pascal onward — through Turing, Ampere, Ada and Blackwell — a reader
+wanting to re-analyse the region where the efficiency optimum sits has no released sweep to work
+from. That is the gap this dataset closes, and both halves of the claim are checkable against files
+in a public repository: the ranges above via `analysis/compare_consumer.py`, and the GTX 980
+counter-example by opening `csvs/raw/gtx980-low-dvfs-real-small-workload-Performance-Power.csv`.
 
 ### 2.7.1 The strongest counter-result found, and it is not dismissed
 
@@ -515,7 +542,7 @@ conservative default those are far apart; on a consumer card boosting to near it
 close. Any comparison of the two numbers must say which baseline it means.
 
 ⚠️ **Both consumer rows are the same citation.** They are two cards from one released collection
-[7], not two independently produced datasets, and **no systematic survey established that they are
+[21], not two independently produced datasets, and **no systematic survey established that they are
 the only public consumer DVFS sweeps in existence.** The claim made here is therefore about the
 consumer DVFS data we were able to locate, not about a surveyed population. That distinction is
 stated rather than glossed because this project has already retracted one novelty claim for
@@ -3424,10 +3451,12 @@ claimed for it, which is a different state from an open measurement.
 - [21] **Wang, Chu.** *GPGPU Performance Estimation with Core and Memory Frequency Scaling.*
   ICPADS 2018, pp. 417–424. Artifact: `github.com/HKBU-HPML/NV-DVFS-Benchmark` (branch `master`).
   🔑 **The actual origin of the GTX 1080 Ti and GTX 980 CSVs this paper analyses**, which earlier
-  drafts attributed only to an unnamed "HKBU-HPML [7]". ⛔ Its released files carry `coreF` and
-  `memF` as **normalised multipliers taking exactly 1.0, 1.2, 1.4, 1.6, 1.8, 2.0** — base upward,
-  with no below-base point — which is the basis of §2.7's claim about data availability rather than
-  about priority.
+  drafts attributed only to an unnamed "HKBU-HPML [7]". ⚠️ **It also releases below-stock consumer sweeps** — its two
+  GTX 980 files cover 500–1000 MHz and 700–1500 MHz against a 950 MHz default. Every part in the
+  release later than Maxwell does not: GTX 1080 Ti and Titan X at 1600–2000 MHz, RTX 2070 Super at
+  95–118% of boost. §2.7's claim is therefore generational, and a draft of this entry stated it far
+  too broadly on the strength of a companion `*-features.csv` whose frequency columns are
+  normalised rather than absolute.
 
 - [3] Maliakel, Ilager, Brandic. *Characterizing LLM Inference Energy-Performance Tradeoffs across
   Workloads and GPU Scaling.* arXiv:2501.08219.
@@ -3441,8 +3470,10 @@ claimed for it, which is a different state from an open measurement.
   efficiency gain for 5.8% performance loss**, which is performance-constrained and therefore not
   the same quantity as this project's unconstrained 44.4% (§5.1). The two must not be compared
   directly as if one beats the other.
-- [7] HKBU-HPML DVFS datasets. `github.com/HKBU-HPML/GPU-DVFS-Job-Schedule`,
-  `github.com/HKBU-HPML/NV-DVFS-Benchmark`
+- [7] HKBU-HPML/GPU-DVFS-Job-Schedule. `github.com/HKBU-HPML/GPU-DVFS-Job-Schedule` — later
+  scheduling work from the same research group as [19]–[21], not a data source for §2.7's table.
+  The GTX 1080 Ti and RTX 2070 Super rows there come from `HKBU-HPML/NV-DVFS-Benchmark` instead,
+  credited to Wang & Chu, ICPADS 2018, as [21] — which also releases below-stock GTX 980 sweeps.
 - [8] Leng, Buyuktosunoglu, Bertran, Bose, Janapa Reddi. *Safe Limits on Voltage Reduction
   Efficiency in GPUs: a Direct Measurement Approach.* MICRO-48, December 2015. IBM T.J. Watson
   Research Center / University of Texas at Austin.

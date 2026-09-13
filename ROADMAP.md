@@ -710,14 +710,29 @@ have failed. Cite Mei and move on.
 **The spine is the DATASET, and it got sharper rather than weaker on 2026-09-13.** The claim is no
 longer "nobody measured below stock" but:
 
-> 🔑 **The open, reusable consumer DVFS data that exists sweeps at or above stock, so nobody can
-> re-analyse the region where the optimum lives.**
+> 🔑 **For consumer silicon later than Maxwell, no released sweep covers the region where the
+> optimum lives.**
 
-Verified: the HKBU releases (`HKBU-HPML/NV-DVFS-Benchmark` — also the origin of the GTX 1080 Ti file
-this project uses) carry `coreF`/`memF` as normalised multipliers **1.0, 1.2, 1.4, 1.6, 1.8, 2.0** —
-base upward, no below-base point. **The below-default result in Mei's own Figures 7–8 was never
-released as data.** That claim is about artifacts, not priority, so it cannot be lost to a paper
-turning up.
+⛔ **RETRACTED 2026-09-13, hours after it was written, by the person who wrote it.** The claim
+was: *"the open, reusable consumer DVFS data that exists sweeps at or above stock"*, on the evidence
+that `coreF`/`memF` in the HKBU release are normalised multipliers 1.0 to 2.0. **That was read off a
+`*-features.csv`. The `*-Performance-Power.csv` files — the ones this project actually analyses —
+carry absolute megahertz, and the two GTX 980 files sweep 500-1000 MHz and 700-1500 MHz against a
+950 MHz default.** Below-stock consumer data is released, downloadable, and was released in 2018.
+
+🔑 **A conclusion drawn from one file of the wrong kind. The fifth retraction in two days and the
+only one that was self-inflicted rather than inherited** - and it reached CLAUDE.md, the roadmap,
+the paper's abstract and conclusion, a to-do list and four commit messages before `compare_consumer`
+was opened and found to read a different file than the one that had been sampled.
+
+**What survives is generational and narrower.** Every consumer part in that release later than
+Maxwell sweeps at or above stock - GTX 1080 Ti and Titan X at 1600-2000 MHz, RTX 2070 Super at
+95-118% of boost. **The below-stock consumer releases stop at the GTX 980, a 2014 part.** So for
+Pascal onward there is no released sweep of the region where the optimum sits, which is what this
+project's four chips across Turing, Ampere and Blackwell provide.
+
+That claim is about artifacts rather than priority, so it cannot be lost to a paper turning up —
+but as the retraction above shows, it can still be lost to reading the wrong file.
 
 **Three goals, in order:**
 
