@@ -417,27 +417,33 @@ LACT issue it cites for the XBAR domain is real - `ilya-zlobintsev/LACT#1147`, o
 two weeks before this project's own crossbar result on a different Blackwell chip. And the Tang et
 al. abstract was read directly, confirming the below-default claim.
 
-✅ **THE BIGGEST UNCLOSED RISK IS CLOSED — Raymond read the HotPower 2013 paper the search could
-not fetch (403).** It scales **core voltage AND frequency directly** on consumer GeForce parts
-across **37 applications**, sweeping fcore 480-880 MHz at fixed 1.049 V and 0.849 V, with core
-offsets -200 to +50 mV and ~19% energy saved at -200 mV. **C is confirmed prior art and more
-strongly than the search had it.**
+✅ **HOTPOWER 2013 HAS NOW BEEN READ IN FULL** (2026-09-13, all five pages, from a PDF the operator
+supplied after the fetch returned 403). It is **ONE GTX 560 Ti**, 37 benchmarks, fcore 480-880 MHz
+at fixed 1.049 V and 0.849 V, **whole-system energy at the wall against an 85 W idle floor**. The
+GTX 280 and GTX 480 that earlier summaries attributed to it are in its RELATED WORK.
 
-🔑 **It also corrected the search's own citation.** The snippet said "GTX 480, 480-1080 MHz"; the
-paper fixes two voltages and sweeps 480-880. **A citation this project marked `search snippet only`
-was wrong in its details, and only a human read caught it** - the marking worked, the citation did
-not.
+⛔ **CLAIM A IS PARTIALLY PRE-EMPTED, by one sentence:** *"for Kmeans, scaling down f_core can save
+energy when V_core = 1.049 V, but this situation does not hold anymore when V_core = 0.849 V. It is
+an interesting research problem to find the optimal f_core..."* **Change the voltage and the
+energy-optimal frequency changes with it — observed on a consumer GPU, through Afterburner, in
+2013.** Never write "nobody has changed voltage and seen the optimum move". What survives is the
+SYSTEMATIC, REGIONAL, CONTROLLED version: they never located where it moved to, it was one
+benchmark of 37 raised as an aside and then abandoned, they shifted global voltage rather than
+reshaping a region, and there was no negative control.
 
-⚠️ **Claim A is NOT pre-empted on that evidence, but it is closer than anything else found.** Their
-`f*core` is the maximum STABLE frequency at a voltage - a stability frontier, like Leng's Vmin -
-not the point where the vendor's curve stops lowering voltage. Their per-program "best voltage"
-sits at 0.85 V, the bottom edge of the tested range, so it is a range limit rather than a located
-optimum. And there is no negative control. ⛔ **The decisive unchecked question: does the paper
-anywhere report the energy-optimal FREQUENCY moving as a consequence of the voltage change?**
-Until the body text is checked, treat A as open.
+🔑 **THEIR FREQUENCY RESULT RUNS THE OPPOSITE WAY TO OURS, AND THE REASON IS THE MEASUREMENT
+SCOPE.** Only 5 of 37 applications benefit from lower f_core; for the other 32 "energy consumption
+suffers a lot". **They measure WHOLE-SYSTEM energy against an 85 W idle floor of which only 29 W is
+the card**, so stretching runtime bills the system's fixed power for every extra second - `P_fixed`
+at system scale. This project measures board power. ⚠️ **Do not cite HotPower 2013 as evidence
+against low-frequency headroom, and state the scope of the energy term every time.**
 
-🔑 **The paper had MORE control than this project does** - voltage was directly writable then, and
-on current consumer parts it is not. That is a better reason for redoing the work than novelty. ⚠️ Also unsearched: IEEE Xplore,
+⛔ **AND IT CORRECTS WHAT THIS FILE SAID ABOUT IT ON 2026-09-12.** That entry claimed "they had MORE
+control than this project does". **They used Afterburner too** - 2.3.0 for fine adjustment, NVIDIA
+Inspector for coarse. Same tool lineage; what changed is what it exposes. On Fermi it set a global
+core voltage; on current consumer parts voltage cannot be set at all, only a per-point curve
+reshaped. That is the accurate statement, and the earlier one was written before anyone read the
+paper. ⚠️ Also unsearched: IEEE Xplore,
 the ACM DL directly, any citation-graph traversal of van Werkhoven, and Chinese-language venues -
 where a meaningful share of GPU DVFS measurement work, including HKBU's own, is published.
 
