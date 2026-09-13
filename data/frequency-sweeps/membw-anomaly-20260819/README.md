@@ -1,11 +1,9 @@
 # Separating the two tuning knobs — 2026-08-19 / 2026-08-20
 
-⚠️ **One sweep here is not described below, recorded 2026-09-11.**
-`20260821-222416_5060ti-splitcurve-membw_sweep.csv`, with a paired voltage extract, is a
-genuine 10-point 1400-2100 MHz `membw` sweep of the **split curve**, taken a day after the
-last run this README walks through. This file numbers every other run individually and
-skips that one. It is collected data rather than scaffolding - its JSON carries
-`session_label: "5060ti-splitcurve-membw"`.
+✅ **The sweep this file used to skip now has its own section**, at the bottom:
+[the split curve's `membw` sweep](#the-split-curves-membw-sweep--collected-data-with-two-defects).
+Recorded as a gap 2026-09-11, closed 2026-09-12. Reading it turned up two defects that are
+themselves worth more than the sweep is.
 
 > **Folder name is narrower than its contents.** It began as a `membw` investigation and now
 > also holds the `gemm` separation run. Kept as-is so existing links stay valid.
@@ -504,3 +502,75 @@ a 18–26% power reduction on compute-bound work.
 - **n = 1 chip**, and one profile. Nothing here generalises to other cards or other curves.
 - **Sequential, not interleaved.** Temperature rose 42 → 52 °C within each run. The drift is
   similar in both so it does not obviously bias the comparison, but it is not controlled.
+
+
+---
+
+# The split curve's `membw` sweep — collected data with two defects
+
+`20260821-222416_5060ti-splitcurve-membw`, plus a paired voltage extract. A genuine 10-point
+1402–2100 MHz `membw` sweep of the **split curve**, taken 2026-08-21, a day after every other run
+above. Driver 610.88, 200 W limit, 10 of 10 frequencies measured.
+
+**It is collected data, not scaffolding.** But it cannot carry a comparison, for two reasons that
+only appear on reading its JSON.
+
+## ⛔ Defect 1: `applied_settings` is null
+
+The one field nothing else can reconstruct is empty. What "split curve" means here rests entirely
+on `session_label: "5060ti-splitcurve-membw"` — a string the operator typed, with no probe of the
+card behind it.
+
+🔑 **Compare the stability runs of 2026-08-23, two days later, which probe the configuration before
+starting and record the reading**: core clock at a locked 3090 target, memory clock under load, and
+what each value distinguishes. That habit exists because of gaps like this one. This sweep predates
+it.
+
+⚠️ **Null does NOT mean stock.** The sweep tool's own docstring says so. Treat the configuration as
+*claimed* rather than *verified*.
+
+## ⛔ Defect 2: schema 0.1.0, so no video-engine telemetry
+
+There is no encoder or decoder column, so the quiet-machine check cannot be applied retrospectively.
+The run is dated 2026-08-21 — **the day before** §5.4.4 established that NVIDIA Instant Replay
+depresses mid-band throughput by ~4.2% and multiplies run-to-run spread fivefold. Instant Replay was
+almost certainly on.
+
+## What it shows anyway
+
+Against the two configurations it can be put beside, over all ten shared targets:
+
+| | band-mean `membw` |
+|---|---|
+| full tuned | 303.1 GB/s |
+| **split curve (this sweep)** | **351.4 GB/s** |
+| memory-only | 357.5 GB/s |
+
+**Against the fully tuned profile: +15.97% band-mean**, positive at all ten points, +3.0% to
++24.7%. That direction is far outside anything contamination of this size explains, and it agrees
+with the rest of Part 2 — the split curve removes the plateau.
+
+⚠️ **Against memory-only it reads −1.70%, and that number should not be used.** It is
+clean-against-contaminated in the wrong direction, one sweep per configuration, and §5.7.6 records
+that no ranking among memory-only, repair and split on `membw` is supported at this n — the
+configurations sit closer together than one configuration sits to itself.
+
+## 🔑 It also carries a textbook instance of the wandering dip
+
+| target | 1792 | **1867** | 1942 |
+|---|---|---|---|
+| GB/s | 363.3 | **344.3** | 387.6 |
+
+**1867 MHz sits 8.31% below the mean of its two neighbours**, and against memory-only at the same
+target it reads **−10.8%** where every other point is within 2.8%.
+
+⛔ **Do not read this as the plateau.** 1867 MHz is exactly where the *tuned* profile's plateau
+ends, so a dip there invites the reading that the split curve inherits it — and the rest of the
+table refuses that: the split curve beats tuned by 15.7% at this very point. The dip is the
+transient defect this project has documented moving from frequency to frequency between runs. It
+landed at 1867 the night before, at 1792 the night after, and CLAUDE.md retired the attempt to
+attribute it to capture software on 2026-08-24.
+
+**What it adds to that record: this instance is DEEPER than any of the seven verified-quiet
+sweeps**, whose worst points run −0.36% to −6.91%. That is consistent with an unverified machine
+and is one more reason not to pool this sweep with them.
