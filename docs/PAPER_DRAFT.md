@@ -6,7 +6,7 @@
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
-> alone. No `[PENDING]` placeholders remain, but **16 numbered sections carry no claims at all** —
+> alone. No `[PENDING]` placeholders remain, but **17 numbered sections carry no claims at all** —
 > `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
 > too**, as of 2026-09-05.
 >
@@ -24,14 +24,14 @@
 
 Graphics processors ship with conservative default operating points, because a vendor's
 voltage-frequency behaviour must hold across millions of individually varying dies for a warranty
-period measured in years. The margin this produces was quantified on GPUs released in 2010 and
-2012; whether comparable margin remains on current consumer parts, and where it sits, is not
-established. It also cannot be answered from published data, for a reason that is itself a
-finding: the public consumer DVFS data we could locate — two cards, both from a single released
-collection [7] rather than from independent groups — sweeps core frequency at and above the card's
-rated boost clock, 101–126% and 95–118% of it, while the efficiency optimum lies *below* stock.
-Their correspondingly small measured gaps invite the conclusion that consumer GPUs have little
-headroom, when what they show is a truncated measurement range.
+period measured in years. That margin, and the fact that a GPU's energy-optimal core frequency
+lies below its default clock, are established results on hardware from 2013 through 2022 — on
+consumer parts as well as datacenter ones. What is not available is the **data**. The consumer DVFS
+measurements we could locate are published as figures rather than as released sweeps, and the
+consumer collections that *are* downloadable sweep core frequency at and above the card's rated
+boost clock — 101–126% and 95–118% of it — while the efficiency optimum lies *below* stock. A
+reader wishing to re-analyse the region where the optimum sits, on current silicon, has nothing to
+re-analyse.
 
 This work contributes an open dataset of consumer-GPU frequency, power and performance
 measurements swept across 40–100% of maximum core clock, released with its collection tooling and
@@ -47,21 +47,33 @@ mean efficiency gain where the best fixed frequency reaches 4.9%. The fitting ea
 since straight-line interpolation between four probes beats every fitted variant, and the fitted
 model only appears to win by violating the floor it was given.
 
-The central result is a mechanism for *where* the optimum sits. On every chip measured, the
-efficiency optimum coincides with **the highest frequency the applied voltage-frequency curve
-reaches at that card's load-floor voltage** — the lowest voltage the card will hold under load.
-It was tested three ways, with each prediction registered before its measurement: **manipulating**
-the floor region of the curve moved the median optimum by the predicted **+465 MHz**, with all 12
-workloads moving upward; a **negative control** that changed the curve by up to 570 MHz *above* the
-floor moved it by **nothing**; and the rule held on a **third chip and second architecture**. ⛔ The
-floor *voltage* does not transfer — 0.720 V, 0.756 V and 0.812 V on the three cards, and two cards
-sharing an architecture and a process node differ by 56 mV — so the relationship is general while
-its parameter must be measured per card.
+The central result concerns *where* the optimum sits, and it is a **causal test of a published
+relationship rather than a new one**. That the optimum coincides with the highest frequency the
+voltage-frequency curve reaches at its flat low-voltage region — the **ridge point** — was reported
+by van Werkhoven et al. (arXiv:2211.07260) on an A100 and an RTX A4000. Every prior treatment we
+found *observes* that correspondence on the vendor's shipped curve. This work intervenes on it:
+
+> **On four consumer GPUs across three architectures, we reshape the vendor's voltage-frequency
+> curve region by region and show that the energy-efficiency optimum is set causally by the top of
+> its low-voltage floor — moving +465 MHz in 12 of 12 workloads when that region is changed, and
+> not at all when the curve above it is changed by more — with every prediction registered before
+> collection; and we identify a card on which the rule cannot be applied at all, because its
+> voltage leaves the floor six millivolts at a time.**
+
+⛔ The floor *voltage* does not transfer — 0.631 V, 0.720 V, 0.756 V and 0.812 V across the four
+cards. That per-chip voltage variation is itself established (Leng et al., MICRO-48 2015, across
+five physical GTX 780s; Trakosa et al., IOLTS 2025, on six Radeon boards); what we add is its
+consequence for prediction, measured: borrowing the 5060 Ti's 0.720 V for the RTX 3060 predicts
+~1530 MHz against a true optimum of 1260 MHz, a **270 MHz** error.
 
 On consumer hardware, a bandwidth-bound workload plateaus under a flattened voltage-frequency
 curve. The mechanism is measured rather than inferred — core voltage pinned across a rising core
 clock, the crossbar clock pinned with it, and the SM-to-memory path ceasing to scale — and a
-repair derived from that diagnosis behaved as predicted. Comparing two vendor BIOS positions on
+repair derived from that diagnosis behaved as predicted. ⚠️ That the crossbar is a distinct,
+voltage-coupled clock domain invisible to `nvidia-smi` was documented independently on Blackwell in
+August 2026 by community reverse-engineering, slightly ahead of this work; the domain is therefore
+not our finding. The causal chain from a flattened curve to a bandwidth plateau, with a stock
+control and a predicted repair, is. Comparing two vendor BIOS positions on
 one 3070 Ti, the "OC" position draws roughly a quarter more power at matched frequency for 0.56%
 more peak compute; a prediction registered in advance that this difference was voltage was
 **refuted**, both positions holding the same voltage floor while the difference proved to be a
@@ -72,12 +84,14 @@ capture software depresses measured GPU throughput and inflates run-to-run sprea
 five-fold, invisibly at idle. Measurements taken without controlling for it are biased downward in
 the mid-band.
 
-**Limits are stated throughout and are not incidental.** Three chips, one unit each, so nothing
+**Limits are stated throughout and are not incidental.** Four chips, one unit each, so nothing
 here separates a property of a model from a property of an individual die; every *tuning* result
-comes from a single card. Nothing here outperforms vendor boost algorithms,
-and no claim of discovering guardband or inter-chip variation is made — both are established
-literature. The contribution is open, current-generation, reproducible measurement of a
-relationship whose public data is either datacenter-only or swept over the wrong range.
+comes from a single card. ⚠️ This abstract said "three chips" in one paragraph and four in another
+until 2026-09-13. Nothing here outperforms vendor boost algorithms, and no claim is made to having
+discovered guardband, inter-chip voltage variation, the ridge-point relationship, or the existence
+of a below-default consumer optimum — **all four are established literature, and §2 says by whom.**
+What is contributed is an open, current-generation, reproducible dataset over the range that
+existing releases omit, and a causal test of a relationship the prior work only observes.
 
 ---
 
@@ -93,8 +107,15 @@ necessarily produces margin, and the margin is not small: Leng et al. [8] measur
 That result is a decade old, and it was obtained on cards — the GTX 480 and GTX 680 — released in
 2010 and 2012. In the intervening period consumer GPU power management has changed considerably:
 successive generations of automatic boost, finer-grained factory binning, and per-chip
-characterisation now shipped as standard. Whether comparable margin remains, and where it sits, is
-not established for current consumer parts.
+characterisation now shipped as standard.
+
+⚠️ **That comparable margin remains on consumer parts IS established**, and this paragraph claimed
+otherwise until 2026-09-13. Mei, Wang and Chu measured a below-default, board-level efficiency
+optimum on a GeForce GTX 980 in 2017 — 30 of 42 kernels minimising below the default clock [19] —
+and Tang et al. reported the same direction on a GTX 2080 Ti in 2019 [15]. **What is not
+established is the position on current silicon, and what does not exist is released data over the
+range where it sits.** Those are narrower questions than the one this paragraph used to pose, and
+they are the ones this work answers.
 
 **Why margin is worth locating at all needs stating, because on its face the trade looks bad.**
 Moving a chip to its efficiency optimum costs performance — on the hardware measured here, up to
@@ -183,16 +204,40 @@ strongly any absence here can be read.
 
 Dynamic voltage and frequency scaling is a mature technique for trading performance against power,
 and its application to GPUs has been studied for over a decade. Measurement studies established
-early that substantial energy savings are available at modest performance cost — one such study
-reported an average 19.28% energy reduction for under 4% performance loss across 37 benchmark
-applications ⚠️. The general shape of the result is consistent across the literature: reducing core
-frequency below stock improves performance-per-watt up to a point, after which fixed power costs
-dominate and efficiency falls again.
+early that substantial energy savings are available at modest performance cost. Mei, Yung, Zhao and
+Chu (HotPower 2013) report an average 19.28% energy reduction for under 4% performance loss across
+37 benchmark applications on a GTX 560 Ti — read in full and confirmed against the source. ⚠️ **That
+figure is whole-system energy measured at the wall, against an 85 W idle floor of which only 29 W is
+the card**, not board power, which is what this work measures throughout (§3.4). Energy figures
+reported at different measurement scopes are never compared directly here without saying so.
 
 Workload character strongly mediates this effect. Compute-bound kernels scale close to linearly
 with core clock, while memory-bandwidth-bound kernels are limited elsewhere and are comparatively
 insensitive to it [4]. This work reproduces that distinction directly (§3.2) and uses it to select
 benchmark workloads.
+
+### 2.1.1 The ridge point
+
+The shape behind that savings curve is a published mechanism, not folklore. van Werkhoven et al.
+(*Going green: optimizing GPUs for energy efficiency through model-steered auto-tuning*, Kernel
+Tuner, arXiv:2211.07260) define the **ridge point** — the frequency at which core voltage stops
+being constant and begins rising — and state the consequence directly:
+
+> "Reducing the clock frequency beyond the ridge point does not make the GPU more energy efficient,
+> as performance drops with f while v is constant below the ridge point."
+
+They measure the ridge at **1025 MHz (70% of peak) on a Tesla A100** and **1290 MHz (72% of peak) on
+an RTX A4000**, with predicted energy-optimal clocks of 985 and 1298 MHz — close to the observed
+ridge points. **Both parts are datacenter and workstation silicon; neither is a consumer GPU.** [10]
+models the same transition as a piecewise power fit with a transition frequency f_t on A40, A100,
+H100 and H200, and reports that the energy optimum "clusters near f_t but does not necessarily
+coincide" — a qualification §5.5 also makes about its own result, on different hardware.
+
+**Positioning.** The mechanism, and its location on datacenter and workstation parts, is
+established. §5.5 tests it causally on consumer silicon rather than locating it: it reshapes the
+vendor's V/F curve by hand, region by region, and shows the efficiency optimum move with the floor
+region it changes and not move when the curve above that region is changed by more, with predictions
+registered before collection.
 
 ### 2.2 Voltage guardbands and manufacturing variation
 
@@ -250,15 +295,24 @@ inefficiency from opposite sides rather than measuring different things.
 
 ### 2.3 Prediction models for frequency scaling
 
-The closest prior work predicts optimal core *and* memory frequency configurations for an unseen
-kernel from static code features, evaluated across three NVIDIA architectures (Kepler, Maxwell,
-Volta) using a suite of micro-benchmarks [1]. A follow-up compares six model families and reports
-XGBoost achieving R² ≈ 0.9646 on Volta [2]. Related approaches predict execution time and power
-across frequency settings for deadline-aware scheduling ⚠️.
+The closest prior work, Fan, Cosenza and Juurlink [1], predicts a Pareto-optimal set of core and
+memory frequency configurations for an unseen kernel from static code features, without executing
+the kernel. They train on 106 synthetic micro-benchmarks and evaluate on a **GTX Titan X (Maxwell,
+consumer)** and a **Tesla P100**, sweeping 85 core frequencies from 135–1392 MHz against 4 memory
+frequencies through **NVML only — no voltage control and no curve reshaping** — and report accurate
+extrema and Pareto-set predictions on 10 of 12 test benchmarks. A follow-up compares six model
+families and reports XGBoost achieving R² ≈ 0.9646 on Volta [2]. Related approaches predict
+execution time and power across frequency settings for deadline-aware scheduling ⚠️.
 
-**Positioning.** This work does not claim a better predictor than [1]. It asks a different question:
-whether per-*unit* prediction is worth its measurement cost at all, against a fixed-frequency
-baseline — and reports a null where it is not (§5.2).
+**Positioning.** This work does not claim a better predictor than [1]. **It is closest not to §5.5's
+causal V/F-curve result but to §5.2's null** — the probe-based Ridge model that loses to a fixed
+constant. Fan et al. report success at predicting per-kernel optimal configurations from richer
+inputs than that null uses: static code features rather than probe points, a 2D core×memory space
+rather than 1D, and purpose-built micro-benchmark training rather than a 33×13 matrix with no
+feature columns. That difference is stated here so the null is not read as contradicting a published
+success. [1] also corroborates a measurement hazard found independently in this work (§5.4.2): NVML
+reports some configurations as supported when the setting call does not actually change the
+frequency — on the Titan X, requests above 1202 MHz silently return 1202.
 
 ### 2.4 Energy-performance tradeoffs in modern workloads
 
@@ -282,14 +336,17 @@ than treating the sensor as ground truth.
 interconnect between the SMs and the memory controllers, which NVIDIA calls XBAR. Two things about
 it are already public and this work claims neither.
 
-**XBAR is an independently documented clock domain on Blackwell.** A published analysis of GB202
-(RTX 5090) establishes that XBARCLK has its own PMU object, clock source, 127-point V/F table,
-hardware measurement entry point and runtime control path, arguing explicitly that public tooling had
-mistaken it for a software statistic. It reports a 0.8999:1 GPC-to-XBAR constraint in the propagation
-topology.
+**XBAR is an independently documented clock domain on Blackwell.** loong0x00's analysis of GB202
+(RTX 5090), published 2026-08-13, establishes that XBARCLK has its own PMU object, clock source,
+127-point V/F table, hardware measurement entry point and runtime control path, arguing explicitly
+that public tooling had mistaken it for a software statistic. It reports a 0.8999:1 GPC-to-XBAR
+constraint in the propagation topology.
 
-**Raising it deliberately is also published.** Work on runtime XBAR offsets under Linux reports
-applying +60 to +450 MHz and measuring up to +10.6% FPS on an RTX 5090, August 2026.
+**Raising it deliberately is also published, and earlier.** LACT issue #1147, opened 2026-08-10 on
+the same project, reports applying +60 to +450 MHz XBAR offsets under Linux and measuring up to
++10.6% FPS on an RTX 5090. **Both sources were found independently of this project, and both predate
+its own crossbar-plateau measurement (begun 2026-08-19) by roughly a week to ten days** — the domain
+was reached from outside this project first, which is what the positioning below credits.
 
 ⚠️ **The direction of both is the opposite of this study's.** Neither reports memory-bandwidth
 measurements in GB/s, an XBAR-to-core ratio measured across a swept range, the behaviour of the
@@ -891,6 +948,23 @@ The probe model does not improve on a single fixed frequency. The mechanism is v
 available percentage points and little per-unit variation remains to exploit. Workload sensitivity
 is present and directionally consistent with §2.1 — correlation −0.666 between performance retained
 at the lowest frequency and optimal frequency — but insufficient to beat the constant.
+
+**[1] reports success at a task this section reports a loss on, and the difference is the input
+space, not the method.** Fan, Cosenza and Juurlink predict per-kernel Pareto-optimal core-and-memory
+configurations for a kernel that has never been executed:
+
+| | Fan et al. [1] | this section (§5.2) |
+|---|---|---|
+| features | static code features | probe points only |
+| space | 2D, core × memory | 1D, core only |
+| training | 106 purpose-built micro-benchmarks | a 33×13 matrix with no workload feature columns |
+
+The Ridge model above has none of [1]'s inputs — no code features, no memory axis, and a dataset
+that structurally cannot carry them (§5.1: the matrix has no workload feature columns at all). **The
+null is therefore not "per-unit prediction does not work"; it is "per-unit prediction from four probe
+points on a feature-free, single-axis dataset does not earn its cost over a constant."** Both are
+true at once, and reading this table as contradicting [1] answers a question this section did not
+ask.
 
 **This null is reported as the result.** The analysis script emits this verdict about its own output.
 
@@ -1846,7 +1920,14 @@ while runtime grows as 1/f — the two roughly cancel — and P_fixed does not s
 job takes longer. Efficiency stops improving and then declines.
 
 **The prediction is therefore specific: the efficiency optimum should sit at the last frequency at
-which voltage is still falling.** It does, on all three chips:
+which voltage is still falling.** This relationship is not new: van Werkhoven et al. define it as the
+**ridge point** and state the same consequence — "reducing the clock frequency beyond the ridge point
+does not make the GPU more energy efficient, as performance drops with f while v is constant below
+the ridge point" (*Going green: optimizing GPUs for energy efficiency through model-steered
+auto-tuning*, arXiv:2211.07260, 2022) — measured on an NVIDIA A100 (ridge at 1025 MHz, 70% of peak)
+and an RTX A4000 (1290 MHz, 72%), both datacenter or workstation parts. What follows measures the
+same relationship on four consumer chips and then moves the floor by hand to test it causally, rather
+than only observing it on the vendor's shipped curve. It does, on all three chips:
 
 | | median suite optimum | stock voltage floor holds to | floor value | workloads picking it |
 |---|---|---|---|---|
@@ -1885,10 +1966,16 @@ the one below is `bgemm256` at 1155 MHz. The registering sentence is left in the
 document deliberately: the test was specified before the hardware arrived.
 
 ⛔ **The floor VOLTAGE does not transfer between cards, and this is the more useful half of the
-result.** The three values are 0.720 V, 0.756 V and 0.812 V. Borrowing the 5060 Ti's 0.720 V for the
-3060 would predict ~1530 MHz against a true optimum of 1260 — a **270 MHz error**, worse than
-predicting a constant. Any application of this rule to a new card must measure that card's floor
-first.
+result.** That a chip's voltage differs from another's is not new by itself: Leng et al. [8] measured
+it directly across five physical GTX 780 cards, one card's voltage consistently above another's by a
+roughly constant offset, and Trakosa et al. [14] confirmed the same shape on six Radeon boards,
+attributing it to process variation. ⚠️ **Both measure a different quantity** — V_min at a fixed
+frequency, a correctness limit — **not the bottom of a dynamic V/F curve** — and neither connects a
+chip's voltage to where its efficiency optimum sits. The three values measured here are 0.720 V,
+0.756 V and 0.812 V. What is specific to this work is the quantified cost of ignoring the difference:
+borrowing the 5060 Ti's 0.720 V for the 3060 would predict ~1530 MHz against a true optimum of 1260 —
+a **270 MHz error**, worse than predicting a constant. Any application of this rule to a new card
+must measure that card's floor first.
 
 🔑 **A differing constant is a stronger outcome than a shared one would have been.** Had all three
 read the same voltage, the most likely explanation would be a driver policy — interesting, but a
@@ -2301,6 +2388,12 @@ gap** §5.6.1 identified between a fixed policy and the oracle. It holds at the 
 the floor, it falls to **19.6% - below the 25.4% of drawing straight lines between the same four
 probes.** No fitted variant beats plain interpolation on this data. The honest summary is *measure
 a few points, interpolate, and attach a performance guarantee* - not *fit a model*.
+
+⚠️ **This is not the claim [1] succeeds at.** [1] predicts a configuration for a kernel that has
+never run, from static code features; every strategy in the table above, interpolation included,
+already measures the same four points on the same kernel. The comparison here is between two ways of
+using measurements already taken, not between measuring and not measuring — see §5.2 for the fuller
+contrast.
 
 **Why interpolation is the safe one is measured rather than assumed, and it is a property of the
 curve rather than of the method.** Performance here is predominantly concave - **64.1%** of second
@@ -3196,11 +3289,16 @@ The question this work set out to answer is narrow and checkable: how much effic
 conservative stock defaults leave on the table on current consumer GPUs, what drives it, and is
 per-unit measurement worth its cost. Three things can be said with the data collected.
 
-**The gap is real and large, and the published consumer data could not have found it.** Both
-public consumer DVFS datasets sweep at or above rated boost, and the optimum lives below stock, so
-their small measured gaps are an artifact of range rather than evidence of absence (§2.7). That
-observation is reproducible in a single script, it sharpens the justification for this project's
-own sweep design, and it is the contribution most likely to be useful to someone else.
+**The gap is real and large, and the released consumer DATASETS could not have found it.** ⚠️ The
+distinction between the data and the literature is the whole point and is easy to blur: the
+*finding* that a consumer GPU's optimum lies below its default clock is published [19], [15], [20].
+The *released* consumer collections sweep at or above rated boost — the artifact analysed here
+encodes its frequency axis as multipliers from 1.0 to 2.0 [21] — so their small measured gaps are
+an artifact of range rather than evidence of absence (§2.7). **A reader cannot re-analyse the
+region where the optimum sits, because no one has released a sweep of it.** That observation is
+reproducible in a single script against files this work already reads, it sharpens the
+justification for this project's own sweep design, and it is the contribution most likely to be
+useful to someone else.
 
 **Per-unit prediction is worth its cost only under a constraint, and the fitting is not the part
 that earns it.** Unconstrained, a probe-based model ties a single fixed frequency, and that null is
@@ -3230,7 +3328,25 @@ was made rather than removed:
    additive offset in the intercept rather than a ratio in the frequency-scaling term (§5.5.1.1).
 3. **That per-workload prediction would beat a fixed frequency.** It ties (§5.2).
 
-A fourth correction was methodological rather than physical: an early attribution of measured
+**And four claims of novelty were retracted, all to searching rather than to a reviewer.** They
+are listed because the alternative is that a reader finds them:
+
+4. **That the load-floor relationship was this work's own.** It is the published **ridge point**
+   [18], stated in the same terms in 2022. Retracted 2026-09-12, four days after it had been
+   promoted to this project's headline result and built upon.
+5. **That locating an efficiency optimum on consumer silicon was unaddressed.** It is not [19],
+   [15], [20]. Four successive narrowings of this claim were attempted and all four failed.
+6. **That per-card floor voltage was a new observation.** Per-chip Vmin variation was measured
+   across five physical GTX 780s in 2015 [8] and six Radeon boards in 2025 [14]. What survives is
+   its quantified consequence for prediction, not the fact itself.
+7. **That the crossbar's clock domain was this work's discovery.** It was documented independently
+   on Blackwell weeks earlier [11], [12]. The causal chain remains; the domain does not.
+
+⚠️ **The common cause is worth more than the individual retractions: every check this project ran
+was internal.** Registered predictions, a negative control, replication across chips and hundreds
+of mechanical assertions all ask *is this true of our data*. None asks *is this already known*.
+
+A further correction was methodological rather than physical: an early attribution of measured
 contention to one piece of software was wrong, and the discriminating experiment identified a
 different cause (§5.4.4). The pattern across all four is that the errors were invisible on
 inspection and only appeared under measurement, which is the argument for the mechanical claim
@@ -3275,6 +3391,43 @@ claimed for it, which is a different state from an open measurement.
 ## References
 
 **Verified** — primary source opened, quoted figures confirmed against it:
+
+- [18] **van Werkhoven, Willemsen, Schoonhoven, Nieuwpoort.** *Going green: optimizing GPUs for
+  energy efficiency through model-steered auto-tuning.* arXiv:2211.07260, 2022 (Kernel Tuner).
+  *Read in full 2026-09-12.* 🛑 **The source of this project's largest retraction.** Defines the
+  **ridge point** — the frequency at which core voltage stops being constant and begins rising —
+  and states the consequence this project had believed was its own: *"Reducing the clock frequency
+  beyond the ridge point does not make the GPU more energy efficient, as performance drops with f
+  while v is constant below the ridge point."* Measured on a Tesla A100 (ridge 1025 MHz, 70% of
+  peak) and an RTX A4000 (1290 MHz, 72%), with predicted energy-optimal clocks of 985 and 1298 MHz.
+  **Datacenter and workstation parts only.**
+- [19] **Mei, Wang, Chu.** *A Survey and Measurement Study of GPU DVFS on Energy Conservation.*
+  Digital Communications and Networks, 2017. arXiv:1610.01784. *Read in full 2026-09-13.*
+  ⛔ **Establishes a board-level, below-default, per-kernel efficiency optimum on consumer GeForce
+  silicon**, which is why no claim to having done that first appears in this paper. ASUS Strix
+  GTX 980, core swept 480–1080 MHz against a 950 MHz default, voltage held fixed at the 0.987 V
+  lower bound, **GPU-level energy from the on-chip sensors**: 30 of 42 kernels take their minimum
+  energy below the default clock, half between 680 and 880 MHz. Mean R̂ 5.24%, mean Rmax 10.87%.
+  ⚠️ **R̂ is energy against the DEFAULT clock and is not comparable to this paper's efficiency gains
+  against the sustained maximum.** ⚠️ ScienceDirect returns 403; the arXiv version is open.
+- [20] **Mei, Yung, Zhao, Chu.** *A Measurement Study of GPU DVFS on Energy Conservation.*
+  HotPower '13. *Read in full 2026-09-13* (scanned, no text layer; direct fetch returns 403).
+  One GTX 560 Ti, 37 benchmarks, fcore 480–880 MHz at fixed 1.049 V and 0.849 V, using NVIDIA
+  Inspector and **MSI Afterburner 2.3.0** — the same instrument lineage this work uses. Reports
+  18.91% energy for 3.45% performance at 0.849 V / 880 MHz. ⚠️ **Whole-system energy at the wall
+  against an 85 W idle floor of which 29 W is the card**, which is why only 5 of its 37 applications
+  benefit from lower core frequency: stretched runtime bills the system's fixed power. **Do not cite
+  it against low-frequency headroom measured at board level.** 🔑 Also contains the closest prior
+  observation to this work's causal result — *"for Kmeans, scaling down f_core can save energy when
+  V_core = 1.049 V, but this situation does not hold anymore when V_core = 0.849 V"* — raised as an
+  aside in one application of 37 and explicitly left as an open problem.
+- [21] **Wang, Chu.** *GPGPU Performance Estimation with Core and Memory Frequency Scaling.*
+  ICPADS 2018, pp. 417–424. Artifact: `github.com/HKBU-HPML/NV-DVFS-Benchmark` (branch `master`).
+  🔑 **The actual origin of the GTX 1080 Ti and GTX 980 CSVs this paper analyses**, which earlier
+  drafts attributed only to an unnamed "HKBU-HPML [7]". ⛔ Its released files carry `coreF` and
+  `memF` as **normalised multipliers taking exactly 1.0, 1.2, 1.4, 1.6, 1.8, 2.0** — base upward,
+  with no below-base point — which is the basis of §2.7's claim about data availability rather than
+  about priority.
 
 - [3] Maliakel, Ilager, Brandic. *Characterizing LLM Inference Energy-Performance Tradeoffs across
   Workloads and GPU Scaling.* arXiv:2501.08219.
@@ -3347,12 +3500,12 @@ from source, and are deliberately omitted rather than cited as either support or
 
 **⚠️ Located but not yet read in full** — open the primary source before submission:
 
-- [17] Mei, Wang, Chu. *A survey and measurement study of GPU DVFS on energy conservation.*
-  Digital Communications and Networks, 2017. `sciencedirect.com/science/article/pii/S2352864816300736`
-  ⛔ **NOT READ — ScienceDirect returned HTTP 403.** Surfaced repeatedly in searches as the standard
-  survey of this area and is very likely to contain a swept-range comparison bearing directly on
-  §2.7. Nothing in this paper cites it for a figure, and nothing should until someone opens it.
-  Try an institutional login or the authors' own copy.
+- [17] ✅ **RESOLVED — see [19].** This entry read "NOT READ — ScienceDirect returned HTTP 403" and
+  warned that the survey was "very likely to contain a swept-range comparison bearing directly on
+  §2.7". It did, and worse: it contains a below-default consumer optimum that retired a claim this
+  paper was still making. **It was on arXiv the whole time.** 🔑 Kept as a record that a paywall is
+  not a dead end, and that the entry correctly identified its own risk for weeks before anyone acted
+  on it.
 - [1] **Fan, Cosenza, Juurlink.** *Predictable GPUs Frequency Scaling for Energy and Performance.*
   ICPP 2019. DOI 10.1145/3337821.3337833. Open-access postprint at TU Berlin DepositOnce.
   *Read in full 2026-09-13.* ⛔ **This entry read "Guerreiro et al." until then — a misattribution,
