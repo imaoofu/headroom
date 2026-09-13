@@ -3,6 +3,11 @@
 What this prototype is missing, in the order it should probably be fixed. Written down so the
 project has a plan that survives between sessions rather than being re-derived each time.
 
+🔑 **The phases below are a WORK LOG, not a plan.** They are written forwards and corrected
+in place, and most of what they hold is closed. **For what is actually open, read "Open right now"
+near the bottom** — that section exists because finding the live items inside the phases had
+become the hard part.
+
 Status key: **[BLOCKER]** must happen before anything downstream is trustworthy ·
 **[CORE]** on the critical path · **[STRETCH]** worth doing if time allows.
 
@@ -340,19 +345,52 @@ The part nobody else can replicate, and the reason the project is worth doing at
 
 Turning two separate models into one project with a single research question.
 
-- **[CORE] Test whether the V100's efficiency curve shape holds on consumer hardware.** This is the
-  unifying question. The public dataset is datacenter silicon running compute workloads; the
-  collected data is consumer silicon running gaming workloads. Whether the shape transfers is
-  genuinely unknown and worth asking.
+- ✅ **[CORE] Test whether the V100's efficiency curve shape holds on consumer hardware.** Done,
+  and it is the largest result in the project. **It holds, on four chips across three
+  architectures** — 44.40% mean gap on the V100 against 42.21% on an RTX 3060, 41.57% on an
+  RTX 2060 Super, and the 5060 Ti's own figures. §5.4 and §5.5 of the paper.
+
+  🔑 **The answer arrived with a mechanism nobody was looking for.** The efficiency optimum
+  is the highest frequency the applied V/F curve reaches at the card's **load-floor voltage** —
+  tested three ways, each prediction registered in `docs/REGISTERED-PREDICTIONS.md` *before* the
+  measurement: a manipulation that moved the floor and moved the optimum, a negative control that
+  changed the curve 570 MHz *above* the floor and moved nothing, and two further chips.
+
+  ⛔ **The floor voltage is per card and does not transfer** — 0.631 / 0.720 / 0.756 /
+  0.812 V across the four. Borrowing one card's value predicts another's optimum 270 MHz wrong.
+
+  ⚠️ **The fourth chip found the rule's boundary.** The RTX 2060 Super leaves its floor
+  6 mV at a time, so the floor's top edge is known only to ±60 MHz and the verdict turns on a
+  single sensor step. Neither confirmed nor refuted — **undecidable**, a third outcome this
+  project had not met.
+- ✅ **[CORE] The wrong-range argument was tested on the architecture it criticises**,
+  2026-09-12. `compare_consumer.py` argues both published consumer DVFS datasets sweep at or above
+  stock and so cannot locate an optimum. One is an RTX 2070 Super reporting **3.34%**. The same
+  architecture swept from 40% gives **41.57%** — a factor of 12.4, with the threshold
+  registered beforehand. Until then the argument compared *different* architectures and asserted
+  the range was the difference.
 - **[BLOCKER] Never pool the two datasets into one training set.** Different architecture, different
   workload type, different feature space, wildly different sample sizes. Combining them is not more
   data, it is noise wearing a lab coat. Two separate models, compared — never one merged fit.
 - **[CORE] Get a methods opinion on the datacenter-vs-consumer comparison** from someone qualified to
   judge it. If it is too apples-to-oranges to carry a paper, that is much cheaper to learn now than
-  in the write-up.
-- **[CORE] Decide honestly what the collected data can support.** At N=6–10 heterogeneous machines
-  there is no valid train/test split — it is a validation and case-study set, not a second
-  prediction model. It only becomes a real prediction model with enough same-SKU repeats.
+  in the write-up. **Still open, and the question has sharpened rather than gone away:** it is no
+  longer datacenter-against-consumer asserting the range is the difference, it is
+  same-architecture-against-same-architecture at two swept ranges. That is the stronger claim, and
+  the one worth putting in front of someone.
+- ⛔ **[CORE] Decide honestly what the collected data can support.** **The premise expired.**
+  This assumed **N=6–10 heterogeneous machines** with "no valid train/test split", and planned
+  around a breadth dataset that was never built. What exists is **four chips with deep per-chip
+  replication** — 300 dataset-grade sweeps on the 5060 Ti against 25, 17 and 14 on the others.
+
+  🔑 **That is a different dataset supporting a different argument.** Breadth would have
+  supported a population claim; depth supports a **mechanism** claim, which is what the load-floor
+  result is. The original judgement survives where it matters — this is not a second prediction
+  model, and there is still no same-SKU repeat — but "it only becomes a real prediction model
+  with enough same-SKU repeats" is no longer the interesting sentence about it.
+
+  ⚠️ **n is still 1 chip per architecture**, and that is the weakness any reader names
+  first.
 
 ---
 
@@ -545,6 +583,27 @@ Turning two separate models into one project with a single research question.
 
 ---
 
+- ✅ **[CORE] The sweep did not check that its benchmark produced anything.** **Closed
+  2026-09-12, the day after it cost a run.** A sweep locked clocks, sampled telemetry at every
+  frequency, wrote a CSV, printed a normal summary and exited **0** — having never launched its
+  workload, because `-WorkloadCommand` named an interpreter on one drive and a script on another.
+  The card sat at ~18 W throughout.
+
+  🔑 **Nothing downstream would have caught it either, and that is the part worth keeping.**
+  The power column is real — it is the genuine idle draw of a locked card — so the file
+  parses, plots and joins like any other sweep. Only the empty `bench_throughput` column says
+  otherwise. Same shape as the 2026-08-16 defect that sampled telemetry *after* the workload
+  finished.
+
+  `WorkloadResultVerdict.ps1` now stops at the FIRST resultless point rather than spending the
+  remaining hour on an idle card, classifies the finished run into the session JSON, and exits
+  **7** when nothing was measured. It is a separate file so it can be tested without a GPU:
+  18 checks, mutation-gated six for six.
+
+  ⚠️ **Sweeps taken before this carry no `workload_result_verdict` and cannot be audited
+  for it** — the same unfixable cost as the VRAM guard below shipping late. And it answers one
+  question only: *did a measurement come back*. A workload that ran badly and returned a
+  wrong-but-positive number still passes.
 - ✅ **[CORE] The preflight guard cannot see VRAM, and an idle model walks straight past it.**
   **Closed 2026-09-05.** `Invoke-FrequencySweep.ps1` now reads `memory.free` and refuses below
   `-MinFreeVramMb`, default 4000 - the SAME constant `preflight.py` already used, deliberately, so
@@ -626,6 +685,47 @@ Turning two separate models into one project with a single research question.
   documented tune, and **no sweep in the repository records it**, so it cannot be ruled in or out
   as a confound in any existing comparison. Whether 5.7's decomposition needs re-stating is a
   paper question and is not answered here.
+
+---
+
+## Open right now — 2026-09-12
+
+Its own section, because the phases above are a work log and finding the live items inside them had
+become the hard part. ⚠️ **Read counts off `python run_tests.py` and
+`python analysis/audit_claims.py --coverage`, never off this file.**
+
+**Needs the hardware:**
+
+- 🟡 **[CORE] Build the two floor-ladder rungs on the 5060 Ti.** Registered in
+  `docs/REGISTERED-PREDICTIONS.md` before collection, and not yet built. The mechanism says
+  shifting the floor region moves the optimum by the same amount; the ladder tests whether it does
+  so **proportionally** rather than merely in the right direction. ⚠️ None of the profiles
+  is stability tested, and none may resemble the 875 mV at 3 GHz that crashed the driver.
+- 🟡 **[CORE] Fine floor sweep on the RTX 2060 Super**, 900–1150 MHz, ~10 minutes. It
+  decides the undecidable case in Phase 2 by finding where voltage first leaves 0.631 V, narrowing
+  the floor extent from ±60 MHz to about ±10. **It settles this card, not the general
+  case** — a card whose voltage moves 13 mV across its whole low range will always make the
+  rule hard to apply, and that limit is itself the finding.
+
+**Needs nothing but time:**
+
+- 🟡 **[CORE] Three data-inventory gaps**, all found 2026-09-11, none closed.
+  `data/stability-runs/README.md` lists **one run of six**; `data/frequency-sweeps/README.md` does
+  not list the **32 sweeps in its own root**; `membw-anomaly-20260819/README.md` skips one sweep.
+  Every data directory is supposed to carry a README saying what is dataset-grade. These do not.
+- 🟡 **[CORE] §5.4.2 is the last paper section with real numbers and no claims.**
+  Everything else carrying numbers is pinned. Its content is mostly the QuickEdit incident, so
+  there may be little to pin — but that should be a finding, not an assumption.
+- 🟡 **[STRETCH] Coverage is uneven, and the unevenness is the useful number**, not the
+  total. §5.5 and §5.4 sit near the bottom. A high claim count is not a covered paper.
+
+**Designed and never run:**
+
+- ⛔ **[CORE] The NVML clock-offset validation pair.** `nvmlDeviceSetClockOffsets` reads back
+  fine and **the write has never been exercised on this card.** The test — power at a locked
+  *f* with a −300 MHz offset against power at *f*+300 with none — was designed 2026-09-09
+  and not run. **Claim nothing about its effect until it has been.** Negative offsets are the safe
+  direction.
 
 ---
 
