@@ -153,9 +153,23 @@ up. They structurally cannot locate an efficiency optimum, because the optimum l
 (the V100's sat at 62% of its max).
 
 🛑 **Their small measured gaps are NOT evidence that consumer GPUs lack headroom.** They are
-evidence that nobody swept the range where headroom lives. Never cite the 1.0% figure as a null,
-and never conclude "the V100 finding does not transfer to consumer silicon" from it — that
-conclusion is unsupported and backwards.
+evidence that *these two datasets* did not sweep the range where headroom lives. Never cite the
+1.0% figure as a null, and never conclude "the V100 finding does not transfer to consumer silicon"
+from it — that conclusion is unsupported and backwards.
+
+⛔ **THAT SENTENCE SAID "nobody swept the range where headroom lives" UNTIL 2026-09-12, AND IT WAS
+FALSE.** Tang, Wang, Wang and Chu, *The Impact of GPU DVFS on the Energy and Performance of Deep
+Learning* (e-Energy 2019, arXiv [1905.11012](https://arxiv.org/abs/1905.11012)) states in its
+abstract that "compared to the **default** core frequency settings of three tested GPUs, the optimal
+core frequency can help conserve 8.7%~23.1% energy" — i.e. they swept BELOW default and found the
+optimum there. 🔑 **That is the same HKBU group whose V100 dataset this project already uses.**
+Mei et al. (HotPower 2013) reported ~19% savings below default on a GTX 480.
+
+**What survives is narrower and still worth stating:** the two *downloadable, reusable* datasets
+this project places on a common axis are overclocking sweeps, so **they** cannot locate an optimum,
+and no prior source was found making that specific criticism of those specific artifacts. ⚠️ **The
+broad form — "the energy-optimal frequency on consumer GPUs lies below stock and nobody has measured
+it" — is refuted and must not be written anywhere.** Say "these datasets", never "nobody".
 
 ✅ **This validates this project's own sweep design.** `-MinFrequencyPercent 40` covers the region
 every published consumer dataset misses entirely. The justification is therefore stronger than
@@ -337,35 +351,61 @@ MUST NOT be presented as new.** This is the second time this project has had to 
 claim after searching - the first was the voltage guardband on 2026-08-14 - and the lesson is the
 same one CLAUDE.md already states: **search before claiming, not after writing.**
 
-#### What actually survives, and it is not nothing
+#### What survives — REVISED 2026-09-12 after a proper search. Two of the five fell.
 
-The rule is prior art. These are not, as far as the 2026-09-12 search reached:
+⛔ **The list below replaces a five-item version written hours earlier from FOUR QUERIES.** That
+version carried a ⛔ on an item that a wider search overturned the same day. 🔑 **The search rule
+above was written that morning and this is its first test — which it failed, in the same file, one
+section higher.** Four queries is not a search, and labelling it "a search result, not a literature
+review" did not stop the items being written as established. Full log: `docs/PRIOR-ART-20260912.md`.
 
-1. 🔑 **The manipulation and its negative control.** Every prior result OBSERVES the correlation
-   between ridge point and optimum on the vendor's shipped curve. This project MOVES the floor by
-   hand - `abba-20260908` - and the optimum moves **+465 MHz in 12 of 12 workloads**; then changes
-   the curve **above** the floor by 570 MHz and the optimum moves by **nothing**. That is a causal
-   test of the mechanism rather than a correlation across cards, and the predictions were
-   registered before collection.
-2. **Consumer silicon.** The A100 is datacenter and the A4000 is a workstation card. The four
-   chips here are consumer parts across three architectures, including Blackwell.
-3. ⛔ **That the floor voltage is per card and does NOT transfer** - 0.631 / 0.720 / 0.756 /
-   0.812 V. The ridge-point work reports ridge FREQUENCIES, not floor voltages, and nothing found
-   says the voltage is unportable.
-4. **The boundary condition.** The RTX 2060 Super leaves its floor 6 mV at a time, which makes the
-   rule undecidable on that card. A rule stated without that condition looks more portable than it
-   is.
-5. **The crossbar-starvation result.** No prior work found linking a flattened V/F curve to a
-   pinned interconnect clock and a bandwidth plateau.
+**1. ✅ SURVIVES — the manipulation and its negative control.** Every prior result OBSERVES the
+correlation between ridge point and optimum on the vendor's shipped curve. This project MOVES the
+floor by hand (`abba-20260908`) and the optimum moves **+465 MHz in 12 of 12 workloads**; then
+changes the curve **above** the floor by 570 MHz and the optimum moves by **nothing**. Nothing found
+reshapes a V/F curve and re-locates the optimum, and nothing found pairs such a test with a negative
+control or with predictions registered in advance. **This is the project's strongest remaining
+claim** — and it rests on an absence, so treat it as "not found" rather than "proven absent".
 
-⚠️ **It also STRENGTHENS the wrong-range argument rather than weakening it.** If the ridge point
-sits at 70-72% of peak clock, then the published consumer datasets that sweep 95-126% of boost are
-entirely above it - which is exactly why they find ~1-3% and this project finds 40%+.
+**2. ⛔ FELL — "no published DVFS study uses consumer silicon" is FALSE.** Leng et al., *Safe Limits
+on Voltage Reduction Efficiency in GPUs* (MICRO-48, 2015) used GTX 480 / 580 / 680 / 780. Trakosa
+et al. (IOLTS 2025) used Radeon RX 7600 / 7700 / 7800 XT. Both are consumer gaming parts.
+**What narrows out of it:** no study found locates a *ridge-point-style optimum via a full V/F
+sweep* on GeForce/Radeon — Leng fixes frequency and varies only voltage. That is a much smaller
+claim, and it is limited by what the search could reach rather than by a clean absence.
 
-**Where this leaves the contribution:** not "we found the rule", but "we tested the rule causally,
-on consumer parts, and found where it breaks". That is a smaller claim and a defensible one.
-⚠️ **This paragraph is a search result, not a literature review.** Sections 2.1-2.5 of the paper
-need rewriting against it, and the search was four queries by one person in one sitting.
+**3. ⛔ FELL — "the floor voltage is per card and does not transfer" is PRIOR ART.** The earlier
+version said "nothing found says the voltage is unportable". Leng et al. measured exactly this on
+**five physical GTX 780 cards**, reporting that one card's Vmin sits consistently above another's by
+a roughly constant offset, and Trakosa et al. confirmed it on six Radeons in 2025, attributing it to
+process variation. **What may narrow out:** those papers measure Vmin at a FIXED frequency — a
+correctness limit — not the bottom of the dynamic V/F curve, and neither connects per-chip voltage
+to *where the efficiency optimum sits*. The defensible form is therefore not "the floor voltage is
+per-card" but **"borrowing another card's floor voltage mispredicts its optimum by a measured
+amount"** (270 MHz, 3060 against 5060 Ti). ⚠️ Vmin and load-floor voltage are related but NOT the
+same quantity, and that distinction has not yet been read carefully in the source.
+
+**4. ✅ SURVIVES — the boundary condition.** The RTX 2060 Super leaves its floor 6 mV at a time,
+making the rule undecidable there. Nothing found reports the rule failing or being ambiguous on any
+hardware. ⚠️ An absence in a search, again, not a demonstrated gap.
+
+**5. 🟡 PARTLY — the crossbar result.** The specific causal chain (flattened curve → pinned crossbar
+→ bandwidth plateau, with a stock control, a quantified ratio collapse and a predicted repair) was
+not found anywhere. ⛔ **But the existence of XBAR as a separate voltage-coupled clock domain on
+Blackwell was documented independently in August 2026** by reverse-engineering work on the RTX 5090
+via the LACT project — contemporaneous with, and slightly ahead of, this project's own finding. The
+CPU analogue (Intel uncore frequency scaling gating DRAM bandwidth) is long-established. So the
+*domain* is not a discovery; the *undervolt-causes-bandwidth-plateau chain* appears to be.
+
+⛔ **AND THE WRONG-RANGE ARGUMENT IS OVERSTATED — see the correction in its own section above.**
+The earlier version of this paragraph claimed the ridge point STRENGTHENED it. The geometry does
+line up, but the broader sentence it supports does not survive contact with the literature.
+
+**Where this leaves the contribution:** not "we found the rule", and no longer "we found it on
+consumer parts" either. It is **"we tested the rule causally — moved the curve and watched the
+optimum follow, with a negative control — and found a card where it cannot be applied"**. One clear
+claim, one boundary condition, and a mechanism chain. Sections 2.1-2.5 of the paper need rewriting
+against all of this.
 
 ### 🔑 The efficiency optimum is the last frequency on the V/F curve's LOAD FLOOR (2026-09-08 → 09-10)
 
