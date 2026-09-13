@@ -2,11 +2,11 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **359 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **271 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **274 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
-> alone. No `[PENDING]` placeholders remain, but **18 numbered sections carry no claims at all** —
+> alone. No `[PENDING]` placeholders remain, but **16 numbered sections carry no claims at all** —
 > `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
 > too**, as of 2026-09-05.
 >
@@ -692,7 +692,7 @@ mostly on-die logic - crossbar, L2 slices, memory controllers - and only its fin
 and the GDDR devices themselves, sits in the memory clock domain. A "core" V/F curve governs the
 rest of it. The measurements are consistent with the crossbar clock being derived from core voltage
 rather than from the locked graphics clock: locking the graphics clock 32.8% higher while voltage is
-held constant moves the crossbar 2.3%, whereas at stock the crossbar holds a near-constant 0.95
+held constant moves the crossbar 2.3%, whereas at stock the crossbar holds a near-constant 0.96
 ratio to the graphics clock across the same range. The rail topology itself was not probed; what was
 measured is the behaviour.
 

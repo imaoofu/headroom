@@ -427,9 +427,9 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` | **271 of 271** |
-| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **233 of 233** |
-| sections with no claim at all | **18 numbered sections are still unaudited** |
+| claims green, 0 failures, with `data/raw/` | **274 of 274** |
+| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **236 of 236** |
+| sections with no claim at all | **16 numbered sections are still unaudited** |
 | §5.7 and its subsections carry | **84 claims between them and §5.5 carries 63** |
 
 ⚠️ **THE TOTAL WENT STALE FOUR TIMES BEFORE IT WAS PINNED: 87 -> 119 -> 185 -> 204**, and on
