@@ -417,10 +417,27 @@ LACT issue it cites for the XBAR domain is real - `ilya-zlobintsev/LACT#1147`, o
 two weeks before this project's own crossbar result on a different Blackwell chip. And the Tang et
 al. abstract was read directly, confirming the below-default claim.
 
-⛔ **THE BIGGEST UNCLOSED RISK: the HKBU HotPower 2013 paper could not be fetched** (403 on every
-attempt), and it is the most promising remaining candidate for a consumer full-sweep
-ridge-point-style study. **It is the same group whose V100 dataset this project uses.** Until
-someone reads it, claims C and E are open rather than settled. ⚠️ Also unsearched: IEEE Xplore,
+✅ **THE BIGGEST UNCLOSED RISK IS CLOSED — Raymond read the HotPower 2013 paper the search could
+not fetch (403).** It scales **core voltage AND frequency directly** on consumer GeForce parts
+across **37 applications**, sweeping fcore 480-880 MHz at fixed 1.049 V and 0.849 V, with core
+offsets -200 to +50 mV and ~19% energy saved at -200 mV. **C is confirmed prior art and more
+strongly than the search had it.**
+
+🔑 **It also corrected the search's own citation.** The snippet said "GTX 480, 480-1080 MHz"; the
+paper fixes two voltages and sweeps 480-880. **A citation this project marked `search snippet only`
+was wrong in its details, and only a human read caught it** - the marking worked, the citation did
+not.
+
+⚠️ **Claim A is NOT pre-empted on that evidence, but it is closer than anything else found.** Their
+`f*core` is the maximum STABLE frequency at a voltage - a stability frontier, like Leng's Vmin -
+not the point where the vendor's curve stops lowering voltage. Their per-program "best voltage"
+sits at 0.85 V, the bottom edge of the tested range, so it is a range limit rather than a located
+optimum. And there is no negative control. ⛔ **The decisive unchecked question: does the paper
+anywhere report the energy-optimal FREQUENCY moving as a consequence of the voltage change?**
+Until the body text is checked, treat A as open.
+
+🔑 **The paper had MORE control than this project does** - voltage was directly writable then, and
+on current consumer parts it is not. That is a better reason for redoing the work than novelty. ⚠️ Also unsearched: IEEE Xplore,
 the ACM DL directly, any citation-graph traversal of van Werkhoven, and Chinese-language venues -
 where a meaningful share of GPU DVFS measurement work, including HKBU's own, is published.
 
