@@ -33,6 +33,58 @@ verdict against *itself* when it ties or loses. Do not "fix" that by tuning unti
 
 ---
 
+## 🔎 THE SEARCH RULE — every headline claim carries a search log
+
+**Added 2026-09-12, immediately after the second novelty retraction.**
+
+> **Any claim that earns a 🔑 in this file, gets its own section in the paper, or has further work
+> built on it, must carry a SEARCH LOG beside it: the queries run, the date, what was found, and
+> what was not reached.**
+
+**A log, not a conclusion.** "Searched, found nothing" is worth little on its own; the queries are
+what the next session can judge, repeat and extend. ⛔ **An absent log means the search has NOT
+been done** — never read silence as "someone checked".
+
+### Why a trigger, and not just "search more"
+
+**Searching more is right and this rule does not replace it.** But an intention with nothing to
+fire it decays, and the specific way it decayed here is worth keeping:
+
+🔑 **The rule above — *"nobody has published this" → Search first* — fires on a SENTENCE.** The
+load-floor result never said "nobody has published this". It said *"the single most transferable
+result in the project"*, which is the same claim wearing different clothes, so nothing tripped.
+**A rule keyed to a phrase only catches the phrase.**
+
+**The cost: four days.** The mechanism was written down 2026-09-08 and by 09-12 it had been
+promoted to the project's headline, written into §5.5.7, given a registered-predictions protocol,
+tested on two further chips, and used to justify a collection trip to another machine. **The search
+that found the prior art took two queries.** It is the RIDGE POINT — see the retraction in the
+load-floor section below.
+
+⚠️ **The result was never wrong. The FRAME around it was**, and every hour was spent believing a
+replication was a discovery.
+
+### The part that should be most uncomfortable
+
+**It survived four days of genuine scrutiny, because every check was INTERNAL.** Registered
+predictions before collection, a manipulation arm, a negative control, three more chips, hundreds
+of mechanical claims against the CSVs, and a retraction when a join artifact turned up.
+
+🔑 **All of that asks "is this true of our data?" None of it asks "is this already known?"** The
+rigour was real and pointed entirely inward — and internal rigour *feels* like diligence, which is
+exactly what makes it comfortable not to look outward. **A weaker result would have been questioned
+sooner.**
+
+### What counts as a search
+
+Vary the vocabulary — academic phrasing rarely matches this project's. The load-floor mechanism is
+filed under *ridge point* and *transition frequency*, neither of which appears anywhere in this
+repository's own description of it. Check adjacent communities too: HPC, mobile SoC, the enthusiast
+and overclocking press, vendor whitepapers, patents. **A patent or a well-documented enthusiast
+measurement is still prior art.**
+
+---
+
 ## What this project claims — and what it must never claim
 
 **The claim:** measure the gap between stock GPU behaviour and the efficiency optimum, on current
