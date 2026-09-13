@@ -221,8 +221,8 @@ benchmark workloads.
 ### 2.1.1 The ridge point
 
 The shape behind that savings curve is a published mechanism, not folklore. van Werkhoven et al.
-(*Going green: optimizing GPUs for energy efficiency through model-steered auto-tuning*, Kernel
-Tuner, arXiv:2211.07260) define the **ridge point** — the frequency at which core voltage stops
+[18] (*Going green: optimizing GPUs for energy efficiency through model-steered auto-tuning*,
+Kernel Tuner, arXiv:2211.07260) define the **ridge point** — the frequency at which core voltage stops
 being constant and begins rising — and state the consequence directly:
 
 > "Reducing the clock frequency beyond the ridge point does not make the GPU more energy efficient,
@@ -423,6 +423,15 @@ board-level, below-default, on a GeForce card, in 2017. Mei, Yung, Zhao and Chu 
 — it is a downloadable file that contains it.** Neither carries a data-availability statement or a
 dataset link; every reference in both resolves to a vendor page or a measurement tool, never to
 data.
+
+The sharpest case is Fan, Cosenza and Juurlink [1], because their sweep is **wider than any released
+dataset and wider than this work's own**: 85 core frequencies from **135 to 1392 MHz** on a GTX
+Titan X, a consumer Maxwell part whose rated boost is 1089 MHz — down to **12% of boost**, against
+the 40% floor used here and the 89% floor of the released consumer files below. That sweep would
+answer the question this section is about outright. It was never released: across all eleven pages
+the paper contains no repository link, no artifact-evaluation appendix and no data-availability
+statement, and all four of its URLs are DOIs resolving to papers. ⚠️ **That is an absence in the
+published version, not proof no data exists** — the authors were not asked.
 
 | Dataset | Hardware | Core sweep | vs *reference* boost | vs the default the **authors declare** |
 |---|---|---|---|---|
@@ -3520,7 +3529,10 @@ claimed for it, which is a different state from an open measurement.
   *Figures confirmed: 8% average (max 22%) performance variation within identical SKUs; outliers up
   to 1.5× slower than median; >18,800 hours across five clusters.*
 
-- [10] *Modeling and Chasing the Energy-Efficiency Sweet Spots in Modern GPUs.* arXiv:2607.00819.
+- [10] **Afzal et al.** *Modeling and Chasing the Energy-Efficiency Sweet Spots in Modern GPUs.*
+  arXiv:2607.00819. *Abstract and HTML version read; the PDF was not retrieved.* ⚠️ **This entry
+  carried NO author name until 2026-09-13**, while `docs/RELATED-WORK.md` had recorded one the whole
+  time - the same shape as the citation error that left an ICPP paper misattributed for months.
   Full-range core-clock sweep below nominal on A40/A100/H100/H200 with an open dataset — the closest
   published analogue to this study's method, and **datacenter-only**, which is why it sharpens the
   consumer-availability gap of §2.7 rather than closing it. Its abstract states that efficiency
