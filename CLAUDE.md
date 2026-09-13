@@ -401,10 +401,24 @@ CPU analogue (Intel uncore frequency scaling gating DRAM bandwidth) is long-esta
 The earlier version of this paragraph claimed the ridge point STRENGTHENED it. The geometry does
 line up, but the broader sentence it supports does not survive contact with the literature.
 
-**Where this leaves the contribution:** not "we found the rule", and no longer "we found it on
-consumer parts" either. It is **"we tested the rule causally — moved the curve and watched the
-optimum follow, with a negative control — and found a card where it cannot be applied"**. One clear
-claim, one boundary condition, and a mechanism chain. Sections 2.1-2.5 of the paper need rewriting
+### 📌 THE CONTRIBUTION SENTENCE — use this wording, do not re-derive it
+
+> **On four consumer GPUs across three architectures, we reshape the vendor's voltage-frequency
+> curve region by region and show that the energy-efficiency optimum is set causally by the top of
+> its low-voltage floor — moving +465 MHz in 12 of 12 workloads when that region is changed, and
+> not at all when the curve above it is changed by more — with every prediction registered before
+> collection; and we identify a card on which the rule cannot be applied at all, because its
+> voltage leaves the floor six millivolts at a time.**
+
+🔑 **It says what was DONE, never what nobody else did.** No "first", no "novel", no "unpublished".
+That is deliberate: every claim this project has lost was lost on the second half of a sentence, and
+a description of the experiment cannot be refuted by a paper turning up. The causal design, the
+negative control and the boundary condition are all in it; the rule itself is credited to the
+ridge-point literature above.
+
+⚠️ **What it must NOT grow back into:** not "we found the rule" (van Werkhoven 2022), not "we found
+it on consumer parts" (Mei 2013, Tang 2019), not "the floor voltage is per-card" (Leng 2015,
+Trakosa 2025). Full index of who owns what: `docs/RELATED-WORK.md`. Sections 2.1-2.5 of the paper need rewriting
 against all of this.
 
 📄 **The full log is `docs/PRIOR-ART-20260912.md`** - 8 agents, five search angles plus two
@@ -720,6 +734,11 @@ named only two of them.
 | `README.md` | results and related work - the outward-facing summary |
 | `CONTEXT.md` | **why this project exists** and how to work on it; portable copy of context that otherwise lives only in local memory on one machine |
 | `HANDOFF.md` | **how to get running** on another machine or in a new chat, and the current state |
+
+⚠️ **There is now a sixth, and it is not optional reading.** `docs/RELATED-WORK.md` indexes every
+source found, with a link, what it establishes, and **whether the primary source was actually
+opened**. Two novelty claims and three citation errors have come out of second-hand summaries, so
+read status travels with the citation. `docs/PRIOR-ART-20260912.md` is the search log behind it.
 
 🛑 **None of them is the authority on a COUNT.** `python analysis/audit_claims.py --coverage` and
 `python run_tests.py` are. Every one of these files has carried a stale claim total at some point,

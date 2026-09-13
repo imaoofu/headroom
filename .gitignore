@@ -45,3 +45,6 @@ data/HWiNFO-Data/*
 # Mutation-testing artifacts: regenerated on demand, and the results file is a
 # measurement of a particular run rather than something to carry forward.
 tools/mutation/*.json
+
+# Paper PDFs are not redistributed - see docs/papers/README.md
+docs/papers/*.pdf
