@@ -2,34 +2,41 @@
 # machine instead of by someone remembering to look.
 #
 # WHAT THIS CHECKS
-#   run_tests.py             534 checks across 15 suites here - every assertion written, nothing
-#                            more. Note the number is environment-dependent: it is 536 on a machine
-#                            that has run Get-Dataset.ps1, because two checks in
-#                            models/test_predict_constrained_frequency.py run against the real V100
-#                            dataset and SKIP when data/raw/ is absent. CI sees 534 and never
-#                            executes those two. Both counts measured 2026-09-02.
-#   audit_claims.py          168 claims recomputed from the committed CSVs and asserted present
-#                            in the documents verbatim and exactly once. A failure here means the
-#                            prose and the data disagree, which is a finding, not a broken script.
+#   run_tests.py             every assertion written, nothing more. The count is
+#                            environment-dependent: two checks in
+#                            models/test_predict_constrained_frequency.py run against the real
+#                            V100 dataset and SKIP when data/raw/ is absent.
+#   audit_claims.py          claims recomputed from the CSVs and asserted present in the documents
+#                            verbatim and exactly once. A failure here means the prose and the
+#                            data disagree, which is a finding, not a broken script.
+#
+#   NO COUNT IS WRITTEN IN THIS FILE. It carried four - 534 checks, 15 suites, 168 claims, 193 -
+#   and all four were stale by 2026-09-13, in a repository whose own rules say to read counts off
+#   `python run_tests.py` and `python analysis/audit_claims.py --coverage` and never off a file.
+#   The canonical totals live in CLAUDE.md's coverage block, which is itself audited.
 #
 # WHAT THIS DOES NOT CHECK - stated here for the same reason every tool in this repo states its
 # own limits in its own output:
 #
 #   - Nothing that needs a GPU. gpu_workload.py, the sweep harness, the stability logger and the
 #     probe_* scripts are never executed here. CI cannot tell you a sweep is valid.
-#   - Nothing that needs the downloaded datasets. data/raw/ and data/external/ are gitignored and
-#     are NOT fetched, so characterize.py (the 44.4% figure), curve_model.py and the models/
-#     predictions do not run, and the two dataset-backed checks noted above skip. That the audit is
-#     green without them is a fact about claim coverage, not a sign the reference results were
-#     verified. THIS CHANGED: claims_reference.py now exists and carries 24 claims over the V100
-#     set - the 44.4% gap, the null, the constrained inversion - so the "V100 reference claims"
-#     job below was added to fetch the dataset and audit them. The checks job still skips all 24,
-#     which is why it reports 168 where that job reports 193, and the licensing note in
-#     scripts/Get-Dataset.ps1 governs the fetch.
+#   - THE "checks" JOB fetches no datasets. data/raw/ and data/external/ are gitignored, so
+#     characterize.py (the 44.4% figure), curve_model.py and the models/ predictions do not run
+#     there, and the two dataset-backed checks noted above skip. That the audit is green without
+#     them is a fact about claim coverage, not a sign the reference results were verified.
+#
+#     THE "V100 reference claims" JOB fetches both. claims_reference.py audits the V100 set - the
+#     44.4% gap, the null, the constrained inversion - and since 2026-09-13 claims_datasets.py
+#     audits the published CONSUMER sets under data/external/ for section 2.7. ⛔ That second
+#     fetch did not exist until section 2.7 had produced two retractions in a single day, neither
+#     of which any CI leg could have caught, because nothing here had ever read those files.
+#     The licensing note in scripts/Get-Dataset.ps1 governs both fetches.
 #
 #     One consequence is easy to trip over and did, on 2026-09-02: any claim whose value depends
-#     on the SIZE of the registry is environment-dependent, because 24 claims register only where
-#     the dataset is present. header-pinned-count is guarded for exactly that reason.
+#     on the SIZE of the registry is environment-dependent, because a block of claims registers
+#     only where the fetched data is present. header-pinned-count is guarded for exactly that
+#     reason - and since 2026-09-13 that guard requires BOTH fetched sets, so an environment with
+#     one and not the other pins neither total rather than pinning a misleading one.
 #   - Green means every claim that EXISTS passes, not that the paper is covered. The coverage step
 #     below prints the sections with no claims; it is informational and never fails the build.
 #   - The audit pins numbers, not assertions. A heading or a sentence can state a mechanism the
@@ -130,13 +137,23 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check -r requirements.txt
 
-      # -Only v100 fetches the three CSVs of data/raw (about 16 KB) and nothing else. The 6.6 MB
-      # specs and consumer sets under data/external are not needed by any claim, so they are not
-      # pulled. Nothing is cached: these datasets state no license, which under default copyright
-      # means all rights reserved, so they are fetched transiently and never stored on CI.
+      # -Only v100 fetches the three CSVs of data/raw (about 16 KB). The consumer sets and the
+      # specs database under data/external are fetched too, because claims_datasets.py audits
+      # section 2.7 against them. ⛔ THIS STEP PULLED ONLY v100 UNTIL 2026-09-13, on a comment
+      # reading "not needed by any claim" - true at the time, and the reason section 2.7 produced
+      # two retractions in one day without any CI leg being able to notice.
+      #
+      # Nothing is cached: these datasets state no license, which under default copyright means
+      # all rights reserved, so they are fetched transiently and never stored on CI.
       - name: Fetch the public V100 dataset
         shell: powershell
         run: .\scripts\Get-Dataset.ps1 -Only v100
+
+      - name: Fetch the published consumer sets and the specs database
+        shell: powershell
+        run: |
+          .\scripts\Get-Dataset.ps1 -Only gtx1080ti
+          .\scripts\Get-Dataset.ps1 -Only gpuspecs
 
       # LOAD-BEARING, do not fold into the step above. Get-Dataset.ps1 catches a failed download,
       # prints FAIL, and still exits 0 - so a fetch that silently returned nothing would leave
@@ -149,6 +166,13 @@ jobs:
       # with or without the dataset, and the guard would pass while proving nothing.
       - name: Verify the fetch actually landed
         run: python analysis/audit_claims.py --filter 5.1-workload-count
+
+      # Same contract as the step above, for the second fetch. claims_datasets.py skips silently
+      # when data/external is missing, so without this a failed consumer download would leave
+      # section 2.7 unchecked and this job green - and the totals in the coverage block would
+      # disagree with what this leg actually ran.
+      - name: Verify the consumer fetch actually landed
+        run: python analysis/audit_claims.py --filter 2.7-declared-defaults-are-grid-points
 
       - name: Full audit, reference data included
         run: python analysis/audit_claims.py

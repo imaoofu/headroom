@@ -2,11 +2,11 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **359 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **274 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **282 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
-> alone. No `[PENDING]` placeholders remain, but **17 numbered sections carry no claims at all** —
+> alone. No `[PENDING]` placeholders remain, but **16 numbered sections carry no claims at all** —
 > `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
 > too**, as of 2026-09-05.
 >
@@ -27,11 +27,12 @@ voltage-frequency behaviour must hold across millions of individually varying di
 period measured in years. That margin, and the fact that a GPU's energy-optimal core frequency
 lies below its default clock, are established results on hardware from 2013 through 2022 — on
 consumer parts as well as datacenter ones. **What is not available, for silicon later than 2014, is
-the data.** The one released consumer collection that sweeps below stock covers a GTX 980; every
-consumer part released alongside it from Pascal onward is swept at or above rated boost — 101–126%
-and 95–118% of it — while the efficiency optimum lies *below* stock. A reader wanting to re-analyse
-the region where the optimum sits, on any consumer architecture after Maxwell, has nothing to
-re-analyse.
+the data.** The one released consumer collection that sweeps far below stock covers a GTX 980, a
+2014 part. The modern consumer sets released alongside it — a GTX 1080 Ti and an RTX 2070 Super —
+sweep a narrow window bracketing their default clock, reaching only 89% of it, while the efficiency
+optimum on a comparably swept datacenter part sat at 62% of maximum. A reader wanting to re-analyse
+the region where the optimum sits, on any consumer architecture after Maxwell, has no sweep that
+descends into it.
 
 This work contributes an open dataset of consumer-GPU frequency, power and performance
 measurements swept across 40–100% of maximum core clock, released with its collection tooling and
@@ -188,7 +189,8 @@ Two claims are explicitly **not** made. This work does not outperform vendor boo
 already incorporate per-chip factory binning and against which a small independent study has no
 plausible advantage. And it does not claim the discovery of guardband or of inter-chip variation;
 both are established [8, 9]. The contribution is open, current-generation, reproducible measurement
-of a relationship whose public data is either datacenter-only or swept over the wrong range.
+of a relationship whose public data is either datacenter-only or swept over too narrow a window to
+contain the answer.
 
 ⚠️ **These claims have been searched against, not merely asserted.** Two delegated literature sweeps
 on 2026-09-06 — fourteen agents, roughly sixty queries — were pointed at falsifying rather than
@@ -422,31 +424,42 @@ board-level, below-default, on a GeForce card, in 2017. Mei, Yung, Zhao and Chu 
 dataset link; every reference in both resolves to a vendor page or a measurement tool, never to
 data.
 
-| Dataset | Hardware | Core sweep (% of rated boost) | Suitable for efficiency-optimum questions? |
-|---|---|---|---|
-| GPU-DVFS-Dataset [6] | 1× Tesla V100 | 55–111% | **Yes** — spans below stock |
-| Wang & Chu [21] | GTX 1080 Ti | 101–126% | **No** — at/above stock only |
-| Wang & Chu [21] | RTX 2070 Super | 95–118% | **No** — at/above stock only |
+| Dataset | Hardware | Core sweep | vs *reference* boost | vs the default the **authors declare** |
+|---|---|---|---|---|
+| GPU-DVFS-Dataset [6] | 1× Tesla V100 | 757–1530 MHz | 55–111% | — |
+| Wang & Chu [21] | GTX 980 (two files) | 500–1000, 700–1500 MHz | 41–123% | below base (1127 MHz) |
+| Wang & Chu [21] | Titan X, GTX 1080 Ti | 1600–2000 MHz | 101–126% | **89–111%** (1800 MHz) |
+| Wang *et al.* [22] | RTX 2070 Super | 1680–2080 MHz | 95–118% | **89–111%** (1880 MHz) |
 
-The two consumer rows are not [19]'s data. They come from a later, separate paper by the same
-research group — Wang & Chu, ICPADS 2018, released as `HKBU-HPML/NV-DVFS-Benchmark` [21].
+⚠️ **Two corrections are folded into that table, both made on 2026-09-13, and both ran in the
+direction of overstating this work's contribution.**
 
-⚠️ **That artifact DOES contain below-stock consumer sweeps, and an earlier draft of this section
-claimed otherwise.** Its two GTX 980 files sweep core frequency **500–1000 MHz** and
-**700–1500 MHz** against a 950 MHz default — comfortably below stock, released, and downloadable.
-The error came from reading a companion *features* file in the same repository, whose frequency
-columns are normalised multipliers rather than absolute megahertz, and generalising from it.
+**First, the release does contain below-stock consumer sweeps.** A draft of this section said it did
+not. Its GTX 980 files sweep core frequency 500–1000 MHz and 700–1500 MHz — well below that card's
+1127 MHz base clock — and two further GTX 980 files in the same repository sweep 400–1000 MHz. The
+error came from reading a companion *features* file, whose frequency columns are normalised
+multipliers rather than absolute megahertz, and generalising from it.
 
-**The gap is therefore generational, and narrower than "the data sweeps the wrong range".** Every
-consumer part in that release later than Maxwell sweeps at or above stock: the GTX 1080 Ti and
-Titan X files both cover 1600–2000 MHz, and the RTX 2070 Super covers 95–118% of rated boost. The
-below-stock consumer releases stop at the GTX 980, a 2014 part.
+**Second, and more consequential: the two modern consumer sets are not overclocking sweeps.** This
+work scored them against the rated boost clock from a specs database, which yielded 101–126% and
+95–118% and the conclusion that they "start at or above stock and go up". That compares a measured
+sweep against a **reference** card. The authors state the default operating clock of the cards they
+actually used — 1800 MHz for the GTX 1080 Ti and 1880 MHz for the RTX 2070 Super — and against
+those numbers each sweep **brackets** its default, with **two of five core frequencies sitting below
+it**, down to 89%. Both declared values fall exactly on a swept grid point, in the memory axis as
+well as the core axis, which is what identifies them as the sweep's centre rather than a nominal
+figure.
 
-So for consumer silicon from Pascal onward — through Turing, Ampere, Ada and Blackwell — a reader
-wanting to re-analyse the region where the efficiency optimum sits has no released sweep to work
-from. That is the gap this dataset closes, and both halves of the claim are checkable against files
-in a public repository: the ranges above via `analysis/compare_consumer.py`, and the GTX 980
-counter-example by opening `csvs/raw/gtx980-low-dvfs-real-small-workload-Performance-Power.csv`.
+**What survives is a claim about RANGE, not direction.** A sweep that reaches 89% of its default
+cannot locate an optimum that sat at 62% of maximum clock on the V100, and the efficiency gaps these
+datasets report — 1.00% and 3.34% — are bounded by that window rather than by the silicon. They
+remain unusable as evidence that consumer GPUs lack headroom, which is the only load this section
+needs them to bear. For consumer parts from Pascal onward, no released sweep descends far enough
+below default for the region to be re-analysed at all.
+
+Both halves are checkable: the ranges via `analysis/compare_consumer.py`, which now prints each
+sweep against both reference boost and declared default, and the GTX 980 counter-example by opening
+`csvs/raw/gtx980-low-dvfs-real-small-workload-Performance-Power.csv` in the same public repository.
 
 ### 2.7.1 The strongest counter-result found, and it is not dismissed
 
@@ -550,10 +563,13 @@ exactly this failure — asserting an absence in the literature without searchin
 dated search across the dataset repositories and artifact appendices would be needed before any
 stronger wording is justified, and has not been performed.
 
-What the two ranges show is arithmetic and does not depend on the survey being complete. Both are
-effectively overclocking sweeps: they begin at or above the rated boost clock and increase from
-there. Because the efficiency optimum lies *below* stock — at 62% of maximum in the V100 data —
-neither swept range contains it.
+What the two ranges show is arithmetic and does not depend on the survey being complete. Each spans
+a window of roughly 22 percentage points centred on the default clock its authors declare, reaching
+no lower than 89% of it. Because the efficiency optimum lies well below stock — at 62% of maximum in
+the V100 data — neither swept range contains it. ⚠️ **A draft of this paragraph called them
+overclocking sweeps that "begin at or above the rated boost clock".** That compared them against a
+specs-database reference card rather than the hardware the authors describe; two of five core
+frequencies in each dataset sit below the declared default (§2.7).
 
 The consequence is a trap for anyone reading them naively. The GTX 1080 Ti data yields a mean
 efficiency gap of 1.00% and the RTX 2070 Super 3.34%, against 44.40% for the V100. Read without
@@ -3319,13 +3335,19 @@ per-unit measurement worth its cost. Three things can be said with the data coll
 **The gap is real and large, and the released consumer DATASETS could not have found it.** ⚠️ The
 distinction between the data and the literature is the whole point and is easy to blur: the
 *finding* that a consumer GPU's optimum lies below its default clock is published [19], [15], [20].
-The *released* consumer collections sweep at or above rated boost — the artifact analysed here
-encodes its frequency axis as multipliers from 1.0 to 2.0 [21] — so their small measured gaps are
-an artifact of range rather than evidence of absence (§2.7). **A reader cannot re-analyse the
-region where the optimum sits, because no one has released a sweep of it.** That observation is
-reproducible in a single script against files this work already reads, it sharpens the
+The *released* modern consumer collections sweep too narrow a window to contain it — each brackets
+its own default clock and stops at 89% of it (§2.7) — so their small measured gaps are bounded by
+range rather than by silicon. **A reader cannot re-analyse the region where the optimum sits on any
+consumer architecture after Maxwell, because no released sweep descends into it.** That observation
+is reproducible in a single script against files this work already reads, it sharpens the
 justification for this project's own sweep design, and it is the contribution most likely to be
 useful to someone else.
+
+⚠️ **This paragraph twice claimed more than that and was twice wrong, in the same direction.** It
+said the released consumer data sweeps only at or above stock, on the strength of a normalised
+`*-features.csv` and then of a specs-database reference clock. Neither is what the datasets say.
+The surviving claim is about the WIDTH of the released window, which is the least this section
+needs and the only part that held up.
 
 **Per-unit prediction is worth its cost only under a constraint, and the fitting is not the part
 that earns it.** Unconstrained, a probe-based model ties a single fixed frequency, and that null is
@@ -3450,13 +3472,23 @@ claimed for it, which is a different state from an open measurement.
   aside in one application of 37 and explicitly left as an open problem.
 - [21] **Wang, Chu.** *GPGPU Performance Estimation with Core and Memory Frequency Scaling.*
   ICPADS 2018, pp. 417–424. Artifact: `github.com/HKBU-HPML/NV-DVFS-Benchmark` (branch `master`).
-  🔑 **The actual origin of the GTX 1080 Ti and GTX 980 CSVs this paper analyses**, which earlier
-  drafts attributed only to an unnamed "HKBU-HPML [7]". ⚠️ **It also releases below-stock consumer sweeps** — its two
-  GTX 980 files cover 500–1000 MHz and 700–1500 MHz against a 950 MHz default. Every part in the
-  release later than Maxwell does not: GTX 1080 Ti and Titan X at 1600–2000 MHz, RTX 2070 Super at
-  95–118% of boost. §2.7's claim is therefore generational, and a draft of this entry stated it far
-  too broadly on the strength of a companion `*-features.csv` whose frequency columns are
-  normalised rather than absolute.
+  🔑 **The origin of the GTX 980, Titan X and GTX 1080 Ti CSVs**, which earlier drafts attributed
+  only to an unnamed "HKBU-HPML [7]". ⚠️ **It releases below-stock consumer sweeps**: two GTX 980
+  files at 500–1000 and 700–1500 MHz, and two more at 400–1000 MHz, against that card's 1127 MHz
+  base clock. A draft of this entry denied that on the strength of a companion `*-features.csv`
+  whose frequency columns are normalised multipliers rather than absolute megahertz. ⚠️ **It is
+  NOT the source of the RTX 2070 Super file** — see [22]; that attribution was also wrong for a
+  day. The GTX 1080 Ti file is byte-identical in both repositories (verified by checksum), so
+  either citation is defensible for that one, and this work fetches it from [22]'s.
+- [22] **Wang, Mei, Liu, Leung, Li, Chu.** *Energy-aware Non-Preemptive Task Scheduling with
+  Deadline Constraint in DVFS-enabled Heterogeneous Clusters.* IEEE TPDS. arXiv:2104.00486.
+  Artifact: `github.com/HKBU-HPML/GPU-DVFS-Job-Schedule` (branch `master`) = [7], which is where
+  `scripts/Get-Dataset.ps1` actually fetches both consumer files from. 🔑 **Its README states the
+  default operating clocks of the cards used — GTX 1080 Ti 1800 MHz core / 5000 MHz memory, RTX
+  2070 Super 1880 / 6300 — and those are the numbers that corrected §2.7.** Scored against them
+  rather than against a specs-database reference clock, neither sweep is an overclocking sweep:
+  each brackets its own default, two of five core points below it. Every declared value lands
+  exactly on a swept grid point in both axes.
 
 - [3] Maliakel, Ilager, Brandic. *Characterizing LLM Inference Energy-Performance Tradeoffs across
   Workloads and GPU Scaling.* arXiv:2501.08219.
@@ -3470,8 +3502,10 @@ claimed for it, which is a different state from an open measurement.
   efficiency gain for 5.8% performance loss**, which is performance-constrained and therefore not
   the same quantity as this project's unconstrained 44.4% (§5.1). The two must not be compared
   directly as if one beats the other.
-- [7] HKBU-HPML/GPU-DVFS-Job-Schedule. `github.com/HKBU-HPML/GPU-DVFS-Job-Schedule` — later
-  scheduling work from the same research group as [19]–[21], not a data source for §2.7's table.
+- [7] HKBU-HPML/GPU-DVFS-Job-Schedule. `github.com/HKBU-HPML/GPU-DVFS-Job-Schedule` — the
+  artifact of [22]. ⛔ **This entry read "not a data source for §2.7's table" until 2026-09-13.**
+  It is the source this project downloads BOTH consumer files from, and its README carries the
+  declared default clocks that overturned that table's central claim.
   The GTX 1080 Ti and RTX 2070 Super rows there come from `HKBU-HPML/NV-DVFS-Benchmark` instead,
   credited to Wang & Chu, ICPADS 2018, as [21] — which also releases below-stock GTX 980 sweeps.
 - [8] Leng, Buyuktosunoglu, Bertran, Bose, Janapa Reddi. *Safe Limits on Voltage Reduction

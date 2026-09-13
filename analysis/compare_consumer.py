@@ -32,6 +32,20 @@ EXTERNAL = REPO_ROOT / "data" / "external"
 # Frequency floor this project's own sweep tool uses, as a fraction of the card's max clock.
 OUR_SWEEP_FLOOR_PERCENT = 40
 
+# The DEFAULT OPERATING CLOCK the dataset authors declare for the cards they actually used,
+# from the README of HKBU-HPML/GPU-DVFS-Job-Schedule ("Base Core Frequency (MHz)").
+#
+# This exists because scoring these sweeps against the specs database was WRONG, and wrong in the
+# way CLAUDE.md warns about: a spec sheet describes a REFERENCE card. The reference GTX 1080 Ti
+# boosts to 1582 MHz; the authors' card defaults to 1800. Against the spec the sweep looks like
+# pure overclocking (101-126%), and against the authors' own number it straddles the default
+# (89-111%), with two of five core points BELOW it. Both declared values land exactly on a swept
+# grid point, in the memory axis as well as the core axis, which is what settles it.
+STATED_BASE_CLOCK_MHZ = {
+    "GTX 1080 Ti (consumer)": 1800,
+    "RTX 2070 Super (consumer)": 1880,
+}
+
 
 def loadSpecs():
     path = EXTERNAL / "all-gpus.json"
@@ -121,15 +135,31 @@ def main():
     print(table.to_string(index=False))
     print()
 
+    # --- The same sweeps against the DEFAULT THE AUTHORS DECLARE, not the reference spec ---
+    print("[COMPARE] The same ranges against the default clock the dataset AUTHORS declare")
+    print("[COMPARE] for the cards they used, which is the comparison that is actually meaningful:")
+    print()
+    for row in rows:
+        base = STATED_BASE_CLOCK_MHZ.get(row["dataset"])
+        if base is None or row["swept_low_mhz"] is None:
+            continue
+        low = 100.0 * row["swept_low_mhz"] / base
+        high = 100.0 * row["swept_high_mhz"] / base
+        print(f"[COMPARE]   {row['dataset']:28s} declared default {base} MHz -> "
+              f"swept {low:.0f}%-{high:.0f}% of it")
+    print()
+
     # --- The point ---
     print("[COMPARE] THE FINDING:")
     for row in rows:
         low, high = row["swept_low_pct_of_boost"], row["swept_high_pct_of_boost"]
         if low is None:
             continue
-        if low >= 90:
-            verdict = ("sweeps AT AND ABOVE stock only - this is an OVERCLOCKING dataset and "
-                       "cannot locate an efficiency optimum")
+        base = STATED_BASE_CLOCK_MHZ.get(row["dataset"])
+        if base is not None:
+            lowOfBase = 100.0 * row["swept_low_mhz"] / base
+            verdict = (f"brackets its declared default, down to {lowOfBase:.0f}% of it - TOO NARROW "
+                       f"to reach the optimum, not an overclocking sweep")
         elif low <= 65:
             verdict = "sweeps well below stock - can locate an efficiency optimum"
         else:
@@ -137,9 +167,16 @@ def main():
         print(f"[COMPARE]   {row['dataset']:28s} {low:>3.0f}%-{high:>3.0f}% of boost: {verdict}")
 
     print()
-    print("[COMPARE] The published CONSUMER datasets never go below stock, so their small measured")
-    print("[COMPARE] gaps are NOT evidence that consumer GPUs lack headroom. They are evidence that")
-    print("[COMPARE] nobody swept the range where the headroom lives. Do not cite them as a null.")
+    print("[COMPARE] CORRECTED 2026-09-13. This block said the consumer sets 'never go below stock'")
+    print("[COMPARE] and called them OVERCLOCKING datasets. Both are false: measured against the")
+    print("[COMPARE] default their own authors declare, two of five core points in each sit BELOW")
+    print("[COMPARE] it. The error was scoring them against the specs database - a REFERENCE card -")
+    print("[COMPARE] which is the mistake CLAUDE.md warns about in its own hardware section.")
+    print()
+    print("[COMPARE] What survives: their small measured gaps are still NOT evidence that consumer")
+    print("[COMPARE] GPUs lack headroom, because a sweep reaching 89% of default cannot see an")
+    print("[COMPARE] optimum that sat at 62% of max on the V100. The range is too NARROW, which is")
+    print("[COMPARE] a weaker and more defensible claim than the one this script used to print.")
     print()
     print(f"[COMPARE] This project's own sweep floor is {OUR_SWEEP_FLOOR_PERCENT}% of max clock, which")
     print("[COMPARE] covers the region the V100 optimum sat in (62% of its max) and that every")

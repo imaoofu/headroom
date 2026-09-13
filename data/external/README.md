@@ -25,15 +25,24 @@ The GTX 1080 Ti set is 600 rows, 30 applications, a 2D sweep: core 1600-2000 MHz
 memory 4000-5500 MHz. The memory axis is one the V100 set lacks entirely. The RTX 2070 Super
 set is 400 rows.
 
-⚠️ The two published consumer DVFS datasets sweep the wrong range. As a percentage of each
+⚠️ The two published consumer DVFS datasets sweep too narrow a window. As a percentage of each
 card's rated boost clock, the GTX 1080 Ti set covers 101-126% and the RTX 2070 Super 95-118%,
-against the V100's 55-111%. Both consumer sets start at or above stock and go up; they are
-overclocking sweeps. They structurally cannot locate an efficiency optimum, because the optimum
-lives below stock; the V100's sat at 62% of its maximum.
+against the V100's 55-111%.
+
+⛔ CORRECTED 2026-09-13. This paragraph said both consumer sets "start at or above stock and go
+up; they are overclocking sweeps". That is FALSE. Those percentages are computed against a rated
+boost clock from the specs database, which describes a REFERENCE card. The dataset authors state
+the default operating clock of the cards they used - GTX 1080 Ti 1800 MHz, RTX 2070 Super 1880 MHz,
+in the README of HKBU-HPML/GPU-DVFS-Job-Schedule - and against those, each sweep BRACKETS its own
+default, with two of five core frequencies below it. Both declared values land exactly on a swept
+grid point in both axes.
+
+What survives is that each window is only ~22 points wide and bottoms out at 89% of default, so
+neither can contain an efficiency optimum that sat at 62% of maximum on the V100.
 
 🛑 Their small measured gaps (1.00% and 3.34% mean, against the V100's 44.40%) are not evidence
-that consumer GPUs lack headroom. They are evidence that nobody swept the range where headroom
-lives. Never cite the 1.0% figure as a null result. Reproduce this with
+that consumer GPUs lack headroom. They are bounded by the width of the window swept. Never cite the
+1.0% figure as a null result. Reproduce this with
 `python analysis/compare_consumer.py`.
 
 ## GPU specs

@@ -213,10 +213,10 @@ the bandwidth chain is not).
 | dataset | what it is |
 |---|---|
 | [HKBU-HPML/NV-DVFS-Benchmark](https://github.com/HKBU-HPML/NV-DVFS-Benchmark) | ⚠️ **`master` branch, not `main`.** 🔑 **This is the origin of the GTX 1080 Ti dataset this project uses** — `csvs/gtx1080ti-dvfs-real-features.csv` — which the prior-art log had recorded as never located. It belongs to **Wang & Chu, ICPADS 2018**, *GPGPU Performance Estimation with Core and Memory Frequency Scaling*, NOT to Mei's papers. Also holds GTX 980, Titan X, P100 and V100 files |
-| [HKBU-HPML/GPU-DVFS-Job-Schedule](https://github.com/HKBU-HPML/GPU-DVFS-Job-Schedule) | Later scheduling work, same group |
+| [HKBU-HPML/GPU-DVFS-Job-Schedule](https://github.com/HKBU-HPML/GPU-DVFS-Job-Schedule) | 🔑 **The repo `Get-Dataset.ps1` actually downloads BOTH consumer files from**, and the artifact of **Wang, Mei, Liu, Leung, Li & Chu, TPDS** ([arXiv:2104.00486](https://arxiv.org/abs/2104.00486)). ⛔ Listed as merely "later scheduling work" until 2026-09-13. **Its README states the cards' default operating clocks — GTX 1080 Ti 1800 MHz core / 5000 memory, RTX 2070 Super 1880 / 6300 — which overturned the overclocking-sweep claim.** |
 | [zyjopensource/GPU-DVFS-Dataset](https://github.com/zyjopensource/GPU-DVFS-Dataset) | **No license stated.** Not redistributed here; fetched by `scripts/Get-Dataset.ps1` |
 | V100 reference set (33 workloads × 13 frequencies) | The project's original basis. Core clock only, **no voltage column** |
-| GTX 1080 Ti / RTX 2070 Super consumer sweeps | The two datasets the wrong-range argument is about. ⚠️ Their originating paper was **never located** — see the prior-art log |
+| GTX 1080 Ti / RTX 2070 Super consumer sweeps | The two datasets the range argument is about. ✅ **Originating paper LOCATED 2026-09-13** — Wang *et al.*, TPDS, arXiv:2104.00486 for the 2070 Super; the 1080 Ti file is byte-identical in Wang & Chu's ICPADS 2018 repo (checksum-verified) |
 
 ---
 
@@ -237,31 +237,37 @@ The open question left after the survey read. Answered three ways:
 was: *"the open, reusable consumer DVFS data that exists sweeps at or above stock"*, on the evidence
 that `coreF`/`memF` in the HKBU release are normalised multipliers 1.0 to 2.0. **That was read off a
 `*-features.csv`. The `*-Performance-Power.csv` files — the ones this project actually analyses —
-carry absolute megahertz, and the two GTX 980 files sweep 500-1000 MHz and 700-1500 MHz against a
-950 MHz default.** Below-stock consumer data is released, downloadable, and was released in 2018.
+carry absolute megahertz, and the GTX 980 files sweep 500-1000 and 700-1500 MHz (plus two more at
+400-1000) against that card's 1127 MHz base clock.** Below-stock consumer data is released and
+downloadable.
 
 🔑 **A conclusion drawn from one file of the wrong kind. The fifth retraction in two days and the
 only one that was self-inflicted rather than inherited** - and it reached CLAUDE.md, the roadmap,
 the paper's abstract and conclusion, a to-do list and four commit messages before `compare_consumer`
 was opened and found to read a different file than the one that had been sampled.
 
-**What survives is generational and narrower.** Every consumer part in that release later than
-Maxwell sweeps at or above stock - GTX 1080 Ti and Titan X at 1600-2000 MHz, RTX 2070 Super at
-95-118% of boost. **The below-stock consumer releases stop at the GTX 980, a 2014 part.** So for
-Pascal onward there is no released sweep of the region where the optimum sits, which is what this
-project's four chips across Turing, Ampere and Blackwell provide.
+⛔ **AND THE REPLACEMENT CLAIM WAS ALSO WRONG, FOUND THE SAME DAY.** It read: *"every consumer part
+in that release later than Maxwell sweeps at or above stock"*, on percentages computed against the
+**rated boost clock from a specs database**. That describes a REFERENCE card. The dataset authors
+publish the default operating clock of the cards they used — **GTX 1080 Ti 1800 MHz, RTX 2070 Super
+1880 MHz** — and against those each sweep **brackets** its default, **two of five core points below
+it**, down to 89%. Both declared values land exactly on a swept grid point in both axes, which is
+what settles that they are the sweep's centre.
 
-**The dataset contribution survives in its generational form**, and is checkable both ways: the
-above-stock ranges via `analysis/compare_consumer.py`, and the GTX 980 counter-example by opening
+✅ **What survives is a claim about WIDTH.** Each modern consumer window is ~22 points wide and
+bottoms out at 89% of default, so none can contain an optimum that sat at **62% of maximum** on the
+V100. That is checkable via `analysis/compare_consumer.py`, which now prints both axes, and the
+GTX 980 counter-example by opening
 `csvs/raw/gtx980-low-dvfs-real-small-workload-Performance-Power.csv` in that same repository.
 
 | released consumer file | coreF range | vs its default |
 |---|---|---|
-| `gtx980-low-...-Performance-Power` | **500–1000 MHz** | **below** (950 MHz default) |
+| `gtx980-low-...-Performance-Power` | **500–1000 MHz** | **entirely below** (1127 MHz base) |
 | `gtx980-high-...-Performance-Power` | **700–1500 MHz** | spans it |
-| `gtx1080ti-dvfs-real-Performance-Power` | 1600–2000 MHz | at/above |
-| Titan X | 1600–2000 MHz | at/above |
-| RTX 2070 Super | 95–118% of boost | at/above |
+| `csvs/v0/gtx980-dvfs-real`, `csvs/backup/gtx980-DVFS` | **400–1000 MHz** | **entirely below** |
+| `gtx1080ti-dvfs-real-Performance-Power` | 1600–2000 MHz | **brackets** 1800 MHz declared default |
+| Titan X (Pascal-generation) | 1600–2000 MHz | above (1531 MHz boost) |
+| RTX 2070 Super | 1680–2080 MHz | **brackets** 1880 MHz declared default |
 
 ---
 

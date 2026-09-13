@@ -4,9 +4,11 @@ Output of `tools/frequency-sweep/Invoke-FrequencySweep.ps1`. One CSV of per-freq
 plus one JSON of session metadata per run.
 
 These are committed for the same reason the stability runs are: the measurements *are* the
-contribution. Published consumer DVFS datasets sweep at or above stock and structurally cannot
-locate an efficiency optimum (see commit `14b4c46`), so open data that sweeps below stock is the
-thing this project has to offer. Smoke-test output is excluded via `.gitignore`; anything else
+contribution. Published consumer DVFS datasets sweep too narrow a window around
+their default clock to contain an efficiency optimum - down to 89% of it, against an optimum that
+sat at 62% of maximum on the V100 - so open data that sweeps far below stock is the thing this
+project has to offer. (This sentence said they "sweep at or above stock"; that was corrected
+2026-09-13, having been computed against a reference card rather than the authors' own.) Smoke-test output is excluded via `.gitignore`; anything else
 kept here needs an entry below saying what it is and whether it is dataset-grade.
 
 ## Before trusting any run

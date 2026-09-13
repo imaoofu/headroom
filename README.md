@@ -53,20 +53,26 @@ Not "we built a better GPU Boost."
 Two consumer GPU DVFS datasets exist publicly. **Both sweep the wrong range.** Placed on a common
 axis — swept range as a percentage of each card's rated boost clock:
 
-| dataset | swept range | mean gap found |
-|---|---|---|
-| GTX 1080 Ti | **101–126%** of boost | 1.00% |
-| RTX 2070 Super | **95–118%** of boost | 3.34% |
-| Tesla V100 (datacenter) | **55–111%** of boost | **44.40%** |
+| dataset | swept range | vs *reference* boost | vs the default the **authors declare** | mean gap found |
+|---|---|---|---|---|
+| GTX 1080 Ti | 1600–2000 MHz | 101–126% | **89–111%** (1800 MHz) | 1.00% |
+| RTX 2070 Super | 1680–2080 MHz | 95–118% | **89–111%** (1880 MHz) | 3.34% |
+| Tesla V100 (datacenter) | 757–1530 MHz | **55–111%** | — | **44.40%** |
 
-Both consumer sets start at or above stock and go **up**. They are overclocking sweeps, and they
-structurally cannot locate an efficiency optimum, because the optimum lives *below* stock — the
-V100's sat at 62% of its maximum.
+⛔ **CORRECTED 2026-09-13.** This section said both consumer sets "start at or above stock and go
+up" and called them overclocking sweeps. **That was false.** Those percentages were computed against
+a rated boost clock from a specs database, which describes a *reference* card. The dataset authors
+state the default operating clock of the cards they used — 1800 and 1880 MHz — and against those,
+each sweep **brackets** its default, with two of five core frequencies below it.
 
-🛑 **Their small measured gaps are NOT evidence that consumer GPUs lack headroom.** They are evidence
-that nobody swept the range where headroom lives. Reproduce with `python analysis/compare_consumer.py`.
+✅ **What survives is a claim about WIDTH.** Each consumer window is only ~22 points wide and
+bottoms out at 89% of default, so neither can contain an optimum that sat at **62% of maximum** on
+the V100. Their small measured gaps are therefore bounded by the range swept, and are **NOT**
+evidence that consumer GPUs lack headroom. Reproduce with `python analysis/compare_consumer.py`,
+which prints both axes.
 
-That is the contribution, stated checkably: **the consumer data that exists sweeps the wrong range.**
+That is the contribution, stated checkably: **the modern consumer data that exists sweeps too
+narrow a window to contain the optimum.**
 
 ---
 

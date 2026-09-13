@@ -137,25 +137,43 @@ consumer hardware, openly and reproducibly, and release the dataset.
 matches the default limit exactly, which validates the source — but his is a factory-OC board
 running above reference. Never treat a spec-sheet clock as the measured clock.
 
-### 🔑 The published consumer DVFS datasets sweep the WRONG RANGE (2026-08-15)
+### 🔑 The published consumer DVFS datasets sweep TOO NARROW A RANGE (2026-08-15, corrected 09-13)
 
-Reproduce with `python analysis/compare_consumer.py`. Every dataset placed on a common axis —
-swept range as a percentage of the card's **rated boost clock**, taken from the specs database:
+Reproduce with `python analysis/compare_consumer.py`, which now prints BOTH axes below.
 
-| Dataset | Swept range | Mean gap | At ceiling |
-|---|---|---|---|
-| GTX 1080 Ti (consumer) | **101–126%** of boost | 1.00% | 60% of apps |
-| RTX 2070 Super (consumer) | **95–118%** of boost | 3.34% | 20% of apps |
-| Tesla V100 (datacenter) | **55–111%** of boost | **44.40%** | 0% |
+⛔ **THIS SECTION SAID "THE WRONG RANGE" AND CALLED BOTH SETS OVERCLOCKING SWEEPS UNTIL 2026-09-13.
+THAT WAS FALSE, AND IT WAS FALSE FOR A REASON THIS FILE WARNS ABOUT ELSEWHERE IN ITS OWN WORDS.**
+The figures were computed against the card's **rated boost clock, taken from the specs database** -
+a deliberate choice, made so the number would not be "assumed". But a spec sheet describes a
+**REFERENCE** card, which is exactly what the hardware section above says about Raymond's own 5060
+Ti. The dataset authors declare the default operating clock of the cards they actually used, in the
+README of `HKBU-HPML/GPU-DVFS-Job-Schedule`:
 
-**Both published consumer datasets are OVERCLOCKING sweeps.** They start at or above stock and go
-up. They structurally cannot locate an efficiency optimum, because the optimum lives *below* stock
-(the V100's sat at 62% of its max).
+| Dataset | vs *reference* boost | declared default | vs **that** | Mean gap | At ceiling |
+|---|---|---|---|---|---|
+| GTX 1080 Ti (consumer) | 101–126% | **1800 MHz** | **89–111%** | 1.00% | 60% of apps |
+| RTX 2070 Super (consumer) | 95–118% | **1880 MHz** | **89–111%** | 3.34% | 20% of apps |
+| Tesla V100 (datacenter) | **55–111%** | - | - | **44.40%** | 0% |
+
+**Neither consumer set is an overclocking sweep. Each BRACKETS its own default, with two of five
+core frequencies BELOW it.** Both declared values land exactly on a swept grid point, in the memory
+axis as well as the core axis, which is what identifies them as the centre of the sweep rather than
+a nominal figure. ⚠️ The GTX 980 files in the same family go further still - 400–1000, 500–1000 and
+700–1500 MHz against a 1127 MHz base clock.
+
+✅ **WHAT SURVIVES IS A CLAIM ABOUT WIDTH, NOT DIRECTION.** A sweep reaching 89% of default cannot
+locate an optimum that sat at **62% of max** on the V100. The released modern consumer windows are
+too narrow to contain the answer, and that is all this finding supports.
+
+🔑 **The number was reproducible, mechanically checked and wrong for four weeks**, because
+`compare_consumer.py` and the paper both computed it the same way from the same wrong reference.
+**Reproducibility guarantees agreement, not correctness** - and §2.7 was one of the 17 unaudited
+sections, so no claim ever rendered a string that a reader could have disputed.
 
 🛑 **Their small measured gaps are NOT evidence that consumer GPUs lack headroom.** They are
-evidence that *these two datasets* did not sweep the range where headroom lives. Never cite the
-1.0% figure as a null, and never conclude "the V100 finding does not transfer to consumer silicon"
-from it — that conclusion is unsupported and backwards.
+bounded by a window 22 percentage points wide. Never cite the 1.0% figure as a null, and never
+conclude "the V100 finding does not transfer to consumer silicon" from it — that conclusion is
+unsupported and backwards.
 
 ⛔ **THAT SENTENCE SAID "nobody swept the range where headroom lives" UNTIL 2026-09-12, AND IT WAS
 FALSE.** Tang, Wang, Wang and Chu, *The Impact of GPU DVFS on the Energy and Performance of Deep
@@ -166,15 +184,18 @@ optimum there. 🔑 **That is the same HKBU group whose V100 dataset this projec
 Mei et al. (HotPower 2013) reported ~19% savings below default on a GTX 480.
 
 **What survives is narrower and still worth stating:** the two *downloadable, reusable* datasets
-this project places on a common axis are overclocking sweeps, so **they** cannot locate an optimum,
-and no prior source was found making that specific criticism of those specific artifacts. ⚠️ **The
+this project places on a common axis sweep a window only 22 points wide around their own default,
+so **they** cannot locate an optimum, and no prior source was found making that specific criticism
+of those specific artifacts. ⚠️ **The
 broad form — "the energy-optimal frequency on consumer GPUs lies below stock and nobody has measured
 it" — is refuted and must not be written anywhere.** Say "these datasets", never "nobody".
 
-✅ **This validates this project's own sweep design.** `-MinFrequencyPercent 40` covers the region
-every published consumer dataset misses entirely. The justification is therefore stronger than
-"no open consumer data exists" — it is **"the consumer data that exists sweeps the wrong range."**
-That is a sharper, more defensible contribution claim, and it is checkable by anyone.
+✅ **This validates this project's own sweep design.** `-MinFrequencyPercent 40` covers a region
+no released modern consumer dataset reaches - they stop at 89% of their own default. The
+justification is therefore stronger than "no open consumer data exists": it is **"the modern
+consumer data that exists sweeps too narrow a window to contain the optimum."** ⚠️ It is NOT
+"the wrong range", which is what this line said until 2026-09-13 - the sweeps do go below stock,
+just not nearly far enough. Checkable by anyone, in both directions.
 
 ### The hardware (Zotac RTX 5060 Ti Twin Edge OC) — verified by direct probing
 
@@ -634,9 +655,9 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` | **274 of 274** |
-| ...and where `data/raw/` is absent, as CI's "checks" leg runs | **236 of 236** |
-| sections with no claim at all | **17 numbered sections are still unaudited** |
+| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **282 of 282** |
+| ...and where both are absent, as CI's "checks" leg runs | **236 of 236** |
+| sections with no claim at all | **16 numbered sections are still unaudited** |
 | §5.7 and its subsections carry | **84 claims between them and §5.5 carries 63** |
 
 ⚠️ **THE TOTAL WENT STALE FOUR TIMES BEFORE IT WAS PINNED: 87 -> 119 -> 185 -> 204**, and on
@@ -666,7 +687,7 @@ travels with the number, in `claims_repo.sectionFamilyCounts`.
 different runner counting a different thing, and a second implementation inside the auditor would be
 two methods that can disagree - the exact failure this project keeps finding elsewhere.
 
-⛔ **Claims live in THREE data modules, and this paragraph said they were "split by which hardware
+⛔ **Claims live in FOUR data modules, and this paragraph said they were "split by which hardware
 the data came from" until 2026-09-12. THEY ARE NOT, AND THEY CANNOT BE.** `claims_consumer.py` was
 already reading the 3070 Ti and the 3060 when that sentence was being relied on, because **5.5.4's
 rank correlation and 5.5.7's knee table compare four chips inside ONE claim** - a cross-card claim
@@ -679,6 +700,7 @@ has no per-card module to live in.
 | `claims_consumer.py` | the sweeps this project ran - 5060 Ti configuration work in 5.4, 5.7, 5.8 - **plus every claim that sets cards side by side** |
 | `claims_crosschip.py` | the 3070 Ti two-BIOS comparison, 2.6 and 5.5-5.5.3, self-contained |
 | `claims_reference.py` | the public V100 set, published by others and never pooled with the rest |
+| `claims_datasets.py` | 🆕 **2026-09-13** - the published CONSUMER sets under `data/external/`, for §2.7. Added after that section produced two retractions in one day, neither catchable by anything here: it was unaudited prose, and CI did not even download the files |
 
 ⚠️ **So the 3070 Ti is reached from two modules**, through two independent sets of constants into
 one `rtx3070ti-20260825/` tree. The stated reason for the split - "a shared constant is how a claim
@@ -695,11 +717,12 @@ would turn this from untidy into dangerous.
 run_tests.py       runs every suite, one verdict - `python run_tests.py`
 analysis/          Python measurement + audit on the public V100 dataset
   audit_claims.py     mechanical paper auditor — see "The claims auditor" above
-  claims_*.py         the claims themselves, one function per sentence of the paper - THREE
+  claims_*.py         the claims themselves, one function per sentence of the paper - FOUR
                       data modules split by STUDY, not by card (see above): _consumer (this
                       project's sweeps + all cross-card claims), _crosschip (the 3070 Ti
-                      two-BIOS study), _reference (public V100). _repo is a fourth, on a
-                      different axis - it audits the repository's own state
+                      two-BIOS study), _reference (public V100), _datasets (the published
+                      consumer sets, §2.7). _repo is a fifth, on a different axis - it
+                      audits the repository's own state
   models/             everything that PREDICTS rather than measures — has its own README
   test_*.py           20 suites, 701 checks (699 without data/raw) - NOT pinned, see above
 tools/
@@ -1127,16 +1150,20 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   🔑 **CI does NOT see `data/raw/`, and that changes the claim count.** The dataset is gitignored
   and fetched, so `claims_reference.py` registers its 24 claims only in the "V100 reference
   claims" job. Both legs are green, and **their two totals are in the canonical coverage block
-  above rather than here.** ⛔ **The gap between them is 38, it was 32 until 2026-09-12, and it
-  said 25 until 2026-09-09 - in the same block that claims its numbers cannot go stale.** The
-  reasoning the 25 gave was right and its inventory was short by three. **Five** non-reference
-  claims are guarded on the same condition and register only alongside the reference set, not two:
+  above rather than here.** ⛔ **The gap between them is 46; it was 38 until 2026-09-13, 32
+  until 09-12, and 25 until 09-09 - in the same block that claims its numbers cannot go stale.**
+  The reasoning the 25 gave was right and its inventory was short by three. **Five** non-reference
+  claims are guarded on the same condition and register only alongside the fetched sets, not two:
   `header-pinned-count`, `header-unaudited-count`, `claudemd-claims-with-reference`,
-  `claudemd-section-families` and `claudemd-unaudited-sections`. So 34 + 5 = 39 register only when
-  `data/raw/` is present, exactly one (`claudemd-claims-without-reference`) registers only when it
-  is absent, and 39 - 1 = 38. 🔑 **The number moves whenever a claim is added to
+  `claudemd-section-families` and `claudemd-unaudited-sections`. ⚠️ **And the condition is now TWO
+  datasets, not one** - `claims_datasets.py` adds **8** claims over the published consumer sets in
+  `data/external/`, so the guard requires both that and `data/raw/`. So 34 + 5 + 8 = 47 register
+  only when the fetched data is present, exactly one (`claudemd-claims-without-reference`)
+  registers only when it is absent, and 47 - 1 = 46. 🔑 **The number moves whenever a claim is added to
   `claims_reference.py`, so it is a maintenance cost, not a constant** - 5.6.3's six fleet-resizing
-  claims are what moved it on 2026-09-12, and 224 did not move at all.
+  claims are what moved it on 2026-09-12, §2.7's eight on 09-13, and 224 did not move at all.
+  ⚠️ **An environment holding one fetched set but not the other now pins NEITHER total** and
+  says so, rather than reporting a count that describes no CI leg.
   `claims_repo.py` splits this way because `len(CLAIMS)` can only honestly report the environment it
   is running in. **Verify this by diffing the two registries, not by reasoning about it** - the
   arithmetic here was internally consistent and still wrong, because the premise was an

@@ -710,26 +710,38 @@ have failed. Cite Mei and move on.
 **The spine is the DATASET, and it got sharper rather than weaker on 2026-09-13.** The claim is no
 longer "nobody measured below stock" but:
 
-> 🔑 **For consumer silicon later than Maxwell, no released sweep covers the region where the
-> optimum lives.**
+> 🔑 **For consumer silicon later than Maxwell, no released sweep descends far enough below the
+> default clock to contain the efficiency optimum.**
 
 ⛔ **RETRACTED 2026-09-13, hours after it was written, by the person who wrote it.** The claim
 was: *"the open, reusable consumer DVFS data that exists sweeps at or above stock"*, on the evidence
 that `coreF`/`memF` in the HKBU release are normalised multipliers 1.0 to 2.0. **That was read off a
 `*-features.csv`. The `*-Performance-Power.csv` files — the ones this project actually analyses —
-carry absolute megahertz, and the two GTX 980 files sweep 500-1000 MHz and 700-1500 MHz against a
-950 MHz default.** Below-stock consumer data is released, downloadable, and was released in 2018.
+carry absolute megahertz, and the GTX 980 files sweep 500-1000 and 700-1500 MHz (plus two more at
+400-1000) against that card's 1127 MHz base clock.** Below-stock consumer data is released and
+downloadable.
 
 🔑 **A conclusion drawn from one file of the wrong kind. The fifth retraction in two days and the
 only one that was self-inflicted rather than inherited** - and it reached CLAUDE.md, the roadmap,
 the paper's abstract and conclusion, a to-do list and four commit messages before `compare_consumer`
 was opened and found to read a different file than the one that had been sampled.
 
-**What survives is generational and narrower.** Every consumer part in that release later than
-Maxwell sweeps at or above stock - GTX 1080 Ti and Titan X at 1600-2000 MHz, RTX 2070 Super at
-95-118% of boost. **The below-stock consumer releases stop at the GTX 980, a 2014 part.** So for
-Pascal onward there is no released sweep of the region where the optimum sits, which is what this
-project's four chips across Turing, Ampere and Blackwell provide.
+⛔ **AND ITS REPLACEMENT FELL THE SAME DAY, TO THE SAME KIND OF ERROR.** The replacement read
+*"every consumer part in that release later than Maxwell sweeps at or above stock"* - computed
+against a **rated boost clock from a specs database**, i.e. a REFERENCE card, which is the mistake
+CLAUDE.md's own hardware section warns about. The dataset authors publish their cards' default
+operating clocks - **GTX 1080 Ti 1800 MHz, RTX 2070 Super 1880 MHz** - and against those, each
+sweep **brackets** its default with **two of five core points below it**, bottoming out at 89%.
+
+✅ **What survives is a claim about WIDTH, and only that.** Each modern consumer window is ~22
+points wide and reaches no lower than 89% of default, so none of them can contain an optimum that
+sat at **62% of maximum** on the V100. That is what this project's four chips across Turing, Ampere
+and Blackwell provide, and it is a weaker claim than either version it replaces.
+
+🔑 **Two retractions of the same sentence in one day, both from reading a convenient file instead
+of the authoritative one.** The first took a normalised features CSV for the measurement data; the
+second took a specs database for the cards actually used. **Both were reproducible, and being
+reproducible is what made them feel checked.**
 
 That claim is about artifacts rather than priority, so it cannot be lost to a paper turning up —
 but as the retraction above shows, it can still be lost to reading the wrong file.

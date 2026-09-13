@@ -48,13 +48,28 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _referenceDataPresent():
-    """Whether the V100 set is fetched, and therefore which total the registry represents.
+    """Whether the FETCHED datasets are present, and therefore which total the registry represents.
 
-    Defined here rather than imported from claims_consumer on purpose. It is two lines, it reads
-    no hardware, and importing it would couple this module to a hardware module for no gain -
-    the coupling that CLAUDE.md's "keep them apart" rule exists to prevent.
+    Defined here rather than imported from claims_consumer on purpose. It reads no hardware, and
+    importing it would couple this module to a hardware module for no gain - the coupling that
+    CLAUDE.md's "keep them apart" rule exists to prevent.
+
+    ⚠️ TWO datasets since 2026-09-13, not one. claims_datasets.py registers section 2.7 against
+    the published consumer sets under data/external/, which are fetched and gitignored exactly as
+    data/raw/ is, so the registry size now depends on both. An environment holding one but not the
+    other registers NEITHER total and says so below, rather than pinning a number that describes
+    no CI leg - a partial fetch producing a plausible-looking count is precisely the failure the
+    guarded totals exist to prevent.
     """
-    return (_REPO_ROOT / "data" / "raw" / "dataset_performance.csv").exists()
+    return ((_REPO_ROOT / "data" / "raw" / "dataset_performance.csv").exists()
+            and (_REPO_ROOT / "data" / "external" / "all-gpus.json").exists())
+
+
+def _partialFetch():
+    """One of the two fetched datasets present and the other missing."""
+    raw = (_REPO_ROOT / "data" / "raw" / "dataset_performance.csv").exists()
+    external = (_REPO_ROOT / "data" / "external" / "all-gpus.json").exists()
+    return raw != external
 
 
 def _sectionsWithClaims():
@@ -123,10 +138,15 @@ if _referenceDataPresent():
         count = len(unauditedSections([PAPER], _sectionsWithClaims()))
         return f"**{count} numbered sections carry no claims at all**"
 
+elif _partialFetch():
+    print("  [SKIP] claims_repo: exactly one of data/raw/ and data/external/ is present. Neither "
+          "registry total is pinned in this environment, because neither CI leg looks like it - "
+          "run scripts/Get-Dataset.ps1 with no -Only, or move the other aside too.")
+
 else:
 
     @claim("claudemd-claims-without-reference", CLAUDE)
     def claimsWithoutReference():
-        """The registry as the "checks" CI leg sees it, with data/raw absent."""
+        """The registry as the "checks" CI leg sees it, with both fetched datasets absent."""
         return f"**{len(CLAIMS)} of {len(CLAIMS)}**"
 

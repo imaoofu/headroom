@@ -74,16 +74,20 @@ URL is worse than an omission, because a reader cannot tell the two apart.
   - `benchmarks.csv` and `mining.csv` — roughly 500 consumer cards, 422 with wattage, from
     mining hashrate-per-watt. An external sanity check on perf-per-watt *ordering* only.
     **NOT training data.**
-- ⚠️ **The two published consumer DVFS datasets sweep the WRONG RANGE**, and this is the most
-  important fact about this directory. Expressed as a percentage of each card's rated boost
-  clock: the GTX 1080 Ti set covers **101-126%** and the RTX 2070 Super **95-118%**, against the
-  V100's **55-111%**. Both consumer sets **start at or above stock and go up** — they are
-  overclocking sweeps. They structurally cannot locate an efficiency optimum, because the
-  optimum lives *below* stock; the V100's sat at 62% of its maximum.
+- ⚠️ **The two published consumer DVFS datasets sweep TOO NARROW A WINDOW**, and this is the
+  most important fact about this directory. As a percentage of each card's rated boost clock the
+  GTX 1080 Ti set covers **101-126%** and the RTX 2070 Super **95-118%**, against the V100's
+  **55-111%** — but that comparison uses a specs-database *reference* card. The dataset authors
+  declare the default operating clock of the cards they actually used, **1800 MHz** and
+  **1880 MHz**, and against those each sweep **brackets its own default**, with two of five core
+  frequencies below it, bottoming out at **89%**.
+- ⛔ **Do NOT write that these sets "start at or above stock" or call them overclocking sweeps.**
+  This spec said exactly that until 2026-09-13 and it was false. What is true is that a window
+  ~22 points wide cannot contain an efficiency optimum that sat at **62% of maximum** on the V100.
 - 🛑 Their small measured gaps (1.00% and 3.34% mean, against the V100's 44.40%) are therefore
-  **NOT evidence that consumer GPUs lack headroom.** They are evidence that nobody swept the
-  range where headroom lives. Never cite the 1.0% figure as a null result. Reproduce this with
-  `python analysis/compare_consumer.py`.
+  **NOT evidence that consumer GPUs lack headroom.** They are bounded by the width of the window
+  swept. Never cite the 1.0% figure as a null result, and never write "nobody" — below-default
+  consumer measurement is published. Reproduce with `python analysis/compare_consumer.py`.
 - ⚠️ Spec sheets in this data describe **reference** cards. The table lists the 5060 Ti 16GB at
   boost 2572 MHz / TDP 180 W; the card measured in this project reports a 3090 MHz maximum lock
   target and a 200 W limit against a 180 W default. Never treat a spec-sheet clock as a measured
