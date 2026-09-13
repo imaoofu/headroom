@@ -407,6 +407,23 @@ optimum follow, with a negative control — and found a card where it cannot be 
 claim, one boundary condition, and a mechanism chain. Sections 2.1-2.5 of the paper need rewriting
 against all of this.
 
+📄 **The full log is `docs/PRIOR-ART-20260912.md`** - 8 agents, five search angles plus two
+adversarial refutation passes, every citation marked full-text / abstract / snippet, and a limits
+section listing the venues, vocabularies and blocked sources it never reached.
+
+✅ **Two of its load-bearing citations were spot-checked by hand rather than taken on trust.** The
+LACT issue it cites for the XBAR domain is real - `ilya-zlobintsev/LACT#1147`, opened
+**2026-08-10**, titled "Runtime XBAR clock and per-domain MSVDD control on NVIDIA Blackwell",
+two weeks before this project's own crossbar result on a different Blackwell chip. And the Tang et
+al. abstract was read directly, confirming the below-default claim.
+
+⛔ **THE BIGGEST UNCLOSED RISK: the HKBU HotPower 2013 paper could not be fetched** (403 on every
+attempt), and it is the most promising remaining candidate for a consumer full-sweep
+ridge-point-style study. **It is the same group whose V100 dataset this project uses.** Until
+someone reads it, claims C and E are open rather than settled. ⚠️ Also unsearched: IEEE Xplore,
+the ACM DL directly, any citation-graph traversal of van Werkhoven, and Chinese-language venues -
+where a meaningful share of GPU DVFS measurement work, including HKBU's own, is published.
+
 ### 🔑 The efficiency optimum is the last frequency on the V/F curve's LOAD FLOOR (2026-09-08 → 09-10)
 
 **The single most transferable result in the project, and the only one now confirmed on two chips
