@@ -3353,9 +3353,18 @@ from source, and are deliberately omitted rather than cited as either support or
   survey of this area and is very likely to contain a swept-range comparison bearing directly on
   §2.7. Nothing in this paper cites it for a figure, and nothing should until someone opens it.
   Try an institutional login or the authors' own copy.
-- [1] Guerreiro et al. *Predictable GPUs Frequency Scaling for Energy and Performance.* ICPP 2019.
-  DOI 10.1145/3337821.3337833 — **the closest prior art; read this before finalising any novelty
-  claim.**
+- [1] **Fan, Cosenza, Juurlink.** *Predictable GPUs Frequency Scaling for Energy and Performance.*
+  ICPP 2019. DOI 10.1145/3337821.3337833. Open-access postprint at TU Berlin DepositOnce.
+  *Read in full 2026-09-13.* ⛔ **This entry read "Guerreiro et al." until then — a misattribution,
+  under a note instructing the reader to open it, which is presumably part of why nobody did.**
+  Confirmed from the text: GTX Titan X (Maxwell, consumer) and Tesla P100; 85 core frequencies
+  135–1392 MHz × 4 memory frequencies; NVML only, **no voltage control**; ML over static code
+  features trained on 106 micro-benchmarks, predicting a Pareto set without executing the kernel.
+  🔑 **It is closest not to §5.5's causal result but to §5.2's NULL**, and it reports success where
+  this project reports a loss — from richer inputs (code features, a 2D core×memory space,
+  purpose-built training). Say so wherever the null appears.
+  Also corroborates §5.4.2's class of hazard: NVML reports configurations as supported that do not
+  actually take effect, and requests above 1202 MHz on Titan X silently return 1202.
 - [2] *Accurate Energy and Performance Prediction for Frequency-Scaled GPU Kernels.* MDPI
   Computation 8(2):37.
 - [4] Measurement studies of GPU DVFS energy conservation (multiple; consolidate to one citation).

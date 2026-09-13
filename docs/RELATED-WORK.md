@@ -50,27 +50,58 @@ voltage and the energy-optimal frequency changes with it — 2013, consumer GPU,
 **because it measures system energy, not board power.** Never cite it against low-frequency
 headroom.
 
-### 🔑 Zamani, Tripathy, Chen, Bhuyan — SAOU. **Re-read this against the causal claim.**
+### ✅ Zamani, Tripathy, Bhuyan, Chen — SAOU. **Re-read 2026-09-13. Does NOT pre-empt the causal claim.**
 *Safe Adaptive Overclocking and Undervolting for Energy-Efficient GPU Computing.* ISLPED 2020.
 [cs.ucr.edu/~hzama001/publications/SAOU.pdf](https://www.cs.ucr.edu/~hzama001/publications/SAOU.pdf)
-· doi:10.1145/3370748.3406553. **Read in full 2026-09-07.**
+· doi:10.1145/3370748.3406553. **Read in full**, local copy `papers/saou-islped-2020.pdf`.
 
-GTX 980, cuBLAS 10K matmul, **MSI Afterburner used to apply the offsets**, checkpoint-recovery for
-faults, up to 22% energy reduction.
+One **GTX 980**, cuBLAS matrix multiply. Pushes **beyond** `V_safeMin` and **beyond** `f_safeMax` —
+deliberately into the faulting region — and catches the resulting errors with in-kernel
+checkpoint-recovery. Up to 22% energy reduction. Built on the authors' earlier GreenMM (ABFT).
 
-⛔ **This was read on 09-07, before the causal claim existed, and has NOT been re-examined against
-it.** It is a consumer GPU, adaptively overclocked *and* undervolted through the same tool this
-project uses. **Whether it moves an efficiency optimum or only chases a safe operating point is the
-open question, and it is the highest-value re-read on this list.**
+🔑 **The sentence that settles it:** *"Since the GPU is undervolted at a **fixed frequency**, it does
+not incur any performance degradation."* They hold frequency and lower voltage. **They never sweep
+frequency for an optimum, never reshape a V/F curve, and the "optimum" they chase is the
+RELIABILITY EDGE, not an efficiency one.** Afterburner appears only as reference [22], the tool.
 
-### ⚠️ Guerreiro et al. — flagged as closest prior art, **STILL NOT READ**
+**Same family as Leng et al.:** exploit the guardband at fixed frequency, handle the faults. The
+open question raised on 09-12 is closed — it bears on the guardband literature, not on claim A.
+
+### ⛔ Fan, Cosenza, Juurlink — ICPP 2019. **Read 2026-09-13, and it was MISATTRIBUTED for months.**
 *Predictable GPUs Frequency Scaling for Energy and Performance.* ICPP 2019.
-[doi:10.1145/3337821.3337833](https://doi.org/10.1145/3337821.3337833)
+[doi:10.1145/3337821.3337833](https://doi.org/10.1145/3337821.3337833) · open-access postprint:
+[TU Berlin DepositOnce](https://depositonce.tu-berlin.de/items/06109ac7-40f7-42e7-bd14-442a273b360a)
+· local copy `papers/fan-icpp-2019-predictable-gpu-freq-scaling.pdf`.
 
-⛔ The paper's own reference list has carried the note *"the closest prior art; read this before
-finalising any novelty claim"* since well before the ridge-point retraction. **It is still unread.**
-Given that two novelty claims have now fallen to sources exactly like this one, this is the single
-most overdue item in the bibliography.
+⛔ **The paper's reference list attributed this to "Guerreiro et al." It is by Kaijie Fan, Biagio
+Cosenza and Ben Juurlink, TU Berlin.** Guerreiro is a real author in this field — RNN-based
+DVFS-aware power models — but wrote different papers. **A wrong author name sat in the bibliography
+under a note telling everyone to read it, which is presumably part of why nobody did.**
+
+| | |
+|---|---|
+| Hardware | **NVIDIA GTX Titan X** (Maxwell, consumer) as the main target, plus Tesla P100 |
+| Space | 85 core frequencies **135–1392 MHz** × 4 memory frequencies = 219 configurations |
+| Control | **NVML only** — `nvmlDeviceSetApplicationsClocks`, `nvmlDeviceGetPowerUsage`. **No voltage control, no curve reshaping** |
+| Method | ML on **static code features**, trained on 106 synthetic micro-benchmarks; predicts speedup and normalised energy, combined into a **Pareto set** |
+| Claim | *"can predict the best frequency settings of a new kernel **without executing it**"* — accurate on extrema and Pareto set for 10 of 12 test benchmarks |
+
+🔑 **The "closest prior art" note was pointing at the wrong risk.** This is frequency-only and
+voltage-free, so it does not touch the causal claim at all. **What it is closest to is this
+project's NULL** — the probe-based Ridge model that loses to a fixed constant. Fan et al. report
+*success* at predicting per-kernel optimal configurations, from richer inputs: static code features
+rather than probe points, a 2D core×memory space rather than 1D, and purpose-built micro-benchmark
+training rather than a 33×13 matrix with no feature columns. ⚠️ **That difference has to be stated
+whenever the null is presented, or a reader will take the null as contradicting a published
+success.**
+
+✅ **It also independently corroborates a measurement hazard this project found on its own:**
+*"some of the configurations marked as supported by NVML are not available, because the setting
+function does not actually change the frequencies"* — and on Titan X, requesting above 1202 MHz
+silently gives 1202. That is the same class as this project's lock-overshoot detection.
+
+**And it is another consumer card swept far below default** — more prior art for the consumer
+claim, on a third card (Titan X), from a third group.
 
 ---
 
@@ -150,3 +181,7 @@ the bandwidth chain is not).
   content less wrong.**
 - ⛔ **"They had more control than this project does ... which is why this project uses
   Afterburner"** — **wrong.** HotPower 2013 used Afterburner too. Written before anyone read it.
+- ⛔ **ICPP 2019 attributed to "Guerreiro et al."** — **wrong.** It is Fan, Cosenza and Juurlink.
+  🔑 **The wrong name sat under a note saying "read this before finalising any novelty claim",
+  for months, while two novelty claims fell.** A citation nobody can look up is a citation nobody
+  opens.
