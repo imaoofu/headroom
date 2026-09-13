@@ -367,12 +367,19 @@ reshapes a V/F curve and re-locates the optimum, and nothing found pairs such a 
 control or with predictions registered in advance. **This is the project's strongest remaining
 claim** — and it rests on an absence, so treat it as "not found" rather than "proven absent".
 
-**2. ⛔ FELL — "no published DVFS study uses consumer silicon" is FALSE.** Leng et al., *Safe Limits
-on Voltage Reduction Efficiency in GPUs* (MICRO-48, 2015) used GTX 480 / 580 / 680 / 780. Trakosa
-et al. (IOLTS 2025) used Radeon RX 7600 / 7700 / 7800 XT. Both are consumer gaming parts.
-**What narrows out of it:** no study found locates a *ridge-point-style optimum via a full V/F
-sweep* on GeForce/Radeon — Leng fixes frequency and varies only voltage. That is a much smaller
-claim, and it is limited by what the search could reach rather than by a clean absence.
+**2. ⛔ FELL ENTIRELY — and its narrow replacement fell too, 2026-09-13.** "No published DVFS study
+uses consumer silicon" is false: Leng et al. (MICRO-48, 2015) used GTX 480/580/680/780, Trakosa et
+al. (IOLTS 2025) used Radeon RX 7600/7700/7800 XT.
+
+⛔ **The fallback — "nobody locates a below-default efficiency optimum on GeForce at BOARD level" —
+is also false.** Mei, Wang & Chu's 2017 survey ([arXiv:1610.01784](https://arxiv.org/abs/1610.01784),
+read in full) sweeps an **ASUS Strix GTX 980** from **480 to 1080 MHz against a 950 MHz default**,
+measures **GPU-level energy from the on-chip sensors**, and reports that **30 of 42 kernels have
+their energy minimum BELOW the default clock, half of them between 680 and 880 MHz**, concluding
+that *"scaling down the core frequency to some extent is an effective approach to conserving
+energy"*. **Nothing about locating a consumer optimum is new here. Stop looking for a version of
+this claim that survives.** ⚠️ And do not compare their 5.24% mean to this project's 44.4% — theirs
+is energy against the DEFAULT clock, ours is efficiency against the SUSTAINED MAXIMUM.
 
 **3. ⛔ FELL — "the floor voltage is per card and does not transfer" is PRIOR ART.** The earlier
 version said "nothing found says the voltage is unportable". Leng et al. measured exactly this on

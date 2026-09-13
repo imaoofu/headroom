@@ -5,8 +5,13 @@ it bears on.** Built 2026-09-13 after the ridge-point retraction, by consolidati
 reference list with the prior-art sweep in [`PRIOR-ART-20260912.md`](PRIOR-ART-20260912.md).
 
 🛑 **Read status is part of the citation.** Every entry says whether the primary source was opened.
-This project has twice written a figure from a second-hand summary that turned out wrong — see the
-corrections at the bottom — so an unread source is marked unread and is not cited for a number.
+This project has written **four** wrong figures from second-hand summaries — see the corrections at
+the bottom — so an unread source is marked unread and is never cited for a number.
+
+✅ **As of 2026-09-13 every source that bounds a novelty claim has been read in full.** The two that
+blocked automated fetching, HotPower 2013 and the 2017 survey, were the two that mattered most: one
+partially pre-empted the causal claim, the other closed the consumer claim outright. ⚠️ **A 403 is
+not a dead end — HotPower needed a browser and the survey was on arXiv all along.**
 
 📄 **Local PDFs go in [`papers/`](papers/), which is gitignored.** Copies are not redistributed
 here; the links below are how you get them back.
@@ -30,6 +35,54 @@ rising. States the consequence this project had believed was its own finding:
 
 A100 ridge 1025 MHz (70% of peak), RTX A4000 1290 MHz (72%); predicted energy-optimal clocks 985
 and 1298 MHz. **Datacenter and workstation only — no consumer parts.**
+
+### ⛔ Mei, Wang, Chu — the 2017 survey. **Closes the last narrow form of the consumer claim.**
+*A Survey and Measurement Study of GPU DVFS on Energy Conservation.* Digital Communications and
+Networks, 2017. ScienceDirect returns 403 — **the arXiv version is open:
+[arXiv:1610.01784](https://arxiv.org/abs/1610.01784)**. **Read in full 2026-09-13**, local copy
+`papers/mei-2017-survey-gpu-dvfs.pdf`.
+
+**This was the last unread source on the list and the one flagged as the biggest remaining risk.
+It was the right thing to worry about.**
+
+| | |
+|---|---|
+| Hardware | **ASUS Strix GeForce GTX 980 (Maxwell, consumer)** and the GTX 560 Ti (Fermi) |
+| Maxwell sweep | core **480 → 1080 MHz against a 950 MHz default**, i.e. down to **51% of default** |
+| Maxwell voltage | **held FIXED at the 0.987 V lower bound** of P2 while frequency is swept — DFS, not DVFS |
+| 🔑 Power scope | **GPU-level, from the on-chip power sensors** — *"the R̂ and Rmax for the Maxwell refer to the GPU energy savings only"*. The Fermi numbers are whole-system, and the paper says so explicitly |
+| Benchmarks | the same 37 applications, CUDA SDK 6.5 + Rodinia, ≥20 min per kernel, 95% CI |
+
+🛑 **The finding that matters:**
+
+> *"Among all the kernels, **12 benefit from scaling up the core frequency** (f_Gc > 950 MHz) while
+> **the other 30 benefit from scaling down** the core frequency (f_Gc < 950 MHz). In particular,
+> half of the kernels achieve their minimum energy at core frequencies **between 680 MHz and
+> 880 MHz**, where 11 of them at 780 MHz."*
+
+and
+
+> *"for modern GPUs, **scaling down the core frequency to some extent is an effective approach to
+> conserving energy**, even if it is difficult to scale down the core voltage."*
+
+⛔ **That is a board-level, below-default, per-kernel efficiency optimum on a GeForce card, in
+2017.** The narrow survivor this project was still claiming — *"no study locates a ridge-point-style
+optimum via a full sweep on GeForce silicon at board level"* — **is gone.** Average R̂ 5.24%, average
+Rmax 10.87%, best case (nn) 34% of GPU energy.
+
+⚠️ **Do NOT compare 5.24% to this project's 44.4%.** Their R̂ is energy saved against the **default
+clock**; the headroom gap here is efficiency gain against the **sustained maximum**. Different
+baseline and different quantity.
+
+✅ **What it does NOT do, and this is all that is left:** voltage is **held constant** throughout the
+Maxwell experiment. They never reshape a V/F curve, never move a floor, and never show an optimum
+relocate as a consequence. Claim A stands.
+
+🔑 **It also corroborates two things this project measured independently.** Figure 6 reports the
+maximum-stable-frequency-versus-voltage relationship as **sublinear** on both Fermi and Maxwell —
+the same frontier shape as HotPower's Figure 3. And their memory result matches the shape of §5.7:
+24 kernels lose >30% energy when memory frequency drops 30%, and **34 of 42 kernels have their
+minimum energy at the vendor's default memory setting**.
 
 ### ⛔ Mei, Yung, Zhao, Chu — HotPower 2013. **Partially pre-empts the causal claim.**
 *A Measurement Study of GPU DVFS on Energy Conservation.* HotPower '13, HKBU.
@@ -126,7 +179,7 @@ claim, on a third card (Titan X), from a third group.
 | **Tang, Wang, Wang, Chu**, e-Energy '19. [arXiv:1905.11012](https://arxiv.org/abs/1905.11012) — **read in full** | P100, V100, **GTX 2080 Ti** | Energy curves show a valley with a sweet spot; 8.7–23.1% training / 19.6–26.4% inference against DEFAULT clock. The consumer card is scaled **up** from 1350 MHz while datacenter defaults are already the ceiling |
 | **Afzal et al.**, *Modeling and Chasing the Energy-Efficiency Sweet Spots in Modern GPUs*. [arXiv:2607.00819](https://arxiv.org/abs/2607.00819) — abstract + HTML read | A40 / A100 / H100 / H200 | Piecewise power model with a transition frequency f_t; optimum "clusters near f_t but does not necessarily coincide". **Datacenter only**, open dataset |
 | **Zhang et al.**, EuroSys '24. [doi:10.1145/3627703.3629584](https://doi.org/10.1145/3627703.3629584) — **read in full** | V100 | 26.7% mean efficiency gain for 5.8% performance loss. ⚠️ **Performance-constrained** — not the same quantity as this project's unconstrained 44.4% |
-| **Mei, Wang, Chu**, *A survey and measurement study of GPU DVFS on energy conservation*, Digital Communications and Networks 2017. [ScienceDirect](https://www.sciencedirect.com/science/article/pii/S2352864816300736) | — | ⛔ **NOT READ — HTTP 403.** The standard survey of this area; very likely contains a swept-range comparison bearing directly on the wrong-range argument. Try an institutional login |
+| **Mei, Wang, Chu** 2017 survey | GTX 980 + GTX 560 Ti | ✅ **READ 2026-09-13 via [arXiv:1610.01784](https://arxiv.org/abs/1610.01784)** — see section 1. ScienceDirect still 403s; the arXiv version is the way in |
 | **Maliakel, Ilager, Brandic**, *Characterizing LLM Inference Energy-Performance Tradeoffs*. [arXiv:2501.08219](https://arxiv.org/abs/2501.08219) — **read** | — | LLM-inference framing of the same tradeoff |
 | *Accurate Energy and Performance Prediction for Frequency-Scaled GPU Kernels*, MDPI Computation 8(2):37 | — | ⚠️ Not read |
 
