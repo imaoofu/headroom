@@ -2,11 +2,11 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **359 committed
 > sweeps across two consumer GPUs**, including core-voltage and crossbar telemetry.
-> **262 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **271 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
-> alone. No `[PENDING]` placeholders remain, but **19 numbered sections carry no claims at all** —
+> alone. No `[PENDING]` placeholders remain, but **18 numbered sections carry no claims at all** —
 > `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
 > too**, as of 2026-09-05.
 >
@@ -1857,8 +1857,9 @@ which voltage is still falling.** It does, on all three chips:
 
 ⛔ **The fourth card does not confirm the relationship, and it does not refute it. It cannot decide
 it**, and that is a boundary condition on the rule rather than a result about the card. Its floor is
-**0.631 V held across more than 570 MHz**, and it leaves that floor **6 mV at a time** — one step of
-this sensor's resolution. Read strictly, the floor ends at 975 MHz and the nearest grid point is 960,
+**0.631 V held across 345 MHz** — seven consecutive points — and the whole low range is nearly as
+flat: voltage moves **13 mV across the 570 MHz from 405 to 975 MHz**. It leaves the floor **6 mV at
+a time**, one step of this sensor's resolution. Read strictly, the floor ends at 975 MHz and the nearest grid point is 960,
 one step below the measured 1065. Allow a single sensor step and it ends at 1035, whose nearest grid
 point is 1065 exactly. **The verdict turns on 6 mV.**
 
