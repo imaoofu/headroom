@@ -61,27 +61,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# --- Throttle reason bits, per NVML documentation -------------------------------------
-# The bitmask nvidia-smi reports is a OR of these. Idle and power-cap are normal; the
-# hardware slowdown bits are the ones that mean the card is protecting itself.
-#
-# This MUST stay a plain hashtable. Indexing an [ordered] dictionary with an integer does
-# a POSITIONAL lookup, not a key lookup, so every reason came back shifted by one - 0x1
-# decoded as "ApplicationsClocksSetting" instead of "GpuIdle". Caught by smoke test.
-$ThrottleReasonBits = @{
-    1   = "GpuIdle"
-    2   = "ApplicationsClocksSetting"
-    4   = "SwPowerCap"
-    8   = "HwSlowdown"
-    16  = "SyncBoost"
-    32  = "SwThermalSlowdown"
-    64  = "HwThermalSlowdown"
-    128 = "HwPowerBrakeSlowdown"
-    256 = "DisplayClockSetting"
+# --- Throttle reason decoding ---------------------------------------------------------
+# Moved into ThrottleReasons.ps1 on 2026-09-12 so it could be tested: this script starts sampling
+# on load and its decode could not be exercised from a test. That move immediately turned up a
+# defect - a mask mixing known and unknown bits DROPPED the unknown part silently, so 0x604 read
+# "SwPowerCap" and the 0x600 vanished. See that file's header for the measurements.
+$throttleHelper = Join-Path $PSScriptRoot "ThrottleReasons.ps1"
+if (-not (Test-Path $throttleHelper)) {
+    throw "ThrottleReasons.ps1 not found beside this script. Throttle decoding is not optional - a run without it records masks nobody can read."
 }
-
-# Bits that indicate the card is in trouble rather than merely idle or power-limited.
-$ConcerningReasons = @("HwSlowdown", "SwThermalSlowdown", "HwThermalSlowdown", "HwPowerBrakeSlowdown")
+. $throttleHelper
 
 # DO NOT use the GpuIdle bit to decide whether the card is busy. Measured on an RTX 5060 Ti
 # (driver 610.88) during an hour of sustained CUDA inference: the card reported bit 0x1 = GpuIdle
@@ -108,25 +97,6 @@ function Resolve-NvidiaSmi {
     $onPath = Get-Command nvidia-smi -ErrorAction SilentlyContinue
     if ($null -ne $onPath) { return $onPath.Source }
     throw "nvidia-smi.exe not found. This tool requires an NVIDIA GPU with drivers installed."
-}
-
-function ConvertTo-ThrottleReasonList {
-    param([string]$HexMask)
-
-    if ([string]::IsNullOrWhiteSpace($HexMask)) { return "unknown" }
-    try {
-        $value = [Convert]::ToInt64($HexMask.Replace("0x", ""), 16)
-    } catch {
-        return "unparsed:$HexMask"
-    }
-    if ($value -eq 0) { return "None" }
-
-    $active = @()
-    foreach ($bit in ($ThrottleReasonBits.Keys | Sort-Object)) {
-        if (($value -band $bit) -ne 0) { $active += $ThrottleReasonBits[$bit] }
-    }
-    if ($active.Count -eq 0) { return "Unrecognised:$HexMask" }
-    return ($active -join ";")
 }
 
 function Get-DisplayDriverCrashEvents {
@@ -200,6 +170,7 @@ $writer.WriteLine("timestamp_iso,elapsed_seconds,sm_clock_mhz,memory_clock_mhz,p
 $sampleCount = 0
 $queryFailureCount = 0
 $concerningSampleCount = 0
+$unknownThrottleSampleCount = 0
 $samples = New-Object System.Collections.ArrayList
 $completedFullDuration = $false
 $stoppedByUser = $false
@@ -272,11 +243,12 @@ try {
         $throttleMask = $parts[8]
         $throttleReasons = ConvertTo-ThrottleReasonList -HexMask $throttleMask
 
-        $isConcerning = $false
-        foreach ($reason in $ConcerningReasons) {
-            if ($throttleReasons -like "*$reason*") { $isConcerning = $true }
-        }
-        if ($isConcerning) { $concerningSampleCount++ }
+        if (Test-ThrottleReasonsConcerning -Reasons $throttleReasons) { $concerningSampleCount++ }
+
+        # Counted separately and NOT escalated. A bit the table cannot explain has covered 589 of
+        # 603 samples in a perfectly healthy stock baseline since driver 616.56, so treating it as
+        # trouble would turn every recent run red. Recording it is what stops it being invisible.
+        if (Test-ThrottleReasonsUnknown -Reasons $throttleReasons) { $unknownThrottleSampleCount++ }
 
         $writer.WriteLine("$($now.ToString('o')),$elapsed,$($parts[0]),$($parts[1]),$($parts[2]),$($parts[3]),$($parts[4]),$($parts[5]),$($parts[6]),$($parts[7]),$throttleMask,$throttleReasons")
 
@@ -322,6 +294,11 @@ if ($crashEvents.Count -gt 0) {
 }
 if ($queryFailureCount -gt 0) {
     [void]$flags.Add("$queryFailureCount telemetry query failure(s) - the driver may have been unresponsive")
+}
+if ($unknownThrottleSampleCount -gt 0) {
+    # A flag, not a failure. It says the decode was incomplete, which is a statement about this
+    # tool rather than about the card.
+    [void]$flags.Add("$unknownThrottleSampleCount sample(s) carried a throttle bit this tool cannot decode - see throttle_reasons in the samples CSV")
 }
 if ($concerningSampleCount -gt 0) {
     [void]$flags.Add("$concerningSampleCount sample(s) showed hardware slowdown or thermal throttling")
@@ -417,6 +394,9 @@ $session = [ordered]@{
     samples_collected        = $sampleCount
     telemetry_failures       = $queryFailureCount
     throttled_samples        = $concerningSampleCount
+    # Added 2026-09-12. Runs before this have no such field, so they cannot be audited for it -
+    # the masks are in their samples CSV, but nothing counted them.
+    unknown_throttle_samples = $unknownThrottleSampleCount
     driver_crash_events      = $crashEvents.Count
     sm_clock_avg_mhz         = Get-Stat -Values $clockValues -Kind "avg"
     sm_clock_max_mhz         = Get-Stat -Values $clockValues -Kind "max"
@@ -439,7 +419,9 @@ $session = [ordered]@{
     temperature_avg_loaded_c = Get-Stat -Values $loadedTempValues -Kind "avg"
     temperature_max_loaded_c = Get-Stat -Values $loadedTempValues -Kind "max"
     samples_file             = Split-Path $logPath -Leaf
-    schema_version           = "0.2.0"
+    # 0.3.0 adds unknown_throttle_samples. Bumped rather than left alone because a consumer
+    # cannot otherwise tell "no undecodable bits" from "this run predates the counter".
+    schema_version           = "0.3.0"
 }
 
 # NOT Out-File -Encoding utf8: on Windows PowerShell 5.1 that writes a UTF-8 BOM, and a BOM

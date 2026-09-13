@@ -494,7 +494,7 @@ analysis/          Python measurement + audit on the public V100 dataset
                       two-BIOS study), _reference (public V100). _repo is a fourth, on a
                       different axis - it audits the repository's own state
   models/             everything that PREDICTS rather than measures — has its own README
-  test_*.py           19 suites, 683 checks (681 without data/raw) - NOT pinned, see above
+  test_*.py           20 suites, 701 checks (699 without data/raw) - NOT pinned, see above
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset

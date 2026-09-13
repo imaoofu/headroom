@@ -45,8 +45,22 @@ REPO_ROOT = Path(__file__).resolve().parent
 # "All suites passed". That is what would have happened when the model suites moved into
 # analysis/models/. findOrphanSuites() below is the guard - the list stays an allowlist, it just
 # refuses to stay quiet about a suite it can see and is not running.
+#
+# ⛔ THAT GUARD HAD THE SAME BLIND SPOT IT WAS WRITTEN TO CLOSE, until 2026-09-12. It walked only
+# the directories ALREADY on this list, so it caught a new SUBdirectory of a listed one and was
+# blind to a new SIBLING. tools/stability-logger/test_throttle_reasons.py was added and simply
+# never ran, with the output still reading "All suites passed". It now walks SEARCH_ROOTS instead,
+# which is deliberately wider than the allowlist - the point of a guard is to see what the list
+# does not.
 SUITE_DIRS = ["analysis", "analysis/models", "tools/frequency-sweep", "tools/local-model",
-              "tools/mutation"]
+              "tools/mutation", "tools/stability-logger"]
+
+# Directories the orphan guard walks looking for suites nobody runs. Broader than SUITE_DIRS on
+# purpose - see findOrphanSuites().
+SEARCH_ROOTS = ["analysis", "tools", "scripts"]
+
+# Directory names that are never ours.
+IGNORED_PARTS = {"__pycache__", ".venv", "venv", "node_modules", ".git"}
 
 
 def findSuites(nameFilter):
@@ -71,12 +85,12 @@ def findOrphanSuites():
     """
     collected = {path.resolve() for path in findSuites("")}
     orphans = []
-    for relative in SUITE_DIRS:
+    for relative in SEARCH_ROOTS:
         directory = REPO_ROOT / relative
         if not directory.is_dir():
             continue
         for path in sorted(directory.rglob("test_*.py")):
-            if "__pycache__" in path.parts:
+            if IGNORED_PARTS & set(path.parts):
                 continue
             if path.resolve() not in collected:
                 orphans.append(path)
