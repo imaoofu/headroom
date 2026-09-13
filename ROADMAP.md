@@ -688,6 +688,75 @@ Turning two separate models into one project with a single research question.
 
 ---
 
+## 🔄 The direction changed on 2026-09-12/13, and this section says how
+
+**Four novelty claims fell in two days, all to searching.** Full account in
+`docs/RELATED-WORK.md` (the index, with read status) and `docs/PRIOR-ART-20260912.md` (the log).
+
+| claim | verdict |
+|---|---|
+| The load-floor rule | ⛔ **prior art** — it is the published RIDGE POINT, van Werkhoven et al. 2022 |
+| Per-card floor voltage | ⛔ **prior art** — Leng et al. 2015 (five GTX 780s), Trakosa et al. 2025 |
+| Efficiency optimum on consumer silicon | ⛔ **prior art** — Mei/Wang/Chu 2017, GTX 980, board-level, 30 of 42 kernels below default |
+| "Nobody swept below stock" | ⛔ **false since 2013** |
+| **Causal manipulation + negative control** | ✅ **survives** four full reads and two adversarial passes |
+| **The 2060 Super boundary condition** | ✅ **survives** |
+
+### What the project is now about
+
+⛔ **Stop looking for a version of the consumer-optimum claim that survives.** Four reformulations
+have failed. Cite Mei and move on.
+
+**The spine is the DATASET, and it got sharper rather than weaker on 2026-09-13.** The claim is no
+longer "nobody measured below stock" but:
+
+> 🔑 **The open, reusable consumer DVFS data that exists sweeps at or above stock, so nobody can
+> re-analyse the region where the optimum lives.**
+
+Verified: the HKBU releases (`HKBU-HPML/NV-DVFS-Benchmark` — also the origin of the GTX 1080 Ti file
+this project uses) carry `coreF`/`memF` as normalised multipliers **1.0, 1.2, 1.4, 1.6, 1.8, 2.0** —
+base upward, no below-base point. **The below-default result in Mei's own Figures 7–8 was never
+released as data.** That claim is about artifacts, not priority, so it cannot be lost to a paper
+turning up.
+
+**Three goals, in order:**
+
+1. **Publish the dataset properly** — 359 dataset-grade sweeps, four chips, three architectures
+   including Blackwell, below stock, with provenance and a mechanical auditor.
+2. **Finish the causal arm** — the floor-ladder rungs turn the one surviving novel claim from
+   *directional* into *quantitative*.
+3. **Reframe the write-up** from discovery to method-and-data.
+
+### 🧪 The ML thread, reopened with a different question
+
+**It is worth continuing, and the reason changed.** Fan, Cosenza & Juurlink (ICPP 2019) report
+SUCCESS predicting per-kernel optima from static code features; this project reports a NULL. Left
+unexplained that reads as a contradiction.
+
+⚠️ **Their inputs are far richer**: code features rather than probe points, a 2D core×memory space
+rather than 1D, and 106 purpose-built micro-benchmarks rather than a 33×13 matrix *with no feature
+columns*. So the interesting question is not "can we beat a constant" but **"what does each class of
+input actually buy?"**
+
+The project already holds three predictors of different input classes, all measured:
+
+| predictor | input required | result |
+|---|---|---|
+| best fixed constant | nothing | **0.837%** mean regret |
+| curve-reading rule | the V/F curve, no benchmarking | **0.675%** over 192 sweeps |
+| probe-based Ridge | k measured points | **0.883%** — it LOSES |
+
+**The missing fourth row is a workload-feature model on this project's OWN data** — 12 workloads
+with computable arithmetic intensity (`gemm` ~1365 FLOP/byte against `membw` 0.167), across four
+chips, which the V100 matrix structurally could not support.
+
+🛑 **The deliverable is the BOUNDARY, not a win.** When does per-workload prediction earn its
+measurement cost? `predict_optimal_frequency.py` prints a verdict against itself when it ties or
+loses, and that must not be "fixed". ⚠️ **n is 12 workloads per chip — leave-one-out on 12 is weak,
+and say so every time.**
+
+---
+
 ## Open right now — 2026-09-12
 
 Its own section, because the phases above are a work log and finding the live items inside them had
