@@ -55,9 +55,16 @@ category, rule, _ = manifest.classify(Path("x/y_sweep.json"),
                                       session(session_label="5060ti-kitverify-idle-gemm"))
 check("a kit-verification run is excluded", category == "excluded" and rule == "kit-verification")
 
-category, rule, _ = manifest.classify(Path("x/y_sweep.json"),
-                                      session(session_label="5060ti-kittest-stock-gemm-stock"))
-check("a kit-test run is excluded", category == "excluded" and rule == "kit-test")
+# ⛔ REGRESSION GUARD. A "kit-test" rule here excluded these two on the substring "kittest",
+# and it was wrong: they are the STOCK ARM of the stock-versus-tuned comparison, bound to
+# STOCK_GEMM and STOCK_MEMBW_13PT in claims_consumer.py where live claims read them. Excluding
+# them put the manifest two sweeps below the paper and made a correct abstract look wrong.
+for label in ("5060ti-kittest-stock-gemm-stock", "5060ti-kittest-stock-membw-stock"):
+    category, rule, _ = manifest.classify(
+        Path("data/frequency-sweeps/oc-comparison-20260819/x_sweep.json"),
+        session(session_label=label))
+    check(f"{label} is DATASET-GRADE - a label substring is not a classifier",
+          category == "dataset-grade" and rule == "")
 
 category, rule, _ = manifest.classify(Path("x/y_sweep.json"), session(session_label="verify-3pt"))
 check("a three-point verification run is its OWN category, not 'excluded' - the paper counts "
@@ -138,6 +145,7 @@ check("every row records which card it came from",
 
 print()
 print(f"{passed} checks passed.")
-print("These check the RULES, not the counts. The reconciliation against the paper is "
-      "deliberately not asserted here - it does not currently balance, and a test that forced "
-      "it to would hide the finding instead of reporting it.")
+print("These check the RULES, not the counts. The reconciliation itself is asserted by "
+      "`paper-dataset-grade-total` in claims_repo.py and enforced by --check, which is the right "
+      "place for it - a claim recomputes from the tree at audit time, where a test would freeze "
+      "a number that grows every collection run.")

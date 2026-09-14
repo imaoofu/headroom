@@ -37,6 +37,7 @@ WHY CLAUDE.md IS AUDITED AT ALL
     An unguarded version of this idea broke both checks legs on 2026-09-02.
 """
 
+import collections
 import pathlib
 
 from audit_claims import CLAIMS, claim, unauditedSections
@@ -150,3 +151,46 @@ else:
         """The registry as the "checks" CI leg sees it, with both fetched datasets absent."""
         return f"**{len(CLAIMS)} of {len(CLAIMS)}**"
 
+
+
+# -------------------------------------------------------------------------------------------
+# The dataset size, pinned at last. UNGUARDED on purpose: data/frequency-sweeps is committed,
+# not fetched, so this claim registers identically in both CI legs and in a fresh clone.
+#
+# 🔑 WHY IT IS HERE AND NOT IN A DATA MODULE. It is a fact about the repository's own contents -
+# how many sweeps it ships - which is this module's axis. The other four data modules pin what
+# the sweeps MEASURED; this pins how many there are.
+#
+# ⛔ "359" SAT IN THE ABSTRACT UNPINNED FROM 2026-09-12 TO 09-14, and it got there by being
+# incremented rather than recounted: the line previously read 342, a 2060 Super arrived with 17
+# sweeps, and 342 + 17 was written down. That is exactly how this file's own claim total went
+# stale four times. The number happened to be right - build_data_manifest.py reconciles it
+# exactly - but nothing could have told anyone that, which is the part this fixes.
+
+@claim("paper-dataset-grade-total", PAPER, "Abstract")
+def datasetGradeSweepTotal():
+    """The abstract's headline dataset size, recomputed from the tree at audit time."""
+    import build_data_manifest
+
+    manifest = build_data_manifest.buildManifest(build_data_manifest.loadSessions())
+    datasetGrade = sum(1 for entry in manifest if entry["category"] == "dataset-grade")
+    verification = sum(1 for entry in manifest if entry["category"] == "verification")
+    return f"**{datasetGrade + verification} dataset-grade sweeps across four chips"
+
+
+@claim("paper-dataset-grade-per-card", PAPER, "Abstract")
+def datasetGradePerCard():
+    """The per-card breakdown, so the total cannot drift away from its own components.
+
+    Pinned separately because the total was right while one component was not: a wrong exclusion
+    rule put the 5060 Ti at 298 and the other three cards at their correct values, and only the
+    per-card view showed which one to go looking at.
+    """
+    import build_data_manifest
+
+    manifest = build_data_manifest.buildManifest(build_data_manifest.loadSessions())
+    counts = collections.Counter(entry["gpu"] for entry in manifest
+                                 if entry["category"] == "dataset-grade")
+    return (f"{counts['NVIDIA GeForce RTX 5060 Ti']} on\nan RTX 5060 Ti (Blackwell GB206), "
+            f"{counts['NVIDIA GeForce RTX 3070 Ti']} on an RTX 3070 Ti (Ampere GA104), "
+            f"{counts['NVIDIA GeForce RTX 2060 SUPER']} on an RTX 2060 Super")

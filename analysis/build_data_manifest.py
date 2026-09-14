@@ -75,6 +75,21 @@ DECLARED_NOT_DATASET_DIRS = (
     "frequency-sweeps/identity-probes-20260908/",
 )
 
+# ⛔ THERE WAS A "kit-test" RULE HERE AND IT WAS WRONG. It excluded any session whose label
+# contained "kittest", on the assumption that the substring meant the same thing as "kitverify".
+# It does not. The two sweeps it caught -
+#     oc-comparison-20260819/20260819-142844_5060ti-kittest-stock-gemm-stock
+#     oc-comparison-20260819/20260819-143337_5060ti-kittest-stock-membw-stock
+# - are the STOCK ARM of the stock-versus-tuned comparison that ROADMAP.md calls "the project's
+# whole thesis in one comparison", and they are bound to STOCK_GEMM and STOCK_MEMBW_13PT in
+# claims_consumer.py, where live claims read them. The label records that the run happened while
+# the collection kit was being exercised; the DATA is the stock baseline.
+#
+# 🔑 Removing that rule is what made the abstract's 359 reconcile exactly. The paper was right and
+# this file was wrong, which is the direction the reconciliation was built to allow - see the
+# module docstring. **A label substring is not a classifier.** Check what reads a file before
+# deciding it is not data.
+
 EXCLUSION_RULES = [
     ("failed-invocation",
      lambda path, session: "failed-invocations" in path.as_posix(),
@@ -83,10 +98,6 @@ EXCLUSION_RULES = [
     ("kit-verification",
      lambda path, session: "kitverify" in (session.get("session_label") or "").lower(),
      "A collection-kit shakedown on known hardware, run to test the KIT rather than the card."),
-
-    ("kit-test",
-     lambda path, session: "kittest" in (session.get("session_label") or "").lower(),
-     "Same purpose as kit-verification under an earlier label."),
 
     ("declared-not-dataset-grade",
      lambda path, session: any(part in path.as_posix() for part in DECLARED_NOT_DATASET_DIRS),

@@ -700,8 +700,8 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **282 of 282** |
-| ...and where both are absent, as CI's "checks" leg runs | **236 of 236** |
+| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **284 of 284** |
+| ...and where both are absent, as CI's "checks" leg runs | **238 of 238** |
 | sections with no claim at all | **16 numbered sections are still unaudited** |
 | §5.7 and its subsections carry | **84 claims between them and §5.5 carries 63** |
 
@@ -763,8 +763,8 @@ run_tests.py       runs every suite, one verdict - `python run_tests.py`
 analysis/          Python measurement + audit on the public V100 dataset
   audit_claims.py     mechanical paper auditor — see "The claims auditor" above
   build_data_manifest.py  deterministic census of every sweep under data/, with the rule that
-                      classified each one. ⚠️ Its reconciliation against the abstract's "359
-                      dataset-grade sweeps" DOES NOT BALANCE - see data/MANIFEST.json
+                      classified each one. ✅ Reconciles against the abstract exactly, and
+                      `--check` exits non-zero if it ever stops. Manifest: data/MANIFEST.json
   claims_*.py         the claims themselves, one function per sentence of the paper - FOUR
                       data modules split by STUDY, not by card (see above): _consumer (this
                       project's sweeps + all cross-card claims), _crosschip (the 3070 Ti
@@ -772,7 +772,7 @@ analysis/          Python measurement + audit on the public V100 dataset
                       consumer sets, §2.7). _repo is a fifth, on a different axis - it
                       audits the repository's own state
   models/             everything that PREDICTS rather than measures — has its own README
-  test_*.py           21 suites, 730 checks (728 without data/raw) - NOT pinned, see above
+  test_*.py           21 suites, 731 checks (729 without data/raw) - NOT pinned, see above
 tools/
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset
