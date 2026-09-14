@@ -1,0 +1,345 @@
+<title>Headroom Council Verdict</title>
+<style>
+  :root{
+    --ink:#16150f; --dim:#5d5a4e; --faint:#8a8577;
+    --bg:#faf8f3; --card:#fffdf8; --rule:#e2ddcf;
+    --hot:#a3341f; --warm:#b5722a; --cool:#2f5d50; --deep:#3b3486;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ink:#eee9dd; --dim:#a8a294; --faint:#7d776a;
+      --bg:#14140f; --card:#1c1c16; --rule:#33322a;
+      --hot:#e8825f; --warm:#d9a45e; --cool:#7dbda8; --deep:#a39bea;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#eee9dd; --dim:#a8a294; --faint:#7d776a;
+    --bg:#14140f; --card:#1c1c16; --rule:#33322a;
+    --hot:#e8825f; --warm:#d9a45e; --cool:#7dbda8; --deep:#a39bea;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);
+    font:16px/1.6 Charter,"Bitstream Charter","Iowan Old Style",Georgia,serif;
+    margin:0;padding:0 20px 100px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto}
+  header{padding:56px 0 30px;border-bottom:3px double var(--rule);margin-bottom:36px}
+  .kicker{font:600 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+  h1{font-size:34px;line-height:1.15;margin:14px 0 10px;letter-spacing:-.02em}
+  .sub{color:var(--dim);font-size:15px;margin:0}
+  .meta{font:12px/1.7 var(--mono);color:var(--faint);margin-top:18px}
+
+  .verdict{background:var(--card);border:1px solid var(--rule);
+    border-left:5px solid var(--hot);border-radius:3px;padding:28px 30px;margin:0 0 40px}
+  .gradeline{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  .grade{font:700 60px/1 var(--mono);color:var(--hot);letter-spacing:-.04em}
+  .gradeby{color:var(--dim);font-size:14px;flex:1;min-width:200px}
+  .verdict p{margin:14px 0 0}
+  .verdict p:first-of-type{font-size:18px;line-height:1.5}
+
+  h2{font-size:13px;font-family:var(--mono);font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--faint);margin:46px 0 16px;
+    padding-bottom:7px;border-bottom:1px solid var(--rule)}
+  h3{font-size:18px;margin:28px 0 8px;letter-spacing:-.01em}
+  p{margin:0 0 14px}
+  em.t{font-style:normal;font-weight:700}
+  code{font:13px var(--mono);background:var(--rule);padding:1px 5px;border-radius:3px}
+
+  .split{border-left:3px solid var(--warm);padding:2px 0 2px 18px;margin:20px 0}
+  .split .h{font:600 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+    color:var(--warm);margin-bottom:9px}
+
+  .caught{background:var(--card);border:1px solid var(--rule);border-radius:3px;
+    padding:18px 20px;margin:16px 0}
+  .caught .who{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+    color:var(--deep);margin-bottom:8px}
+
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  td.v{font-family:var(--mono);white-space:nowrap;color:var(--cool);font-weight:600}
+
+  details{border:1px solid var(--rule);border-radius:3px;margin:9px 0;background:var(--card)}
+  summary{cursor:pointer;padding:13px 17px;font-weight:600;font-size:15px;
+    display:flex;gap:12px;align-items:baseline;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";color:var(--faint);font-size:12px}
+  details[open] summary::before{content:"▾"}
+  summary .lens{color:var(--faint);font:11px/1 var(--mono);letter-spacing:.08em;
+    text-transform:uppercase;margin-left:auto;text-align:right}
+  .body{padding:2px 22px 18px;border-top:1px solid var(--rule);margin-top:2px}
+  .body p{font-size:15px}
+
+  .do{background:var(--card);border:1px solid var(--rule);border-top:4px solid var(--cool);
+    border-radius:3px;padding:26px 28px;margin:36px 0 0}
+  .do .lab{font:700 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+    color:var(--cool);margin-bottom:12px}
+  .do .act{font-size:21px;line-height:1.35;font-weight:700;margin:0 0 14px;letter-spacing:-.01em}
+  ol{padding-left:20px;margin:14px 0}
+  ol li{margin-bottom:9px}
+  .disc{margin-top:44px;padding:16px 18px;border:1px dashed var(--rule);border-radius:3px;
+    color:var(--dim);font-size:13.5px}
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);
+    color:var(--faint);font:12px/1.7 var(--mono)}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="kicker">LLM Council · Full session</div>
+  <h1>Is Headroom publishable, after seven retractions?</h1>
+  <p class="sub">Five advisors on four models, five independent reviewers, one chairman's verdict.
+     Graded against the bar Raymond chose: <em class="t">publishable as undergraduate research</em>.</p>
+  <div class="meta">2026-09-13 · 16:53:34 · upgraded panel · split decision (C×2, B×2, D×1)</div>
+</header>
+
+<div class="verdict">
+  <div class="gradeline">
+    <div class="grade">B+</div>
+    <div class="gradeby">Advisors offered <strong>C+</strong> (Contrarian) and
+      <strong>B+/A−</strong> (Executor). The chairman lands nearer the Executor, but only because two
+      reviewers independently broke the Contrarian's central argument.</div>
+  </div>
+  <p><em class="t">The measurements are not in question and never have been. What is in question is
+     one sentence: how far the causal result generalises.</em></p>
+  <p>Seven retractions sound like a project failing. Read the list and they are all the same failure
+     repeated — a claim about what was <em>new</em>, never a claim about what was <em>measured</em>.
+     No CSV has ever been wrong. That distinction is the difference between a B+ and the C+ the
+     Contrarian wanted to give, and it is why this is publishable work that is not yet ready to send.</p>
+  <p>The honest statement of the headline result is <strong>"strong within-chip causal evidence,
+     generalisation uncertain"</strong> — not "proven", and not the Contrarian's "pseudoreplicated,
+     period."</p>
+</div>
+
+<h2>Where the council agrees</h2>
+<p>All five, including the harshest, accept that the experimental work is sound: registered
+predictions before collection, a real negative control, a boundary condition reported rather than
+buried, and a null published as a headline instead of tuned away. Nobody disputed a number.</p>
+<p>All five also agree the <strong>framing is the liability, not the data</strong> — and that the
+contribution sentence's opening clause invites a reviewer to read the whole causal design as
+ordinary undervolting and stop reading.</p>
+
+<h2>Where it clashes</h2>
+
+<div class="split">
+  <div class="h">Clash 1 — is the causal result pseudoreplicated?</div>
+  <p>The Contrarian says the centrepiece is fatally weak: "+465 MHz in 12 of 12 workloads" is one
+  chip, twelve correlated measurements, one curve edit — "four chips across three architectures
+  sounds like breadth; it is four n=1 studies stacked." The Executor and First Principles treat the
+  same evidence as the paper's spine.</p>
+  <p><strong>Adjudicated, and the Contrarian loses half of it.</strong> Reviewers 2 and 4, working
+  independently, found the same flaw: the Contrarian calls the negative control weak because it
+  shares chip, session and operator — which is precisely what a negative control is <em>for</em>.
+  That is confusing <em>narrow scope</em> (true) with <em>invalid design</em> (false).</p>
+  <p><strong>What survives from it is the more valuable half:</strong> generalisation across chips is
+  genuinely unsupported, and a DVFS reviewer will say so within thirty seconds.</p>
+</div>
+
+<div class="split">
+  <div class="h">Clash 2 — ship, stop, or reframe?</div>
+  <p>The Outsider says stop and do a real literature review first — "they're doing literature search
+  backwards." The Executor says ship: four items, then submit. First Principles says the question is
+  wrong, and the falsification loop is itself the paper.</p>
+  <p><strong>The chairman sides with the Executor on sequencing and the Outsider on cause</strong> —
+  the search discipline does need rebuilding, but a 2–4 week reading pause inside a closing window
+  is how a project dies with nothing submitted.</p>
+</div>
+
+<div class="split">
+  <div class="h">Clash 3 — is the audit infrastructure rigour or avoidance?</div>
+  <p>The Contrarian: the 282 claims and 701 tests "are not rigour — they are <em>displacement</em>,"
+  effort poured into the one axis that has never been the failure mode. The Expansionist: it is the
+  single most transferable thing in the project and a paper in its own right.</p>
+  <p><strong>Both are right and they are not in conflict.</strong> The auditor has never caught a
+  novelty error because it cannot — but it has caught four wrong numbers, and internal consistency
+  not being <em>this</em> project's failure mode is not an argument that it is worthless.</p>
+</div>
+
+<h2>Blind spots the review caught</h2>
+
+<div class="caught">
+  <div class="who">Reviewer 1 — the sharpest catch in the session</div>
+  <p><strong>Nobody proposed external verification of novelty.</strong> The project has a documented
+  0-for-7 record at judging what the literature already contains — yet every single recommendation
+  assumes Raymond will now do that correctly, alone. "D's reframing is especially dangerous because
+  it <em>lowers</em> the novelty bar, potentially creating false confidence in searches he has
+  already failed at."</p>
+  <p>The mentorship exists to support publication and is the obvious instrument for exactly this. It
+  is not being used that way.</p>
+</div>
+
+<div class="caught">
+  <div class="who">Reviewer 5 — the most practically urgent</div>
+  <p><strong>Nobody knows the actual deadline.</strong> Every recommendation in the packet scales to
+  infinite time. "The mentorship 'gets the work out', which probably means delivering a credible
+  artifact before a hard date, not achieving journal acceptance." Which of these plans is even
+  reachable depends entirely on a date nobody stated.</p>
+</div>
+
+<div class="caught">
+  <div class="who">Reviewer 2 — the one that would improve the science</div>
+  <p><strong>Nobody asked what the 2060 Super failure <em>means</em>.</strong> All five treat it as a
+  scope limitation. It is evidence about which hardware properties determine whether the rule
+  applies at all — does it require sub-6 mV stepping? That is a mechanism question, and it is where
+  the understanding is.</p>
+</div>
+
+<div class="caught">
+  <div class="who">Reviewer 3 — on the person, not the artifact</div>
+  <p>First Principles ignores <strong>asymmetric career risk</strong>: an eighth retraction caught
+  after publication reads very differently to a hiring committee than one caught in a private repo.
+  "D's philosophical reframe is elegant but doesn't say what to do tomorrow."</p>
+</div>
+
+<div class="caught">
+  <div class="who">Reviewer 4 — the contrarian proposal nobody else made</div>
+  <p>The null result could be the <em>first</em> publication: a genuine negative-result contribution,
+  reachable in weeks, establishing a record and buying time for the harder claims. The Contrarian
+  called it "publishable nowhere"; three advisors ignored it entirely.</p>
+</div>
+
+<h2>The recommendation</h2>
+<p>Do not reframe the project as a methods paper about its own falsification loop. It is the most
+intellectually attractive option on the table and the chairman is the least qualified voice to
+endorse it — see the disclosure below. It also fails Reviewer 3's test: it does not tell you what to
+do tomorrow, and it trades a concrete empirical result for a meta-claim that a reviewer outside this
+repo has no reason to find remarkable.</p>
+<p>Instead, <strong>keep the causal result as the headline and fix the one thing that makes it
+breakable.</strong> The Contrarian's fix is the best single action anyone in the session proposed,
+and it was on nobody's to-do list:</p>
+<ol>
+  <li><strong>A second RTX 5060 Ti.</strong> Repeat the A/B/B/A manipulation on a different physical
+  chip of the same model. This converts the weakest point — one chip — into a replication, and
+  Raymond can reach it because he sells these. No other researcher in this literature has that
+  asset cheaply.</li>
+  <li><strong>The 2060 Super sweep rides along</strong> in the same elevated session. Ten minutes,
+  already queued, and it is the first measured Turing V/F curve in this literature.</li>
+  <li><strong>Re-weight the contribution sentence</strong> while the sweeps run. The technique is
+  standard; the causal test is not. Make the sentence say so.</li>
+  <li><strong>Ask the mentor to verify novelty</strong> before anything is submitted — the one
+  control this project has never applied to the one axis where it is 0-for-7.</li>
+  <li><strong>Get the deadline in writing</strong> and cut the plan to fit it.</li>
+</ol>
+<p>Park the dataset-publication prep and the ML thread. Both are real; neither blocks submission;
+both will expand to fill whatever time remains.</p>
+
+<div class="do">
+  <div class="lab">The one thing to do first</div>
+  <p class="act">Put a second RTX 5060 Ti on the bench and re-run the floor manipulation on it.</p>
+  <p>Everything else in this report is an improvement to a paper. This is the difference between a
+  result a reviewer can dismiss in one sentence and one they cannot. It uses the single advantage
+  this project has over better-funded labs — physical access to multiple copies of the same
+  consumer chip — and it is the only item that turns <em>n</em>=1 into replication.</p>
+  <p style="margin-bottom:0;color:var(--dim)">If a second card cannot be reached in the window, then
+  the Contrarian is right about the fallback: state the limitation plainly in the abstract, and
+  target a workshop or artifact track rather than a venue whose reviewers will treat it as fatal.</p>
+</div>
+
+<h2>The advisors, in full</h2>
+
+<details><summary>Response B — "the survivors are selected by the same process that produced seven retractions"<span class="lens">Contrarian · Opus</span></summary>
+<div class="body">
+<p>Every surviving claim is phrased as <em>not found elsewhere</em>. This project has a documented
+0-for-7 record at predicting what the literature already contains, and each retraction came from
+searching <em>after</em> writing. The process hasn't changed; only the vocabulary has. Apply that
+base rate to the three survivors and you should expect one or two to fall — most likely the crossbar
+chain, given LACT documented the domain a fortnight before you measured it.</p>
+<p><strong>The statistical flaw nobody has named: the causal result is pseudoreplicated.</strong>
+"+465 MHz in 12 of 12 workloads" is n=1 chip, 12 correlated measurements on one piece of silicon
+with one curve edit. Twelve workloads on one GB206 is not twelve trials. Four chips across three
+architectures sounds like breadth; it is four n=1 studies stacked.</p>
+<p>And the manipulation is hand-made in Afterburner. "Openly and reproducibly" is half a claim: the
+data is open, the intervention is a GUI drag nobody can replicate exactly.</p>
+<p>The 282 claims, 701 tests and CI are not rigour — they are <em>displacement</em>.</p>
+<p><strong>Grade: C+.</strong> Excellent lab notebook, a paper with no defensible novelty claim
+left. <strong>Kill:</strong> the Ridge model thread, further chips, further auditor coverage, and
+the word "first" in any form. <strong>Next:</strong> replicate the A/B/B/A manipulation on a second
+5060 Ti — you sell these. That single run is worth more than everything else queued.</p>
+</div></details>
+
+<details><summary>Response C — "Monday morning, in order"<span class="lens">Executor · Sonnet</span></summary>
+<div class="body">
+<p><strong>1. Run the 2060 Super sweep first — before coffee gets cold.</strong> ~10 minutes, and
+the cheapest thing on the list relative to what it buys: a boundary condition that is currently
+±60 MHz goes to ±10, and it is the first measured Turing V/F curve in this literature.</p>
+<p><strong>2. Same GPU session: build the two floor-ladder profiles and run their suites.</strong>
+He's already elevated, already at the machine. Batching is the only way it happens this month. This
+converts "the optimum moves" into "the optimum moves proportionally" — the difference between a demo
+and a dose-response curve. That's the paper's spine.</p>
+<p><strong>3. While sweeps run — rewrite the contribution sentence.</strong> Urgent precisely because
+it's embarrassing: if a reviewer reads "we reshape the curve region by region" and thinks "that's
+just undervolting," the causal design underneath never gets read charitably.</p>
+<p><strong>4. Draft the §5.7 pre-emption of the saturation objection.</strong> Kills the most obvious
+referee report in advance.</p>
+<p><strong>Off the list:</strong> dataset prep and the ML framing — exactly the kind of work that
+expands to fill however much time is left. Give the literature follow-ups a triggering date, not a
+good feeling.</p>
+<p><strong>Grade: strong B+/A−</strong>, publishable at a workshop once 1–4 land.</p>
+</div></details>
+
+<details><summary>Response D — "is 'novel enough to publish' even a coherent gate here?"<span class="lens">First Principles · Sonnet</span></summary>
+<div class="body">
+<p>Publication novelty gates exist to ration reviewer attention in a system where the default
+submitter is a funded lab with institutional incentive to overclaim. None of that describes this
+artifact. Applying the lab-grade gate asks "did a novel <em>claim</em> survive" when the actual
+production is "did a <em>process</em> survive" — and the process is the finding.</p>
+<p>Every one of the seven retractions fired on the framing sentence, not the measurement. The CSVs
+never lied; the search discipline caught the overclaim every time before it calcified. That is a
+working falsification loop, self-applied, at a cadence most funded labs don't sustain because their
+incentives point the other way.</p>
+<p>Reframe: stop optimising for "beat the literature", start optimising for "publish the method that
+keeps catching you", with the causal manipulation and the 2060S boundary as the empirical anchor.</p>
+</div></details>
+
+<details><summary>Response E — "the upside nobody is naming is the tooling"<span class="lens">Expansionist · Sonnet</span></summary>
+<div class="body">
+<p>282 claims that are <em>rendered strings computed from raw data at check time</em>, not stored
+expected values, asserted to appear verbatim-once in the prose. That is a general solution to a
+problem every empirical field has and almost nobody has open-sourced cleanly. Release it standalone
+with the Headroom corpus as its worked example and this stops being one undergrad's GPU paper.</p>
+<p>Second: the 2060 Super boundary isn't a footnote, it's a second paper — an independent, citable
+correction to existing literature, and probably the fastest actual publication here.</p>
+<p>Third: the Afterburner curve decode plus the crossbar finding is hardware reverse-engineering
+documentation the overclocking community wants independently of any academic outcome.</p>
+<p><strong>The biggest miss: treating this as one paper instead of three artifacts with different
+audiences and different time-to-publish.</strong></p>
+</div></details>
+
+<details><summary>Response A — "they're doing literature search backwards"<span class="lens">Outsider · Haiku</span></summary>
+<div class="body">
+<p>Seven retractions isn't a sign they're being too bold; it's a sign the workflow is broken. They're
+writing up results, discovering during that process what's already published, and retracting. That's
+expensive and demoralizing.</p>
+<p>The experimental work looks genuinely solid. But they're discovering prior art at the
+<em>publishing</em> stage instead of using it to scope the claim <em>before</em> experiments. The
+citation errors suggest they're working too fast or too tired at write-up. That's a symptom, not the
+disease.</p>
+<p><strong>Don't publish yet.</strong> Do a full literature review — actually read the field, not
+search-as-you-write. The alternative is retracting in print instead of in a private repo.</p>
+<p>They built a model that lost and published it. That's exactly right. The experimental chops are
+there; the meta-process isn't.</p>
+</div></details>
+
+<h2>Panel</h2>
+<table>
+  <tr><th>Letter</th><th>Lens</th><th>Model</th><th>Verdict offered</th></tr>
+  <tr><td class="v">A</td><td>The Outsider</td><td>Haiku</td><td>Don't publish yet</td></tr>
+  <tr><td class="v">B</td><td>The Contrarian</td><td>Opus</td><td>C+ · replicate or reframe</td></tr>
+  <tr><td class="v">C</td><td>The Executor</td><td>Sonnet</td><td>B+/A− · ship after four items</td></tr>
+  <tr><td class="v">D</td><td>First Principles</td><td>Sonnet</td><td>Wrong question · publish the method</td></tr>
+  <tr><td class="v">E</td><td>The Expansionist</td><td>Sonnet</td><td>Three artifacts, not one paper</td></tr>
+</table>
+<p style="color:var(--dim);font-size:14px">Reviewers 1–5 ran on Haiku with different adjudication
+briefs. The Expansionist was relaunched on Sonnet after Fable returned out-of-credits.
+Advisor↔letter mapping was randomised before review.</p>
+
+<div class="disc">
+  <strong>Chairman's disclosure.</strong> The chairman of this session is the same assistant that
+  co-authored the seven retractions under discussion, and wrote the framing that four of them
+  corrected. Its instinct to endorse Response D — that the falsification loop is itself the finding —
+  is self-flattering, and has been discounted in the verdict for that reason.
+</div>
+
+<footer>
+  Full transcript: council-transcript-20260913-165334.md · 5 advisors, 5 reviewers, 1 chairman
+</footer>
+</div>
