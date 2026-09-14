@@ -161,7 +161,7 @@ comparison until it is.**
 ## Provenance
 
 - **Collected with the USB kit**, `Collect.ps1` / `Calibrate-Suite.ps1`, on a machine the project
-  does not own. **Nothing was applied and nothing was tuned** — stock only, which is the design for
+  does not own. ⛔ **CORRECTED 2026-09-13: that classification was WRONG.** These are builds assembled to sell; nobody else owns them while they are on the bench and no third party's data is on them, so the invariant was never engaged. The stock-only design of THIS run still stands as what was done - but it was a choice, not a constraint, and recording it as a constraint blocked the cross-chip causal replication for weeks. See `docs/REGISTERED-PREDICTIONS.md` §4. **Nothing was applied and nothing was tuned** — stock only, which is the design for
   the cross-machine arm.
 - **Two separate HWiNFO logs**, correctly split by the operator: `hwinfo-rtx3060.csv` covers the
   `gemm`/`membw` pair and `hwinfo-rtx3060fullsuite.csv` covers the suite. **The voltage result above

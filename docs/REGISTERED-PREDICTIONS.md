@@ -402,3 +402,98 @@ data READMEs before this file existed.
 | `abba-20260908` | the optimum moves with the floor region of the curve | ✅ **+465 MHz in 12 of 12 workloads** |
 | `repair-suite-p2-20260909` | changing the curve *above* the floor moves the optimum **not at all** | ✅ optimum unmoved despite a 570 MHz change |
 | `rtx3060-20260910` | the rule holds on a different architecture | ✅ holds — ⛔ but the floor **voltage** does not transfer (0.756 V, not 0.720) |
+
+---
+
+# 4. 🔑 THE CROSS-CHIP CAUSAL REPLICATION — registered 2026-09-13, BEFORE any card is touched
+
+**Registered because two cards became available at once and both leave soon.** An RTX 3070 Ti
+(Ampere GA104) and an RTX 2060 Super (Turing TU106), both owned outright — see the ownership
+correction below. This is the experiment the 2026-09-13 council session named as the single thing
+blocking the paper, and it had been recorded as impossible.
+
+⛔ **THE BLOCKER WAS A MISCLASSIFICATION, NOT A RULE.** `rtx3060-20260910/README.md` states these
+were machines Raymond "does not own", and `rtx3070ti-20260825/README.md` calls its card "a
+customer's machine". **Both descriptions are wrong.** These are builds assembled to sell; nobody
+else owns them while they are on the bench and no third party's data is on them. The safety
+invariant — *never automate tuning on machines Raymond does not own* — was never engaged. 🔑 **This
+is the second time this project has treated a recorded blocker as real without rechecking it**, and
+CLAUDE.md's own warning about that is in the coverage section.
+
+## What is already known, and therefore what is being predicted rather than explored
+
+Both cards' stock floors are already measured, which is what makes these predictions registrable:
+
+| card | floor voltage | stock floor holds to | measured median optimum | rule verdict so far |
+|---|---|---|---|---|
+| RTX 3070 Ti (GA104) | **0.812–0.819 V** | **1500 MHz** | **1485 MHz** | ✅ observational, holds |
+| RTX 2060 Super (TU106) | **0.631 V** | **975 or 1035 MHz** | **1065 MHz** | ⚠️ undecidable |
+
+**Every prior confirmation of the rule on these two cards is OBSERVATIONAL.** Only the 5060 Ti has
+a causal arm. That is the n=1 that the council said a reviewer would name in thirty seconds.
+
+## 4a. 3070 Ti — the replication. **The single highest-value prediction in this document.**
+
+> **Extend the stock floor upward by reshaping only the curve at and below 0.819 V, and the median
+> suite optimum will move with the new floor end, in the same direction and by a comparable
+> fraction of the shift.**
+
+Success is the optimum tracking the new floor end to within one grid step. ⛔ **A movement in the
+wrong direction, or no movement, refutes the causal claim on a second chip and must be reported as
+the headline** — the 5060 Ti result would then be a single-chip curiosity rather than a mechanism.
+
+## 4b. 3070 Ti — the negative control, run in the same session or not at all
+
+> **Change the curve only ABOVE the floor voltage, by at least 300 MHz, and the optimum will not
+> move.**
+
+⚠️ **The manipulation without its control is worth much less than half the experiment.** A council
+reviewer specifically defended this design: sharing chip, session and operator is what a negative
+control is *for*. If the session is cut short, run 4b, not a second replicate of 4a.
+
+## 4c. 2060 Super — the boundary condition, made decidable or shown not to be
+
+> **Reshaping the floor region on a card whose voltage leaves the floor 6 mV at a time will produce
+> a floor end that is EITHER sharp enough to locate — in which case the optimum should track it as
+> in 4a — OR still undecidable, in which case the ambiguity is a property of the silicon and not of
+> the vendor's shipped curve.**
+
+🔑 **Both outcomes are publishable and they say different things**, which is why this is registered
+as a disjunction rather than a directional bet. This is the only prediction here whose interesting
+result is the negative one. ⚠️ Run the fine floor sweep (~10 min) FIRST — the manipulation cannot be
+designed without knowing where the stock floor actually ends on this card.
+
+## Safety envelope — these cards are going to be sold
+
+**The hardware risk of a floor manipulation is low and should be stated plainly rather than
+gestured at: undervolting reduces electrical and thermal stress, and the failure mode is a driver
+reset, which self-recovers and clears the offsets.** The one crash this project has induced —
+875 mV pinned at 3000 MHz, deliberately past the edge — did no damage. What follows is about
+leaving a card in a known-good state for a buyer, not about protecting silicon from a curve edit.
+
+1. ⛔ **Power limit stays at stock. Never raised.** Not needed for any prediction above.
+2. ⛔ **Memory clocks are not touched.** Memory is the genuinely risky axis — GDDR6X thermals on the
+   3070 Ti, and silent error-correction retries that make a "stable" overclock net *slower*. No
+   prediction here needs it.
+3. ⛔ **Peak voltage never exceeds the stock curve's maximum.** Reshaping means moving clocks at a
+   given voltage, not raising voltage.
+4. ✅ **Snapshot the profile store verbatim before the first change**, into
+   `data/afterburner-profiles/`, per the convention that exists because a slot number is not an
+   identity.
+5. ✅ **Stability protocol after the manipulation**, and **verify return to stock before shipping** —
+   read back the power limit, memory clock under load, and peak core, as was done for Profile 3 on
+   2026-09-09. A driver reset silently clears offsets, so a card can look tuned in its settings
+   string and be running stock.
+6. ⚠️ **Uninstall what was installed.** The collection kit deliberately leaves nothing behind; a
+   manipulation needs Afterburner present, which does not. Remove it and its profile store.
+
+## Order of operations, given both cards leave soon
+
+1. **2060 Super fine floor sweep** — 10 minutes, no elevation, no manipulation. Needed for 4c and
+   valuable alone as the first measured Turing V/F curve in this literature.
+2. **3070 Ti: 4a then 4b.** The replication is the point; the control is what makes it mean
+   something.
+3. **2060 Super manipulation (4c)** only if time remains after 1 and 2.
+
+🔑 **If only one thing gets done, do the 3070 Ti pair.** It is what converts "one chip" into
+"two chips, two architectures", and that is the sentence the paper currently cannot write.

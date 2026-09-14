@@ -1,6 +1,6 @@
 # RTX 3070 Ti - first non-Blackwell chip, and a vendor BIOS A/B - 2026-08-25
 
-Gigabyte RTX 3070 Ti GAMING OC rev2.0, a customer's machine, collected with the kit and returned
+Gigabyte RTX 3070 Ti GAMING OC rev2.0, a machine built to sell and owned outright at the time of collection — ⛔ this README said "a customer's machine" until 2026-09-13, which is what recorded a non-existent blocker on tuning it — collected with the kit and returned
 to the state it was found in. **This is the first chip in the project that is not the RTX 5060 Ti**,
 and the first controlled comparison of two configurations on identical silicon.
 

@@ -628,7 +628,7 @@ Diagnose before naming a culprit.
 - **`gpu_workload.py` never touches clocks, voltage, or power limits.** Temperature ceiling with
   clean abort, bounded iterations, VRAM freed on error.
 - **Never automate tuning on machines Raymond does not own.** Business reputation risk, not just
-  technical risk.
+  technical risk. ⚠️ **CLARIFIED 2026-09-13, because a misreading of this line blocked the project's most valuable experiment for weeks.** The PCs Raymond builds are assembled to sell, not repaired for owners - **he owns them while they are on the bench, and no third party's data is on them**, so this invariant does NOT apply to them. Two sweep READMEs had recorded the opposite. It still applies to any machine genuinely belonging to someone else. 🔑 **The rule was never the obstacle; the classification was** - check which you are looking at before treating a card as untouchable.
 - Measured during testing: peak 60 °C / 132 W against an 88 °C ceiling and 200 W limit. Nowhere near
   hardware protection thresholds.
 
