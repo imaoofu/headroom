@@ -108,6 +108,10 @@ def runSuite(path):
         "ok": completed.returncode == 0,
         "passed": output.count("[PASS]"),
         "failed": output.count("[FAIL]"),
+        # A suite that cannot run on this platform says so, on its own line, and asserts nothing.
+        # That is NOT the silent-zero-assertion failure the guard below exists to catch - see the
+        # comment there for why the two must be told apart.
+        "skipped": any(line.lstrip().startswith("[SKIP]") for line in output.splitlines()),
         "output": output,
     }
 
@@ -157,7 +161,23 @@ def main():
     # A suite that reports zero assertions is treated as a failure. It almost always means the
     # file errored before reaching its checks, or was gutted - both of which exit 0 in a plain
     # script and would otherwise be reported as a pass.
-    silent = [r for r in results if r["ok"] and r["passed"] == 0]
+    #
+    # ⚠️ EXCEPT when the suite DECLARED a skip. The two PowerShell suites need a shell that does
+    # not exist on macOS, so they print "[SKIP] ..." and assert nothing - which this guard called
+    # SILENT and failed the whole run. CI never caught it because GitHub's ubuntu runners ship
+    # pwsh and the suites really do execute there; it only fires on a developer's Mac, where it
+    # trains exactly the habit the guard was written to prevent - ignoring red.
+    #
+    # A declared skip is reported on its own line and does NOT fail the run. It is still printed
+    # every time, because the failure mode being guarded against is a zero-assertion suite going
+    # UNNOTICED, and a loud skip is not that.
+    skipped = [r for r in results if r["ok"] and r["passed"] == 0 and r["skipped"]]
+    for result in skipped:
+        relative = result["path"].relative_to(REPO_ROOT).as_posix()
+        print(f"  SKIPPED: {relative} declared a skip and asserted nothing on this platform. "
+              f"It is NOT covered by this run.")
+
+    silent = [r for r in results if r["ok"] and r["passed"] == 0 and not r["skipped"]]
     if silent:
         for result in silent:
             relative = result["path"].relative_to(REPO_ROOT).as_posix()

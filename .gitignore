@@ -48,3 +48,6 @@ tools/mutation/*.json
 
 # Paper PDFs are not redistributed - see docs/papers/README.md
 docs/papers/*.pdf
+
+# macOS directory metadata - shows up in git status on a Mac checkout and nowhere else.
+.DS_Store
