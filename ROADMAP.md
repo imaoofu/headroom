@@ -784,7 +784,30 @@ and say so every time.**
 
 ---
 
-## Open right now — 2026-09-12
+## Open right now — 2026-09-13
+
+⚠️ **This header read 2026-09-12 and the list below it is now PARTLY SUPERSEDED.** The live,
+priority-ordered list is `docs/TODO-20260913.md`; this section is the roadmap-level view and defers
+to it on ordering. Three things changed on 09-13 and all three change what is open:
+
+1. ✅ **The framing rewrite is DONE** (`5452004`, `995cdf9`, `0b2f5d8`, `854bd96`). §2.1–2.5 and
+   §2.7 now introduce the ridge point as prior art, and §2.7 cites the dataset's own authors *for*
+   the narrow-window argument rather than claiming it — the seventh retraction, and the one that
+   made the section stronger.
+2. 🔓 **The cross-chip causal replication is UNBLOCKED and was never actually blocked.** Two sweep
+   READMEs classified the 3070 Ti and 3060 as machines Raymond does not own; they are builds
+   assembled to sell, owned outright on the bench. The safety invariant was never engaged. **An RTX
+   3070 Ti and an RTX 2060 Super are both available now and both leave soon.** Predictions are
+   registered (`docs/REGISTERED-PREDICTIONS.md` §4) and run sheets are written
+   (`SESSION-D-RUNSHEET.md`, `SESSION-E-RUNSHEET.md`).
+3. ⚠️ **The causal claim's SCOPE is overstated in the paper and must be narrowed** to *strong
+   within-chip causal evidence, generalisation uncertain*. Only the 5060 Ti has a causal arm; the
+   other three chips are stock observations. A council session flagged this as the first thing a
+   reviewer would name.
+
+📝 **And there is now a program deliverable with an external deadline** — the Inspirit project
+proposal, drafted at `docs/INSPIRIT-PROPOSAL.md`. It is the only item here whose timing is not set
+by this project, which makes it the only one that can make everything else late.
 
 Its own section, because the phases above are a work log and finding the live items inside them had
 become the hard part. ⚠️ **Read counts off `python run_tests.py` and
