@@ -50,6 +50,17 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 # Source in the repository -> destination relative to the kit root.
 $files = @(
     @{ From = "tools\frequency-sweep\Invoke-FrequencySweep.ps1"; To = "tools\frequency-sweep\Invoke-FrequencySweep.ps1" },
+    # ⛔ MISSING FROM THIS LIST UNTIL 2026-09-14, AND ITS ABSENCE WAS SILENT BY DESIGN.
+    # Invoke-FrequencySweep.ps1 dot-sources this helper to check that the benchmark actually
+    # produced numbers. When it is not found the sweep prints a NOTE and carries on WITHOUT the
+    # check - which is the right behaviour for an old kit, and exactly wrong for a freshly synced
+    # one. So syncing would have installed the guard's caller and not the guard, leaving the kit
+    # in the one state that looks current and is not.
+    # 🔑 The guard exists because of a failure on the RTX 2060 Super on 2026-09-12: a hand-written
+    # invocation with the interpreter on D: and the script on F: timed a process that exited in
+    # half a second and wrote thirteen clean-looking idle points. See
+    # data/frequency-sweeps/rtx2060s-20260912/failed-invocations/README.md.
+    @{ From = "tools\frequency-sweep\WorkloadResultVerdict.ps1"; To = "tools\frequency-sweep\WorkloadResultVerdict.ps1" },
     @{ From = "tools\frequency-sweep\gpu_workload.py";           To = "tools\frequency-sweep\gpu_workload.py" },
     @{ From = "tools\Disable-QuickEdit.ps1";                     To = "tools\Disable-QuickEdit.ps1" },
     @{ From = "tools\stability-logger\Log-GpuStability.ps1";     To = "tools\stability-logger\Log-GpuStability.ps1" },

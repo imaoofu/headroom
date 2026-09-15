@@ -70,8 +70,20 @@ silently. Part 1 is one configuration throughout, so one log covers it.
 
 ### The exact commands
 
-⚠️ **The kit's drive letter changes per machine** — past runs record `C:\headroom-kit`,
-`D:\headroom-kit` (this card, on 09-12) and `F:\HEADRO~1`. Substitute whatever it mounts as.
+⛔ **THE DRIVE LETTER IS THE KNOWN FAILURE MODE ON THIS EXACT CARD.** On 2026-09-12 a hand-written
+invocation of this same script ran `D:\...\python.exe` against `F:\...\gpu_workload.py`. Python
+started, failed to open the script, exited in 0.58 s, and the sweeper **timed an idle card at all
+thirteen points and wrote a clean-looking CSV** — thirteen locked frequencies, no throughput, an
+hour gone. See `failed-invocations/README.md`.
+
+✅ **So bind the path ONCE to a variable and never type it twice.** The kit mounts as `F:` on this
+machine today; past runs record `C:`, `D:` and `F:\HEADRO~1`.
+
+✅ **And the guard that catches it is now on the kit.** Synced 2026-09-14 — `WorkloadResultVerdict.ps1`
+was missing from `Sync-Kit.ps1`'s file list, so the sweep script's check for "did the benchmark
+produce anything" had its caller but not its helper, and degraded to a printed NOTE. Fixed. The
+sweep now **stops at the first frequency** if no benchmark JSON comes back, instead of burning the
+rest of the run.
 
 **1. Open PowerShell as Administrator**, and allow scripts for that window only:
 
@@ -82,28 +94,33 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 🛑 **`-Scope Process` only.** It applies to that window and is gone when it closes. Never
 `LocalMachine` or `CurrentUser` on a machine that is not staying with you.
 
-**2. Preflight, in that same window:**
+**2. Bind the kit path once, and preflight:**
 
 ```powershell
-cd D:\headroom-kit
+$kit = "F:\headroom-kit"
+cd $kit
 .\tools\Disable-QuickEdit.ps1
 nvidia-smi --query-gpu=utilization.gpu,utilization.encoder,utilization.decoder --format=csv
 ```
 
 Baseline under ~5%, encoder and decoder at **0**. Instant Replay off.
 
-**3. Start HWiNFO logging.** Launch `D:\headroom-kit\HWiNFO64.exe`, tick **Sensors-only**, then in
-the sensors window start CSV logging to a path you will remember:
+**3. Start HWiNFO logging.** Launch `F:\headroom-kit\HWiNFO64.exe` (it is on the kit — 10.9 MB,
+beside `HWiNFO64.INI`), tick **Sensors-only**, then start CSV logging to:
 
 ```
-D:\headroom-kit\results\2060s-finefloor-hwinfo.csv
+F:\headroom-kit\results\2060s-finefloor-hwinfo.csv
 ```
 
-**4. Run the sweep:**
+**4. Run the sweep.** Both paths come from `$kit`, so the interpreter and the script cannot land on
+different drives:
 
 ```powershell
-.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx2060s-finefloor-gemm" -WorkloadCommand "D:\headroom-kit\python\python.exe D:\headroom-kit\tools\frequency-sweep\gpu_workload.py --workload gemm --json" -MinFrequencyMhz 900 -MaxFrequencyMhz 1140 -FrequencyCount 13 -AppliedSettings "stock, PL default, no OC - fine floor probe 900-1140"
+.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx2060s-finefloor-gemm" -WorkloadCommand "$kit\python\python.exe $kit\tools\frequency-sweep\gpu_workload.py --workload gemm --json" -MinFrequencyMhz 900 -MaxFrequencyMhz 1140 -FrequencyCount 13 -AppliedSettings "stock, PL default, no OC - fine floor probe 900-1140"
 ```
+
+⚠️ **Watch the first frequency.** If the workload cannot launch, the sweep now says so and stops
+there rather than running the other twelve points against an idle card.
 
 **5. Stop the HWiNFO log** when the sweep prints its summary. Copy **both** the sweep folder and
 the HWiNFO CSV off the machine.
