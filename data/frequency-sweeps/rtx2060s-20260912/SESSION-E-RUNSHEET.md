@@ -76,8 +76,15 @@ started, failed to open the script, exited in 0.58 s, and the sweeper **timed an
 thirteen points and wrote a clean-looking CSV** — thirteen locked frequencies, no throughput, an
 hour gone. See `failed-invocations/README.md`.
 
-✅ **So bind the path ONCE to a variable and never type it twice.** The kit mounts as `F:` on this
-machine today; past runs record `C:`, `D:` and `F:\HEADRO~1`.
+🔑 **THE SAME USB TAKES A DIFFERENT LETTER ON EVERY MACHINE, AND THAT IS THE WHOLE TRAP.** It mounts
+as **`F:` on the authoring machine** and as **`D:` on the 2060 Super PC** — confirmed by the
+successful 09-12 sweep, whose `workload_command` records `D:\headroom-kit\python\python.exe`. The
+failed run mixed the target machine's `D:` with the authoring machine's `F:`. Past runs also record
+`C:` and `F:\HEADRO~1`.
+
+✅ **So bind the path ONCE and never type it twice.** Set `$kit` to whatever the kit mounts as on
+the machine in front of you; every command below derives from it, so the interpreter and the script
+cannot land on different drives. Check it with `Get-Volume`, do not assume it from this sheet.
 
 ✅ **And the guard that catches it is now on the kit.** Synced 2026-09-14 — `WorkloadResultVerdict.ps1`
 was missing from `Sync-Kit.ps1`'s file list, so the sweep script's check for "did the benchmark
@@ -94,10 +101,17 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 🛑 **`-Scope Process` only.** It applies to that window and is gone when it closes. Never
 `LocalMachine` or `CurrentUser` on a machine that is not staying with you.
 
-**2. Bind the kit path once, and preflight:**
+**2. Bind the kit path once — `D:` on the 2060 Super PC — and prove it is really there:**
 
 ```powershell
-$kit = "F:\headroom-kit"
+$kit = "D:\headroom-kit"
+Test-Path "$kit\python\python.exe"; Test-Path "$kit\tools\frequency-sweep\gpu_workload.py"
+```
+
+⛔ **Both must print `True` before going further.** That one line is the entire defence against the
+09-12 failure: it checks the two paths the sweep will actually use, on the machine it will use them.
+
+```powershell
 cd $kit
 .\tools\Disable-QuickEdit.ps1
 nvidia-smi --query-gpu=utilization.gpu,utilization.encoder,utilization.decoder --format=csv
@@ -105,11 +119,11 @@ nvidia-smi --query-gpu=utilization.gpu,utilization.encoder,utilization.decoder -
 
 Baseline under ~5%, encoder and decoder at **0**. Instant Replay off.
 
-**3. Start HWiNFO logging.** Launch `F:\headroom-kit\HWiNFO64.exe` (it is on the kit — 10.9 MB,
+**3. Start HWiNFO logging.** Launch `D:\headroom-kit\HWiNFO64.exe` (it is on the kit — 10.9 MB,
 beside `HWiNFO64.INI`), tick **Sensors-only**, then start CSV logging to:
 
 ```
-F:\headroom-kit\results\2060s-finefloor-hwinfo.csv
+D:\headroom-kit\results\2060s-finefloor-hwinfo.csv
 ```
 
 **4. Run the sweep.** Both paths come from `$kit`, so the interpreter and the script cannot land on
