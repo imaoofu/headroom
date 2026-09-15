@@ -1,7 +1,7 @@
 """Build a deterministic manifest of every sweep under data/, and reconcile it against the paper.
 
 WHY THIS EXISTS
-    The paper's abstract states "359 dataset-grade sweeps across four chips and three
+    The paper's abstract states "360 dataset-grade sweeps across four chips and three
     architectures". Nothing computed that number, no claim pinned it, and the only inventory in
     the repository was `tools/local-model/specs/sweep-root-inventory.md` - a PROMPT asking a local
     LLM to describe the tree. An inference step has no business in a file census: walking a
@@ -53,11 +53,11 @@ MANIFEST_CSV = REPO_ROOT / "data" / "MANIFEST.csv"
 PAPER_CLAIMS = {
     "NVIDIA GeForce RTX 5060 Ti": 300,
     "NVIDIA GeForce RTX 3070 Ti": 25,
-    "NVIDIA GeForce RTX 2060 SUPER": 17,
+    "NVIDIA GeForce RTX 2060 SUPER": 18,
     "NVIDIA GeForce RTX 3060": 14,
 }
 PAPER_VERIFICATION_RUNS = 3
-PAPER_TOTAL = 359
+PAPER_TOTAL = 360
 
 # ---------------------------------------------------------------------------------------------
 # CLASSIFICATION. Every exclusion names itself. A sweep is never dropped silently, and the reason

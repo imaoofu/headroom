@@ -463,6 +463,36 @@ as a disjunction rather than a directional bet. This is the only prediction here
 result is the negative one. ⚠️ Run the fine floor sweep (~10 min) FIRST — the manipulation cannot be
 designed without knowing where the stock floor actually ends on this card.
 
+## 4d. 2060 Super — is the load floor a property of the CURVE, or of a COLD CARD?
+
+**Registered 2026-09-15, after the fine floor sweep and before the descending run.** Nothing about
+the card has been touched since; this prediction is written from a result already in hand about a
+measurement not yet made.
+
+🔑 **WHY THIS EXISTS.** The fine sweep found the voltage **non-monotonic** — falling 0.644 → 0.631 V
+from 900 to 1005 MHz, then rising to 0.662 by 1140. But the sweep runs low frequency to high, and
+the card warms 42.0 → 58.7 °C while it does, **so on the falling limb frequency and warm-up are
+perfectly collinear.** On the rising limb they are not: temperature has saturated within 3.2 °C
+while voltage climbs 31 mV, so that half is attributable to frequency. The falling half is not.
+
+> **Sweeping the identical 900–1140 MHz grid in DESCENDING order, on a card allowed to reach
+> thermal steady state the same way, the voltage minimum will remain at 975–1005 MHz.**
+
+| outcome | reading |
+|---|---|
+| minimum stays at **975–1005** | ✅ The shape belongs to the V/F curve. The non-monotonic Turing floor is real and Result 1 stands whole. |
+| minimum **follows the cold end** — now the top of the grid | ⛔ It is thermal. **Every load floor this project has measured came from a low-to-high sweep**, so the 5060 Ti, 3060 and 3070 Ti floors all inherit the same confound and the floor-extent numbers need re-reading. This is the larger finding by a distance. |
+| minimum flattens or moves partway | 🟡 Both contribute. Report the split and quote no single floor extent without the sweep direction beside it. |
+
+⚠️ **The honest prior is that this is NOT settled.** Temperature-compensated voltage is ordinary
+controller behaviour, and nothing in this project has ever varied sweep direction to look for it.
+✅ **Cost: one ~12 minute sweep, stock, no elevation beyond the usual clock lock, nothing applied
+and nothing to clean up.** It is the cheapest experiment on the list and it can invalidate a
+number that appears in the paper's headline mechanism.
+
+🛑 **Keep the raw HWiNFO log again**, and record the per-point temperatures — they are the
+independent variable this time, not a footnote.
+
 ## Safety envelope — these cards are going to be sold
 
 **The hardware risk of a floor manipulation is low and should be stated plainly rather than

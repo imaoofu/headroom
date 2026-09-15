@@ -54,7 +54,7 @@ import math
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from join_hwinfo_voltage import (loadHwinfo, loadSweep, filterIdle,
-                                 matchSamples, summarisePoint)
+                                 matchSamples, summarisePoint, contestedSamples)
 
 failures = []
 
@@ -337,6 +337,63 @@ voltage17, crossbar17, ratio17 = summarisePoint(samples17, 1000.0)
 check("summarisePoint ratio equals crossbar / achievedMhz",
       crossbar17 == 2000.0 and ratio17 == 2.0,
       f"crossbar was {crossbar17!r}, ratio was {ratio17!r}, expected 2000.0 and 2.0")
+
+# ---------------------------------------------------------------------------
+# contestedSamples - the bin-overlap check added 2026-09-15.
+#
+# ⛔ THE FIRST VERSION OF THIS CHECK COMPARED GRID SPACING AGAINST THE TOLERANCE and flagged 92
+# committed sweeps, both RTX 3070 Ti fine sweeps among them. Every one of those was FALSE: a
+# hard-locked clock reports at its target, so its samples never reach the neighbour however close
+# the grid looks. Re-derived at a 7 MHz bin the 3070 Ti voltages came back identical to three
+# decimals. These checks pin the distinction so the geometric version cannot come back.
+
+def point(mhz):
+    return {"target": int(mhz), "achieved": float(mhz), "throughputGbs": 1.0,
+            "powerW": 100.0, "memoryMhz": 1000.0}
+
+
+def sample(mhz):
+    return {"clock": float(mhz), "voltage": 0.7, "crossbar": None, "power": 100.0}
+
+
+# Test 18: a fine grid whose samples sit exactly on their targets is NOT contested at a tight bin.
+sweepFine = [point(900), point(915), point(945)]
+contested18, total18 = contestedSamples([sample(900), sample(915), sample(945)], sweepFine, 7.0)
+check("a 15 MHz grid is uncontested at a 7 MHz bin", contested18 == 0 and total18 == 3,
+      f"got {contested18} of {total18}")
+
+# Test 19: the SAME grid and the SAME samples ARE contested at the 25 MHz default. This is the
+# 2026-09-15 RTX 2060 Super case in miniature - nothing about the data changed, only the bin.
+# Worked by hand: 900 is within 25 of both 900 and 915 -> contested. 915 is within 25 of 900 and
+# 915, but 945 is 30 away -> contested. 945 is within 25 of 945 only, since 915 is 30 away -> NOT
+# contested. So TWO of the three, and the third is clean for the same reason test 20 is.
+contested19, _ = contestedSamples([sample(900), sample(915), sample(945)], sweepFine, 25.0)
+check("the same 15 MHz grid IS contested at the 25 MHz default", contested19 == 2,
+      f"got {contested19}, expected 2 of the 3 samples claimed twice")
+
+# Test 20: THE FALSE-POSITIVE GUARD. Points 30 MHz apart look too close for a 25 MHz bin on
+# geometry alone (30 < 50), but samples landing exactly on their locked targets are claimed once
+# each. This is the RTX 3070 Ti fine sweep, and it must NOT be flagged.
+sweep3070 = [point(1200), point(1245), point(1290), point(1335)]
+samples3070 = [sample(1200), sample(1245), sample(1290), sample(1335)]
+contested20, _ = contestedSamples(samples3070, sweep3070, 25.0)
+check("hard-locked points 45 MHz apart are uncontested at the 25 MHz default - geometry says "
+      "possible, the samples say it did not happen", contested20 == 0, f"got {contested20}")
+
+# Test 21: a sample stranded BETWEEN two points is the thing actually being detected.
+contested21, _ = contestedSamples([sample(907)], [point(900), point(915)], 10.0)
+check("a sample between two points is counted once, not twice", contested21 == 1,
+      f"got {contested21}")
+
+# Test 22: no samples means nothing contested, rather than a crash or a divide.
+contested22, total22 = contestedSamples([], sweepFine, 25.0)
+check("an empty sample list is uncontested", contested22 == 0 and total22 == 0,
+      f"got {contested22} of {total22}")
+
+# Test 23: a single sweep point can never contest with itself, at any tolerance.
+contested23, _ = contestedSamples([sample(1000)], [point(1000)], 500.0)
+check("one point cannot contest with itself even at an absurd tolerance", contested23 == 0,
+      f"got {contested23}")
 
 if failures:
     print(f"FAILED: {', '.join(failures)}")

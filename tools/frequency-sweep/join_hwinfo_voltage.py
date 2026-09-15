@@ -38,6 +38,11 @@ from pathlib import Path
 IDLE_POWER_WATTS = 30.0
 CLOCK_TOLERANCE_MHZ = 25.0
 
+# Two sweep points closer than this ran at the SAME clock - the card clipped and refused to hold
+# them apart. That is a property of the hardware, not of the join, so no bin width fixes it and
+# gridSpacingConflict() deliberately ignores such pairs.
+SAME_POINT_MHZ = 10.0
+
 
 def loadHwinfo(path):
     rows = list(csv.reader(open(path, encoding="latin-1")))
@@ -131,8 +136,48 @@ def matchSamples(samples, achievedMhz, toleranceMhz=CLOCK_TOLERANCE_MHZ):
     module docstring. The tolerance has to be wide enough to absorb the reported clock jitter
     within one held point and narrow enough not to reach the neighbouring point; the grid steps
     are ~75 MHz apart at the low end, so 25 MHz leaves margin on both sides.
+
+    ⛔ THAT LAST SENTENCE IS AN ASSUMPTION ABOUT THE GRID, AND A FINE SWEEP BREAKS IT. See
+    gridSpacingConflict() below - the 2026-09-15 RTX 2060 Super fine-floor sweep stepped 15 MHz
+    and every second bin silently absorbed its neighbour's samples.
     """
     return [s for s in samples if abs(s["clock"] - achievedMhz) <= toleranceMhz]
+
+
+def contestedSamples(samples, sweep, toleranceMhz):
+    """How many samples fall within the bin of MORE THAN ONE sweep point.
+
+    ⛔ WHY THIS EXISTS. matchSamples takes every sample within +/-tolerance of a point's achieved
+    clock, so where two points sit closer than 2*tolerance they BOTH claim the samples between
+    them. Nothing announces it: the join prints a full table, every point gets a voltage, and the
+    only visible trace is an inflated sample count that reads as good news.
+
+    🔑 Found on the RTX 2060 Super fine-floor sweep of 2026-09-15 - a deliberately fine 15 MHz grid
+    against a tolerance written for ~75 MHz steps. 908 of its 916 loaded samples were contested.
+    Re-binned at 7 MHz the per-point counts became uniform (63-80), the joined power column stopped
+    being non-monotonic, and two points at the top that the wide bin had merged into one value
+    separated into 0.656 and 0.662 V.
+
+    ⚠️ THIS MEASURES THE OVERLAP RATHER THAN PREDICTING IT, AND THE DISTINCTION IS THE WHOLE POINT.
+    The first version of this check compared grid SPACING against the tolerance. That flagged 92
+    committed sweeps, including both RTX 3070 Ti fine sweeps whose floor table Session D's
+    prediction rests on - and every one of those flags was false. Re-derived at a 7 MHz bin the
+    3070 Ti voltages came back IDENTICAL to three decimal places, because a hard-locked clock
+    reads at its target and its samples never reach the neighbour, however close the grid looks.
+    Geometry says contamination is POSSIBLE; only the samples say it HAPPENED.
+
+    Returns (contestedCount, totalCount).
+    """
+    contested = 0
+    for sample in samples:
+        claims = 0
+        for point in sweep:
+            if abs(sample["clock"] - point["achieved"]) <= toleranceMhz:
+                claims += 1
+                if claims > 1:
+                    contested += 1
+                    break
+    return contested, len(samples)
 
 
 def summarisePoint(matched, achievedMhz):
@@ -157,6 +202,11 @@ def main():
     parser.add_argument("--min-power", type=float, default=IDLE_POWER_WATTS,
                         help="Discard HWiNFO samples below this GPU power; they are the idle "
                              "gaps between sweep points and sit at boost voltage.")
+    parser.add_argument("--clock-tolerance", type=float, default=None,
+                        help=f"Bin width in MHz around each point's achieved clock. Defaults to "
+                             f"{CLOCK_TOLERANCE_MHZ}, which is written for grids stepping ~75 MHz "
+                             f"or wider. A finer grid REQUIRES an explicit value - the join "
+                             f"refuses rather than let neighbouring points share samples.")
     args = parser.parse_args()
 
     samples, indices = loadHwinfo(args.hwinfo)
@@ -164,14 +214,36 @@ def main():
     print(f"HWiNFO columns used: {indices}")
     print(f"{len(samples)} samples, {len(sweep)} sweep points\n")
 
+
     loaded = filterIdle(samples, args.min_power)
     print(f"{len(loaded)} of {len(samples)} samples are above {args.min_power} W and kept\n")
+
+    tolerance = args.clock_tolerance if args.clock_tolerance is not None else CLOCK_TOLERANCE_MHZ
+    contested, totalLoaded = contestedSamples(loaded, sweep, tolerance)
+    if contested and args.clock_tolerance is None:
+        spacings = sorted({round(b["achieved"] - a["achieved"])
+                           for a, b in zip(sorted(sweep, key=lambda p: p["achieved"]),
+                                           sorted(sweep, key=lambda p: p["achieved"])[1:])
+                           if b["achieved"] - a["achieved"] >= SAME_POINT_MHZ})
+        suggested = (spacings[0] / 2 - 0.5) if spacings else tolerance / 2
+        print(f"*** REFUSING TO JOIN: {contested} of {totalLoaded} samples are claimed by more "
+              f"than one sweep point. ***")
+        print(f"The bin is +/-{tolerance:.0f} MHz and this grid steps "
+              f"{spacings[0] if spacings else '?'} MHz, so neighbouring points share samples.")
+        print("Each affected point absorbs its neighbour's readings, inflating its sample count "
+              "and pulling the median toward the wrong clock. Nothing downstream would show it.")
+        print(f"Re-run with an explicit bin, e.g.  --clock-tolerance {suggested:.0f}")
+        return 2
+    if contested:
+        print(f"NOTE: {contested} of {totalLoaded} samples are claimed by more than one point at "
+              f"this tolerance. You set it explicitly, so proceeding." + chr(10))
+    print(f"binning samples within +/-{tolerance:.0f} MHz of each point's achieved clock\n")
 
     print(f"{'target':>7} {'achieved':>9} {'GB/s':>8} {'W':>6} {'n':>4} "
           f"{'volts':>7} {'crossbar':>9} {'xbar/core':>10}")
     merged = []
     for point in sweep:
-        matched = matchSamples(loaded, point["achieved"])
+        matched = matchSamples(loaded, point["achieved"], tolerance)
         if not matched:
             print(f"{point['target']:>7} {point['achieved']:>9.1f} "
                   f"{point['throughputGbs']:>8.1f} {point['powerW']:>6.1f} {0:>4}  (no samples)")
