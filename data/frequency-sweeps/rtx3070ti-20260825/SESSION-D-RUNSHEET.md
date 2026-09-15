@@ -122,6 +122,35 @@ elevation.
 
 ---
 
+## The exact commands, and the one thing the kit does NOT have
+
+✅ **The sweeps go through `Collect.ps1`.** This card's original suite used band **852–2130 MHz,
+13 points, settle 8, measure 20**, which is the kit's default band on this GPU — so no explicit
+frequency arguments are needed, and matching the original collection is what makes the comparison
+valid.
+
+```powershell
+cd <KIT>
+.\Calibrate-Suite.ps1                     # FIRST. Iteration counts are per card.
+.\Collect.ps1 -Label "rtx3070ti-sessiond-stock-1" -AppliedSettings "stock, silent BIOS" -Iterations <from calibrate>
+```
+
+Then repeat with `-Label ...-edit1-2`, `...-edit1-3`, `...-stock-4` after each curve change, and
+`...-edit2` for the control. **`-AppliedSettings` must describe the curve actually applied** — it is
+the field nothing can reconstruct afterwards, and the reason the earliest tuned data in this project
+is unusable.
+
+⛔ **AFTERBURNER IS NOT IN THE KIT AND WILL NOT BE.** The kit installs nothing and leaves nothing
+behind; that is its whole design. A manipulation needs Afterburner present on the target machine,
+which means **installing it, applying curves, and removing it and its profile store afterwards**.
+That is a materially larger footprint than a stock sweep and it is the part to plan for.
+
+⚠️ **There is no script that snapshots a profile store.** The one committed snapshot
+(`data/afterburner-profiles/5060ti-profiles-20260908.json`) was produced ad hoc and only
+`predict_from_curve.py` reads it. For this card, **copy the raw `Profiles\*.cfg` verbatim into
+`data/afterburner-profiles/` and record each file's SHA-256** — that satisfies the reconstruction
+purpose with no tooling, and the device ID in the filename identifies the card.
+
 ## Before you touch anything
 
 1. **Snapshot the Afterburner profile store verbatim** into `data/afterburner-profiles/` before the

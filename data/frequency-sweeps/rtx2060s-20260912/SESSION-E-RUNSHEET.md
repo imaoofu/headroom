@@ -53,6 +53,31 @@ supported clock; record what it actually locked, not what you asked for.
 | what it decides | where voltage **first** leaves 0.631 V, to ±10 MHz instead of ±60 |
 | applied settings | **none — stock** |
 
+### The exact command
+
+⛔ **NOT `Collect.ps1`.** It has no frequency-band parameters and only runs the standard 13-point
+stock band. This sweep calls the harness directly, which is how the existing `lowrange` sweep on
+this card was taken (`sweep_band_explicit: true`, 400–1100 MHz).
+
+⚠️ **The kit's drive letter changes per machine** — past runs record `C:\headroom-kit`,
+`D:\headroom-kit` and `F:\HEADRO~1`. Substitute whatever it mounts as.
+
+```powershell
+cd <KIT>
+.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 `
+  -SessionLabel "rtx2060s-finefloor-gemm" `
+  -WorkloadCommand "<KIT>\python\python.exe <KIT>\tools\frequency-sweep\gpu_workload.py --workload gemm --json" `
+  -MinFrequencyMhz 900 -MaxFrequencyMhz 1140 -FrequencyCount 13 `
+  -MeasureSeconds 60 `
+  -AppliedSettings "stock, as found, silent BIOS"
+```
+
+🔑 **`-MeasureSeconds 60` instead of the usual 20, on purpose.** At the kit's 0.5 s sampling
+that is ~120 voltage samples per frequency bin instead of ~40, which is what the dither analysis
+below needs. ⚠️ It also means **throughput from this sweep is not comparable with the 20-second
+sweeps** — that is fine, because this run exists to locate a voltage step, not to measure
+performance. Say so if any number from it is ever quoted.
+
 ## ⚠️ The limit this sweep CANNOT beat, and what to do about it
 
 **Finer frequency steps do not fix coarse voltage quantisation.** The sensor reports in ~6.25 mV
