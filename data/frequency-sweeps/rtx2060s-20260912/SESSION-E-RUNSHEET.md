@@ -1,7 +1,8 @@
 # Session E — the RTX 2060 Super fine floor sweep, and the boundary manipulation
 
 **Work off this sheet at the machine.** Predictions for the manipulation are registered in
-`docs/REGISTERED-PREDICTIONS.md` §4c. Part 1 needs no elevation and no curve changes.
+`docs/REGISTERED-PREDICTIONS.md` §4c. Part 1 applies nothing to the card and leaves nothing behind
+— but it **does need an Administrator shell**, because locking clocks does.
 
 **Why this card matters more than its size suggests.** No Turing voltage-frequency curve has ever
 been *measured* in the ridge-point literature. Schoonhoven et al. can only read core voltage on
@@ -41,7 +42,7 @@ here, and it is why this session exists.
 
 ---
 
-# PART 1 — the fine floor sweep (do this first; ~10–15 min, no elevation, nothing applied)
+# PART 1 — the fine floor sweep (do this first; ~10–15 min, nothing applied)
 
 **Grid: 900 → 1140 MHz in 20 MHz nominal steps**, 13 points. The tool will snap each to the nearest
 supported clock; record what it actually locked, not what you asked for.
@@ -53,30 +54,77 @@ supported clock; record what it actually locked, not what you asked for.
 | what it decides | where voltage **first** leaves 0.631 V, to ±10 MHz instead of ±60 |
 | applied settings | **none — stock** |
 
-### The exact command
+### 🛑 HWiNFO IS THE INSTRUMENT. Without it this run measures nothing.
 
-⛔ **NOT `Collect.ps1`.** It has no frequency-band parameters and only runs the standard 13-point
-stock band. This sweep calls the harness directly, which is how the existing `lowrange` sweep on
-this card was taken (`sweep_band_explicit: true`, 400–1100 MHz).
+**The sweep tool cannot read voltage — nothing in NVML can.** An exhaustive scan of field IDs
+1–259 returns 44 readable fields and no voltage at any scale. **Every voltage number in this
+project comes from an HWiNFO log**, joined afterwards by `join_hwinfo_voltage.py`. This session
+exists to locate a voltage step, so a sweep run without HWiNFO logging is a wasted session.
+
+`HWiNFO64.exe` **ships on the kit** and the kit's `HWiNFO64.INI` sets `SensorInterval=500`, so it
+samples at **0.50 s**. Nothing to install.
+
+⛔ **Start the log BEFORE the sweep and stop it AFTER.** One log must never span a settings
+change — the join bins samples by core clock, so a log covering two configurations mixes them
+silently. Part 1 is one configuration throughout, so one log covers it.
+
+### The exact commands
 
 ⚠️ **The kit's drive letter changes per machine** — past runs record `C:\headroom-kit`,
-`D:\headroom-kit` and `F:\HEADRO~1`. Substitute whatever it mounts as.
+`D:\headroom-kit` (this card, on 09-12) and `F:\HEADRO~1`. Substitute whatever it mounts as.
+
+**1. Open PowerShell as Administrator**, and allow scripts for that window only:
 
 ```powershell
-cd <KIT>
-.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 `
-  -SessionLabel "rtx2060s-finefloor-gemm" `
-  -WorkloadCommand "<KIT>\python\python.exe <KIT>\tools\frequency-sweep\gpu_workload.py --workload gemm --json" `
-  -MinFrequencyMhz 900 -MaxFrequencyMhz 1140 -FrequencyCount 13 `
-  -MeasureSeconds 60 `
-  -AppliedSettings "stock, as found, silent BIOS"
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 ```
 
-🔑 **`-MeasureSeconds 60` instead of the usual 20, on purpose.** At the kit's 0.5 s sampling
-that is ~120 voltage samples per frequency bin instead of ~40, which is what the dither analysis
-below needs. ⚠️ It also means **throughput from this sweep is not comparable with the 20-second
-sweeps** — that is fine, because this run exists to locate a voltage step, not to measure
-performance. Say so if any number from it is ever quoted.
+🛑 **`-Scope Process` only.** It applies to that window and is gone when it closes. Never
+`LocalMachine` or `CurrentUser` on a machine that is not staying with you.
+
+**2. Preflight, in that same window:**
+
+```powershell
+cd D:\headroom-kit
+.\tools\Disable-QuickEdit.ps1
+nvidia-smi --query-gpu=utilization.gpu,utilization.encoder,utilization.decoder --format=csv
+```
+
+Baseline under ~5%, encoder and decoder at **0**. Instant Replay off.
+
+**3. Start HWiNFO logging.** Launch `D:\headroom-kit\HWiNFO64.exe`, tick **Sensors-only**, then in
+the sensors window start CSV logging to a path you will remember:
+
+```
+D:\headroom-kit\results\2060s-finefloor-hwinfo.csv
+```
+
+**4. Run the sweep:**
+
+```powershell
+.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -SessionLabel "rtx2060s-finefloor-gemm" -WorkloadCommand "D:\headroom-kit\python\python.exe D:\headroom-kit\tools\frequency-sweep\gpu_workload.py --workload gemm --json" -MinFrequencyMhz 900 -MaxFrequencyMhz 1140 -FrequencyCount 13 -AppliedSettings "stock, PL default, no OC - fine floor probe 900-1140"
+```
+
+**5. Stop the HWiNFO log** when the sweep prints its summary. Copy **both** the sweep folder and
+the HWiNFO CSV off the machine.
+
+⛔ **KEEP THE RAW HWiNFO CSV.** The distilled extract holds one median per bin and throws away
+exactly what the dither analysis below needs.
+
+### ⚠️ Two things this sheet got wrong until 2026-09-14
+
+**`-MeasureSeconds 60` was specified here and it is INERT.** The parameter's own documentation
+says it "applies only when NO `-WorkloadCommand` is given; with a workload, sampling runs for as
+long as it runs." A workload is given, so it would have changed nothing — and the sheet's claim
+that throughput from this run is therefore incomparable with the 20-second sweeps was wrong in the
+same stroke. **It is directly comparable**, provided the iteration count is the default.
+
+**The sample-count arithmetic behind it was also wrong, in the useful direction.** It assumed ~40
+HWiNFO samples per bin. The `lowrange` extract on this card records `sampleCount` of **67 to 165**,
+because HWiNFO logs continuously across the whole fixed-work run rather than inside a measure
+window. At 1095 MHz that is already 67 samples. **The dither analysis has what it needs at default
+settings.** If more dwell is ever wanted the lever is `--iterations` on the workload, not
+`-MeasureSeconds` — and changing it breaks comparability, which is the trade.
 
 ## ⚠️ The limit this sweep CANNOT beat, and what to do about it
 
@@ -85,17 +133,18 @@ codes. If the true curve rises by less than one code across this range, no frequ
 resolves it — you would only be locating the first *observable* step, not the first *actual* rise.
 
 ✅ **But there may be a way through, and this run is the chance to test it.** The kit logs HWiNFO at
-**0.5 s** (`SensorInterval=500`), so a 60 s dwell gives ~120 samples per frequency bin. If the true
-voltage sits *between* two codes, a well-behaved sensor **dithers** between them, and the ratio of
-0.631 to 0.637 samples estimates the sub-step voltage — resolution below one code, for free.
+**0.5 s** (`SensorInterval=500`) across the whole fixed-work run, which on this card's `lowrange`
+sweep gave **67 to 165 samples per frequency bin** at default iteration counts. If the true voltage
+sits *between* two codes, a well-behaved sensor **dithers** between them, and the ratio of 0.631 to
+0.637 samples estimates the sub-step voltage — resolution below one code, for free.
 
 ⛔ **Whether this sensor dithers at all is UNKNOWN.** The committed extracts hold one median per bin
 (`n=1` per target), so nothing on disk can answer it. It may quantise hard and never dither, in
 which case the idea is dead and that is itself worth recording.
 
 🛑 **So: KEEP THE RAW HWiNFO LOG for this run.** Do not let it be cleaned up. The distilled extract
-throws away exactly the information this technique needs. If you can raise the dwell per frequency,
-do — more samples per bin is the whole game here.
+throws away exactly the information this technique needs — it is the one irreplaceable artifact
+of the session.
 
 ## What Part 1 settles
 
@@ -173,7 +222,7 @@ experiment; if the closing stock run does not match the opening one, the result 
 
 ## If you only have time for one thing
 
-**Do Part 1.** It needs no elevation, no curve edit, and no cleanup, it takes ten minutes, and it is
+**Do Part 1.** It applies nothing, needs no curve edit and no cleanup, it takes ten minutes, and it is
 the first measured Turing voltage-frequency curve in this literature regardless of which way it
 falls. Part 2 is the more interesting experiment and the more expensive one; Part 1 is the one that
 would be a waste to leave undone with the card sitting on the bench.

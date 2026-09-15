@@ -135,6 +135,15 @@ cd <KIT>
 .\Collect.ps1 -Label "rtx3070ti-sessiond-stock-1" -AppliedSettings "stock, silent BIOS" -Iterations <from calibrate>
 ```
 
+🛑 **RUN HWiNFO LOGGING ACROSS EVERY SWEEP.** `HWiNFO64.exe` ships on the kit; its `HWiNFO64.INI`
+sets `SensorInterval=500`. NVML exposes no voltage at all, so **HWiNFO is the only evidence that a
+curve edit actually took** — and a driver reset silently clears Afterburner offsets, which would
+otherwise produce a whole sweep of stock silicon wearing a tuned settings string.
+
+⛔ **A separate log per configuration.** The join bins samples by core clock, so one log spanning
+stock and Edit 1 mixes two curves into one table with nothing to separate them. Stop the log at
+every curve change and start a new file.
+
 Then repeat with `-Label ...-edit1-2`, `...-edit1-3`, `...-stock-4` after each curve change, and
 `...-edit2` for the control. **`-AppliedSettings` must describe the curve actually applied** — it is
 the field nothing can reconstruct afterwards, and the reason the earliest tuned data in this project
