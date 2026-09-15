@@ -73,6 +73,19 @@
     How long to sample telemetry at each frequency. Default 20. Applies only when NO
     -WorkloadCommand is given; with a workload, sampling runs for as long as it runs.
 
+.PARAMETER Descending
+    Walk the frequency grid from HIGHEST to LOWEST instead of the default lowest-to-highest.
+
+    ⛔ ADDED 2026-09-15 BECAUSE THE DEFAULT ORDER IS A CONFOUND AND NOTHING HERE COULD VARY IT.
+    A sweep that climbs in frequency also warms the card as it goes, so frequency and temperature
+    rise together and any voltage that changes with temperature is indistinguishable from one that
+    changes with clock. The RTX 2060 Super fine-floor sweep of 2026-09-15 measured core voltage
+    FALLING 0.644 -> 0.631 V from 900 to 1005 MHz while the card went 42.0 -> 58.7 C; above
+    1005 MHz the temperature had saturated and the voltage rise there is attributable, but the
+    fall is not. Every load-floor measurement in this project was taken ascending.
+
+    Running the identical grid both ways separates them. Nothing else about the sweep changes.
+
 .PARAMETER SampleIntervalSeconds
     Telemetry sampling period, in seconds. Default 0.5.
 
@@ -152,6 +165,7 @@ param(
     [double]$MaxBaselineUtilization = 10,
     [int]$MinFreeVramMb = 4000,
     [switch]$AllowVideoEngines,
+    [switch]$Descending,
     [string]$AppliedSettings = "",
     [string]$OutputDirectory = "",
     [switch]$DryRun
@@ -435,13 +449,18 @@ if ($explicitBand) {
     }
 }
 $targets = Select-SweepFrequencies -Supported $inRange -Count $FrequencyCount
+if ($Descending) {
+    # [array] because reversing a single-element result would otherwise unwrap to a scalar and
+    # break the foreach below - the same shape of defect as the -First 1 pipeline bug.
+    $targets = [array]($targets | Sort-Object -Descending)
+}
 
 Write-Host ""
 Write-Host "[SWEEP] GPU:        $gpuName (driver $driverVersion)"
 Write-Host "[SWEEP] Max clock:  $maxClock MHz | power limit $powerLimitEnforced W enforced ($powerLimitDefault W default, $powerLimit W max)"
 Write-Host "[SWEEP] Supported:  $($supported.Count) discrete graphics clocks, $($supported[-1])-$($supported[0]) MHz"
 if ($explicitBand) {
-    $stepMhz = if ($targets.Count -gt 1) { [int][math]::Round(($targets[-1] - $targets[0]) / ($targets.Count - 1)) } else { 0 }
+    $stepMhz = if ($targets.Count -gt 1) { [int][math]::Round([math]::Abs($targets[-1] - $targets[0]) / ($targets.Count - 1)) } else { 0 }
     Write-Host "[SWEEP] Sweep band:  $floorMhz-$ceilMhz MHz (explicit) - FINE sweep, ~$stepMhz MHz apart. Not a full-range curve."
 } else {
     Write-Host "[SWEEP] Sweep floor: $floorMhz MHz ($MinFrequencyPercent% of max) - lower clocks exist but are not swept"
@@ -974,6 +993,9 @@ $session = [ordered]@{
     sweep_band_min_mhz   = $floorMhz
     sweep_band_max_mhz   = $ceilMhz
     sweep_band_explicit  = $explicitBand
+    # The ORDER the grid was walked. Sweeps taken before 2026-09-15 carry no such field and were
+    # all ascending; absent must therefore be read as "ascending", never as "unknown".
+    sweep_order          = if ($Descending) { "descending" } else { "ascending" }
     settle_seconds       = $SettleSeconds
     measure_seconds      = $MeasureSeconds
     drifted_points       = $driftedPoints.Count

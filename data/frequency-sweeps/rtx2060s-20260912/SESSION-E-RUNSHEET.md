@@ -177,6 +177,54 @@ which case the idea is dead and that is itself worth recording.
 throws away exactly the information this technique needs — it is the one irreplaceable artifact
 of the session.
 
+---
+
+# PART 1b — the DESCENDING sweep. ⚡ Run this while the card is still on the bench.
+
+**Added 2026-09-15, after Part 1 ran.** Registered as §4d. Same grid, same settings, ~12 minutes,
+nothing applied — the only thing that changes is the ORDER.
+
+🔑 **Why it is now the most valuable 12 minutes available.** Part 1 found the voltage
+**non-monotonic**: 0.644 V at 900 MHz falling to 0.631 at 975–1005, then rising to 0.662 at 1140.
+But the sweep climbs in frequency while the card warms from **42.0 to 58.7 °C**, so on the falling
+limb frequency and warm-up are perfectly collinear. On the rising limb they are not — temperature
+has saturated within 3.2 °C while voltage climbs 31 mV — so that half is safe and the falling half
+is not.
+
+⛔ **And the falling limb is what sets where the floor BEGINS.** Every load floor this project has
+measured, on all four cards, came from a low-to-high sweep. If the minimum is thermal, they all
+inherit it.
+
+```powershell
+$kit = "D:\headroom-kit"; Test-Path "$kit\python\python.exe"; Test-Path "$kit\tools\frequency-sweep\gpu_workload.py"
+```
+
+Start a **new** HWiNFO log first (`…-finefloor-desc-hwinfo.csv`) — one log must never span two runs.
+
+```powershell
+.\tools\frequency-sweep\Invoke-FrequencySweep.ps1 -Descending -SessionLabel "rtx2060s-finefloor-desc-gemm" -WorkloadCommand "$kit\python\python.exe $kit\tools\frequency-sweep\gpu_workload.py --workload gemm --json" -MinFrequencyMhz 900 -MaxFrequencyMhz 1140 -FrequencyCount 13 -AppliedSettings "stock, PL default, no OC - fine floor probe 900-1140 DESCENDING order, thermal control for 4d"
+```
+
+✅ **`-Descending` did not exist until 2026-09-15 and had to be added.** The tool sorted its grid
+ascending and walked it in that order with no way to vary it, which is why **every load-floor
+measurement in this project shares the same warm-up confound**. The switch reverses the grid and
+changes nothing else; the session JSON now records `sweep_order`, and a sweep with no such field is
+ascending rather than unknown. Verified by dry run on the 5060 Ti — 1140 first, 900 last.
+
+⚠️ **The kit needs re-syncing before this run.** The switch is in the repository; a kit synced
+earlier does not have it and will reject `-Descending` as an unknown parameter.
+
+| result | reading |
+|---|---|
+| minimum stays at **975–1005** | ✅ the shape belongs to the V/F curve; Part 1's Result 1 stands whole |
+| minimum **follows the cold end** (now the top) | ⛔ it is thermal — and every floor extent in this project needs re-reading. The bigger finding. |
+| partial movement | 🟡 both contribute; never quote a floor extent again without the sweep direction beside it |
+
+🛑 **Keep this raw HWiNFO log too**, and this time the per-point temperatures are the independent
+variable rather than a footnote.
+
+---
+
 ## What Part 1 settles
 
 | result | reading |
