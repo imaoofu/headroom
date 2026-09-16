@@ -484,6 +484,29 @@ while voltage climbs 31 mV, so that half is attributable to frequency. The falli
 | minimum **follows the cold end** — now the top of the grid | ⛔ It is thermal. **Every load floor this project has measured came from a low-to-high sweep**, so the 5060 Ti, 3060 and 3070 Ti floors all inherit the same confound and the floor-extent numbers need re-reading. This is the larger finding by a distance. |
 | minimum flattens or moves partway | 🟡 Both contribute. Report the split and quote no single floor extent without the sweep direction beside it. |
 
+### 🔑 Evidence gathered BEFORE the run, which moves the prior toward "not thermal"
+
+**Recorded here rather than after, because a prior revised once the answer is known is worth
+nothing.** 16 of the 22 sweeps that have ever produced a voltage extract warm by 8 °C or more, and
+the 5060 Ti stock sweep that sets the project's 0.720 V floor warms **24.6 °C** — so the exposure
+is real and project-wide. But the floors those sweeps report are **flat through the warm-up**:
+
+| card | floor region | voltage across it | temperature across it |
+|---|---|---|---|
+| RTX 3060 | 840 → 1260 MHz, 5 points | **0.756 V, zero movement** | 38.6 → 48.8 °C (**10.2 °C**) |
+| RTX 5060 Ti | 1237 → 1545 MHz, 3 points | **0.720 V, zero movement** | 41.2 → 46.3 °C (5.1 °C) |
+
+⛔ **A 10.2 °C warm-up on the 3060 moved the reading by less than one 6 mV sensor code.** If
+temperature were driving voltage at the scale seen on the 2060 Super — **13 mV across 13.5 °C**,
+more than double that bound — the 3060's floor could not have come back flat across five
+consecutive points.
+
+✅ **So the flat floors are most likely genuinely flat, and the corpus is probably not in danger.**
+What remains unexplained is the 2060 Super specifically. ⚠️ **This does not settle it**: the bound
+comes from a *different card*, and thermal compensation is a per-controller behaviour that need not
+transfer — the same trap as borrowing a floor voltage between cards. The prediction below stands
+unchanged.
+
 ⚠️ **The honest prior is that this is NOT settled.** Temperature-compensated voltage is ordinary
 controller behaviour, and nothing in this project has ever varied sweep direction to look for it.
 ✅ **Cost: one ~12 minute sweep, stock, no elevation beyond the usual clock lock, nothing applied

@@ -87,6 +87,26 @@ rounding behaviour established before a ratio means anything, and nothing here e
 one that sets where the floor begins — which means "the floor is 345 MHz wide" from the 09-12 data
 inherits the same confound, because that sweep also ran low to high.
 
+### ✅ How far the confound reaches — bounded from existing data, 2026-09-15
+
+**16 of the 22 sweeps that ever produced a voltage extract warm by 8 °C or more**, and the 5060 Ti
+stock sweep behind the 0.720 V floor warms 24.6 °C. So the exposure is project-wide. But the floors
+those sweeps report are **flat through the warm-up**:
+
+| card | floor region | voltage across it | temperature across it |
+|---|---|---|---|
+| RTX 3060 | 840 → 1260 MHz, 5 points | **0.756 V, zero movement** | 38.6 → 48.8 °C (**10.2 °C**) |
+| RTX 5060 Ti | 1237 → 1545 MHz, 3 points | **0.720 V, zero movement** | 41.2 → 46.3 °C (5.1 °C) |
+
+⛔ **A 10.2 °C warm-up on the 3060 moved the reading by less than one 6 mV code.** The fall measured
+here is 13 mV across 13.5 °C — more than double that bound. If temperature drove voltage at this
+scale the 3060's floor could not have come back flat across five consecutive points.
+
+✅ **So the flat floors are most likely genuinely flat and the corpus is probably not in danger;
+what is unexplained is this card.** ⚠️ The bound comes from a *different card*, and thermal
+compensation is per-controller behaviour that need not transfer — the same trap as borrowing a
+floor voltage between cards. It narrows the question; it does not close it.
+
 ### The discriminating experiment, and it is cheap
 
 **Re-run this exact grid in DESCENDING order**, same session, same settings, ~12 minutes.
