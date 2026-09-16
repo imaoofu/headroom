@@ -100,14 +100,29 @@ under half the pair. If time runs short, drop a replicate, never Edit 2.
 Drift between sessions on one unchanged configuration has been measured at ~1.47% on `gemm`, which
 is larger than several effects this project reports. A/B/B/A brackets it.
 
+⛔ **THIS TABLE SAID "gemm, membw" UNTIL 2026-09-16 AND IT COULD NOT HAVE TESTED ITS OWN
+PREDICTION.** 4a is registered on the **median suite optimum** — *"moves down from 1485 MHz"*, a
+figure that comes from the twelve-workload suite with **7 of 12 workloads** on the median. Two
+workloads produce no median of twelve and nothing comparable to 1485. The session would have run,
+looked successful, and answered a different question.
+
 | # | config | workloads | why |
 |---|---|---|---|
-| 1 | **stock** | gemm, membw | today's baseline — do NOT reuse the 08-27 sweeps |
-| 2 | **Edit 1** | gemm, membw | the manipulation |
-| 3 | **Edit 1** | gemm, membw | replicate, catches within-config spread |
-| 4 | **stock** | gemm, membw | closes the bracket; must match run 1 |
+| 1 | **stock** | **full 12-workload suite** | today's baseline — do NOT reuse the 08-27 sweeps |
+| 2 | **Edit 1** | **full suite** | the manipulation |
+| 3 | **Edit 2** | **full suite** | the negative control |
+| 4 | **stock** | **full suite** | closes the bracket; must match run 1 |
 
-Then, if time remains: **Edit 2**, gemm + membw, once.
+**The suite is `copy, reduce, softmax, layernorm, bgemm32, bgemm64, bgemm128, bgemm256, bgemm1024,
+attention, conv, gemm`** — and it measures **60–64 minutes per configuration**, from the two
+twelve-workload suites already collected. Budget four hours of sweeping, not one.
+
+🔑 **The Edit-1 replicate is what got dropped, not the control.** This sheet's own rule is "drop a
+replicate, never Edit 2", and at 61 minutes a run that rule now has teeth. Runs 1 and 4 bracket
+drift between them, which is the job the replicate was mostly doing.
+
+✅ **If the day runs long, stop after run 3 and run 4 first thing next session** — but then the
+bracket spans a session boundary and ~1.47% cross-session drift applies, so say so in the write-up.
 
 ⛔ **If run 4 does not come back to run 1 within ~1.5%, the session is drift-contaminated** and the
 manipulation result is not interpretable. Report that rather than the effect.
@@ -130,10 +145,21 @@ frequency arguments are needed, and matching the original collection is what mak
 valid.
 
 ```powershell
-cd <KIT>
-.\Calibrate-Suite.ps1                     # FIRST. Iteration counts are per card.
-.\Collect.ps1 -Label "rtx3070ti-sessiond-stock-1" -AppliedSettings "stock, silent BIOS" -Iterations <from calibrate>
+$kit = "D:\headroom-kit"; cd $kit        # check the letter with Get-Volume; it is not always the same
+.\Calibrate-Suite.ps1                     # FIRST. Iteration counts are per card. ~10 min.
 ```
+
+Write the twelve numbers down. Then, for each configuration, with `-Iterations` matched to
+`-Workloads` **by position** and **held identical across all four runs**:
+
+```powershell
+.\Collect.ps1 -Label "rtx3070ti-sessiond-stock-1" -AppliedSettings "stock, silent BIOS" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations <n1>,<n2>,<n3>,<n4>,<n5>,<n6>,<n7>,<n8>,<n9>,<n10>,<n11>,<n12>
+```
+
+⛔ **Calibrate ONCE, at the start, on stock — never again between configurations.** A re-calibrated
+count changes the work per point, which breaks the fixed-work property that makes duration a valid
+performance metric and makes the four runs incomparable. This is the same rule as "hold the grid
+constant", applied to the other axis.
 
 🛑 **RUN HWiNFO LOGGING ACROSS EVERY SWEEP.** `HWiNFO64.exe` ships on the kit; its `HWiNFO64.INI`
 sets `SensorInterval=500`. NVML exposes no voltage at all, so **HWiNFO is the only evidence that a
@@ -144,10 +170,9 @@ otherwise produce a whole sweep of stock silicon wearing a tuned settings string
 stock and Edit 1 mixes two curves into one table with nothing to separate them. Stop the log at
 every curve change and start a new file.
 
-Then repeat with `-Label ...-edit1-2`, `...-edit1-3`, `...-stock-4` after each curve change, and
-`...-edit2` for the control. **`-AppliedSettings` must describe the curve actually applied** — it is
-the field nothing can reconstruct afterwards, and the reason the earliest tuned data in this project
-is unusable.
+Then repeat with `-Label ...-edit1-2`, `...-edit2-3`, `...-stock-4` after each curve change.
+**`-AppliedSettings` must describe the curve actually applied** — it is the field nothing can
+reconstruct afterwards, and the reason the earliest tuned data in this project is unusable.
 
 ⛔ **AFTERBURNER IS NOT IN THE KIT AND WILL NOT BE.** The kit installs nothing and leaves nothing
 behind; that is its whole design. A manipulation needs Afterburner present on the target machine,
