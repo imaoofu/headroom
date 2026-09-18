@@ -379,3 +379,75 @@ reshapes; enthusiast sources measure "same FPS, less power" at one operating poi
   🔑 **The wrong name sat under a note saying "read this before finalising any novelty claim",
   for months, while two novelty claims fell.** A citation nobody can look up is a citation nobody
   opens.
+
+---
+
+## 8. Found 2026-09-18 by the first outside reader, and READ IN FULL
+
+### ✅ Mendes, Tomás, Roma — *Decoupling GPGPU voltage-frequency scaling for deep-learning applications*
+
+JPDC **165**:32–51, 2022. `10.1016/j.jpdc.2022.03.004`. Author PDF:
+`hpcas.inesc-id.pt/~handle/papers/Journal_JPDC_2022.pdf`. **Read in full 2026-09-18**, 20 pages,
+every statement below taken from the text rather than from a summary.
+
+**GPT surfaced this as the closest pre-emption of the manipulation claim. Reading it narrows that
+considerably — and hands this project a quotable justification it did not have.**
+
+🔑 **THEY EXCLUDED NVIDIA, AND SAID WHY, IN THEIR OWN WORDS:**
+
+> "The sole inclusion of AMD devices comes from the reduced availability of drivers and convenient
+> software APIs from other manufacturers (e.g., NVIDIA) for an independent and decoupled control
+> over the GPU frequency and voltage."
+
+✅ **That is a peer-reviewed statement that the thing this project does cannot be done the way they
+did it on NVIDIA.** They set voltage and frequency independently through `rocm-smi`; on consumer
+NVIDIA parts voltage cannot be written through any documented API at all, which is why this project
+reshapes the V/F *curve* instead. **Cite them for the constraint, not merely against the claim.**
+
+**What they actually measure is Vmin — a CORRECTNESS limit, not an efficiency optimum.** Their
+central quantity is *"the frequency-dependent minimum operating voltage that (still) leads to a
+correct GPU operation"*, found by undervolting at fixed frequency in 50 mV steps (10 mV near the
+edge) through three stages: working → computation errors → crash.
+
+⛔ **The words "optimum", "optimal frequency", "ridge" and "constant voltage" do not appear in the
+paper.** The nearest thing is a *"plateau of minimum energy consumption"* in the 2-D F–V space for
+CNN training (Fig. 21). **They never locate the frequency that maximises throughput per watt**,
+which is the quantity this project's rule is about.
+
+🔑 **This is the same distinction `CLAUDE.md` already draws for Leng et al.**: Vmin at a fixed
+frequency is a correctness limit, *not* the bottom of the dynamic V/F curve, and neither connects
+per-chip voltage to *where the efficiency optimum sits*.
+
+| | Mendes et al. 2022 | this project |
+|---|---|---|
+| hardware | AMD Vega 10 FE, Radeon 5700 XT | 4 consumer NVIDIA chips, 3 architectures |
+| control | voltage set **directly**, decoupled, via `rocm-smi` | curve **reshaped** per point; voltage unwritable |
+| quantity | **Vmin**, correctness limit | **efficiency optimum** over frequency |
+| granularity | global V at fixed f, 50 mV steps | region-targeted edit on a 127-point curve |
+| power cap | **raised to TDP max** (220→300 W, 190→285 W) | **stock throughout** |
+| failure | deliberately driven to **crash** | safe direction only; instability unreachable |
+| control arm | none | negative control + registered predictions |
+
+**Results, for the record:** 15–25% safe undervolt on both GPUs, >20% guardband at all frequencies,
+up to **38% energy** and **41% EDP** reduction on CNN training, average **36.7%** EDP improvement
+across complete CNN training, with no significant accuracy loss.
+
+### ⚠️ What GPT got slightly wrong, and it matters
+
+GPT wrote that this *"pre-empts a general claim such as 'first experiment to modify a GPU V/F
+relationship and re-find its energy optimum'."* ✅ **The broad form is genuinely pre-empted.**
+⛔ **But "energy optimum" overstates the overlap**: they map a 2-D F–V space and report a
+minimum-energy *plateau*, and they do not locate an energy-optimal *frequency*. Reading the paper
+was the only way to see that, which is the standing rule here — **an AI-supplied summary is a lead,
+not a source.**
+
+### 🟡 A lead for the open §4d thermal question — do NOT over-read it
+
+§3.4 reports that undervolt capability is roughly flat to **70–75 °C**, is **greatest at 55 °C**,
+and degrades above 75 °C as carrier mobility falls. They extend Leng et al. [10], who found only
+small Vmin variation with temperature but tested only to 70 °C.
+
+⚠️ **This is about Vmin, not about the requested voltage a driver programs**, and the two are
+different quantities — the driver does not know Vmin. The RTX 2060 Super's voltage minimum happening
+to fall at **55.5 °C** is a coincidence worth noticing and **not** an explanation. Record it as a
+lead; §4d's descending sweep is still the test.
