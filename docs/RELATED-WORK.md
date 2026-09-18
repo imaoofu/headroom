@@ -507,3 +507,53 @@ makes the mechanism look general, which strengthens the thing this project actua
 ⚠️ **Nothing here was ever claimed as novel by this project**, whose contribution sentence says what
 was DONE. But `PRIOR-ART-20260913.md`'s framing — that the ridge-point literature had not measured
 consumer V/F curves — was too strong, and this is the source that corrects it.
+
+### 🔑 Guerreiro, Ilic, Roma, Tomás — *Modeling and Decoupling the GPU Power Consumption for Cross-Domain DVFS*
+
+IEEE TPDS **30**(11):2494–2506, 2019. `10.1109/TPDS.2019.2917181`. Author PDF:
+`web.tecnico.ulisboa.pt/~ist14359/wordpress/nfvr_pubs/tpds19.pdf`. **Read in full 2026-09-18**,
+13 pages. Five GPUs: Titan Xp, GTX Titan X, **GTX 980, GTX 960**, Tesla K40c.
+
+**The journal extension of the HPCA 2018 paper. Same verdict on novelty — and one finding this
+project needed before running an experiment it has already designed.**
+
+## ⛔ THE FINDING: THE OBSERVED V/F BEHAVIOUR DEPENDS ON *HOW* YOU CHANGE THE FREQUENCY
+
+> "From the obtained measurements, it was observed that **the voltage scaling behaviour depends on
+> the method used to scale the domains frequency.** When using the **NVML library** (on the Titan
+> Xp, GTX Titan X and Tesla K40c GPUs), the voltage variation presents **two different regions**:
+> for higher frequencies the voltage scales linearly, while for lower frequencies it stays
+> constant. In some GPUs NVML does not allow changing the frequency (e.g., for non-Titan or
+> non-Tesla GPUs). In these cases, the domains frequencies were changed by varying the **graphics
+> clock and memory transfer rate OFFSETS** of the Powermizer inside the `nvidia-settings` tool.
+> However, experimental results showed that **this alternate method does not result in the same
+> behaviour as in this case the voltage stays constant across all frequencies.**"
+
+✅ **Good news first: this project uses the method that works.** Every sweep here locks clocks
+through `nvidia-smi -lgc`, i.e. NVML — the case where the two regions appear. The structure this
+project measures is the structure their NVML measurements show.
+
+🛑 **AND IT IS A DIRECT WARNING ABOUT AN EXPERIMENT THIS PROJECT HAS DESIGNED BUT NOT RUN.**
+`CLAUDE.md` describes an NVML clock-**offset** validation pair — power at a locked *f* with a
+−300 MHz offset against power at *f*+300 with none — designed 2026-09-09 and never executed.
+**Guerreiro et al. report that offset-based frequency control produces a *different* voltage
+response from locking: voltage constant at every frequency.** If that holds on Blackwell, the
+offset arm and the locked arm are **not measuring the same machine state**, and the pair would not
+validate what it was designed to validate.
+
+⚠️ **Their offset tool is `nvidia-settings` Powermizer, not `nvmlDeviceSetClockOffsets`**, and
+their parts are Maxwell/Pascal/Kepler. So this does not transfer automatically — but it makes
+"check the voltage response under offsets before trusting the pair" a precondition rather than a
+nicety, and it is cheap to check.
+
+## What it does NOT establish
+
+⛔ **"efficiency" appears ZERO times. "optimum" ZERO times.** ("ridge" matches only inside the
+reference "Bridges".) Like its HPCA predecessor it is a **power model** — it never computes energy
+efficiency and never locates an optimal frequency. The single use of "optimal" is a *use case* for
+their model: *"searching for the optimal frequency state without exhaustive execution."*
+
+**No Turing.** Maxwell, Pascal and Kepler only, across both papers.
+
+✅ So the region↔optimum link and the causal manipulation remain untouched by both Guerreiro
+papers. What moves is the **measurement's** ownership, already recorded above.

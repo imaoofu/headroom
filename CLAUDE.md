@@ -301,6 +301,17 @@ offsets are the safe direction: lower clock at every voltage, so a given clock t
 at a locked *f* with a −300 offset should match power at *f*+300 without one — was designed
 2026-09-09 and not run. **Claim nothing about its effect until it has been.**
 
+🛑 **AND THAT PAIR MAY NOT MEASURE WHAT IT WAS DESIGNED TO — READ THIS BEFORE RUNNING IT.**
+Guerreiro et al., TPDS 2019 (`10.1109/TPDS.2019.2917181`, **read in full 2026-09-18**,
+`docs/RELATED-WORK.md` §8) report that **the observed voltage response depends on HOW the frequency
+is changed**: through NVML the voltage shows two regions — constant, then rising — while through
+clock **offsets** *"the voltage stays constant across all frequencies."* ⚠️ Their offset path is
+`nvidia-settings` Powermizer on Maxwell/Pascal/Kepler, not `nvmlDeviceSetClockOffsets` on
+Blackwell, so it does not transfer automatically. **But if it holds here, the offset arm and the
+locked arm are not the same machine state and the pair validates nothing.** ✅ **Precondition: log
+voltage under a live offset first and check whether the two regions survive.** Cheap, and it is the
+difference between a result and a wasted session.
+
 ⚠️ **`CoreClkBoost` reads −502 MHz on P1/P2/P4/P5 and +0 on stock, and nobody knows what it means.**
 It is treated as *not* additively applied, on two pieces of evidence: NVML reports a 0 MHz offset with
 those profiles live, and optimum predictions computed from the curve **without** subtracting 502 hit
