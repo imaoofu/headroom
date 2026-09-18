@@ -2038,7 +2038,7 @@ than only observing it on the vendor's shipped curve. It does, on all three chip
 it**, and that is a boundary condition on the rule rather than a result about the card. Its floor is
 **0.631 V held across 345 MHz** — seven consecutive points — and the whole low range is nearly as
 flat: voltage moves **13 mV across the 570 MHz from 405 to 975 MHz**. It leaves the floor **6 mV at
-a time**, one step of this sensor's resolution. Read strictly, the floor ends at 975 MHz and the nearest grid point is 960,
+a time**, one quantisation step of the reported voltage. Read strictly, the floor ends at 975 MHz and the nearest grid point is 960,
 one step below the measured 1065. Allow a single sensor step and it ends at 1035, whose nearest grid
 point is 1065 exactly. **The verdict turns on 6 mV.**
 

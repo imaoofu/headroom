@@ -59,7 +59,7 @@ some distance. It holds across an enormous span:
 0.631 V minimum. The flat band is **570+ MHz wide**, far wider than any other card here.
 
 ⛔ **And that is exactly why it cannot settle the question.** The rule needs *where the floor ends*,
-and the exit is 6 mV at a time — one step of this sensor's resolution:
+and the exit is 6 mV at a time — one quantisation step of the REPORTED voltage:
 
 | floor extent, as read | nearest suite grid point | measured median optimum |
 |---|---|---|

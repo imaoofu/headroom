@@ -4,8 +4,26 @@
 not happened before and may not again: **RTX 3070 Ti**, **RTX 2060 Super**, **RTX 5060 Ti** (local).
 
 🔑 **This list is ONLY the hardware-bound work.** Everything else — the paper edits, the proposal,
-the dataset README — is in `docs/TODO-20260915.md` and none of it needs a card. Do not spend bench
+the dataset README — is in `docs/TODO-20260918.md` and none of it needs a card. Do not spend bench
 time on anything that can be done at a desk.
+
+## 🆕 What changed 2026-09-18, after the first outside novelty check
+
+**An independent reader (ChatGPT, given the cold brief) reviewed the design and three papers were
+read in full. Three things bear on this weekend:**
+
+1. ✅ **Session D matters MORE, not less.** The reader's verdict was that the region-targeted
+   manipulation *with a negative control* is the **one design it could not find published**. So the
+   second chip is what stands between "compelling N=1" and "an established relationship" — its
+   words, not this project's.
+2. ⚠️ **The 5060 Ti's negative control is PARTIALLY LEAKY** — 4 of 12 workloads move (median +0).
+   A second chip's control is now the cheapest evidence that the leak is chip-specific rather than
+   the mechanism. **Another reason not to drop Edit 2.**
+3. 🛑 **The NVML clock-offset pair (3d below) has gained a PRECONDITION.** Guerreiro et al., TPDS
+   2019, find the voltage response depends on *how* frequency is changed — two regions through
+   NVML, but *"constant across all frequencies"* through offsets. **Log voltage under a live offset
+   and confirm the two regions survive before running the pair**, or the two arms are not the same
+   machine state.
 
 🛑 **Every timing below is measured, not estimated.** Suite durations come from the two
 twelve-workload suites already collected (60.6 and 64.0 min); the fine sweep from the 2026-09-15
@@ -151,11 +169,19 @@ suite: 2 × 62 min, plus the profile building.
 ⚠️ **No ladder profile is stability tested, and none may resemble the 875 mV @ 3 GHz that crashed
 the driver.** Build them in the safe direction only.
 
-## 3d. The NVML clock-offset validation pair. ⚡ **~25 min.**
+## 3d. The NVML clock-offset validation pair. ⚡ **~25 min + a precondition.**
 
 Designed 2026-09-09, never run. Power at a locked *f* with a **−300 MHz** offset against power at
 *f*+300 with none. ⛔ **The write has never been exercised on this card** — reading back works, and
 that is all. **Claim nothing about it until this runs.** Negative offsets are the safe direction.
+
+🛑 **DO THE PRECONDITION FIRST, ADDED 2026-09-18.** Guerreiro et al. TPDS 2019 (read in full) report
+that offset-driven frequency control gives *"constant voltage across all frequencies"* where NVML
+locking gives two regions. ⚠️ Different tool, older architectures — it may not transfer. **But if it
+does, the offset arm and the locked arm are different machine states and the pair validates
+nothing.** ✅ **Apply a −300 MHz offset, run a short HWiNFO-logged sweep, and check whether the
+constant-then-rising shape survives.** Ten minutes, and it decides whether the other twenty-five
+are worth spending.
 
 ## 3e. The >30-minute stability soak. **1–2 h, unattended.**
 

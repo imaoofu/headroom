@@ -20,7 +20,7 @@ From `20260912-142900_rtx2060s-lowrange` (60 MHz grid) and `20260912-114754_rtx2
 | core MHz | V | | core MHz | V |
 |---|---|---|---|---|
 | 405 | 0.644 | | **975** | **0.631 ← last floor point** |
-| 465 | 0.644 | | 1035 | 0.637 ← **+6 mV, one sensor step** |
+| 465 | 0.644 | | 1035 | 0.637 ← **+6 mV, one reported step** |
 | 525 | 0.637 | | **1065** | **0.644 ← measured optimum** |
 | 585 | 0.637 | | 1095 | 0.650 |
 | 630–915 | **0.631** | | 1170 | 0.669 |
@@ -34,10 +34,10 @@ Do not treat the lowest clocks as part of the floor.
 
 **Read strictly**, the floor ends at **975 MHz** — the last point reading 0.631. Nearest suite grid
 point is 960, which is **one step below the measured optimum of 1065**, so the rule *fails*.
-**Allow a single 6 mV sensor step**, and the floor ends at **1035**, whose nearest grid point is
+**Allow a single 6 mV reported step**, and the floor ends at **1035**, whose nearest grid point is
 1065, and the rule *holds*.
 
-🔑 **The entire verdict on this card turns on one sensor code.** That is what "undecidable" means
+🔑 **The entire verdict on this card turns on one 6 mV code.** ⚠️ Whether that code is the SENSOR's resolution is NOT established - it could equally be VID granularity, controller telemetry, driver rounding or HWiNFO. Corrected 2026-09-18; see `docs/PRIOR-ART-20260918.md` §3. That is what "undecidable" means
 here, and it is why this session exists.
 
 ---
@@ -159,7 +159,7 @@ settings.** If more dwell is ever wanted the lever is `--iterations` on the work
 
 ## ⚠️ The limit this sweep CANNOT beat, and what to do about it
 
-**Finer frequency steps do not fix coarse voltage quantisation.** The sensor reports in ~6.25 mV
+**Finer frequency steps do not fix coarse voltage quantisation.** The reading moves in ~6.25 mV
 codes. If the true curve rises by less than one code across this range, no frequency resolution
 resolves it — you would only be locating the first *observable* step, not the first *actual* rise.
 
