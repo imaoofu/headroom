@@ -554,7 +554,22 @@ and two architectures.** Do not re-derive it.
 - **Manipulation** — `abba-20260908` changed the *floor region* and the optimum moved **+465 MHz in
   12 of 12 workloads**.
 - **Negative control** — `repair-suite-p2-20260909` changed the curve *above* the floor by up to
-  570 MHz and the optimum moved **by nothing**.
+  570 MHz and the **median** suite optimum moved **+0 MHz**.
+
+  ⛔ **"MOVED BY NOTHING" WAS AN OVERSTATEMENT AND IS CORRECTED 2026-09-18.** Measured same-session
+  against the `stock-bracket-20260909` r9 suite, n=12: the median is unmoved, **8 of 12 workloads
+  are unmoved**, and **4 move** — `bgemm32` +145, `layernorm` +158, `gemm` +306, `reduce` +315 MHz.
+  The treatment moved **all 12 by a uniform +465**. So the contrast is still large and still in the
+  predicted direction, but the control is **partially leaky** and must not be described as a clean
+  null.
+
+  🔑 **The check came from an outside reader, and it was a better objection than the council's.**
+  The council said the control was weak for sharing chip, session and operator — which is what a
+  control is *for*. GPT-5.6 asked instead whether **the edited region was ever exercised**, which
+  is checkable: peak throughput in the control runs is **+13% to +30%** above stock at 2787–2978 MHz,
+  so the edit was real and the card ran in it. ✅ **That makes the null on the optimum meaningful
+  rather than vacuous** — a large measured effect in the edited region, and no median shift in the
+  optimum. Full working: `docs/PRIOR-ART-20260918.md` §7.
 - **Cross-architecture** — `rtx3060-20260910`, a different chip, node and vendor board.
 
 ⛔ **THE FLOOR VOLTAGE IS PER CARD AND DOES NOT TRANSFER.** 0.720 V on the 5060 Ti, **0.756 V on the

@@ -93,12 +93,20 @@ finally:
 check("the registry is restored after the failure-path test", "2211.07260" in vc.CITATIONS)
 
 print()
-print("the open discrepancy is still recorded")
+print("the one discrepancy this checker found, and how it resolved")
 
-# This is not a passing state and the test says so. It is a REMINDER that something is unresolved,
-# and it will start failing once someone opens the TPDS paper and settles it - which is the point.
-check("2104.00486's author-order discrepancy is still flagged for a human",
-      "2104.00486" in vc.UNRESOLVED_DISCREPANCIES)
+# ✅ RESOLVED 2026-09-18, and the resolution is the part worth pinning: the REPOSITORY was right
+# and arXiv's preprint metadata was the misleading record. Had the rule been "make the registry
+# match arXiv", this checker would have INTRODUCED the project's fifth citation error while
+# appearing to remove one. The mismatch between `firstAuthor` (arXiv's Mei) and `publishedAs`
+# (TPDS's Wang) is therefore DELIBERATE and must not be tidied away.
+check("no discrepancy is left open", vc.UNRESOLVED_DISCREPANCIES == {})
+check("2104.00486's resolution is kept on the record", "2104.00486" in vc.RESOLVED_DISCREPANCIES)
+check("the registry still expects arXiv's lead author for the live comparison",
+      vc.CITATIONS["2104.00486"]["firstAuthor"] == "Mei")
+check("...and separately records what the PUBLISHED paper should be cited as",
+      "Qiang Wang" in vc.CITATIONS["2104.00486"]["publishedAs"]
+      and "Non-Preemptive" in vc.CITATIONS["2104.00486"]["publishedAs"])
 
 print()
 print(f"{passed} checks passed.")

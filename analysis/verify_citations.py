@@ -78,9 +78,16 @@ CITATIONS = {
         "firstAuthor": "Mei",
         "authorCount": 6,
         "titleFragment": "Task Scheduling with Deadline Constraint",
-        "note": "SEE discrepancy note in the module docstring of the check below. The repository "
-                "cites this as 'Wang, Mei, Liu, Leung, Li, Chu'; arXiv orders it Mei, Wang, Chu, "
-                "Liu, Leung, Li. Same six people, different lead author. UNRESOLVED.",
+        "note": "RESOLVED 2026-09-18, and the REPOSITORY WAS RIGHT. arXiv's preprint metadata "
+                "leads with Mei and omits 'Non-Preemptive'; the published IEEE TPDS version leads "
+                "with Qiang Wang and includes it. DOI 10.1109/TPDS.2022.3181096, TPDS 33(12) "
+                "4083-4099, 2022 - verified against publisher-deposited Crossref metadata. "
+                "'Wang et al.' throughout the paper is correct. firstAuthor below is arXiv's, "
+                "because that is what --live compares against.",
+        "publishedAs": "Qiang Wang, Xinxin Mei, Hai Liu, Yiu-Wing Leung, Zongpeng Li, Xiaowen Chu; "
+                       "'Energy-Aware Non-Preemptive Task Scheduling With Deadline Constraint in "
+                       "DVFS-Enabled Heterogeneous Clusters'; IEEE TPDS 33(12):4083-4099, 2022; "
+                       "doi:10.1109/TPDS.2022.3181096",
     },
     "2208.11035": {
         "firstAuthor": "Sinha",
@@ -102,25 +109,34 @@ CITATIONS = {
     },
 }
 
-# ⛔ AN OPEN DISCREPANCY, RECORDED RATHER THAN PAPERED OVER.
+# ✅ THE ONE DISCREPANCY THIS CHECKER FOUND, AND HOW IT RESOLVED.
 #
-# For 2104.00486 the repository records the author list as "Wang, Mei, Liu, Leung, Li, Chu" and the
-# title as "Energy-aware NON-PREEMPTIVE Task Scheduling...". arXiv's metadata gives the order
-# "Mei, Wang, Chu, Liu, Leung, Li" and a title without "Non-Preemptive".
+# For 2104.00486 the repository recorded "Wang, Mei, Liu, Leung, Li, Chu" and a title containing
+# "Non-Preemptive". arXiv's metadata leads with Mei and has no "Non-Preemptive". Flagged here on
+# 2026-09-17 as UNRESOLVED, with the instruction to open the published version rather than edit
+# either side to match the other.
 #
-# The SET of six authors agrees. Only the order and one title word differ, and both are things a
-# journal version legitimately changes from a preprint. So this is NOT evidence the repository is
-# wrong - it is evidence that nobody has checked the PUBLISHED TPDS version, which is the artifact
-# actually cited.
+# 🔑 RESOLVED 2026-09-18: THE REPOSITORY WAS RIGHT AND arXiv WAS THE MISLEADING RECORD.
+# The published IEEE TPDS version is Qiang Wang, Xinxin Mei, Hai Liu, Yiu-Wing Leung, Zongpeng Li,
+# Xiaowen Chu - "Energy-Aware Non-Preemptive Task Scheduling With Deadline Constraint in
+# DVFS-Enabled Heterogeneous Clusters", TPDS 33(12):4083-4099, 2022, doi:10.1109/TPDS.2022.3181096.
+# Confirmed against publisher-deposited Crossref metadata, independently of the arXiv record.
 #
-# 🔑 It matters because the short form is "Wang et al." throughout, and if arXiv's order is the
-# published one then every one of those should read "Mei et al.". §2.7 now rests on this source.
+# 🔑 THE LESSON IS THE ONE THE FLAG WAS WRITTEN ON: a preprint's author order and title are NOT
+# authoritative for the journal version, and a journal version legitimately changes both. Had the
+# rule been "make the registry match arXiv", this check would have INTRODUCED the project's fifth
+# citation error while appearing to remove one.
 #
-# RESOLVE IT BY OPENING THE TPDS PAPER, not by editing either value to match the other.
-UNRESOLVED_DISCREPANCIES = {
-    "2104.00486": "Repository says first author Wang; arXiv says Mei. Check the published IEEE "
-                  "TPDS version - a preprint's author order is not authoritative for it.",
+# ⚠️ So the live comparison below still expects arXiv's "Mei", because that is genuinely what
+# arXiv says. The `publishedAs` field carries what the paper should be cited as. They differ on
+# purpose, and any future reader who tries to "fix" the mismatch should read this block first.
+RESOLVED_DISCREPANCIES = {
+    "2104.00486": "Repository was correct. Published TPDS leads with Qiang Wang and includes "
+                  "'Non-Preemptive'; the arXiv preprint differs on both. Resolved 2026-09-18 "
+                  "against doi:10.1109/TPDS.2022.3181096.",
 }
+
+UNRESOLVED_DISCREPANCIES = {}
 
 # Ids the repository mentions as UNREAD LEADS rather than citations. Recorded, not cited.
 #
@@ -297,6 +313,11 @@ def main():
               "to match the other:")
         for arxivId, text in sorted(UNRESOLVED_DISCREPANCIES.items()):
             print(f"  [OPEN] {arxivId}: {text}")
+        print()
+    if RESOLVED_DISCREPANCIES:
+        print("RESOLVED discrepancies - kept, because how one resolved is the useful part:")
+        for arxivId, text in sorted(RESOLVED_DISCREPANCIES.items()):
+            print(f"  [RESOLVED] {arxivId}: {text}")
         print()
 
     if problems:
