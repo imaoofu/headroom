@@ -29,6 +29,25 @@ of 1065 MHz quoted below is the median over twelve workloads on the 105 MHz grid
 (405–465 MHz read 0.644, *above* the 0.631 minimum) and it was recorded as a curiosity; at 15 MHz
 resolution it is the dominant feature of the band.
 
+⛔ **"NON-MONOTONIC CURVE" IS THE WRONG WORDING AND IT IS CORRECTED 2026-09-18.** An outside
+reader raised that a fall in *measured* voltage need not mean the vendor's *programmed* mapping
+falls — load-line droop, active voltage positioning, or a gap between requested VID and delivered
+rail voltage would all produce it. **The defensible sentence is "the reported voltage readback is
+non-monotonic."** This project already had evidence the two differ (`CLAUDE.md`: *"0.925 V
+requested delivers 0.920 V under ~170 W load"*) and still did not consider it.
+
+✅ **DROOP WAS THEN TESTED AND REFUTED — see `docs/PRIOR-ART-20260918.md` §2.** Droop depends on
+current, not frequency, so two workloads at the *same locked clock* decide it. On this card,
+`gemm` and `membw` differ by **47.1 W at 1590 MHz and report identical voltage**; on the RTX 3060,
+**71.2 W at a matched clock, 0.0 mV difference.** The reported voltage does not respond to load at
+all, so it behaves like a requested VID read back from the table.
+
+🔑 **Which makes the finding stronger, not weaker.** A VID that falls as clock rises is the curve
+lookup returning a lower voltage at a higher clock — more interesting than a measurement artifact.
+**Temperature compensation is the leading remaining candidate**, and that is what §4d tests.
+⚠️ Note §4d cannot separate droop from frequency (current tracks frequency in both directions); the
+fixed-frequency test above is what settled that, and it needed no hardware.
+
 🛑 **A ridge point is defined on a curve that is CONSTANT and then rises.** Schoonhoven et al.'s
 Equation 3 is a flat floor plus a linear rise, **fitted from power**, and they never measured a
 Turing V/F curve — their only Turing part is in the group where voltage cannot be read and the
