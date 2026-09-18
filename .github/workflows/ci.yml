@@ -101,6 +101,15 @@ jobs:
       - name: Claims audit
         run: python analysis/audit_claims.py
 
+      # Offline on purpose. This leg checks COVERAGE - that every arXiv id cited anywhere in the
+      # repository is registered by someone who opened the source - which needs no network and is
+      # the guard that actually matters. From 2026-09-17 a second AI assistant contributes here,
+      # and an unverified citation is the failure mode that scales worst with more assistants.
+      # `--live` compares against arXiv's own metadata and is run by hand, not in CI, so a rate
+      # limit or an arXiv outage never reads as a citation defect.
+      - name: Citation coverage
+        run: python analysis/verify_citations.py --check
+
       # Never a gate. It reports which numbered sections carry no claims and which numbers inside
       # audited sections nothing pins, so the coverage gap stays visible in every run's log
       # instead of being assumed closed by a green tick above it.
