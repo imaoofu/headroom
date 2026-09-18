@@ -456,6 +456,23 @@ curve, on an architecture whose floor the ridge-point literature assumed rather 
 cannot be refuted by a paper turning up. **Retire the old wording** - "nothing found reports the
 rule failing" rested on an absence and was the weaker claim.
 
+⛔ **THE TURING STATEMENT SURVIVES. THE GENERAL ONE DOES NOT - NARROWED 2026-09-18 AFTER READING
+GUERREIRO et al., HPCA 2018 IN FULL** (`10.1109/HPCA.2018.00072`, `docs/RELATED-WORK.md` §8). They
+**measured** the constant-voltage region directly on a **GTX Titan X (Maxwell) and a Titan Xp
+(Pascal)**, down to ~500 MHz, and in their own words found *"two distinct regions for the core
+voltage... i) a constant voltage region, for lower frequencies; and ii) after a specific frequency,
+the voltage starts increasing linearly"* - using **NVIDIA Inspector and MSI Afterburner**, the same
+tool lineage this project uses. ⚠️ Their measurement is INDEPENDENT of their model: voltage is an
+unknown estimated from power, and the Afterburner reading validates it, so unlike Schoonhoven's
+Equation 3 it could have come out any shape.
+
+🔑 **So "the ridge-point literature assumed rather than observed" is true of TURING and of
+Schoonhoven et al. specifically - it is NOT true of consumer NVIDIA generally.** Never write the
+general form. ✅ **And Guerreiro et al. never compute efficiency at all** - "efficiency" and
+"optimum" appear **zero times** in the paper; it is a power model. The region↔optimum link and the
+causal manipulation are untouched by it, and having three independent measurements of the structure
+across five architectures makes the mechanism look general, which helps rather than hurts.
+
 **5. 🟡 PARTLY — the crossbar result.** The specific causal chain (flattened curve → pinned crossbar
 → bandwidth plateau, with a stock control, a quantified ratio collapse and a predicted repair) was
 not found anywhere. ⛔ **But the existence of XBAR as a separate voltage-coupled clock domain on

@@ -451,3 +451,59 @@ small Vmin variation with temperature but tested only to 70 °C.
 different quantities — the driver does not know Vmin. The RTX 2060 Super's voltage minimum happening
 to fall at **55.5 °C** is a coincidence worth noticing and **not** an explanation. Record it as a
 lead; §4d's descending sweep is still the test.
+
+### ⛔ Guerreiro, Ilic, Roma, Tomás — *GPGPU Power Modeling for Multi-Domain Voltage-Frequency Scaling*
+
+HPCA 2018, pp. 789–800. `10.1109/HPCA.2018.00072`. Author PDF:
+`web.tecnico.ulisboa.pt/~ist14359/wordpress/nfvr_pubs/hpca18.pdf`. **Read in full 2026-09-18**,
+12 pages.
+
+🔑 **THIS IS THE EARLIEST DIRECT MEASUREMENT OF THE CONSTANT-VOLTAGE REGION ON CONSUMER NVIDIA
+HARDWARE THAT THIS PROJECT KNOWS OF — 2018, four years before Schoonhoven et al.** Verbatim:
+
+> "The results clearly show that there are two distinct regions for the core voltage when scaling
+> the core frequency: i) **a constant voltage region, for lower frequencies**; and ii) after a
+> specific frequency, **the voltage starts increasing linearly with the frequency.**"
+
+⚠️ **And they measured it with the same tool lineage this project uses:**
+
+> "The real measured voltages were obtained using the **NVIDIA Inspector and MSI Afterburner**
+> (third party Windows tools)."
+
+**Hardware: GTX Titan X (Maxwell), Titan Xp (Pascal), Tesla K40c (Kepler).** Figure 6 plots
+measured against predicted core voltage over roughly **500–1200 MHz** on the Titan X and
+**500–1900 MHz** on the Titan Xp — i.e. well below default, on consumer-class parts.
+
+✅ **The measurement is INDEPENDENT of their model.** Voltage enters their power model as an
+unknown estimated from power (Eq. 4–7); Figure 6 then validates that estimate against
+Afterburner/Inspector readings. So unlike Schoonhoven et al.'s Equation 3 — a flat floor plus a
+rise *by construction*, fitted from power — this paper has an actual voltage measurement that
+could have come out any shape.
+
+**Their own stated limits:** *"it was not possible to sweep through all core and memory frequency
+ranges, due to limitations of these tools, nor was it possible to verify the voltage levels on the
+Tesla K40c GPU."*
+
+### ⛔ What this changes, and what it does not
+
+| | status |
+|---|---|
+| "the constant-voltage region exists on consumer NVIDIA" | ⛔ **measured and published 2018.** Older than this project credited. |
+| "it was measured with Afterburner-class tools" | ⛔ also 2018, same lineage |
+| the region ↔ **efficiency optimum** link | ✅ **NOT in this paper.** "efficiency" appears **0 times**; "optimum" **0 times**; "ridge" only as a false match inside a reference. It is a **power model**, and it never computes energy efficiency or locates an optimal frequency. |
+| Turing | ✅ untouched — Kepler, Maxwell, Pascal only |
+| the region-targeted causal manipulation | ✅ untouched |
+
+🔑 **So the correlation's ownership does NOT move to Guerreiro — but the measurement's does.**
+`CLAUDE.md` says the ridge-point literature *"assumed rather than observed"* the floor on parts it
+could not read; that remains true of Schoonhoven et al. on Turing, but it must no longer be implied
+about consumer NVIDIA generally. **Guerreiro et al. observed it directly in 2018.**
+
+✅ **This is now the THIRD independent measurement of the structure on NVIDIA** — Guerreiro 2018
+(Maxwell, Pascal), Schoonhoven 2022 (Ampere), and this project (Turing, Ampere, Blackwell). That
+makes the mechanism look general, which strengthens the thing this project actually claims — the
+*causal* result — while removing any residual novelty in having measured the region at all.
+
+⚠️ **Nothing here was ever claimed as novel by this project**, whose contribution sentence says what
+was DONE. But `PRIOR-ART-20260913.md`'s framing — that the ridge-point literature had not measured
+consumer V/F curves — was too strong, and this is the source that corrects it.
