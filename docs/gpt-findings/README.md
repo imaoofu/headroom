@@ -7,6 +7,7 @@ authority or automatic approval to change the paper.
 
 | Date | Result | Evidence status |
 |---|---|---|
+| 2026-09-18 | [Adversarial audit: flattened V/F curve, XBAR clock, and the 300 GB/s plateau](2026-09-18-xbar-causal-claim-adversarial-audit.md) | Repository data/code and primary NVIDIA profiler documentation opened. Finds that the full causal chain is assembled from unmatched experiments, that the logged stock and flat runs use different MCLK, and that XBAR/throughput diverge before reported voltage does. No hardware reproduction or direct GB206 XBAR intervention. |
 | 2026-09-18 | [NVIDIA GPU voltage quantisation: what the public documentation establishes](2026-09-18-nvidia-voltage-quantisation.md) | Public NVIDIA and controller documentation opened; no source establishes HWiNFO's exact physical voltage source or a universal 6.25 mV PWMVID step. Exact tested-board controller identities remain unresolved. |
 | 2026-09-18 | [XBAR undervolting and bandwidth: expanded prior-art search](2026-09-18-xbar-prior-art.md) | Public-source search completed; exact combined result not located; substantial related observations and mitigations found. Hardware experiments were not independently reproduced. |
 | 2026-09-18 | [Search coverage, supplementary sources, and unresolved access](2026-09-18-xbar-search-log.md) | Companion record with identifiers, read status, vocabulary coverage, and explicit retrieval gaps. |
