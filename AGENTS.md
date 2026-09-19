@@ -91,6 +91,15 @@ Listed because they are invisible on inspection and each one produced plausible,
 
 ---
 
+## GPT findings/results from prompts
+
+Raymond requested a persistent archive for GPT results. After completing substantive
+Headroom prompt work, save its findings, sources, verification status, and unresolved
+limits in [`docs/gpt-findings/`](docs/gpt-findings/README.md) and update that index.
+Link existing canonical records rather than duplicate them. For cold novelty work,
+finish the independent search before reading the archive or project framing; archive
+the result afterward and record when that boundary ended.
+
 ## Where things live
 
 | file | answers |

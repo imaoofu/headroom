@@ -317,6 +317,13 @@ comparing against.
 
 ---
 
+## GPT findings/results from prompts
+
+[Open the GPT findings archive](docs/gpt-findings/README.md) for saved prompt
+results, source links, verification status, and unresolved questions. It includes
+the expanded XBAR prior-art search and links to the earlier outside-reader report.
+Future substantive GPT results for Headroom are indexed there.
+
 ## License
 
 | | License | Covers |

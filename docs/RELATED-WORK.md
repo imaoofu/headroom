@@ -1,5 +1,12 @@
 # Related work — the index
 
+**Additional search record, 2026-09-18:** the
+[GPT XBAR prior-art report](gpt-findings/2026-09-18-xbar-prior-art.md) and its
+[source register and access limits](gpt-findings/2026-09-18-xbar-search-log.md)
+record the expanded forum, patent, and internal-clock-domain search. These archive
+source-reported findings and search limits; they do not independently validate the
+external hardware experiments or automatically revise the paper.
+
 **One place for every source this project has found, with a link, what it actually says, and what
 it bears on.** Built 2026-09-13 after the ridge-point retraction, by consolidating the paper's
 reference list with the prior-art sweep in [`PRIOR-ART-20260912.md`](PRIOR-ART-20260912.md).
