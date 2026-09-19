@@ -159,7 +159,9 @@ settings.** If more dwell is ever wanted the lever is `--iterations` on the work
 
 ## ⚠️ The limit this sweep CANNOT beat, and what to do about it
 
-**Finer frequency steps do not fix coarse voltage quantisation.** The reading moves in ~6.25 mV
+**Finer frequency steps do not fix coarse voltage quantisation.** ✅ **On THIS card the grid is
+genuinely 6.25 mV** - confirmed 2026-09-18 across all committed logs - though the 5060 Ti's is
+5 mV, so it is a per-card property and not an NVIDIA constant. The reading moves in ~6.25 mV
 codes. If the true curve rises by less than one code across this range, no frequency resolution
 resolves it — you would only be locating the first *observable* step, not the first *actual* rise.
 

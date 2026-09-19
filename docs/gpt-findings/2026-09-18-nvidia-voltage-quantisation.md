@@ -254,3 +254,74 @@ The complete query transcript for the earlier interface, datasheet, HWiNFO, and
 reverse-engineering searches was not retained in a form that can be copied exactly,
 so it is not reconstructed here as an exact log. Every cited page or document above
 was opened during this pass unless its access limitation is stated explicitly.
+
+---
+
+# ✅ Verification pass + a new result from this project's own data — Claude, 2026-09-18
+
+**Per `docs/agents/COLLABORATION-PROTOCOL.md`: an AI-supplied fact is a lead until checked.** This
+section records what was checked, and one finding the report's documentation work made possible.
+
+## 🔑 THE GRID IS NOT 6.25 mV ON EVERY CARD. IT IS PER-CARD, AND THIS PROJECT HAS THE EVIDENCE.
+
+The report's central claim is that no universal NVIDIA step exists and that granularity is
+controller- and board-dependent. **That is directly testable against the 22 committed HWiNFO logs,
+and it holds:**
+
+| card | grid observed |
+|---|---|
+| RTX 2060 Super (Turing TU106) | **6.25 mV** |
+| RTX 3060 (Ampere GA106) | **6.25 mV** |
+| RTX 3070 Ti (Ampere GA104) | **6.25 mV** |
+| **RTX 5060 Ti (Blackwell GB206)** | **5 mV** |
+
+**The split is clean — every log from a card falls on one grid, with no card mixing.** Derived from
+the distinct voltage values in each raw log, across all four chips and every configuration
+(stock, tuned, split, repair, OC).
+
+⚠️ **6.25 mV does not appear as 6.25 in the logs**, because HWiNFO writes three decimals. It shows
+as **alternating 6 and 7 mV** steps, with larger gaps at 12/13 (= 12.5), 19 (= 18.75) and 25. The
+5060 Ti instead gives clean 5, 10, 15, 25 — exact multiples of 5. That is precisely the display
+rounding the report identified, and it explains a phrase this repository has used for weeks.
+
+✅ **This matches the documented hardware spread**: Infineon XDPE132G5C is **5 or 10 mV
+user-configurable**, MP2884A's command path is **6.25 mV**, uP9512R's `VOUT` report is **10 mV**.
+Four cards, two grids, no universal step.
+
+⛔ **So `CLAUDE.md` and `SESSION-E-RUNSHEET.md` saying "the sensor reports in ~6.25 mV codes" was
+wrong twice over** — wrong that it is the *sensor*, and wrong that it is *6.25* on the 5060 Ti.
+
+⚠️ **What this does NOT establish:** which controller is on any of these four boards. The report
+looked and could not verify the GPU-core controller on the exact board revisions used here. The
+grid is measured; its cause is inferred.
+
+## Independent corroboration of this project's droop result
+
+The report surfaces a 2024 HWiNFO forum exchange in which a user reports that **direct uP9512R
+`VOUT` rose with load** while the NVIDIA API value differed, and HWiNFO's author replies that PWM
+controllers are usually not exposed through NVAPI I2C.
+
+🔑 **That is third-party support for what this project measured independently on 2026-09-18** — 47 W
+and 71 W of load difference at matched clocks moving the reported voltage by **0.0 mV**. Two routes,
+same conclusion: the NVIDIA-reported value is not sensed rail voltage.
+
+## Verification status of the report's sources
+
+| source | status |
+|---|---|
+| The per-card grid claim | ✅ **CONFIRMED against 22 local logs** (this section) |
+| MP2884A 6.25 mV command vs 1 mV `READ_VOUT` | ⚠️ not independently opened here — **the load-bearing datasheet claim** |
+| NVIDIA OpenVReg Console spec, `Vstep = (Vmax−Vmin)/Nmax` | ⚠️ not independently opened |
+| Infineon XDPE132G5C 5/10 mV | ⚠️ not independently opened |
+| HWiNFO forum threads, LibreHardwareMonitor source | ⚠️ not independently opened |
+| Controller identification on **this project's exact boards** | ⛔ **the report states it could not verify any of them** |
+
+## The sentence to use
+
+The report's own wording is well-calibrated and is adopted, with one correction — the grid value
+must be stated per card, not globally:
+
+> The NVIDIA-reported core voltage is quantised on a per-card grid — **6.25 mV on the 2060 Super,
+> 3060 and 3070 Ti; 5 mV on the 5060 Ti** — and public documentation does not establish whether the
+> value is a voltage request, a controller target, or sensed rail voltage. It is reported here as
+> the granularity of the NVIDIA-reported value, not as sensor resolution.

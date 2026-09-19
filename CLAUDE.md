@@ -682,6 +682,38 @@ mid-band points and pronounced the rest clean. **It was wrong: a point-to-point 
 and is structurally blind to a uniform offset**, which was most of the effect. Only comparing two
 runs revealed the 9% level shift. **Never certify a sweep as clean from within-run shape alone.**
 
+### ⛔ THE VOLTAGE GRID IS ALSO PER CARD - 6.25 mV ON THREE CHIPS, 5 mV ON THE 5060 Ti
+
+**Measured across all 22 committed HWiNFO logs, 2026-09-18.** This file and
+`SESSION-E-RUNSHEET.md` said *"the sensor reports in ~6.25 mV codes"*, **and that was wrong twice**:
+wrong that it is the SENSOR, and wrong that it is 6.25 on every card.
+
+| card | grid |
+|---|---|
+| RTX 2060 Super (Turing TU106) | **6.25 mV** |
+| RTX 3060 (Ampere GA106) | **6.25 mV** |
+| RTX 3070 Ti (Ampere GA104) | **6.25 mV** |
+| **RTX 5060 Ti (Blackwell GB206)** | **5 mV** |
+
+The split is clean - every log from a card falls on one grid, across stock, tuned, split, repair
+and OC configurations alike. ⚠️ **6.25 mV never appears as 6.25**, because HWiNFO writes three
+decimals: it shows as alternating **6 and 7 mV**, with 12/13 (=12.5), 19 (=18.75) and 25. The
+5060 Ti gives clean multiples of 5 instead.
+
+✅ **This matches documented controller hardware** - Infineon XDPE132G5C is **5 or 10 mV
+user-configurable**, MPS MP2884A's command path is **6.25 mV**, uPI uP9512R's `VOUT` report is
+**10 mV**. There is no universal NVIDIA step; NVIDIA's own OpenVReg PWMVID spec defines
+`Vstep = (Vmax - Vmin) / Nmax` rather than a fixed increment.
+
+⚠️ **The grid is MEASURED; its cause is INFERRED.** Nobody has verified which controller sits on
+any of these four boards. Full documentation trail and its verification status:
+`docs/gpt-findings/2026-09-18-nvidia-voltage-quantisation.md`.
+
+🔑 **Third-party corroboration of the load test arrived with it.** A 2024 HWiNFO forum exchange has
+a user reporting that direct uP9512R `VOUT` **rose with load** while the NVIDIA API value differed,
+and HWiNFO's author replying that PWM controllers are usually not exposed through NVAPI I2C. Two
+independent routes to the same conclusion: **the NVIDIA-reported value is not sensed rail voltage.**
+
 ⛔ **THE FLOOR VOLTAGE IS PER CARD AND DOES NOT TRANSFER.** 0.720 V on the 5060 Ti, **0.756 V on the
 3060**. Borrowing 0.720 for the 3060 predicts ~1530 MHz against a true optimum of 1260 — a 270 MHz
 error. **Measure a new card's floor before predicting anything on it.**
