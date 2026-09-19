@@ -484,13 +484,47 @@ general form. ✅ **And Guerreiro et al. never compute efficiency at all** - "ef
 causal manipulation are untouched by it, and having three independent measurements of the structure
 across five architectures makes the mechanism look general, which helps rather than hurts.
 
-**5. 🟡 PARTLY — the crossbar result.** The specific causal chain (flattened curve → pinned crossbar
-→ bandwidth plateau, with a stock control, a quantified ratio collapse and a predicted repair) was
-not found anywhere. ⛔ **But the existence of XBAR as a separate voltage-coupled clock domain on
-Blackwell was documented independently in August 2026** by reverse-engineering work on the RTX 5090
-via the LACT project — contemporaneous with, and slightly ahead of, this project's own finding. The
-CPU analogue (Intel uncore frequency scaling gating DRAM bandwidth) is long-established. So the
-*domain* is not a discovery; the *undervolt-causes-bandwidth-plateau chain* appears to be.
+**5. 🟡 PARTLY — the crossbar result. NARROWED TWICE ON 2026-09-18 and the second one matters most.**
+
+⛔ **UNDERVOLTING LOWERS THE CROSSBAR CLOCK WAS PUBLISHED IN JANUARY 2023, NOT AUGUST 2026.**
+Hardwareluxx post **#184, 25.01.2023**, user EleCtricStream, on an RTX 4090 — **opened and read
+here, translated from the German**: *"Mit dem Nvidia-Inspector lässt sich der Crossbar-Takt auslesen
+und dieser ist bei UV merklich niedriger als im Standard... Das sind eben immerhin 150 MHz
+weniger"* — with NVIDIA Inspector the crossbar clock reads **~150 MHz lower under undervolt** than
+at stock. ⚠️ He adds *"Tests habe ich noch keine gemacht"* — no performance tests run, no bandwidth
+measured, no mechanism established, N=1 card. **So the OBSERVATION is three and a half years old;
+the measured consequence is not.**
+
+⛔ **AND THE "INDEPENDENT" 2026 CORROBORATION IS ONE PERSON.** This file credited *"reverse-
+engineering work on the RTX 5090 via the LACT project"* as independent documentation. Verified via
+`gh api` on 2026-09-18: **LACT #1147 (2026-08-10), NVIDIA/open-gpu-kernel-modules #1266
+(2026-07-28), and the `loong0x00.com` Blackwell XBAR article are all by the same author,
+`Loong0x00`, on the same RTX 5090.** 🔑 **Three citations, one researcher, one chip — that is a
+single source, and this file was reading it as three.** An NVIDIA engineer reportedly did not
+reproduce the anomaly on a different 5090 and a 5070 Ti.
+
+⚠️ **#1266 is the closer pre-emption and it is a causal intervention, not an observation.** Capping
+XBAR at 1,493 MHz drops FurMark from 256 to 173 FPS — **−32.4% at a HIGHER core clock and unchanged
+DRAM clock**. ✅ **What separates it from this project's result:** its trigger is a memory-clock
+maximum rather than a flattened core curve, and its outcome is FPS rather than measured GB/s.
+
+⛔ **MITIGATIONS ARE ALSO PUBLISHED.** overclockers.ru (2026-08-18) warns that Afterburner
+undervolting imposes an otherwise invisible XBAR ceiling and proposes changing the xbar ratio in
+mVolt+ or setting a voltage ceiling instead. **Never write "no workaround has been published."**
+
+🟡 **A recipe matching the repair's SHAPE also predates it** — a 2022 Reddit "Method 4" post
+describing retention of stock curve points below the target voltage. ⚠️ **NOT VERIFIED HERE**:
+Reddit blocks automated retrieval from this environment, so this rests on the outside reader's
+report alone. Treat as an unconfirmed lead until someone opens it. **If it holds, the curve shape
+alone carries no distinction** and the contribution is the diagnosis plus the advance prediction.
+
+The CPU analogue (Intel uncore frequency scaling gating DRAM bandwidth) is long-established.
+
+✅ **WHAT IS LEFT, STATED NARROWLY:** the *domain* is not a discovery, *undervolt lowers XBAR* is not
+a discovery, *XBAR gates throughput* is not a discovery, and *a mitigation* is not a discovery. What
+was not located is the specific chain **from a flattened core V/F curve to a measured global-memory
+bandwidth plateau in GB/s, with a stock control, a quantified crossbar-to-core ratio collapse, and a
+repair stated in advance.** Full record: `docs/gpt-findings/2026-09-18-xbar-prior-art.md`.
 
 ⛔ **AND THE WRONG-RANGE ARGUMENT IS OVERSTATED — see the correction in its own section above.**
 The earlier version of this paragraph claimed the ridge point STRENGTHENED it. The geometry does

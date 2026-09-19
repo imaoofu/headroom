@@ -56,6 +56,29 @@ belonging to nobody on the paper, written into the file whose entire purpose is 
 model does not make that likelier; it makes it *cheaper to produce*, which is the same problem at
 higher volume.
 
+### 🆕 They can reach different sources, and that is not a small detail
+
+**Discovered 2026-09-18 while verifying the XBAR search.** The two assistants do not have the same
+reach, in both directions:
+
+| | Claude Code | GPT |
+|---|---|---|
+| Reddit | ⛔ **403 to the JSON API and `old.reddit.com` alike** | ✅ opened several threads |
+| Forums (Hardwareluxx, overclockers.ru, HWUpgrade, Guru3D) | 🟡 some work, some do not | ✅ reached German, Russian and Italian material |
+| GitHub API — authorship, dates, issue metadata | ✅ `gh` is authenticated here | 🟡 web view only |
+| Crossref / arXiv metadata | ✅ scripted and repeatable | 🟡 by hand |
+| Local PDFs, the repository, running code | ✅ | ⛔ |
+
+🔑 **So "could not verify" means different things from each of them, and neither list is the truth.**
+The XBAR pass produced a concrete example: GPT read a January 2023 Hardwareluxx post *and* a 2022
+Reddit post; Claude could open the first and independently confirm it, and **could not open the
+second at all**. That Reddit source remains an unconfirmed lead for exactly that reason — not
+because anyone doubts it, but because nobody here has seen it.
+
+✅ **Use it deliberately.** Send GPT the sources Claude bounced off; send Claude the things that need
+an API, a local file, or a script. **And record which assistant failed to reach what**, because a
+gap in one is not a gap in the other.
+
 ### What checks what
 
 | output | checked by |

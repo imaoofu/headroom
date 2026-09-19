@@ -225,3 +225,56 @@ as interchangeable domains across GPU generations.
 
 The [companion search record](2026-09-18-xbar-search-log.md) retains additional
 source identifiers, read-status distinctions, and useful unresolved leads.
+
+---
+
+# ✅ Verification pass — Claude, 2026-09-18
+
+**Added after the fact by the other assistant, per `docs/agents/COLLABORATION-PROTOCOL.md`: an
+AI-supplied fact is a LEAD, not a source, until a person or a script has checked it.** This section
+records what was independently checked and what was not. It does not alter the report above.
+
+| claim | status |
+|---|---|
+| Hardwareluxx #184, 25.01.2023, undervolt → ~150 MHz lower crossbar | ✅ **VERIFIED** — page fetched, post located, German read directly |
+| LACT #1147, NVIDIA #1266 and the `loong0x00.com` article are one author | ✅ **VERIFIED** via `gh api` — both issues return user `Loong0x00` |
+| NVIDIA #1266 exists, title, author, 2026-07-28 | ✅ **VERIFIED** via `gh api` |
+| #1266's FPS table (256 → 173, −32.4%) | ⚠️ **NOT independently checked** — reported by the issue author |
+| Reddit "Method 4", August 2022 | ⛔ **NOT VERIFIABLE from this environment** — Reddit returns 403 to both the JSON API and `old.reddit.com`. **Unconfirmed lead.** |
+| overclockers.ru mitigation advice, patents, envytools, mVolt guide | ⛔ not independently opened here |
+
+## What verified, in the source's own words
+
+Hardwareluxx post **#184**, dated **25.01.2023**, user EleCtricStream, RTX 4090:
+
+> "Mit dem Nvidia-Inspector lässt sich der Crossbar-Takt auslesen und dieser ist bei UV merklich
+> niedriger als im Standard. Ich habe hier den Standard Takt der Suprim genommen. … Das sind eben
+> immerhin 150 Mhz weniger, was sich natürlich schon je nachdem auf die FPS auswirken könnte…
+> **Tests habe ich noch keine gemacht**"
+
+⚠️ **The last clause is load-bearing and the report flags it correctly** — no performance tests, no
+bandwidth measured, no mechanism established, N=1 card. The *observation* is 2023; the *measured
+consequence* is not.
+
+Post **#186** adds a mechanism guess (crossbar related to Ada's AMA, connecting SMs within a TPC),
+and **#185** reports curve edits lowering another domain clock as far back as a GTX 1080 Ti. Both
+are user speculation, not established.
+
+## 🔑 The finding this project should take hardest
+
+**Three citations, one researcher, one chip.** `CLAUDE.md` credited the XBAR domain to *"reverse-
+engineering work on the RTX 5090 via the LACT project"*, and `PRIOR-ART-20260912.md` spot-checked
+LACT #1147 by hand as a load-bearing citation — correctly confirming it exists, while never asking
+whether it was independent of the other two. It is not.
+
+⚠️ **And an NVIDIA engineer reportedly failed to reproduce the anomaly** on a different RTX 5090 and
+a 5070 Ti. That cuts both ways: it weakens the pre-emption *and* it is exactly the kind of
+non-replication this project would want stated about its own results.
+
+## What this changed
+
+`CLAUDE.md`'s "what survives" item 5 was rewritten the same day. The surviving claim is now stated
+only as: the chain **from a flattened core V/F curve to a measured global-memory bandwidth plateau
+in GB/s, with a stock control, a quantified crossbar-to-core ratio collapse, and a repair stated in
+advance** — was not located. Every weaker form (the domain, undervolt-lowers-XBAR, XBAR-gates-
+throughput, a mitigation exists) is now explicitly recorded as published.
