@@ -340,11 +340,58 @@ opposite things to the two workloads:
       -> the SM-to-memory-controller path stops scaling
       -> membw plateaus at ~300 GB/s while DRAM sits at 16301 MHz throughout
 
-The crossbar-to-core ratio is the cleanest single statistic in the study: **0.928–0.976 at stock**
-(spread 0.048 — the interconnect tracks the core) against **0.942 collapsing to 0.726 under the
-flattened curve** (spread 0.218). The two configurations agree exactly where their voltages agree
-— at 1402 MHz both sit at 0.720 V and both deliver ~282 GB/s — and diverge from the first point
-where stock raises voltage and tuned does not.
+The crossbar-to-core ratio is a compact statistic: **0.928–0.976 at stock** (spread 0.048 — the
+interconnect tracks the core) against **0.942 collapsing to 0.726 under the flattened curve**
+(spread 0.218). ⚠️ **It is arithmetic on the two clocks already tabulated, NOT a second
+measurement**, so it cannot distinguish a causal XBAR bottleneck from a shared policy holding XBAR
+and some unobserved domain low together.
+
+⛔ **THE SENTENCE THAT STOOD HERE IS FALSE AND IS RETRACTED, 2026-09-18.** It read: *"The two
+configurations agree exactly where their voltages agree — at 1402 MHz both sit at 0.720 V and both
+deliver ~282 GB/s — and diverge from the first point where stock raises voltage and tuned does
+not."* **Divergence begins TWO GRID POINTS EARLIER, while both configurations still report 0.720 V:**
+
+| MHz | V stock | V flat | XBAR st | XBAR fl | gap |
+|---|---|---|---|---|---|
+| 1402 | 0.720 | 0.720 | 1335 | 1320 | −1.1% |
+| **1477** | **0.720** | **0.720** | **1402** | **1320** | **−4.8%** |
+| **1560** | **0.720** | **0.720** | **1470** | **1342** | **−5.5%** |
+| 1635 | 0.740 | 0.720 | 1545 | 1342 | −6.9% |
+
+🔑 **The stated chain needs the reported voltage to be the state variable, and it is not.** Found by
+an adversarial audit, verified here against the committed extracts.
+
+✅ **A reconciliation exists, and it is not special pleading** — it comes from independent work the
+same day: the reported voltage is a **coarse VID lookup, quantised at 5 mV on this card**, not a
+rail measurement. Two configurations can request 0.720 V and differ in what is applied. ⚠️ **That
+rescues the physics and not the evidence.** The honest statement is that XBAR and throughput track
+**the curve configuration**, not the observed voltage.
+
+⛔ **AND TWO MORE THINGS THE AUDIT FOUND, BOTH CONFIRMED.**
+
+**The only pair carrying voltage and XBAR telemetry is NOT memory-clock matched** — the flattened
+run logs MCLK 16301 and the stock run 13801, a 2500 MHz difference, and every run in the family
+records a 7001 MHz *minimum*. So *"DRAM sits at 16301 MHz throughout"* is not true of that pair.
+✅ The direction is conservative — higher MCLK, lower throughput — so it does not explain the
+plateau away. **But no committed pair is simultaneously memory-matched, XBAR-instrumented and
+profile-verified.**
+
+**The plateau begins at 280.6 GB/s, and §3.3.1 of this project's own paper documents *"a ceiling
+near 281 GB/s that neither concurrency nor per-thread unrolling lifts"*** — 281.2 from four
+concurrent copies, 281.9 from an unrolled kernel, agreeing to 0.24% with **no curve manipulation
+at all**. 🔑 **So the flattened curve may not CREATE the plateau so much as prevent the card from
+escaping a ceiling that is already there**, and the present data cannot distinguish the two.
+
+🛑 **WHAT SURVIVES:** the plateau is real and reproduces, the repair was predicted in advance and
+behaved as predicted, and the effect is configuration-level on this unit. **What does NOT survive
+is XBAR as a demonstrated MEDIATOR.** Write it as association plus a successful predicted
+intervention, never as an isolated causal chain. Full verification:
+`docs/gpt-findings/2026-09-18-xbar-causal-claim-adversarial-audit.md`.
+
+✅ **The cheapest fix is ~25 minutes:** re-run flattened-versus-stock **memory-matched** — both at
+13801 or both at +2500 — with voltage and XBAR logged in one session. That removes the largest
+confound. Settling mediation properly needs direct XBAR intervention at fixed core curve and fixed
+MCLK, which needs runtime XBAR control this card does not have.
 
 **This unified two findings that had looked unrelated.** `gemm` at ~1365 FLOP/byte never stresses
 the crossbar, so the pinned low voltage is pure benefit; `membw` at 0.167 FLOP/byte lives on that

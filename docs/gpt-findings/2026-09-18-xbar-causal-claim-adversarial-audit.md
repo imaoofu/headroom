@@ -300,3 +300,98 @@ here.
 - No Nsight Compute counter capture for these exact runs was present.
 - No direct XBAR intervention on this GB206/Windows configuration was present.
 - The hardware experiment was not independently reproduced for this audit.
+
+---
+
+# ✅ Verification pass — Claude, 2026-09-18
+
+**Three central claims checked against the committed data. All three hold.** This is the most
+consequential external finding this project has received.
+
+⚠️ **Scope note first:** this audit states it read the repository and `CLAUDE.md` before writing.
+**It is therefore NOT a cold outside-reader check** — unlike the prompt-B search, which recorded
+that its boundary closed only afterwards. For an adversarial audit that is the right call (it needs
+the data), but the two must not be counted as the same kind of evidence.
+
+## Claim 1 ✅ — the voltage-logged pair is not memory-clock matched
+
+| run | MCLK max | MCLK avg | MCLK min |
+|---|---|---|---|
+| `…oc-volt-membw` (flattened) | **16301** | 16140 | 7001 |
+| `…stock-volt-membw` (stock) | **13801** | 13592 | 7001 |
+| `…memonly-membw-anomaly` | 16301 | 16121 | 7001 |
+
+⛔ **`CLAUDE.md` says "membw plateaus at ~300 GB/s while DRAM sits at 16301 MHz throughout."** The
+only pair carrying voltage and XBAR telemetry differs by **2500 MHz of memory clock**, and every
+run records a 7001 MHz minimum, so "16301 throughout" is not literally true of any of them.
+
+✅ The direction is conservative — the flattened run has the *higher* MCLK and the *lower*
+throughput — so this does not explain the plateau away. But it means no single committed run pair
+is simultaneously memory-matched, XBAR-instrumented, and profile-verified.
+
+## Claim 2 ✅ — divergence begins BEFORE the voltages diverge. This is the damaging one.
+
+| MHz | V stock | V flat | XBAR st | XBAR fl | GB/s st | GB/s fl | gap |
+|---|---|---|---|---|---|---|---|
+| 1402 | 0.720 | 0.720 | 1335 | 1320 | 283.83 | 280.64 | −1.12% |
+| **1477** | **0.720** | **0.720** | **1402** | **1320** | 298.45 | 284.16 | **−4.79%** |
+| **1560** | **0.720** | **0.720** | **1470** | **1342** | 309.73 | 292.76 | **−5.48%** |
+| 1635 | 0.740 | 0.720 | 1545 | 1342 | 320.96 | 298.97 | −6.85% |
+
+⛔ **`CLAUDE.md` says: *"The two configurations agree exactly where their voltages agree… and
+diverge from the first point where stock raises voltage and tuned does not."* THAT IS FALSE.**
+At 1477 and 1560 the reported voltages are identical at 0.720 V, XBAR is already 82–128 MHz apart,
+and throughput has diverged 4.8% and 5.5%.
+
+🔑 **The stated chain requires the voltage to be the state variable, and it demonstrably is not.**
+
+✅ **A reconciliation exists and it comes from today's other work**, so it is not special pleading:
+the reported voltage is a **coarse VID lookup quantised at 5 mV on this card**, not a rail
+measurement — established independently by the fixed-frequency load test (47–71 W moving it 0.0 mV)
+and corroborated by HWiNFO's own author. **Two configurations can request the same 0.720 V and
+differ in what is actually applied.** ⚠️ That rescues the physics and **not** the evidence: it means
+the reported voltage cannot carry the mechanism, and the honest statement is that XBAR and
+throughput track **the curve configuration**, not the observed voltage.
+
+## Claim 3 ✅ — the plateau starts at a ceiling the paper already documents
+
+§3.3.1 of this project's own paper: four independent copies at 1395 MHz reach **281.2 GB/s**,
+an unrolled kernel reaches **281.9 GB/s** — *"Methods 2 and 3 agree to within 0.24%… from entirely
+different mechanisms"* — and §3.3.1's summary names *"a ceiling near **281 GB/s** that neither
+concurrency nor per-thread unrolling lifts."*
+
+**The flattened run's plateau begins at 280.64 GB/s.**
+
+⛔ **So the plateau's floor coincides with an unexplained ceiling this project measured separately,
+with no curve manipulation involved.** GPT's reading is the better fit: the flattened curve may not
+*create* the plateau so much as **prevent the card from escaping a pre-existing ceiling**. That is a
+different causal story and the data does not currently distinguish them.
+
+## What survives, and what does not
+
+| | |
+|---|---|
+| ✅ The plateau is real and reproduces | unchanged |
+| ✅ The repair was predicted in advance and worked | unchanged |
+| ✅ Configuration-level effect on this unit | unchanged |
+| ⛔ "Divergence begins where voltage diverges" | **false — retract** |
+| ⛔ "DRAM at 16301 throughout" for the telemetry pair | **false — retract** |
+| ⛔ XBAR demonstrated as the *mediator* | **not established** — it may be a correlated indicator of a shared low-voltage policy |
+| ⚠️ The ratio collapse as independent evidence | it is arithmetic on the same two clocks, not a second measurement |
+
+**The defensible sentence is the audit's own:** on this board, driver, monitoring stack and profile
+set, the flattened low-voltage curve was **associated with** a low reported XBAR clock and a
+~300 GB/s plateau, and restoring the low-voltage slope restored both. **The runs do not isolate
+XBAR as the causal bottleneck.**
+
+## What would settle it
+
+The audit's discriminating proposal is the right one and it needs hardware this project has:
+**intervene on XBAR directly at a fixed core curve and fixed MCLK**, and measure GB/s. Loong0x00's
+NVIDIA issue #1266 did exactly that shape of experiment on a 5090 (capping XBAR dropped FurMark
+32.4% at higher core clock and unchanged DRAM). ⚠️ Doing it here needs runtime XBAR control, which
+LACT #1147 requests and which is not available on this card today.
+
+**Cheaper and available now:** re-run the flattened-vs-stock pair **memory-matched** — both at
+stock 13801 or both at +2500 — with voltage and XBAR logged in one session. That removes the single
+largest confound and costs about 25 minutes.
