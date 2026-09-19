@@ -606,7 +606,7 @@ and two architectures.** Do not re-derive it.
 
 | configuration | chip | arch | floor V | floor ends | measured optimum | |
 |---|---|---|---|---|---|---|
-| stock | 5060 Ti | Blackwell | 0.720 | 1537 | 1537 | ✅ |
+| stock | 5060 Ti | Blackwell | 0.720 | **1560-1590** ⬅ refined | 1537 | ✅ |
 | split (P5) | 5060 Ti | Blackwell | 0.720 | 1530 | 1537 | ✅ |
 | repair (P2) | 5060 Ti | Blackwell | 0.720 | 1530 | 1537 | ✅ |
 | full tune (P4) | 5060 Ti | Blackwell | 0.720 | 2002 | 2002 | ✅ |
@@ -633,6 +633,54 @@ and two architectures.** Do not re-derive it.
   rather than vacuous** — a large measured effect in the edited region, and no median shift in the
   optimum. Full working: `docs/PRIOR-ART-20260918.md` §7.
 - **Cross-architecture** — `rtx3060-20260910`, a different chip, node and vendor board.
+
+### ✅ THE 5060 Ti FLOOR MEASURED AT 31 MHz, 2026-09-18 — IT IS GENUINELY FLAT
+
+**The project's most load-bearing number rested on THREE points at 158 MHz spacing.** The 2060
+Super looked flat at 60 MHz and turned out non-monotonic at 15, so this was the obvious thing to
+check. Two sweeps, 1380-1760 MHz, 13 points, ~31 MHz apart, stock Profile 3, driver **616.92**:
+
+| MHz | 1378 | 1402 | 1432 | 1462 | 1500 | **1530** | **1560** | 1590 | 1620 | 1657 | 1687 | 1717 | 1747 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| V | 0.720 | 0.720 | 0.720 | 0.720 | 0.720 | **0.720** | **0.720** | 0.730 | 0.740 | 0.745 | 0.755 | 0.760 | 0.765 |
+
+✅ **Seven consecutive points at 0.720 V, then a clean monotonic rise. No Turing-style
+non-monotonicity here** — whatever the 2060 Super is doing, this card does not do it.
+
+⚠️ **BUT THE FLOOR ENDS LATER THAN THIS FILE SAID. 1537 was never measured; it was inferred.**
+0.720 V still holds at **1560**, and the first rise is at **1590**, so the floor ends somewhere in
+between. The old figure came from a coarse grid whose nearest points were 1545 (0.720) and 1702
+(0.755) — a 157 MHz gap with nothing in it.
+
+🔑 **The rule still selects the right grid point**, because the suite grid is ~158 MHz wide and a
+prediction only has to land within half a step. But **the floor end and the measured optimum are
+NOT the same number**, and this file presented them as one.
+
+⚠️ **The exit is gradual, not sharp** — 0.720 → 0.730 → 0.740 → 0.745 → 0.755 in ~5-10 mV steps,
+unlike the 3060's single 31 mV jump. Closer to the 2060 Super's creep than previously assumed.
+⚠️ Sampling here was the main machine's **2.00 s**, giving only 5-9 samples per point; the kit's
+0.50 s would give four times that. Enough for a constant median, not enough for dither analysis.
+
+### 🔑 CONTAMINATION DESTROYS THROUGHPUT AND LEAVES VOLTAGE ALONE — measured, 2026-09-18
+
+The first of the two sweeps was contaminated: the operator ran the full test suite and git
+alongside it. Re-run with the machine quiet, **throughput rose at EVERY point, mean +9.38%, range
++5.9 to +13.2%** — larger than 5.4.4's Instant Replay figures, because a 792-check suite is heavier
+than a screen recorder.
+
+**Voltage across the same pair: identical at 11 of 13 points, maximum difference 5 mV — less than
+one 6.25 mV code.** Crossbar likewise within 11 MHz.
+
+✅ **So voltage data from a contaminated sweep is still usable; throughput data is not.** That
+matters for the whole corpus, since 5.4.4 records that every cross-configuration comparison here
+was taken under uncontrolled desktop load. **It follows from the fixed-frequency droop test** —
+the reading is a VID lookup, not a measurement, so it cannot respond to load.
+
+⛔ **AND A DIAGNOSTIC LESSON WORTH MORE THAN THE SWEEP.** The contamination was first assessed by
+point-to-point residual (does throughput track clock between adjacent points?). That found five bad
+mid-band points and pronounced the rest clean. **It was wrong: a point-to-point test measures SHAPE
+and is structurally blind to a uniform offset**, which was most of the effect. Only comparing two
+runs revealed the 9% level shift. **Never certify a sweep as clean from within-run shape alone.**
 
 ⛔ **THE FLOOR VOLTAGE IS PER CARD AND DOES NOT TRANSFER.** 0.720 V on the 5060 Ti, **0.756 V on the
 3060**. Borrowing 0.720 for the 3060 predicts ~1530 MHz against a true optimum of 1260 — a 270 MHz
