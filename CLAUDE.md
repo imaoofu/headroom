@@ -1124,7 +1124,15 @@ analysis/          Python measurement + audit on the public V100 dataset
                       audits the repository's own state
   models/             everything that PREDICTS rather than measures — has its own README
   test_*.py           21 suites, 731 checks (729 without data/raw) - NOT pinned, see above
+.claude/           🆕 2026-09-20 - harness config, COMMITTED. settings.json wires two hooks;
+                   agents/stale-reference-auditor.md finds a correction that did not propagate;
+                   skills/retract/ encodes the retraction protocol. See tools/claude-hooks/README.md
 tools/
+  claude-hooks/      🆕 PreToolUse guard refusing agent edits to committed MEASUREMENTS, because
+                     audit_claims.py would VERIFY the damage rather than catch it - it renders its
+                     expected string FROM the CSV it checks. Default-deny inside data/, .md only
+                     exception. ⛔ The test suite must NOT go in a hook: 11.4 s of load beside a
+                     sweep is the 9.38% contamination of 2026-09-18, reproduced automatically
   stability-logger/   observes only — telemetry + crash verdict
   frequency-sweep/    CHANGES GPU STATE — locks clocks, must always reset
     gpu_workload.py   fixed-work benchmark (gemm = compute, membw = bandwidth)

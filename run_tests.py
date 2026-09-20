@@ -52,8 +52,8 @@ REPO_ROOT = Path(__file__).resolve().parent
 # never ran, with the output still reading "All suites passed". It now walks SEARCH_ROOTS instead,
 # which is deliberately wider than the allowlist - the point of a guard is to see what the list
 # does not.
-SUITE_DIRS = ["analysis", "analysis/models", "tools/frequency-sweep", "tools/local-model",
-              "tools/mutation", "tools/stability-logger"]
+SUITE_DIRS = ["analysis", "analysis/models", "tools/claude-hooks", "tools/frequency-sweep",
+              "tools/local-model", "tools/mutation", "tools/stability-logger"]
 
 # Directories the orphan guard walks looking for suites nobody runs. Broader than SUITE_DIRS on
 # purpose - see findOrphanSuites().
