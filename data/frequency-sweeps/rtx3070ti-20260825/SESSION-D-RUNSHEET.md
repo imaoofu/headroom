@@ -87,6 +87,39 @@ construction. And the 5060 Ti manipulation moved the floor **up** (+465 MHz); mo
 here tests the same claim in the opposite direction, which rules out "any curve edit pushes the
 optimum upward". A same-direction replication could not do that.
 
+### 🔑 "Why not just undervolt it the way the 5060 Ti was undervolted?"
+
+**Because a conventional undervolt is a worse EXPERIMENT on this particular card, in four
+specific ways.** The 5060 Ti profiles are good tuning; that is a different job from this one.
+
+**1. ⛔ The power cap leaves almost no room upward.** This card clips at **~1763 MHz**, so an
+upward edit has at most **+263 MHz** of dose before it runs out of card — against **−300 MHz**
+available downward with nothing in the way. And any upward result would be entangled with the
+power cap, because the card might not sustain the new floor end at all. **The dose would be
+smaller and the confound larger.**
+
+**2. ✅ This edit is region-isolated and the 5060 Ti's was not.** That is the confound the
+adversarial audit found on 2026-09-19: the ABBA pair is **+465 MHz at 700 and 800 mV and −98 MHz
+at 875 and 925 mV** — two regions moved, in opposite directions — which is why *"we reshape the
+curve region by region"* had to be struck from the contribution sentence. Edit 1 touches three
+voltage points and nothing else. 🔑 **Copying the 5060 Ti's shape would import its known defect
+into the replication.**
+
+**3. 🛑 An upward edit can crash; this one cannot.** A conventional undervolt asks for *more clock
+at less voltage*, which is a stability bet on an unknown chip. 875 mV at 3000 MHz took the display
+driver down on the 5060 Ti, and the reset **silently cleared the Afterburner offsets** — a run
+continued past it would have measured stock silicon under a tuned settings string. This is a
+customer-bound card on a shop bench and the session is ~5 h; a crash at hour three costs the pair,
+not a run.
+
+**4. ⚠️ The prediction is directional, so a same-direction replication proves less.** If both chips
+move up, *"any curve edit pushes the optimum upward"* survives as a rival explanation. Moving this
+one **down** kills it outright.
+
+⚠️ **What DOES carry over from the 5060 Ti work:** save stock into a slot first, snapshot the
+profile store verbatim before editing, apply with `-profileN -q`, and never trust a settings string
+over HWiNFO. The discipline transfers; the curve shape deliberately does not.
+
 **Registered prediction (4a):** the median suite optimum moves down from **1485 MHz** to the grid
 point nearest the new floor end — **1170 or 1275 MHz** on the 105 MHz suite grid.
 ⛔ No movement, or upward movement, **refutes the causal claim on a second chip** and is the
