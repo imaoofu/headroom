@@ -8,13 +8,13 @@ specific day and draws from this list; **this is the list.**
 proposal, the citation gate, the dataset package. None of it needs a card, and none of it is a
 fallback for bench time that was available and went unused.
 
-**Roughly 18 hours of bench work remains. About 10 of it is on cards that leave.**
+**Roughly 19 hours of bench work remains. About 10 of it is on cards that leave.**
 
 | card | remaining | expires? |
 |---|---|---|
 | **RTX 3070 Ti** | ~5 h 40 | ✅ **yes — it ships** |
 | **RTX 2060 Super** | ~4 h 20 | ✅ yes, shop machine |
-| **RTX 5060 Ti** | ~7 h 50 | ❌ never — local box |
+| **RTX 5060 Ti** | ~8 h 35 | ❌ never — local box |
 | RTX 3060 | ~25 min | ⚠️ unknown, probably gone |
 
 ---
@@ -101,6 +101,7 @@ nvidia-smi pmon -c 5 -s u
 | **4k** | 5060 Ti | **Profile 1 suite** | 65 min | **2** | a registered prediction, never collected; the only power-limit control |
 | **4b** | 5060 Ti | descending fine floor, 1380–1760 | 15 min | **2** | the project's floor, measured the other direction |
 | **4l** | 5060 Ti | repaired-curve (P2) stability soak | 35 min | **2** | the one configuration behind §5.7 never soaked |
+| **4m** | 5060 Ti | 🆕 **`reduce` fine sweep, RANDOM order, replicated** | 45 min | **2** | the predictor misses `reduce` **16 of 16, all above**; suite order is confounded in 14 of 16 legs |
 | **4d** | 5060 Ti | NVML offset validation pair | 25 min | 3 | a capability currently claimed on a read-back alone |
 | **4e** | 5060 Ti | floor-ladder rung B (+170) | 82 min | 3 | *directional* → **quantitative** |
 | **4f** | 5060 Ti | floor-ladder rung C (+320) | 82 min | 3 | the second rung is what makes it a ladder |
@@ -309,6 +310,25 @@ the driver.** Build in the safe direction only, and snapshot the store first.
 Every tuned configuration behind the headline numbers has been soaked for exactly thirty minutes,
 and undervolt failures routinely take hours to surface. ✅ **This one runs while you do something
 else.**
+
+## 4m. 🆕 The `reduce` residual — mechanism or suite position? **45 min.**
+
+**Added 2026-09-20 from the predictor audit.** The curve predictor misses **all 16 `reduce` curves
+and every raw optimum is ABOVE the prediction** — stock 1702/1852, split 1852/2010, repair 2167,
+full tune 2167–2625. Mean regret 4.790%, worst 11.939%. ⚠️ **`gemm` behaves differently** — exact
+on full tune four times, scattered 1395/1545/1702 elsewhere — so grouping them as "the 70%
+residual" hides a systematic displacement inside a run-sensitive one.
+
+⛔ **The confound: 14 of 16 run legs use the identical suite order**, so workload identity is almost
+perfectly aligned with position, thermal history and session duration.
+
+**The discriminator:** fine-sweep `reduce` and one matched workload **in randomised order, with
+replication**, under at least two curve extents.
+
+| result | reading |
+|---|---|
+| `reduce` keeps a stable positive offset across orders | ✅ a mechanism limit or a real workload property |
+| the offset follows run position or session | ⛔ a benchmark artifact — and **every per-workload residual in the project inherits it** |
 
 ## 4h. Pin the floor end. **15 min.**
 

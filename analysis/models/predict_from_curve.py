@@ -33,7 +33,18 @@ WHAT IT SCORES, AND THE DEFLATION THAT COMES WITH IT
 
       - It beats the best single fixed frequency by ~2.9x on mean regret.
       - It TIES a best-constant-per-configuration fitted with full hindsight, to three decimals,
-        because it picks the identical frequency every time. So it extracts everything the
+        because it picks the identical frequency every time.
+
+      ⛔ THE NEXT CLAUSE USED TO READ "extracts everything the configuration axis holds", AND
+        THAT IS UNSUPPORTED - corrected 2026-09-20 after an adversarial audit, verified here.
+        The tie is an identity of DISCRETE CHOICES on a ~155 MHz grid: both strategies emit only
+        TWO distinct frequencies across four configurations. It shows the mechanism loses nothing
+        to a fitted constant on this corpus. It does not show the axis is exhausted.
+
+      ⛔ AND THE ENTIRE ADVANTAGE OVER THE SINGLE CONSTANT IS ONE CONFIGURATION. Three of four
+        leave the floor at 1530 MHz and the predictor answers 1545 - which IS the best single
+        constant. Drop the one that differs and all three strategies become identical. The tool
+        now computes and prints that rather than leaving it to be discovered. So it extracts the
         configuration axis has to offer, for free - and nothing more than that.
       - ⚠️ And the whole axis is worth about 1.3 points of regret, against a headroom of 30-57
         points. Predictor choice barely matters. This is the V100 null generalising, now with a
@@ -320,6 +331,40 @@ def chooseByOracle():
     return lambda configuration, workload, curve: max(curve, key=lambda t: curve[t])
 
 
+def decomposeAdvantage(curves, mechanismPicks, fixedPick):
+    """Print how much of the advantage over the single constant rests on how few configurations.
+
+    ⛔ Added 2026-09-20, because an adversarial audit found that ALL of it rested on one. The
+    mechanism and the single constant can only differ on a configuration whose floor extent
+    selects a different grid point; on every other configuration they are the same strategy
+    wearing different names. Scoring 192 curves hides that, so the tool now says it out loud.
+    """
+    distinguishing = sorted(c for c, pick in mechanismPicks.items() if pick != fixedPick)
+    configurations = sorted(mechanismPicks)
+    print()
+    print(f"    !! WHERE THE ADVANTAGE LIVES. The mechanism differs from the single constant on "
+          f"{len(distinguishing)} of {len(configurations)} configurations:")
+    print(f"       {', '.join(distinguishing) if distinguishing else '(none)'} - everywhere else "
+          f"both pick {fixedPick} MHz.")
+
+    remainder = [entry for entry in curves if entry[0] not in distinguishing]
+    if not remainder or not distinguishing:
+        return
+    mechanism, _ = chooseByMechanism(remainder)
+    fixed, _ = chooseByBestFixedFrequency(remainder)
+    perConfiguration, _ = chooseByBestPerConfiguration(remainder)
+    scored = [("mechanism", mechanism), ("best single constant", fixed),
+              ("best per configuration", perConfiguration)]
+    print(f"       Remove {'them' if len(distinguishing) > 1 else 'it'} and "
+          f"{len(remainder)} curves remain:")
+    for label, strategy in scored:
+        score = evaluateStrategy(remainder, strategy)
+        print(f"         {label:<22} {score['mean_regret_pct']:.3f} mean, "
+              f"{score['exact_match_rate'] * 100:.1f}% exact")
+    print("       If those three lines are identical, the headline ratio rests entirely on the")
+    print("       configurations named above - report it as that, not as 192 independent tests.")
+
+
 def regretByWorkload(curves, chooseTarget):
     """Mean regret per workload, worst first. Shows where a strategy's residual actually lives."""
     grouped = {}
@@ -381,8 +426,10 @@ def main():
 
     if abs(mechanismScore - perConfigScore) < 0.001:
         print("    It TIES the hindsight-fitted per-configuration constant exactly - it picks the")
-        print("    same frequency every time. So it extracts everything the configuration axis")
-        print("    holds and nothing more; its value is needing no measurement, not being smarter.")
+        print("    same frequency every time. Its value is needing no measurement, not being")
+        print("    smarter. NOT 'it extracts everything the configuration axis holds' - that")
+        print("    wording was withdrawn 2026-09-20; a tie between two strategies that emit the")
+        print("    same two discrete frequencies does not bound what the axis contains.")
     elif mechanismScore > perConfigScore:
         print(f"    It LOSES to a hindsight per-configuration constant "
               f"({mechanismScore:.3f} vs {perConfigScore:.3f}), so reading the curve is worse than")
@@ -395,6 +442,8 @@ def main():
     # ASCII only in PRINTED output. Windows consoles default to cp1252, which cannot encode the
     # warning emoji this repository uses in Markdown, and print() raises UnicodeEncodeError rather
     # than degrading. Docstrings and comments are never printed, so they keep theirs.
+    decomposeAdvantage(curves, mechanismPicks, fixedPick)
+
     print(f"\n    !! SCALE. The whole configuration axis is worth "
           f"{fixedScore - mechanismScore:.2f} points of regret,")
     print("    against a headroom of roughly 30-57 points. Predictor choice barely matters -")

@@ -864,6 +864,56 @@ predictor at **0.675% mean regret over 192 sweeps**, tying a hindsight-fitted pe
 constant exactly while needing no measurement. ⚠️ **And the whole configuration axis is worth only
 1.29 points of regret against a 30–57 point headroom**, so do not oversell it.
 
+⛔ **THREE THINGS ABOUT THAT TABLE, ALL FOUND BY AN ADVERSARIAL AUDIT ON 2026-09-20 AND ALL
+RECOMPUTED HERE.** Full record: `docs/gpt-findings/2026-09-20-curve-predictor-regret-adversarial-audit.md`.
+
+**1. 🛑 The whole 2.90x rests on ONE configuration.** The predictor emits only **two distinct
+frequencies** across four configurations — 1545 for stock, split and repair, 2010 for full tune —
+and **1545 IS the best single constant**. Per configuration:
+
+| configuration | curves | mechanism | global 1545 |
+|---|---:|---:|---:|
+| stock | 84 | 0.426% | **0.426%** |
+| split | 48 | 0.834% | **0.834%** |
+| repair | 12 | 1.200% | **1.200%** |
+| **full tune** | 48 | **0.822%** | **5.966%** |
+
+**Drop full tune and all three strategies become identical** — 0.626% mean, 11.939% worst, 77.8%
+exact over the remaining 144 curves. ✅ **The tool now computes and prints this itself**, so it
+cannot be quoted without it. ⚠️ **The corpus is also unbalanced** (84/48/48/12); weighting the four
+configurations equally gives 0.820% against 2.107%, and the 1.29-point gap survives only because
+full tune is exactly a quarter either way.
+
+**2. ⛔ The 720 mV floor is NOT IDENTIFIED by this data.** Every whole-millivolt threshold from
+**711 to 741 mV** produces the identical table — same two actions, same 0.675%, same 74.0%. That is
+a **31 mV window, six voltage codes wide on a 5 mV card**. Below it the picks collapse (710 mV
+→ 1395 MHz and 2.993% mean); above it they climb. ⚠️ **So "the table is robust to a one-code
+perturbation" is true and nearly meaningless** — the grid cannot resolve the parameter, which is
+the opposite of confirming it.
+
+**3. ⛔ AND THE RULE DOES NOT SURVIVE THE ONE CLEAN FINE-GRID RECORD — this is the one to worry
+about.** On `20260918-202543_5060ti-finefloor-gemm-r2` (13 points, ~30 MHz, stock, verified quiet)
+the efficiency argmax is **1402 MHz achieved**, while the floor holds 0.720 V through **1560** and
+first rises at **1590**. The rule predicts the TOP of the floor; the measurement puts the peak
+**158 MHz below it**. ⚠️ **Regret at the predicted point is only 0.622%**, because the curve is
+flat: relative efficiency runs **99.7 / 100.0 / 98.9 / 98.0 / 99.5 / 99.4 / 98.0%** across
+1378–1560 MHz, then falls away to 90.0% by 1747.
+
+✅ **What the fine grid supports is the RIDGE-POINT STATEMENT, not ours:** *efficiency is flat
+below the floor's end and falls above it.* The top of the floor is a **defensible upper bound on
+where to run**, not a measured peak. ⛔ **"The optimum IS the top of the floor" is a coarse-grid
+artifact** — at 158 MHz spacing 1537 is the nearest point to both. ⚠️ And the contaminated twin of
+that same sweep puts the argmax at **1597**, so on a fine grid the label moves 187 MHz between two
+runs of one configuration while regret stays under 0.7%. **Exact-match and low regret are different
+claims and this project has been quoting the first.**
+
+✅ **THE V100 NULL IS NOT A CONTRADICTION, and this file implied it might be.** The ridge model and
+the fixed baseline choose **the same frequency on 32 of 33 workloads**; the entire 0.046-point
+difference is `CNN_1.5M`, where the model alone moves 952 → 885 and loses. **Neither analysis tests
+workload identity and finds it valuable** — both show a coarse discrete action dominated by a
+constant. 🔑 **The consumer predictor does not model workload identity at all**, so it was never
+the opposing result.
+
 ---
 
 ## Ruled out — do not revisit without new information

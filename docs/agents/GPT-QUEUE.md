@@ -9,7 +9,9 @@ answers get:
 | **B — cold novelty search** | Found undervolt→XBAR published **January 2023**; caught that three "independent" 2026 sources are **one author, one chip**. Invented nothing; three DOIs verified |
 | **A — the 6 mV question** | Correctly refused to assert a universal step. Its documentation work made a **new result** possible from our own data (the grid is per-card) |
 | **C — adversarial audit** | ⛔ **Retracted the XBAR mediation claim.** Three claims verified against our committed data |
-| **1 — load-floor audit** | ⛔ **Retracted four clauses of the CONTRIBUTION SENTENCE.** **Seven claims recomputed here; all seven held, several to the decimal.** The most consequential external finding this project has had |
+| **1 — load-floor audit** | ⛔ **Retracted four clauses of the CONTRIBUTION SENTENCE.** Seven claims recomputed here; all seven held |
+| **2 — §2.7 artifact range** | ⛔ *"They cannot locate an optimum"* is too categorical — **4 of 30 and 7 of 20 applications have interior optima**. Every boundary count reproduced |
+| **6 — predictor audit** | ⛔ **The 2.90x is ONE configuration**, the 720 mV floor is **unidentified across 31 mV**, and the fine grid puts the optimum **158 MHz below the floor's end**. **Eight claims recomputed; all eight held to three decimals.** The most consequential external finding this project has had |
 
 🔑 **It has not yet produced a claim that failed verification.** The droop hypothesis was refuted,
 but it was a *good* hypothesis refuted by an experiment it prompted — which is worth more than

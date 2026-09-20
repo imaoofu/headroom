@@ -104,9 +104,15 @@ answer. "The model loses" is the correct result and now has a mechanism behind i
 | best **single** constant, fitted with hindsight | 1.961% | 60.9% |
 
 - It beats the best single constant **2.90×**, and 142 of 192 sweeps come out exactly optimal.
+  ⛔ **ALL of that 2.90× is one configuration** — drop `fulltune` and the mechanism, the single
+  constant and the per-configuration constant are **identical** at 0.626% over 144 curves. The tool
+  prints this decomposition itself; do not quote the ratio without it.
 - ⚠️ **It ties the per-configuration constant to three decimals** because it picks the identical
-  frequency every time. **It extracts everything the configuration axis holds and nothing beyond
-  it.** Its value is needing no measurement — a per-config constant requires sweeping every
+  frequency every time. ⛔ **The next clause said "it extracts everything the configuration axis
+  holds", and that was withdrawn 2026-09-20** — both strategies emit the same **two** discrete
+  frequencies on a ~155 MHz grid, which bounds nothing about the axis. **What the tie DOES show is
+  that the mechanism loses nothing to a constant fitted on the answers.** Its value is needing no
+  measurement — a per-config constant requires sweeping every
   configuration first — not being cleverer.
 - ⚠️ **It is not "zero-parameter" in a fair comparison.** It reads the V/F curve, which the constant
   and the Ridge baselines never had. The curve is free to obtain, so this is not cheating, but it is
