@@ -116,6 +116,11 @@ untouched.** Dragging points *down* only; instability is not reachable by constr
 1200 MHz, inside the floor, and 825 mV is a real point on this card's 6.25 mV grid. Leaving it at
 stock would leave the floor reaching ~1500 MHz and the manipulation would test nothing.
 
+🛑 **Touch exactly three points: 0.812, 0.819, 0.825 V. Leave everything below 0.812 V alone.**
+Those lower points sit *under* 1200 MHz at stock, so "set to 1200" would RAISE them — the unsafe
+direction, and how this project crashed a driver once already. The card never applies less than its
+floor voltage under load, so leaving them stock costs the experiment nothing.
+
 ```powershell
 .\Collect.ps1 -Label "rtx3070ti-sessiond-edit1-2" -AppliedSettings "EDIT 1 - every curve point at or below 0.825 V set to 1200 MHz, 0.831 V and above left at stock, SILENT BIOS, PL default, memory stock" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations 4099,4291,3230,2462,843,2113,3511,2327,616,135,432,120
 ```

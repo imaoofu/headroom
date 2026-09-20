@@ -64,10 +64,22 @@ must begin rising at **1200 instead of 1500** — the floor end moves **−300 M
 
 | curve point | stock clock | set to |
 |---|---|---|
-| ≤ 0.812 V | ~1500 | **1200** |
+| **below 0.812 V** | low | 🛑 **DO NOT TOUCH — see below** |
+| 0.812 V | ~1500 | **1200** |
 | 0.819 V | 1500 | **1200** |
 | **0.825 V** | **~1500** | **1200** ⬅ was unassigned until 2026-09-20 |
 | 0.831 V and above | 1545 → 1763 | **unchanged** |
+
+🛑 **"AT OR BELOW 0.825 V" MUST NOT BE READ AS "EVERY POINT DOWN TO THE LEFT EDGE OF THE EDITOR".**
+The curve editor carries points well below 0.812 V whose stock clocks are far *under* 1200 MHz.
+Setting those **to** 1200 raises them — the unsafe direction — and asks the card for 1200 MHz at
+~0.70 V. ⚠️ **This project has already crashed a display driver exactly that way**: 875 mV pinned
+at 3000 MHz on the 5060 Ti, eleven driver-reset events, and the reset silently cleared the
+Afterburner offsets so the run would have measured stock silicon under a tuned settings string.
+
+✅ **Touch only 0.812, 0.819 and 0.825 V.** Nothing below 0.812 V is ever applied under load — the
+card clamps to its floor, which is what "load floor" means and what the whole session is about — so
+leaving them at stock costs the experiment nothing and keeps every edit in the down-only direction.
 
 ✅ **Why this is the safe direction, and why it is also the better experiment.** After the edit the
 card uses *more* voltage for any given clock than stock, so instability is not possible by
