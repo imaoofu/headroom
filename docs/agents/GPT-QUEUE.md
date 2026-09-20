@@ -17,6 +17,13 @@ being right.
 
 ---
 
+📤 **THE PROMPT TO SEND NEXT IS WRITTEN OUT IN FULL: [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md)** —
+an adversarial audit of the **curve predictor and its regret metric**, which is job 6 below promoted
+to the front. It is the last headline claim that has never been audited, and the two that were both
+produced retractions.
+
+---
+
 ## ⛔ Read this before sending anything
 
 **Two different jobs, and they need opposite handling:**
