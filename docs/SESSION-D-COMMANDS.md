@@ -77,7 +77,46 @@ Get-FileHash "$dest\*.cfg" -Algorithm SHA256 | Format-List Path,Hash
 
 ---
 
-## 3 · ⛔ Do NOT calibrate
+## 3 · 🛑 Build BOTH curves NOW — before the first sweep, not between runs
+
+⛔ **THIS STEP DID NOT EXIST UNTIL 2026-09-20.** The run headings below say *"Apply first:"*, which
+reads as *build it at that moment* — i.e. build a curve in the middle of a measuring session. **Do
+not.** Three separate reasons, any one of which is enough:
+
+1. ⛔ **Curve-building IS the 9.38% contamination.** Operator machine use during a sweep depressed
+   throughput at **every point** on 2026-09-18, and a point-to-point residual is structurally blind
+   to it because it is a uniform offset. Dragging points in a GUI for fifteen minutes is exactly
+   that load.
+2. 🛑 **Run 1 is the worst possible run to contaminate.** It is simultaneously the baseline the
+   Edit-1 effect is measured against **and** the run that run 4 must return to within ~1.5%.
+   Contaminate it and the drift bracket reads as drift that is not there.
+3. 🔑 **One HWiNFO log must never span two curve states** — the join bins by core clock and cannot
+   separate them afterwards.
+
+✅ **And building first is a free feasibility check on the thing the whole session depends on.** If
+Afterburner cannot apply a per-point curve on this board, runs 2 and 3 are impossible and Session D
+collapses to a stock replicate. **Learn that at minute 15, not at minute 70.**
+
+**Nothing about either edit depends on run 1's output.** Both are specified in absolute volts and
+MHz from measurements already committed in `hwinfo-silent/`.
+
+| slot | contents |
+|---|---|
+| **P1** | **STOCK, saved untouched before any edit** |
+| **P2** | **EDIT 1** — 0.812 / 0.819 / 0.825 V → 1200 MHz, 0.831 V and up unchanged |
+| **P3** | **EDIT 2** — 0.831 V and up flattened to 1500 MHz, 0.825 V and below unchanged |
+
+✅ **Afterburner does not have to stay open.** `MSIAfterburner.exe -profileN -q` applies the profile
+and **exits** — that is how three multi-hour 5060 Ti runs were driven with the operator away. The
+curve persists in the driver, so every sweep runs with Afterburner's own polling absent.
+
+🛑 **Building P2 and P3 leaves the card on whichever you applied last.** Before run 1: apply P1,
+then **verify it took the three ways in §6** — power limit stock, memory clock stock under load,
+peak core reaching ~1763 MHz. A settings string is not evidence.
+
+---
+
+## 4 · ⛔ Do NOT calibrate
 
 **The iteration counts for this exact card already exist**, from `rtx3070ti-suite-20260904` — the
 twelve-workload run that produced the **1485 MHz** median optimum this session predicts against.
@@ -94,7 +133,7 @@ Positional, matching `copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bge
 
 ---
 
-## 4 · The four suites, ~62 min each
+## 5 · The four suites, ~62 min each
 
 🛑 **Start a NEW HWiNFO log before each run and stop it after.** One log must never span two
 curves — the join bins by core clock and cannot separate them afterwards. **NVML exposes no
@@ -109,7 +148,7 @@ silently clears Afterburner offsets.
 
 ### Run 2 — EDIT 1, the manipulation
 
-Apply first: **every curve point at or below 0.825 V → 1200 MHz. Everything at 0.831 V and above
+**Apply P2, built in §3.** It is: **every curve point at or below 0.825 V → 1200 MHz. Everything at 0.831 V and above
 untouched.** Dragging points *down* only; instability is not reachable by construction.
 
 ⛔ **The boundary is 0.825, not 0.819** — corrected 2026-09-20. The fine sweep reads 0.825 V at
@@ -129,8 +168,8 @@ floor voltage under load, so leaving them stock costs the experiment nothing.
 
 ### Run 3 — EDIT 2, the negative control
 
-**Flatten everything from 0.831 V upward to a constant 1500 MHz. Leave 0.825 V and below at
-stock.**
+**Apply P3, built in §3.** It is: **everything from 0.831 V upward flattened to a constant
+1500 MHz, 0.825 V and below left at stock.**
 
 ```powershell
 .\Collect.ps1 -Label "rtx3070ti-sessiond-edit2-3" -AppliedSettings "EDIT 2 NEGATIVE CONTROL - 0.831 V and above flattened to 1500 MHz, 0.825 V and below left at stock, SILENT BIOS, PL default, memory stock" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations 4099,4291,3230,2462,843,2113,3511,2327,616,135,432,120
@@ -143,7 +182,7 @@ a failed run.**
 
 ### Run 4 — stock again, closes the bracket
 
-Revert the curve first.
+**Apply P1 first**, then verify it took the three ways in §6. Do not hand-rebuild the stock curve.
 
 ```powershell
 .\Collect.ps1 -Label "rtx3070ti-sessiond-stock-4" -AppliedSettings "STOCK reverted after both edits and verified three ways, SILENT BIOS, PL default, memory stock" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations 4099,4291,3230,2462,843,2113,3511,2327,616,135,432,120
@@ -154,7 +193,7 @@ manipulation result is not interpretable.** Report that rather than the effect.
 
 ---
 
-## 5 · Before the card ships
+## 6 · Before the card ships
 
 ```powershell
 nvidia-smi --query-gpu=power.limit,power.default_limit,clocks.max.graphics --format=csv,noheader
