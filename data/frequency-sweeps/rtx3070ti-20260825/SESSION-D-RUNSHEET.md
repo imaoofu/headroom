@@ -32,6 +32,16 @@ Not from a spec sheet — read out of `hwinfo-silent*/…_voltage.csv` in this d
 across 645 MHz**, 855 → 1500. Median suite optimum **1485 MHz**, 7 of 12 workloads picking it —
 one grid step below the floor end, exactly as the rule says.
 
+⛔ **THE FLOOR BAND IS THREE CODES WIDE, NOT TWO — CORRECTED 2026-09-20, AND IT MOVES THE EDIT
+BOUNDARY BELOW.** The coarse sweep sees only {0.812, 0.819}, but the **fine** sweep — the one that
+located the floor end at 1500 — reads **0.825 V at 1200 MHz**, inside the flat region. On this
+card's **6.25 mV** grid the codes run 812.5 / 818.75 / **825.0** / 831.25, so a boundary written as
+*"≤ 0.819 versus ≥ 0.831"* leaves **825 mV unassigned** — and 825 mV is a real, draggable point in
+the curve editor. 🔑 **An unassigned point is not a formatting detail here:** left at stock during
+Edit 1 it would still reach ~1500 MHz at floor voltage, so the floor would not actually shorten and
+the manipulation would test nothing. **Both edits below now use 0.825 as the boundary**, which is
+exhaustive on the grid with no point unnamed.
+
 🔑 **The card is POWER-CAPPED at ~1763 MHz.** Only ~263 MHz of usable range exists above the floor
 end. That single fact constrains the negative control below, and it is why this session's control
 is smaller in magnitude than the 5060 Ti's 570 MHz. Say so in the write-up rather than quietly
@@ -46,16 +56,17 @@ touches memory. In curve-editor terms you are dragging points **down**, never up
 
 ### EDIT 1 — shorten the floor (this is 4a)
 
-> **At every curve point at or below 0.819 V, set the clock to 1200 MHz. Leave every point above
-> 0.831 V exactly at stock.**
+> **At every curve point at or below 0.825 V, set the clock to 1200 MHz. Leave every point at
+> 0.831 V and above exactly at stock.**
 
-Stock reaches 1500 MHz at 0.819 V; after the edit it reaches only 1200 MHz there, so voltage must
-begin rising at **1200 instead of 1500** — the floor end moves **−300 MHz**.
+Stock reaches 1500 MHz at floor voltage; after the edit it reaches only 1200 MHz there, so voltage
+must begin rising at **1200 instead of 1500** — the floor end moves **−300 MHz**.
 
 | curve point | stock clock | set to |
 |---|---|---|
 | ≤ 0.812 V | ~1500 | **1200** |
 | 0.819 V | 1500 | **1200** |
+| **0.825 V** | **~1500** | **1200** ⬅ was unassigned until 2026-09-20 |
 | 0.831 V and above | 1545 → 1763 | **unchanged** |
 
 ✅ **Why this is the safe direction, and why it is also the better experiment.** After the edit the
@@ -72,11 +83,11 @@ headline if it happens.
 ### EDIT 2 — the negative control (this is 4b)
 
 > **Flatten everything from 0.831 V upward to a constant 1500 MHz. Leave every point at or below
-> 0.819 V at STOCK (i.e. reaching 1500 MHz).**
+> 0.825 V at STOCK (i.e. reaching 1500 MHz).**
 
 | curve point | stock clock | set to |
 |---|---|---|
-| ≤ 0.819 V | ~1500 | **unchanged (stock)** |
+| ≤ 0.825 V | ~1500 | **unchanged (stock)** |
 | 0.831 V | 1545 | **1500** |
 | 0.850 V | 1590 | **1500** |
 | 0.894 V | 1695 | **1500** |

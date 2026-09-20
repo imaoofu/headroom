@@ -109,22 +109,26 @@ silently clears Afterburner offsets.
 
 ### Run 2 — EDIT 1, the manipulation
 
-Apply first: **every curve point at or below 0.819 V → 1200 MHz. Everything at 0.831 V and above
+Apply first: **every curve point at or below 0.825 V → 1200 MHz. Everything at 0.831 V and above
 untouched.** Dragging points *down* only; instability is not reachable by construction.
 
+⛔ **The boundary is 0.825, not 0.819** — corrected 2026-09-20. The fine sweep reads 0.825 V at
+1200 MHz, inside the floor, and 825 mV is a real point on this card's 6.25 mV grid. Leaving it at
+stock would leave the floor reaching ~1500 MHz and the manipulation would test nothing.
+
 ```powershell
-.\Collect.ps1 -Label "rtx3070ti-sessiond-edit1-2" -AppliedSettings "EDIT 1 - every curve point at or below 0.819 V set to 1200 MHz, 0.831 V and above left at stock, SILENT BIOS, PL default, memory stock" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations 4099,4291,3230,2462,843,2113,3511,2327,616,135,432,120
+.\Collect.ps1 -Label "rtx3070ti-sessiond-edit1-2" -AppliedSettings "EDIT 1 - every curve point at or below 0.825 V set to 1200 MHz, 0.831 V and above left at stock, SILENT BIOS, PL default, memory stock" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations 4099,4291,3230,2462,843,2113,3511,2327,616,135,432,120
 ```
 
 **Registered prediction:** the median optimum moves **down from 1485 → 1170 or 1275 MHz**.
 
 ### Run 3 — EDIT 2, the negative control
 
-**Flatten everything from 0.831 V upward to a constant 1500 MHz. Leave 0.819 V and below at
+**Flatten everything from 0.831 V upward to a constant 1500 MHz. Leave 0.825 V and below at
 stock.**
 
 ```powershell
-.\Collect.ps1 -Label "rtx3070ti-sessiond-edit2-3" -AppliedSettings "EDIT 2 NEGATIVE CONTROL - 0.831 V and above flattened to 1500 MHz, 0.819 V and below left at stock, SILENT BIOS, PL default, memory stock" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations 4099,4291,3230,2462,843,2113,3511,2327,616,135,432,120
+.\Collect.ps1 -Label "rtx3070ti-sessiond-edit2-3" -AppliedSettings "EDIT 2 NEGATIVE CONTROL - 0.831 V and above flattened to 1500 MHz, 0.825 V and below left at stock, SILENT BIOS, PL default, memory stock" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations 4099,4291,3230,2462,843,2113,3511,2327,616,135,432,120
 ```
 
 ⚠️ **Every target above 1500 will achieve ~1500. That clipping is the evidence the edit took, not
