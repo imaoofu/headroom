@@ -131,9 +131,34 @@ manipulation result is not interpretable. Report that rather than the effect.
 that changes between configurations breaks the fixed-work property that makes duration a valid
 performance metric.
 
-⚠️ **Iteration counts must be re-derived on this card** and then held constant across all runs.
-`SUITE-ITERATIONS.md` holds 5060 Ti counts and they do not transfer. Calibrate first; it needs no
-elevation.
+⛔ **"ITERATION COUNTS MUST BE RE-DERIVED ON THIS CARD" IS CORRECTED 2026-09-20. THEY ALREADY
+EXIST, FOR THIS EXACT CARD.** The line was written when no 3070 Ti suite had been collected. One
+has: `rtx3070ti-suite-20260904/` is the twelve-workload run that **produced the 1485 MHz median
+optimum this sheet registers its prediction against**, and every sweep JSON in it carries its
+`--iterations` value.
+
+| workload | iterations | | workload | iterations |
+|---|---:|---|---|---:|
+| copy | 4099 | | bgemm128 | 3511 |
+| reduce | 4291 | | bgemm256 | 2327 |
+| softmax | 3230 | | bgemm1024 | 616 |
+| layernorm | 2462 | | attention | 135 |
+| bgemm32 | 843 | | conv | 432 |
+| bgemm64 | 2113 | | gemm | 120 |
+
+🔑 **Re-calibrating would be actively worse than reusing these.** The registered prediction is
+*"the median moves down from 1485"*, and 1485 is a property of the 09-04 suite at these counts.
+Re-deriving changes the work per point, so run 1 would no longer be comparable to the run that
+produced the number being predicted against. Reusing them makes run 1 a **same-card, same-config,
+same-work replicate of 09-04** - a cross-session drift check spanning sixteen days, for free.
+
+⚠️ **The 09-04 suite ran on driver 610.88.** Read the current driver off a new sweep JSON, never
+off a document, and state the difference in the write-up. Counts describe work, not driver, so they
+transfer; the *comparison* to 09-04 carries a driver gap.
+
+✅ `SUITE-ITERATIONS.md` holds 5060 Ti counts and those still do not transfer. Calibration is now
+optional here - run it only to sanity-check that ~9 s per point still holds, and then use the
+table above regardless.
 
 ---
 
@@ -190,8 +215,23 @@ purpose with no tooling, and the device ID in the filename identifies the card.
 1. **Snapshot the Afterburner profile store verbatim** into `data/afterburner-profiles/` before the
    first edit. A slot number is not an identity — this convention exists because P3 held an
    aggressive curve one day and stock the next.
-2. **Record the BIOS position** (silent) in `-AppliedSettings`, along with driver version read off
-   the sweep JSON rather than from any document.
+2. 🛑 **VERIFY THE BIOS SWITCH IS STILL IN SILENT, AND DO IT WITH nvidia-smi.** This card has a
+   dual-BIOS switch, it was **found in SILENT and returned to SILENT**, and every number this
+   session predicts against - the 1485 MHz optimum, the 0.812-0.819 V floor, the ~1763 MHz power
+   cap - is a SILENT-position measurement. The two positions are distinguishable in one command,
+   because they differ in power envelope:
+
+   ```
+   nvidia-smi --query-gpu=power.limit,power.default_limit,power.max_limit --format=csv,noheader
+   ```
+
+   | reads | position |
+   |---|---|
+   | **290 / 290 / 320 W** | ✅ SILENT - proceed |
+   | 310 / 310 / 350 W | ⛔ OC - the baseline does not apply. Switch back, reboot, re-check |
+
+   Record the position and the driver version in `-AppliedSettings`, with the driver read off a
+   sweep JSON rather than from any document.
 3. **Preflight:** Instant Replay / ShadowPlay **off**; browsers, Discord, Steam, media players
    closed. Verify idle baseline **under ~5%** and encoder/decoder at 0%. A passing 10% guard is not
    enough — a 6% baseline still cost 10.3% at 1545 MHz once.
