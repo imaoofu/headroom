@@ -8,7 +8,8 @@ answers get:
 |---|---|
 | **B — cold novelty search** | Found undervolt→XBAR published **January 2023**; caught that three "independent" 2026 sources are **one author, one chip**. Invented nothing; three DOIs verified |
 | **A — the 6 mV question** | Correctly refused to assert a universal step. Its documentation work made a **new result** possible from our own data (the grid is per-card) |
-| **C — adversarial audit** | ⛔ **Retracted the XBAR mediation claim.** Three claims verified against our committed data. The most consequential external finding this project has had |
+| **C — adversarial audit** | ⛔ **Retracted the XBAR mediation claim.** Three claims verified against our committed data |
+| **1 — load-floor audit** | ⛔ **Retracted four clauses of the CONTRIBUTION SENTENCE.** **Seven claims recomputed here; all seven held, several to the decimal.** The most consequential external finding this project has had |
 
 🔑 **It has not yet produced a claim that failed verification.** The droop hypothesis was refuted,
 but it was a *good* hypothesis refuted by an experiment it prompted — which is worth more than
@@ -34,11 +35,33 @@ novelty, prove a source's experimental claims, or update the paper automatically
 
 ---
 
-# 1. 🥇 Adversarial audit of the LOAD-FLOOR causal claim
+# 1. ✅ DELIVERED 2026-09-19 — adversarial audit of the LOAD-FLOOR causal claim
 
-**The obvious next job, because prompt C did exactly this to §5.7 and found it could not support
-its own sentence. The load-floor result is the project's headline and has never had the same
-treatment.**
+📄 **`docs/gpt-findings/2026-09-19-load-floor-causal-claim-adversarial-audit.md`.** Partial
+delivery; the operator reports more may follow.
+
+**Seven claims were recomputed here before anything was changed. All seven held:**
+
+| checked | result |
+|---|---|
+| ABBA shifts are "+465 in 12 of 12" | ⛔ median +465, all 12 **upward**, range **+79.0 to +539.8**, **6 of 12** exactly +465 |
+| The optimum result was **post hoc** | ⛔ confirmed by **our own commit `0ca60ea`** — *"RESULT 1, and it was not planned"* |
+| `REGISTERED-PREDICTIONS.md` says otherwise | ⛔ confirmed; the row has been corrected |
+| P4/P5 is a single-region contrast | ⛔ **+465 at 700/800 mV, −98 at 875/925 mV** |
+| ABBA-era P4 plateau ≠ later P4 | ⛔ **3015 vs 3030**, both snapshots committed |
+| Control leak counts 4 / 3 / 5 / 6 of 12 | ⛔ **exact match** on all four comparators |
+| §5.5.7 renders a superseded 1552 MHz | ⛔ confirmed; the fine sweep bounds the exit at 1560–1590 |
+
+🔑 **It found the one thing internal review cannot: that a ledger of registrations had recorded a
+registration that never happened.** The honest record was in the run's own README and commit the
+whole time; the error entered later, when the ledger summarised them.
+
+⚠️ **One thing to weigh rather than accept.** Its proposed replacement sentence is more cautious
+than the evidence requires in one place — it calls the cross-card arm "association" without noting
+that the RTX 3060 test **was** prospectively registered, which the audit itself establishes
+elsewhere in the same document. **Take the corrections; write the sentence here.**
+
+**The original brief, kept for the record:**
 
 Give it repo access, same as prompt C. Ask it to audit:
 

@@ -461,7 +461,8 @@ review" did not stop the items being written as established. Full log: `docs/PRI
 
 **1. ✅ SURVIVES — the manipulation and its negative control.** Every prior result OBSERVES the
 correlation between ridge point and optimum on the vendor's shipped curve. This project MOVES the
-floor by hand (`abba-20260908`) and the optimum moves **+465 MHz in 12 of 12 workloads**; then
+floor by hand (`abba-20260908`) and the **median** optimum moves **+465 MHz with all 12 workloads
+moving upward** (range **+79 to +540**, 6 of 12 exactly +465 — corrected 2026-09-19); then
 changes the curve **above** the floor by 570 MHz and the optimum moves by **nothing**. Nothing found
 reshapes a V/F curve and re-locates the optimum, and nothing found pairs such a test with a negative
 control or with predictions registered in advance. **This is the project's strongest remaining
@@ -579,12 +580,39 @@ line up, but the broader sentence it supports does not survive contact with the 
 
 ### 📌 THE CONTRIBUTION SENTENCE — use this wording, do not re-derive it
 
-> **On four consumer GPUs across three architectures, we reshape the vendor's voltage-frequency
-> curve region by region and show that the energy-efficiency optimum is set causally by the top of
-> its low-voltage floor — moving +465 MHz in 12 of 12 workloads when that region is changed, and
-> not at all when the curve above it is changed by more — with every prediction registered before
-> collection; and we identify a card on which the rule cannot be applied at all, because its
-> voltage leaves the floor six millivolts at a time.**
+⛔ **THE SENTENCE THAT STOOD HERE IS RETRACTED, 2026-09-19.** Four of its clauses are false or
+overstated, each verified against this repository's own data by recomputation — see the block below
+it. The replacement:
+
+> **On four consumer GPUs across three architectures we locate the V/F curve's low-voltage region
+> and the energy-efficiency optimum, and on one of them we change the curve and re-locate the
+> optimum: switching between two profiles whose decoded curves differ by +465 MHz below 840 mV
+> moved the median twelve-workload optimum by +465 MHz, with all twelve workloads moving upward;
+> a separate, larger edit ABOVE the floor moved the median by nothing. We identify a card on which
+> the rule cannot be applied at all, because its voltage leaves the floor six millivolts at a
+> time.**
+
+⛔ **WHAT WAS STRUCK, AND WHY. Every figure below was RECOMPUTED here, not taken on the auditor's
+word** — `docs/gpt-findings/2026-09-19-load-floor-causal-claim-adversarial-audit.md`.
+
+| struck | what the data says |
+|---|---|
+| *"moving +465 MHz in **12 of 12 workloads**"* | The **median** moved +465 and **all 12 moved upward**, but the shifts range **+79.0 to +539.8 MHz** and **exactly 6 of 12** are +465. `bgemm32` moved **+79** |
+| *"with **every prediction registered** before collection"* | 🛑 **The decisive manipulation was POST HOC.** `abba-20260908` registered a *dose-response* prediction — that the deeper undervolt would leave less than 27.5% headroom — and it **failed** (34.32% vs 28.27%). Commit `0ca60ea` says in its own words: *"RESULT 1, and it was not planned."* |
+| *"we reshape ... **region by region**"* | ⚠️ **The manipulation was not region-isolated.** P4 is **+465** on P5 at 700 and 800 mV **and −98 BELOW it at 875 and 925 mV**. Two regions changed, in opposite directions |
+| *"on four consumer GPUs ... we reshape"* | The curve was reshaped on **one** card. The other three are **stock-curve associations**, and the fourth is undecidable. **Causal n = 1 chip, 1 profile contrast.** Twelve workloads are repeated outcomes on it, not twelve chips |
+
+✅ **What genuinely survives the registration problem, and it is not nothing.** The +465 prediction
+was computed from the decoded curve using a floor voltage of 0.720 V **measured independently on
+other data**, not fitted to the ABBA outcome — and the P2 control, the RTX 3060 test and the RTX
+2060 Super test **were** registered before their collections. The honest form is: *the control and
+the cross-architecture tests were registered in advance; the manipulation's result was found in a
+run registered for a different prediction, which failed.*
+
+⚠️ **AND THE TREATMENT PROFILE IS NOT ONE CONFIGURATION ACROSS THE PROJECT.** The ABBA-era P4 has
+a plateau of **3015 MHz**; it was edited to **3030** later the same day — both snapshots are
+committed (`5060ti-profiles-20260908.json` and `…20260908b-p4-plateau-3030.json`). **A run labelled
+"Profile 4" before that edit is a different configuration from one after it.**
 
 🔑 **It says what was DONE, never what nobody else did.** No "first", no "novel", no "unpublished".
 That is deliberate: every claim this project has lost was lost on the second half of a sentence, and
@@ -659,18 +687,38 @@ and two architectures.** Do not re-derive it.
 | full tune (P4) | 5060 Ti | Blackwell | 0.720 | 2002 | 2002 | ✅ |
 | **stock** | **RTX 3060** | **Ampere** | **0.756** | **1260** | **1260** | ✅ |
 
-**It has been tested three ways, and the predictions were registered before the measurements:**
-- **Manipulation** — `abba-20260908` changed the *floor region* and the optimum moved **+465 MHz in
-  12 of 12 workloads**.
+**It has been tested three ways.** ⛔ **This line said "and the predictions were registered before
+the measurements" until 2026-09-19. That is FALSE of the manipulation** — see the contribution
+section above. The control and the cross-architecture test were registered; the manipulation's
+result was not.
+
+- **Manipulation** — `abba-20260908` moved the curve below 840 mV by +465 MHz and the **median**
+  optimum moved **+465 MHz, with all 12 workloads moving upward**. ⚠️ **Not "12 of 12 by +465"** —
+  the shifts run **+79.0 to +539.8 MHz** and 6 of 12 are exactly +465. ⚠️ **And the contrast is not
+  region-isolated:** the same profile pair is **−98 MHz at 875 and 925 mV**. The negative control
+  is what bounds that confound — a **570 MHz** edit in that upper region moved the median by 0, so
+  a 98 MHz difference there is a sixth of a dose that already did nothing.
 - **Negative control** — `repair-suite-p2-20260909` changed the curve *above* the floor by up to
   570 MHz and the **median** suite optimum moved **+0 MHz**.
 
   ⛔ **"MOVED BY NOTHING" WAS AN OVERSTATEMENT AND IS CORRECTED 2026-09-18.** Measured same-session
   against the `stock-bracket-20260909` r9 suite, n=12: the median is unmoved, **8 of 12 workloads
   are unmoved**, and **4 move** — `bgemm32` +145, `layernorm` +158, `gemm` +306, `reduce` +315 MHz.
-  The treatment moved **all 12 by a uniform +465**. So the contrast is still large and still in the
-  predicted direction, but the control is **partially leaky** and must not be described as a clean
-  null.
+  ⛔ **AND "THE TREATMENT MOVED ALL 12 BY A UNIFORM +465" WAS ITSELF WRONG, CORRECTED 2026-09-19.**
+  It moved all 12 **upward**, by **+79 to +540**. So the contrast is between *12 of 12 moving* and
+  *4 of 12 moving*, not between uniform and leaky.
+
+  ⚠️ **The leak is larger than the 4 of 12 recorded here**, and against cleaner comparators.
+  Recomputed 2026-09-19, n=12 each: **P2 vs stock bracket 4**, **vs ABBA leg B1 3**, **vs leg B2 5**,
+  **vs the per-workload mean of B1/B2 6**. ✅ The stock comparison is also the *dirtiest* of the four
+  — stock is 180 W and +0 memory against P2's 200 W and +2500 — while the ABBA legs share both with
+  P2. The median is 1537 in every one of them.
+
+  🔑 **Why a zero median survives a leak this size:** most workloads pile onto the same 1537 MHz
+  grid point, so several can move a full bin while the 6th and 7th ordered values do not. **A zero
+  median shift cannot be written as "nothing happens" without the per-workload count beside it.**
+  The contrast is still large and still in the predicted direction, but the control is **partially
+  leaky** and must not be described as a clean null.
 
   🔑 **The check came from an outside reader, and it was a better objection than the council's.**
   The council said the control was weak for sharing chip, session and operator — which is what a
@@ -889,6 +937,18 @@ would only catch the first.
   line break and does not need to know where the paper wraps. Line wrapping is presentation.
 - **A claim's job is to state what the data says, not to make the audit green.** If a correctly
   written claim does not match the paper, that is a *finding*. Fix the paper, never the formula.
+
+🛑 **AND THE BLIND SPOT THE DESIGN CANNOT SEE, FOUND 2026-09-19: a claim verifies the source it
+NAMES, not that the named source is the CURRENT one.** §5.5.7's floor table renders the 5060 Ti's
+floor as **1552 MHz** from a coarse 2026-08-20 voltage extract, while the 2026-09-18 fine sweep —
+already committed — shows **0.720 V still held at 1560** and the first rise at **1590**. The claim is
+green, the render is faithful, and the number is superseded.
+
+⚠️ **This is the same failure as §2.7's four-week-wrong figure**, where the paper and the analysis
+computed the same number from the same wrong reference. **Reproducibility guarantees agreement, not
+currency.** There is no mechanical fix here — nothing in the repository knows that one extract
+supersedes another — so **when a finer measurement lands, grep the claim modules for the file it
+replaces.**
 
 **⚠️ The double-import trap.** Running `audit_claims.py` directly binds it as `__main__`. A claims
 module then does `from audit_claims import claim`, which imports a *second copy* of the module with

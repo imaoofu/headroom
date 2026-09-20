@@ -399,8 +399,29 @@ data READMEs before this file existed.
 
 | experiment | registered prediction | outcome |
 |---|---|---|
-| `abba-20260908` | the optimum moves with the floor region of the curve | ✅ **+465 MHz in 12 of 12 workloads** |
-| `repair-suite-p2-20260909` | changing the curve *above* the floor moves the optimum **not at all** | ✅ optimum unmoved despite a 570 MHz change |
+| `abba-20260908` | ⛔ **NOT the optimum — see the correction below** | the optimum result was **unplanned**; the registered prediction **failed** |
+| `repair-suite-p2-20260909` | changing the curve *above* the floor moves the optimum **not at all** | ✅ **median** unmoved despite a 570 MHz change; **3–6 of 12 individual workloads move** |
+
+⛔ **THE FIRST ROW WAS FALSE AND IS CORRECTED 2026-09-19.** It read *"the optimum moves with the
+floor region of the curve — ✅ +465 MHz in 12 of 12 workloads"*, in the one file whose entire job is
+to record what was registered **in advance**.
+
+**What `abba-20260908` actually registered** is in its own sweep JSONs: a **dose-response**
+prediction, that Profile 4 — the deeper undervolt — would leave **less than P5's 27.5%** remaining
+headroom. **It failed**, and in the opposite direction: 34.32% against 28.27%.
+
+**The load-floor result was found afterwards, in that run's data.** The run's own README says *"It
+was not planned"* and commit `0ca60ea` says *"RESULT 1, and it was not planned."* 🔑 **Both were
+written honestly at the time; the error was committed later, when this ledger summarised them.**
+
+✅ **Two things keep it from being a bare post-hoc fit.** The 0.720 V floor used to predict +465 was
+measured on **other data** rather than fitted to this outcome, and the follow-ups — P2, the RTX 3060,
+the RTX 2060 Super — **were** registered before collection. ⚠️ The 2060 Super's was **refuted as
+registered**, and a later finer measurement cannot convert that into a success.
+
+🛑 **Found by an outside adversarial audit, verified here by recomputation**, not by internal
+review — which had read this table repeatedly. Full record:
+`docs/gpt-findings/2026-09-19-load-floor-causal-claim-adversarial-audit.md`.
 | `rtx3060-20260910` | the rule holds on a different architecture | ✅ holds — ⛔ but the floor **voltage** does not transfer (0.756 V, not 0.720) |
 
 ---
