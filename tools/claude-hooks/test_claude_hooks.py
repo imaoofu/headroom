@@ -41,7 +41,30 @@ def check(description, condition, detail=""):
         print(f"[PASS] {description}")
 
 
-REPO = r"C:\Users\Raymond\Documents\headroom"
+# ⛔ THIS WAS A HARDCODED `C:\Users\Raymond\Documents\headroom` UNTIL 2026-09-20, AND IT FAILED
+# CI ON BOTH LEGS. `post_edit_gate.shouldRun()` compares against the REAL repository root at
+# runtime, so on a runner rooted at /home/runner/work/headroom/headroom a path under C:\Users\...
+# is correctly judged "outside the repository" and the check failed. The code was right.
+#
+# 🔑 The test passed on the machine it was written on and could only ever pass there - which is
+# the hardest kind of wrong to see, because a green local run looks like evidence.
+REPO = str(Path(__file__).resolve().parents[2])
+
+# ✅ The verdict() cases below deliberately keep WINDOWS backslashes even on a Linux runner. That
+# is not an oversight: the hook runs on Windows and receives backslashed absolute paths, so
+# handling them is the behaviour under test. verdict() matches on a substring, so any prefix
+# reaches the same answer - which is exactly why those cases were NOT what broke.
+
+# The guard against that mistake returning: if REPO is not the repository root, every path below
+# is fictional and the suite is asserting about nothing.
+check("REPO resolves to the actual repository root",
+      (Path(REPO) / "CLAUDE.md").exists() and (Path(REPO) / "run_tests.py").exists(),
+      f"got {REPO!r}")
+
+
+def inRepo(*parts):
+    """A real path inside this checkout, with the platform's own separator."""
+    return str(Path(REPO).joinpath(*parts))
 
 # Test 1: the things that MUST stay editable. These come first because a guard that blocks them
 # gets switched off, and a switched-off guard is the worst outcome available here.
@@ -123,10 +146,14 @@ check("survives a payload with no tool_input at all",
 
 # Test 7: the post-edit gate fires on repository markdown and nothing else. Firing on every
 # source edit would pay 0.18 s for a check that cannot change.
-check("the gate fires on repository markdown", shouldRun(f"{REPO}\\CLAUDE.md"))
-check("the gate ignores Python", shouldRun(f"{REPO}\\run_tests.py") is False)
+# ⚠️ These three must use the REAL root with the platform's own separator. Unlike verdict(),
+# which matches on a substring and so reaches the same answer for any prefix, shouldRun() asks
+# whether the file is inside THIS checkout - so a path from another machine is not a formatting
+# detail, it is a different question. That is what failed CI on both legs on 2026-09-20.
+check("the gate fires on repository markdown", shouldRun(inRepo("CLAUDE.md")))
+check("the gate ignores Python", shouldRun(inRepo("run_tests.py")) is False)
 check("the gate ignores markdown outside the repository",
-      shouldRun(r"C:\Users\Raymond\Desktop\notes.md") is False)
+      shouldRun(str(Path(REPO).parent / "not-the-repo" / "notes.md")) is False)
 check("the gate ignores a missing path", shouldRun(None) is False)
 
 # Test 8: end to end through the real process boundary, because everything above tests the

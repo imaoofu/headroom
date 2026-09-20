@@ -84,6 +84,22 @@ it to fail-closed** without first making it impossible to break.
 python tools/claude-hooks/test_claude_hooks.py
 ```
 
+### ⛔ It failed CI on both legs the day it was added, and the CODE was fine
+
+The suite hardcoded `REPO = r"C:\Users\Raymond\Documents\headroom"`. `post_edit_gate.shouldRun()`
+asks whether a file is inside **this** checkout, resolved at runtime — so on a runner rooted at
+`/home/runner/work/headroom/headroom` it correctly answered "outside the repository" and the
+assertion failed. Three pushes, both legs, one check.
+
+🔑 **The test passed on the machine it was written on and could only ever pass there** — and a
+green local run looks exactly like evidence. `REPO` is now derived from `__file__`, with a check
+asserting it really is the repository root, so the mistake cannot return silently.
+
+✅ **Reproduce a different root before trusting a path-sensitive suite.** Copy the hook files plus
+`CLAUDE.md` and `run_tests.py` into a temporary directory and run the suite from there. **Then put
+the original defect back and confirm the harness actually fails** — a verification that passes for
+the wrong reason is worth nothing, which is the same standard `run_tests.py` sets for mutations.
+
 Registered in `run_tests.py`'s `SUITE_DIRS`. Note that the orphan guard in that runner walks
 `tools/`, so a suite added here and *not* registered would have been reported rather than silently
 skipped — which is how `tools/stability-logger/` was found to be missing on 2026-09-12.
