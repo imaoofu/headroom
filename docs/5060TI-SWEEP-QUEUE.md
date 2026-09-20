@@ -6,6 +6,11 @@ expires — but it is where the project's headline result lives, and six of thes
 🛑 **The 3070 Ti replication still outranks every item on this page.** That card leaves; this one
 does not.
 
+📋 **This file holds the exact COMMANDS. The ordering across all four cards lives in
+[`docs/GPU-WORKLIST.md`](GPU-WORKLIST.md)**, which is also where 4j, 4k (the never-collected
+Profile 1 registration) and 4l (the repaired curve has never been soaked) are described. Keep the
+two jobs separate rather than restating a priority here.
+
 ---
 
 ## Before ANY run — the preflight that caught today's problem

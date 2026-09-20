@@ -5,6 +5,10 @@ SATURDAY DID NOT HAPPEN.** The three-card window has collapsed to **one working 
 2026-09-20**, so this is no longer a weekend plan — it is a one-day plan, and the ordering below
 changed because of it.
 
+📋 **The full standing list of GPU work is [`docs/GPU-WORKLIST.md`](GPU-WORKLIST.md)** — all
+fifteen items across four cards, tiered, with the five-slot constraint and the shared preflight.
+**This file is a schedule for one day and draws from it.**
+
 🔑 **This list is ONLY the hardware-bound work.** Everything else — the paper edits, the proposal,
 the dataset README — is in `docs/TODO-20260918.md` and none of it needs a card. **With one day left
 that rule hardens: nothing at a desk touches bench time, and desk work is not a fallback for a
@@ -237,9 +241,12 @@ slider, not a curve edit — the flattened core curve is untouched, and **+2500 
 safe direction.** Budget ~10 minutes for building and verifying it, on top of the 25.
 
 🛑 **Afterburner has five slots and they are all occupied**, so saving overwrites one. **Snapshot
-`Profiles\*.cfg` with SHA-256 before saving anything**, and overwrite **P1** — it is the least-used
-configuration and the only one no live claim depends on. A slot number is not an identity; P3 held
-an aggressive curve one day and stock the next.
+`Profiles\*.cfg` with SHA-256 before saving anything.** ⛔ **Do NOT take P1** — an earlier version of
+this line called it "the only one no live claim depends on" and that was wrong: a **registered
+prediction against P1 has never been collected** (`REGISTERED-PREDICTIONS.md` §2). Restore is a file
+copy from `data/afterburner-profiles/5060ti-profiles-20260918/`, so any slot is recoverable — but
+"restore it afterwards" is one forgotten step away from losing a registration. A slot number is not
+an identity; P3 held an aggressive curve one day and stock the next.
 
 ⚠️ **4j needs the operator present twice**, once per configuration, because HWiNFO logging must start
 and stop around each one and **one log must never span two configurations.** It is not an unattended
