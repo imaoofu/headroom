@@ -73,7 +73,18 @@ $files = @(
     # voltage measurement taken through the kit. It lived only on the USB drive until 2026-09-11,
     # so a rate change on one machine could not be seen from the repository. Synced like any other
     # tool for exactly that reason.
-    @{ From = "tools\collection-kit\HWiNFO64.INI";               To = "HWiNFO64.INI" }
+    @{ From = "tools\collection-kit\HWiNFO64.INI";               To = "HWiNFO64.INI" },
+    # ⛔ THE OPERATOR-FACING DOCUMENTS WERE HAND-COPIED ONTO THE KIT AND NOT SYNCED UNTIL
+    # 2026-09-20, SO ALL THREE HAD DRIFTED. Checked that day: the kit carried a Session D run
+    # sheet still instructing the operator to re-derive iteration counts that already exist for
+    # that card, and a weekend plan superseded the day before.
+    # 🔑 This is the kit-rot failure CLAUDE.md records for TOOLS, applied to the documents
+    # that tell the operator how to use them - and it is worse, because a stale tool usually
+    # errors while a stale instruction is simply followed.
+    @{ From = "docs\SESSION-D-COMMANDS.md";                     To = "SESSION-D-COMMANDS.md" },
+    @{ From = "docs\GPU-WORKLIST.md";                           To = "GPU-WORKLIST.md" },
+    @{ From = "data\frequency-sweeps\rtx3070ti-20260825\SESSION-D-RUNSHEET.md"; To = "SESSION-D-RUNSHEET.md" },
+    @{ From = "data\frequency-sweeps\rtx2060s-20260912\SESSION-E-RUNSHEET.md";  To = "SESSION-E-RUNSHEET.md" }
 )
 
 function Say([string]$text, [string]$colour = "White") {
