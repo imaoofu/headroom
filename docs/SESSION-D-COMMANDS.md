@@ -103,7 +103,7 @@ MHz from measurements already committed in `hwinfo-silent/`.
 | slot | contents |
 |---|---|
 | **P1** | **STOCK, saved untouched before any edit** |
-| **P2** | **EDIT 1** — 0.812 / 0.819 / 0.825 V → 1200 MHz, 0.831 V and up unchanged |
+| **P2** | **EDIT 1** — everything at or below 0.825 V **capped at 1200 MHz**, 0.831 V and up unchanged |
 | **P3** | **EDIT 2** — 0.831 V and up flattened to 1500 MHz, 0.825 V and below unchanged |
 
 ✅ **Afterburner does not have to stay open.** `MSIAfterburner.exe -profileN -q` applies the profile
@@ -155,10 +155,15 @@ untouched.** Dragging points *down* only; instability is not reachable by constr
 1200 MHz, inside the floor, and 825 mV is a real point on this card's 6.25 mV grid. Leaving it at
 stock would leave the floor reaching ~1500 MHz and the manipulation would test nothing.
 
-🛑 **Touch exactly three points: 0.812, 0.819, 0.825 V. Leave everything below 0.812 V alone.**
-Those lower points sit *under* 1200 MHz at stock, so "set to 1200" would RAISE them — the unsafe
-direction, and how this project crashed a driver once already. The card never applies less than its
-floor voltage under load, so leaving them stock costs the experiment nothing.
+✅ **CAP everything at or below 0.825 V at 1200 MHz — a flat line from the left edge through
+0.825 V, then a step up to the untouched stock curve at 0.831 V.** Drag points **down**, never up;
+if a far-left point is already below 1200 MHz, leave it.
+
+⛔ **"Leave everything below 0.812 V at stock" was WRONG and is corrected 2026-09-20.**
+**Afterburner enforces a non-decreasing curve**, and the stock points left of 0.812 V already sit
+*above* 1200 MHz — so leaving them makes the curve decrease and **Afterburner refuses to apply
+it**. Capping them is the safe direction anyway: every clock then costs at least the voltage it
+cost at stock.
 
 ```powershell
 .\Collect.ps1 -Label "rtx3070ti-sessiond-edit1-2" -AppliedSettings "EDIT 1 - every curve point at or below 0.825 V set to 1200 MHz, 0.831 V and above left at stock, SILENT BIOS, PL default, memory stock" -Workloads copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm -Iterations 4099,4291,3230,2462,843,2113,3511,2327,616,135,432,120
@@ -178,7 +183,7 @@ floor voltage under load, so leaving them stock costs the experiment nothing.
 ⚠️ **Every target above 1500 will achieve ~1500. That clipping is the evidence the edit took, not
 a failed run.**
 
-**Registered prediction:** the optimum **stays at 1485**.
+**Registered prediction, RESTATED 2026-09-20 before collection:** the optimum stays at the **top of the floor, ~1485–1500 MHz ACHIEVED**. ⚠️ **Movement inside that band is the same operating point, not a control failure** — the six clipped targets all land at ~1500 MHz at floor voltage, and the max of six noisy samples beats a single 1485 sample by selection alone. **Report the clipped rows as one bin.** A real failure is relocation to a different region: down toward 1170/1275, or up past the floor. Full reasoning: `SESSION-D-RUNSHEET.md` §4b.
 
 ### Run 4 — stock again, closes the bracket
 
@@ -218,7 +223,7 @@ nothing behind; this session does, and that is the part to undo.
 | result | verdict |
 |---|---|
 | optimum → **1170 / 1275**, control unmoved | ✅ **the causal claim replicates on a second chip and architecture** |
-| optimum moves **and** the control moves | ⛔ attribution to the floor region is wrong — a bigger finding, and it must be reported |
+| optimum moves **and** the control relocates OUT of the ~1485–1500 band | ⛔ attribution to the floor region is wrong — a bigger finding, and it must be reported |
 | optimum does not move | ⛔ refutes the claim off the 5060 Ti; report as the headline, and the 5060 Ti result becomes single-chip |
 | run 4 ≠ run 1 | ⚠️ drift-contaminated — report nothing about the effect |
 

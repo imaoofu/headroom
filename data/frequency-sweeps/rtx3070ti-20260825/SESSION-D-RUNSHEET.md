@@ -64,22 +64,33 @@ must begin rising at **1200 instead of 1500** — the floor end moves **−300 M
 
 | curve point | stock clock | set to |
 |---|---|---|
-| **below 0.812 V** | low | 🛑 **DO NOT TOUCH — see below** |
+| **everything left of 0.812 V** | **already above 1200** | **1200** (cap) |
 | 0.812 V | ~1500 | **1200** |
 | 0.819 V | 1500 | **1200** |
 | **0.825 V** | **~1500** | **1200** ⬅ was unassigned until 2026-09-20 |
 | 0.831 V and above | 1545 → 1763 | **unchanged** |
 
-🛑 **"AT OR BELOW 0.825 V" MUST NOT BE READ AS "EVERY POINT DOWN TO THE LEFT EDGE OF THE EDITOR".**
-The curve editor carries points well below 0.812 V whose stock clocks are far *under* 1200 MHz.
-Setting those **to** 1200 raises them — the unsafe direction — and asks the card for 1200 MHz at
-~0.70 V. ⚠️ **This project has already crashed a display driver exactly that way**: 875 mV pinned
-at 3000 MHz on the 5060 Ti, eleven driver-reset events, and the reset silently cleared the
-Afterburner offsets so the run would have measured stock silicon under a tuned settings string.
+✅ **The rule is CAP, not SET: drag a point down to 1200 MHz, never up.** In the editor this is a
+flat line at 1200 from the left edge through 0.825 V, then a step back up to the untouched stock
+curve at 0.831 V.
 
-✅ **Touch only 0.812, 0.819 and 0.825 V.** Nothing below 0.812 V is ever applied under load — the
-card clamps to its floor, which is what "load floor" means and what the whole session is about — so
-leaving them at stock costs the experiment nothing and keeps every edit in the down-only direction.
+⛔ **AN EARLIER VERSION OF THIS BLOCK SAID "LEAVE EVERYTHING BELOW 0.812 V AT STOCK". THAT IS
+IMPOSSIBLE TO APPLY AND WAS CORRECTED AT THE MACHINE, 2026-09-20.** **Afterburner enforces a
+monotonically non-decreasing curve.** The stock points left of 0.812 V already sit **above**
+1200 MHz — they are just under the ~1500 the floor reaches — so pulling 0.812 down to 1200 while
+leaving them alone makes the curve *decrease*, and **Afterburner refuses to apply it.**
+
+🔑 **The reasoning behind the bad instruction was inference, not reading.** It argued that because
+the card never applies less than ~0.812 V under load, the curve below 0.812 V must carry low
+clocks. **The load floor says which point the card SELECTS, not what shape the curve has to its
+left.** The curve was sitting there and could have been read. That is the same failure this file
+records elsewhere — treating a derived belief as an observation.
+
+✅ **The safety property is unaffected, because capping is the down direction.** The original worry
+was raising a low-voltage point — asking for 1200 MHz at ~0.70 V, which is the shape of the 5060 Ti
+crash (875 mV pinned at 3000 MHz, eleven driver-reset events, and the reset silently cleared the
+Afterburner offsets). Capping does the opposite: every clock now costs **at least** the voltage it
+cost at stock. ⚠️ **If any far-left point is already below 1200 MHz, leave it — never drag one up.**
 
 ✅ **Why this is the safe direction, and why it is also the better experiment.** After the edit the
 card uses *more* voltage for any given clock than stock, so instability is not possible by
@@ -142,6 +153,48 @@ That is a **−263 MHz** change at the top, which is all the range this card has
 
 **Registered prediction (4b):** the optimum stays at **1485 MHz**. The whole floor region is
 untouched, so if the optimum moves, the rule's attribution to the *floor* region is wrong.
+
+⛔ **THAT WORDING IS UNSAFE AND IS RESTATED BELOW, 2026-09-20 — BEFORE COLLECTION, WHICH IS THE
+ONLY TIME IT IS LEGITIMATE TO TOUCH A REGISTERED PREDICTION.**
+
+**The clipping creates six near-duplicate rows at the top of the floor, and they compete with
+1485 for the argmax.** `analyze_sweep.py` selects the peak by **achieved** frequency
+(`achieved_frequency_avg`), not by target. Under Edit 2:
+
+| target | achieves | at voltage |
+|---|---|---|
+| 855 … 1485 | its target | floor |
+| **1590, 1695, 1800, 1905, 2010, 2115** | **~1500 each** | **floor** — the floor still reaches 1500 |
+
+So six sweep points collapse onto **one operating point, at floor voltage, 15 MHz above 1485**.
+
+🛑 **And efficiency is FLAT across the floor**, which is the 2026-09-20 fine-grid finding: relative
+efficiency on the 5060 Ti ran 99.7 / 100.0 / 98.9 / 98.0 / 99.5 / 99.4 / 98.0% across 1378–1560
+MHz, and the argmax moved **187 MHz between two runs of one configuration**. 1485 and ~1500 are a
+coin flip on the merits.
+
+🔑 **Worse, it is a BIASED coin.** Six noisy samples of the ~1500 point compete against one sample
+of 1485, and the max of six draws beats a single draw more than half the time **by selection
+alone**. The control is therefore predisposed to report "the optimum moved" — and this sheet's
+reading table calls a moved control *"a bigger finding"*. **That would be a false alarm of the most
+expensive kind available here.**
+
+✅ **RESTATED, and this is what the rule actually predicts.** The rule says the optimum sits at the
+top of the load floor. **The floor top is 1500 MHz under stock AND under Edit 2** — Edit 2 does not
+touch it. So:
+
+> **4b (restated): the optimum stays at the top of the floor, ~1485–1500 MHz achieved. Movement
+> within that band is the SAME operating point and is not a control failure. A control failure
+> means relocation to a different region of the curve** — down toward 1170/1275, or up past the
+> floor.
+
+✅ **Report the six clipped rows as one bin**, not six points, and say so in the write-up.
+
+⚠️ **The alternative, if you would rather fix it in hardware than in the statement:** flatten the
+top to **1545** instead of 1500. Clipped points would then need 0.831 V, land above the floor, and
+be genuinely less efficient, so nothing competes with 1485. **Cost: the dose drops from −263 to
+−218 MHz.** The restatement above is preferred because it is what the hypothesis says either way —
+but this is Raymond's call and either is defensible if recorded before the run.
 
 ⚠️ **Expect the top of the sweep to clip.** Every target above 1500 will achieve ~1500. That is
 intended and is the evidence the edit took — it is not a failed run.
