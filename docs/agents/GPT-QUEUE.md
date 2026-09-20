@@ -82,7 +82,34 @@ voltage is a **coarse VID lookup** and not a rail measurement, and the floor end
 
 ---
 
-# 2. The §2.7 narrow-window claim, asked properly
+# 2. ✅ DELIVERED 2026-09-19 — the §2.7 narrow-window claim, asked properly
+
+📄 **`docs/gpt-findings/2026-09-19-consumer-dvfs-artifact-range-audit.md`.**
+
+**Verified here before anything changed:** the ±11% arithmetic is exact (88.889–111.111% and
+89.362–110.638%), and **every boundary count reproduces to the application** — 8/4/18 of 30 and
+9/7/4 of 20, recomputed from `data/external/` as `1 / (time × power)` over the full grid.
+
+🔑 **Its best finding is the INTERIOR column**, which our table never had: **4 of 30 and 7 of 20
+applications DO have their optimum bracketed**, so *"they cannot locate an optimum"* is too
+categorical. Our "At ceiling" column already carried its high-edge counts (60% and 20%).
+
+✅ **It correctly refused to over-claim.** The external search is reported as *"not found in the
+searched record"*, never as absence, and it flags its own **lack of independence** — it had already
+seen the repository, so this is an adversarial audit and **not** a cold novelty check under
+`NOVELTY-CHECK-BRIEF.md`. 🛑 **Record that the cold boundary is now closed for this model.**
+
+⚠️ **One thing it caught that was ours, not the paper's:** *"widely reused"* is unsupported — a
+code search for each filename found only the source repository, 15 stars, one fork. **That phrasing
+was mine, in the brief below.**
+
+🛑 **What it opened and did not close:** a raw-table energy argmax puts **18 of 30 GTX 1080 Ti
+applications at the HIGHEST** sampled clock, against the authors' reported optimum *"close to the
+allowed lowest setting"*. Their 20 benchmarks vs the CSV's 30 applications, a fitted optimum vs a
+grid argmax, and system-scope energy are all candidates. **Someone must read Figure 4** before the
+paper leans further on citing them against their own artifact.
+
+**The original brief, kept for the record:**
 
 ⛔ **The first brief simplified it, and GPT answered the simplified version.** It reported the claim
 pre-empted by the GTX 980 dataset — but the live claim is narrower and already cites the dataset's

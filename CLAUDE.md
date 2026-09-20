@@ -126,7 +126,7 @@ consumer hardware, openly and reproducibly, and release the dataset.
 | Dataset | What it is | Why it matters |
 |---|---|---|
 | `data/raw/` V100 set | 33 workloads × 13 core frequencies, one V100 | The original basis. Core clock only, no voltage. |
-| `data/external/gtx1080ti-*.csv` | **Consumer** GTX 1080 Ti, 600 rows, 30 apps, **core 1600–2000 × mem 4000–5500 MHz** | A **2D sweep** — core crossed with memory clock, an axis the V100 set lacks entirely. Plus GTX 2070 Super, 400 rows. |
+| `data/external/gtx1080ti-*.csv` | **Consumer** GTX 1080 Ti, 600 rows, 30 apps, **core 1600–2000 × mem 4000–5500 MHz** | A **2D sweep** — core crossed with memory clock, an axis the V100 set lacks entirely. Plus **RTX** 2070 Super, 400 rows — ⚠️ this line said *GTX* 2070 Super until 2026-09-19; the filename is `gtx2070s` but the product is an **RTX**. |
 | `data/external/all-gpus.json` | 2,824 GPUs, numeric specs (sms, tdp, memoryBandwidth, memoryBus, processSize, clocks). Apache-2.0 | Activates the specs-conditioning extension point in `curve_model.py`. **Contains the RTX 5060 Ti.** |
 | `data/external/benchmarks.csv` | ~500 consumer cards, 422 with wattage (mining hashrate/W) | External sanity check on perf-per-watt *ordering* across cards. Not training data. |
 
@@ -184,8 +184,45 @@ optimum there. 🔑 **That is the same HKBU group whose V100 dataset this projec
 Mei et al. (HotPower 2013) reported ~19% savings below default on a GTX 480.
 
 **What survives is narrower and still worth stating:** the two *downloadable, reusable* datasets
-this project places on a common axis sweep a window only 22 points wide around their own default,
-so **they** cannot locate an optimum.
+this project places on a common axis sweep a window only 22 points wide around their own default.
+
+⛔ **THIS SENTENCE ENDED "so THEY CANNOT LOCATE AN OPTIMUM" UNTIL 2026-09-19. THAT IS TOO
+CATEGORICAL, AND THE COUNTER-EVIDENCE WAS INSIDE THE FILES THE WHOLE TIME.** Recomputed here from
+`data/external/`, minimum energy per application as `1 / (time × power)` over the full
+core × memory grid:
+
+| artifact | apps | best at LOW core edge | **interior** | best at HIGH core edge |
+|---|---:|---:|---:|---:|
+| GTX 1080 Ti | 30 | 8 | **4** | **18** |
+| RTX 2070 Super | 20 | 9 | **7** | 4 |
+
+✅ **The high-edge column is not news — it is the "At ceiling" column of the table above** (60% and
+20%), independently re-derived. 🔑 **The INTERIOR column is new, and it is what bounds the claim:
+4 of 30 and 7 of 20 applications DO have their optimum bracketed by these grids.** The defensible
+form is *"these grids often fail to bracket a workload's optimum"*, and it must say whether
+"optimum" means the best sampled grid point or the unconstrained physical one.
+
+⚠️ **AND A DISCREPANCY WITH THE AUTHORS THAT IS NOT RESOLVED HERE.** §2.7 leans on Wang et al.
+reporting that their optimum sits *"close to the allowed lowest setting"*. A raw-table energy argmax
+on the released GTX 1080 Ti CSV puts **18 of 30 at the HIGHEST** sampled core clock and only 8 at the
+lowest. **Do not present the raw-grid computation as a reproduction of their model-derived figure.**
+Candidate explanations, none checked: their paper reports **20** benchmarks against the CSV's **30**
+applications, theirs is a **fitted** optimum rather than a grid argmax, and their energy is
+system-scope against a 37 W idle floor. 🛑 **Someone needs to read §5.1.1/§5.2 and Figure 4 against
+these counts before the paper leans further on the authors-against-their-own-artifact strategy.**
+
+⚠️ **Two smaller corrections from the same audit.** The two tables are **one lineage, not two
+independent ones** — `GPU-DVFS-Job-Schedule` republishes `NV-DVFS-Benchmark`'s GTX 1080 Ti file
+unchanged and adds the RTX 2070 Super. And **"widely reused" is NOT supported**: a GitHub code
+search for each exact filename found only the source repository, which had 15 stars and one fork.
+**"Publicly reusable" is supported; "widely reused" is not** — citation of a paper is not reuse of
+its CSV.
+
+🔑 **A provenance lesson fell out of checking the audit's file hashes.** Its SHA-256 values do not
+match our local copies — and **converting ours to CRLF reproduces both of its hashes exactly**. The
+content is identical; one of the two retrieval paths normalised line endings and **it cannot be
+told from inside which**. ⛔ **Never publish a hash for a third-party file without recording the
+retrieval path and the line-ending convention beside it.**
 
 ⛔ **THE SECOND HALF OF THAT SENTENCE - "no prior source was found making that specific criticism
 of those specific artifacts" - IS FALSE, FOUND 2026-09-13.** The criticism is made by the dataset's
