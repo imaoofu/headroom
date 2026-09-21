@@ -8,6 +8,12 @@ specific day and draws from this list; **this is the list.**
 proposal, the citation gate, the dataset package. None of it needs a card, and none of it is a
 fallback for bench time that was available and went unused.
 
+🆕 **The 5060 Ti's twelve items have their own page: [`GPU-WORKLIST-5060TI.md`](GPU-WORKLIST-5060TI.md).**
+They sequence differently from every other card's — no expiry, so the binding constraints become
+contamination on the operator's own machine and the P1 slot chain — and four of them **batch into
+one 65-minute stock block** that this page's per-item table cannot express. ⚠️ **That page does not
+outrank this one:** if a card that leaves is reachable on a given day, its items come first.
+
 **Roughly 19 hours of bench work remains. About 10 of it is on cards that leave.**
 
 | card | remaining | expires? |
