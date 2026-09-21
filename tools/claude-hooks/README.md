@@ -26,6 +26,37 @@ data.
 that list was caught by a test. This is the one class that no test in the repository can see,
 because the tests read the same files.
 
+### ✅ DEMONSTRATED 2026-09-21, not argued — and the guard did NOT cover it
+
+The paragraph above was a design argument until an **OpenAI Codex** agent, running on the same
+machine with write access to this repository, was asked to change one voltage reading in
+`rtx3070ti-20260825/hwinfo-silent/…_voltage.csv` — 855 MHz, **0.819 → 0.900 V**. It did. Then,
+with the altered file in place, **every gate this project has passed:**
+
+| gate | result on corrupted data |
+|---|---|
+| `analysis/audit_claims.py` | **284 of 284 claims verified against the CSVs** |
+| `python run_tests.py` | **828 checks across 24 suites, all passed** |
+| `build_data_manifest.py --check` | **exit 0** |
+| `verify_citations.py --check` | **exit 0** |
+
+🔑 **Four green gates on data that had been edited by hand minutes earlier.** The file was restored
+from git; nothing was lost. **What the exercise cost is the belief that the hooks close this.**
+
+⛔ **THE GUARD IS PER-HARNESS, AND THEREFORE PER-AGENT.** `.claude/settings.json` wires it into
+Claude Code and nothing else. A second agent in the same working tree is simply outside it, and
+`.codex/hooks.json` — generated as a mirror — **did not fire**: this machine has no Codex
+`config.toml` and no global hook config, so it is decoration.
+
+🛑 **So the honest statement of what `guard_measurement_files.py` does: it stops ONE agent from
+making an accident. It is not an integrity control and must never be cited as one.**
+
+✅ **What would actually close it is DETECTION, not prevention** — a content hash per measurement
+file, verified in CI. `data/MANIFEST.json` already censuses 367 files with `path`, `category`,
+`rule`, `driver` and more, and **carries no hash of any kind**. Adding one and checking it is
+agent-agnostic, survives a harness nobody has heard of yet, and is the only version of this that
+does not need updating every time a new tool gains write access. **Not yet built.**
+
 ## Why the test suite is NOT in a hook
 
 The three gates are not interchangeable:
