@@ -11,6 +11,7 @@ answers get:
 | **C — adversarial audit** | ⛔ **Retracted the XBAR mediation claim.** Three claims verified against our committed data |
 | **1 — load-floor audit** | ⛔ **Retracted four clauses of the CONTRIBUTION SENTENCE.** Seven claims recomputed here; all seven held |
 | **2 — §2.7 artifact range** | ⛔ *"They cannot locate an optimum"* is too categorical — **4 of 30 and 7 of 20 applications have interior optima**. Every boundary count reproduced |
+| **09-21 / 09-22 — time-join tooling, datasheet, citation screen** | ✅ Time join **ran clean on hardware across 61 sweeps, 775 points**. Inventory counts exact. ⚠️ Cited SBAC-PAD 2020's Table IV without flagging that it **relocates the optimum**, which narrowed a live claim once read here |
 | **6 — predictor audit** | ⛔ **The 2.90x is ONE configuration**, the 720 mV floor is **unidentified across 31 mV**, and the fine grid puts the optimum **158 MHz below the floor's end**. **Eight claims recomputed; all eight held to three decimals.** The most consequential external finding this project has had |
 
 🔑 **It has not yet produced a claim that failed verification.** The droop hypothesis was refuted,
@@ -19,10 +20,12 @@ being right.
 
 ---
 
-📤 **THE PROMPT TO SEND NEXT IS WRITTEN OUT IN FULL: [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md)** —
-an adversarial audit of the **curve predictor and its regret metric**, which is job 6 below promoted
-to the front. It is the last headline claim that has never been audited, and the two that were both
-produced retractions.
+📤 **THE PROMPTS TO SEND NEXT ARE IN [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md), rewritten 2026-09-22.**
+🆕 **GPT now gets IN-REPO work**, not only searches: a session preamble of hard rules (`data/` is read-only,
+no commits, a GPU-quiet check before any test run), then six jobs. Job 1 audits the 09-22 results,
+Job 2 builds the data hash gate, Job 3 registers the Session D analysis in advance, Job 4 adds DOI
+citation checks, Job 5 is literature, and Job 6 is a small sweep-tool fix.
+~~The predictor audit that stood here was delivered 2026-09-20 (item 6 below).~~
 
 ---
 
@@ -213,7 +216,8 @@ no unseen configuration test is available. Do not assign this item again as open
 
 ⛔ **Anything already settled.** The consumer-optimum claim (four reformulations failed), the
 narrow-window claim in its broad form, "we measured the constant-voltage region on consumer NVIDIA"
-(Guerreiro 2018), "nobody modified a V/F relationship and re-found the optimum" (Mendes 2022).
+(Guerreiro 2018), "nobody modified a V/F relationship and re-found the optimum" (⛔ **Mendes SBAC-PAD 2020**, Table IV —
+this said "Mendes 2022" until 2026-09-22, and the 2022 paper does NOT locate an optimal frequency).
 
 ⛔ **To write into the paper.** It files research records; the paper is changed here, after
 verification, by a person who has read the source.
