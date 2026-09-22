@@ -182,6 +182,22 @@ Both scripts also run clean under the task's exact invocation,
 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...`, which is a different code path
 from running them in an open shell.
 
-⚠️ **Still unproven: the wrapper has never driven a real sweep.** Every test above used
+~~⚠️ **Still unproven: the wrapper has never driven a real sweep.** Every test above used
 `-WhatIfOnly` or exercised the logging tool alone. The first live run should be a short one
-you are present for.
+you are present for.~~
+
+✅ **PROVEN 2026-09-22, with the operator absent: 61 of 61 sweeps.** Every sweep and every log stop
+exited 0. Every log was non-empty and recorded **118–121 rows per minute** against the 120 expected
+at 0.50 s. That covered 4.6 hours of sweeps between 08:59 and 14:29, including Afterburner profile
+changes verified by memory clock. Each run's `wrapper-result.json` is in
+`C:\headroom-benchesults\`. ⚠️ **The scheduled task was never registered**; that day's runs
+were driven from an already-elevated agent shell. **Two things still need a person:** opening
+HWiNFO and its Sensors window, because launching it triggers UAC, and keeping the machine awake and
+un-rebooted.
+
+# `experiments/`: multi-sweep runners built on the wrapper
+
+| script | what it is |
+|---|---|
+| `Run-ActivityAB.ps1` | the activity A/B test, `REGISTERED-PREDICTIONS.md` §5: uptime gate, two warm-ups, then S A A S × 3 on the stock `4i` grid. Scored by `analysis/score_activity_ab.py` |
+| `Start-ActivityLoad.ps1` | the "active" condition: a logged, scripted proxy for agent activity. Changes no GPU state |

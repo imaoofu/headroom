@@ -568,6 +568,52 @@ number that appears in the paper's headline mechanism.
 🛑 **Keep the raw HWiNFO log again**, and record the per-point temperatures — they are the
 independent variable this time, not a footnote.
 
+## 5. RTX 5060 Ti: do isolated throughput losses come from ACTIVITY? Registered 2026-09-22, PENDING
+
+**Why.** On 2026-09-22, three stock `4i` replicates lost 8–11% at isolated points: **4, then 2, then
+0** degraded points, while the driving agent went from busy to silent. An outside audit
+(`docs/gpt-findings/2026-09-22-5060ti-session-results-audit.md`) found that **agent activity, run
+order and time since a cold start all changed together**. The data cannot say which mattered, and
+"replicate and take the maximum" rests on the answer.
+
+**Design, fixed before collection.** Runner `tools/hwinfo-logging/experiments/Run-ActivityAB.ps1`,
+scorer `analysis/score_activity_ab.py`, both committed with this entry.
+
+- Stock Profile 3, verified by memory clock under load. `gemm`, 1380–1760 MHz, 13 points,
+  ascending: the grid the losses were found on.
+- **Warm-up removed:** the run waits for **30 minutes of uptime**, then does **two throwaway
+  warm-up sweeps, excluded from scoring**.
+- **Order balanced:** **S A A S × 3**, giving 6 silent and 6 active runs, so a linear time trend
+  cancels.
+- **Only activity differs.** Active runs start `Start-ActivityLoad.ps1` once the GPU is under
+  load. It is a logged proxy for the agent's work: `nvidia-smi pmon` every 5 s, plus a 2 s CPU
+  burst and a full-screen capture every 15 s. Both conditions do identical load-detection polling.
+
+**Scoring, fixed now.**
+- Envelope: the best throughput at each target across the 12 scored runs.
+- Degraded point: **more than 2% below** the envelope.
+- D_A and D_S are the degraded-point totals in active and silent runs.
+
+| outcome | rule | meaning |
+|---|---|---|
+| **activity supported** | D_A ≥ D_S + 4 **and** ≥ 3 of 6 active runs hit | the proxy reproduces the losses on a warm card, with order balanced |
+| **not supported for this proxy** | D_A ≤ D_S + 1 | the scripted activity adds nothing. ⚠️ It does **not** clear real agent activity, which also streams into an app window |
+| inconclusive | anything between | report both totals, no verdict |
+| other cause | D_S ≥ 3 | losses occur in silence on a warm card |
+| none at all | D_A + D_S = 0 | cold start and real activity are still **not separated** |
+
+**Prediction, made now:** **activity supported.** The 2026-09-22 losses fell as activity fell, and
+did not track temperature.
+
+⛔ **If a threshold proves wrong after the data exists, report the registered verdict AND the
+revised one, never only the revised one.** One chip, one session, a scripted proxy.
+
+**To run:** Raymond opens HWiNFO and its Sensors window, which needs UAC. Then, from an elevated
+shell: `powershell -ExecutionPolicy Bypass -File tools\hwinfo-logging\experiments\Run-ActivityAB.ps1`
+(~85 minutes plus the uptime wait). The driving agent stays silent until it exits.
+
+---
+
 ## Safety envelope — these cards are going to be sold
 
 **The hardware risk of a floor manipulation is low and should be stated plainly rather than
