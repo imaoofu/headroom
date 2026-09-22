@@ -597,19 +597,23 @@ maximum rather than a flattened core curve, and its outcome is FPS rather than m
 undervolting imposes an otherwise invisible XBAR ceiling and proposes changing the xbar ratio in
 mVolt+ or setting a voltage ceiling instead. **Never write "no workaround has been published."**
 
-🟡 **A recipe matching the repair's SHAPE also predates it** — a 2022 Reddit "Method 4" post
-describing retention of stock curve points below the target voltage. ⚠️ **NOT VERIFIED HERE**, and
-the URL is known: `reddit.com/r/nvidia/comments/wghb9d/i_present_to_you_method_4_of_undervolting_your_gpu/`
-(recorded in `docs/gpt-findings/2026-09-18-xbar-prior-art.md`). This rests on the outside reader's
-report alone. Treat as an unconfirmed lead until someone opens it.
+⛔ **METHOD NUMBER CORRECTED 2026-09-22.** This paragraph used to say a 2022 Reddit
+*“Method 4”* retained stock curve points below the target. GPT opened the original
+[`wghb9d` post](https://www.reddit.com/r/nvidia/comments/wghb9d/i_present_to_you_method_4_of_undervolting_your_gpu/):
+that shape is its **Method 3**. Method 4 keeps the lowest idle points stock, then
+gradually lifts the intervening points. The error entered when a post title was
+substituted for the method definition inside it. The stock-lower/flat-upper shape
+predates this work; the bandwidth diagnosis and advance repair prediction are the
+narrower distinction. See `docs/gpt-findings/2026-09-22-queue-literature-and-datasheet-check.md`.
+This source read is a GPT research record, pending independent project review.
 
-⛔ **THIS SAID "REDDIT BLOCKS AUTOMATED RETRIEVAL FROM THIS ENVIRONMENT" UNTIL 2026-09-21. THAT
+⛔ **HISTORICAL ACCESS NOTE, SUPERSEDED 2026-09-22.** THIS SAID "REDDIT BLOCKS AUTOMATED RETRIEVAL FROM THIS ENVIRONMENT" UNTIL 2026-09-21. THAT
 ATTRIBUTES THE BLOCK TO THE WRONG SIDE.** Re-tested that day: the in-app browser refuses both
 `reddit.com` and `old.reddit.com` as *"not allowed due to safety restrictions"*, and `WebFetch`
 returns *"unable to fetch from www.reddit.com"*. **Both are this environment's own domain policy,
 not Reddit's anti-bot defences.** 🔑 The wrong reason points at the wrong fix: "Reddit blocks us"
-invites trying a cleverer retrieval tool, when in fact **no tool running in this session will ever
-reach it.** ✅ **The cheapest close is Raymond opening the URL himself and pasting the text** —
+invites trying a cleverer retrieval tool, when in fact ~~**no tool running in this session will ever
+reach it.**~~ GPT's web retrieval did open it on 2026-09-22. ~~**The cheapest close is Raymond opening the URL himself and pasting the text**~~ —
 thirty seconds, and it yields the primary-source read this file's citation discipline demands.
 ⚠️ **Do not settle for a third-party Reddit mirror.** That is the "convenient summary" that has
 already produced four citation errors here. **If it holds, the curve shape
@@ -730,7 +734,7 @@ and two architectures.** Do not re-derive it.
 
 | configuration | chip | arch | floor V | floor ends | measured optimum | |
 |---|---|---|---|---|---|---|
-| stock | 5060 Ti | Blackwell | 0.720 | **1560-1590** ⬅ refined | 1537 | ✅ |
+| stock | 5060 Ti | Blackwell | 0.720 | **1567-1575** ⬅ refined again 2026-09-22 | 1537 | ✅ |
 | split (P5) | 5060 Ti | Blackwell | 0.720 | 1530 | 1537 | ✅ |
 | repair (P2) | 5060 Ti | Blackwell | 0.720 | 1530 | 1537 | ✅ |
 | full tune (P4) | 5060 Ti | Blackwell | 0.720 | 2002 | 2002 | ✅ |
@@ -792,6 +796,15 @@ check. Two sweeps, 1380-1760 MHz, 13 points, ~31 MHz apart, stock Profile 3, dri
 non-monotonicity here** — whatever the 2060 Super is doing, this card does not do it.
 
 ⚠️ **BUT THE FLOOR ENDS LATER THAN THIS FILE SAID. 1537 was never measured; it was inferred.**
+✅ **AND THE 30 MHz GAP IS NOW CLOSED TO 8 MHz, 2026-09-22.** Worklist item **4h** swept
+**1530-1620 in 13 points (~7.5 MHz)**, twice, stock Profile 3, at 0.50 s sampling:
+**0.720 V holds through 1567 and first rises to 0.730 at 1575.** Both replicates agree at every
+point. **The floor ends between 1567 and 1575 MHz** — quote that, not the older bracket.
+`data/frequency-sweeps/5060ti-finefloor-20260922/`. ⚠️ **It changes no verdict** — the suite grid
+is 158 MHz and the rule needs only half a step — but it replaces a bracket with a measurement,
+after this file carried an *inferred* 1537 for weeks.
+
+The superseded reading, kept because the sequence is the useful part:
 0.720 V still holds at **1560**, and the first rise is at **1590**, so the floor ends somewhere in
 between. The old figure came from a coarse grid whose nearest points were 1545 (0.720) and 1702
 (0.755) — a 157 MHz gap with nothing in it.

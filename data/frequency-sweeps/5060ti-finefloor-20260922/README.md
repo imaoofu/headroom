@@ -166,3 +166,41 @@ attributable at all.
 ✅ **Corroboration of the dither finding, unlooked for:** `desc-r1` reports **0.738 V** at 1620 where
 r3 reports 0.740. That is the 0.735/0.740 mixture showing up in the median — the same point 4i
 independently flags at a 38% minority.
+
+---
+
+# 4h — the floor end, pinned. **1567–1575 MHz.**
+
+Two ascending replicates, **1530–1620 MHz in 13 points (~7.5 MHz)**, stock Profile 3, 0.50 s
+sampling. Closes the 30 MHz gap the coarser grids left.
+
+| achieved MHz | 1545 | 1552 | 1560 | **1567** | **1575** | 1582 | 1590 |
+|---|---|---|---|---|---|---|---|
+| r1 | 0.720 | 0.720 | 0.720 | **0.720** | **0.730** | 0.730 | 0.730 |
+| r2 | 0.720 | 0.720 | 0.720 | **0.720** | **0.730** | 0.730 | 0.730 |
+
+✅ **The floor ends between 1567 and 1575 MHz.** Both replicates agree at every one of the thirteen
+points, and throughput agrees between them to within 0.2%.
+
+**The sequence this number has been through is the useful part:**
+
+| when | floor end | how |
+|---|---|---|
+| until 2026-09-18 | "1537" | **inferred**, never measured — nearest coarse points were 1545 and 1702 |
+| 2026-09-18 | 1560–1590 | measured at ~31 MHz |
+| **2026-09-22** | **1567–1575** | measured at ~7.5 MHz, replicated |
+
+⚠️ **It changes no verdict.** The suite grid is 158 MHz wide and the rule only needs a prediction
+to land within half a step, so every conclusion built on the floor end stands unaltered. This
+replaces a bracket with a measurement — which matters because this project carried an inferred
+figure as though it were measured for weeks.
+
+⚠️ **No claim module had to change.** Checked by grepping `analysis/claims_*.py` for the
+superseded extract, per CLAUDE.md's rule that a finer measurement means grepping the claims for the
+file it replaces. The 1560/1590 hits in `claims_consumer.py` are `PLATEAU_TARGETS`, a band list and
+a bootstrap interval — unrelated. CLAUDE.md's own prose did carry it, in two places, and both were
+corrected.
+
+✅ **Dither shows up here too, independently.** At 1605 MHz achieved, r1 medians **0.735** and r2
+medians **0.740** — the two runs straddle a code boundary at the same frequency, which is what a
+genuinely dithering point looks like when you only keep the median.
