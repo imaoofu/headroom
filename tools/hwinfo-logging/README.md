@@ -102,3 +102,86 @@ missing directory, existing file, both switches — are pure and cheap to cover.
 currently unverified except by reading.** It does not launch HWiNFO itself, deliberately: the
 splash and the update nag are extra state to get wrong, and a run that begins by guessing at
 dialogs is not a run worth having.
+
+---
+
+# The unattended chain
+
+Three pieces. Register once, then every run is one unelevated command.
+
+```
+agent / any unelevated shell
+  └─ writes C:\headroom-bench\job.json
+  └─ schtasks /run /tn headroom-bench
+       └─ Scheduled task, HIGHEST PRIVILEGES, runs one FIXED script
+            └─ Invoke-LoggedSweep.ps1
+                 ├─ preflight: power limit + pmon, REFUSES on a busy card
+                 ├─ Invoke-HwinfoLogging.ps1 -Start
+                 ├─ Invoke-FrequencySweep.ps1   (needs admin; has it)
+                 ├─ Invoke-HwinfoLogging.ps1 -Stop   (in `finally`)
+                 └─ writes wrapper-result.json
+```
+
+## Setup, once
+
+```powershell
+.\Register-BenchTask.ps1        # from an ELEVATED shell
+```
+
+Then per run: write the job, `schtasks /run /tn headroom-bench`, read
+`C:\headroom-bench\results\<stamp>_<label>\wrapper-result.json`.
+
+## 🛑 What registering the task authorises
+
+**Standing elevated execution of ONE FIXED SCRIPT.** That is why the job file is treated as a
+*request* and never an instruction:
+
+| field | how it is constrained |
+|---|---|
+| `workload` | matched against a **whitelist of 13 names**. The job cannot supply a command line — the wrapper builds it |
+| output path | **derived** from the label, never supplied, so path traversal has nothing to traverse |
+| `label` | `^[a-z0-9][a-z0-9-]{2,63}$` |
+| `minMhz` / `maxMhz` | integers 200–4000, max must exceed min |
+| `frequencyCount` | 3–40 |
+| `iterations` | digits and commas only |
+| `appliedSettings` | **required**, 20–600 chars — it is the one field nothing can reconstruct afterwards |
+
+Verified refusals: `"label": "../escape"` and `"workload": "gemm; calc.exe"` both exit 2 without
+touching the GPU. The task is registered with **no trigger** — a bench run must never start
+because a clock said so; the machine has to be verified quiet first.
+
+## ⛔ Keep non-ASCII out of string literals in these .ps1 files
+
+Found 2026-09-21, before any of this ran. None of this repo's PowerShell tools carry a BOM, so
+PowerShell 5.1 reads them as ANSI. A UTF-8 emoji becomes several cp1252 bytes, and **inside a
+quoted string that breaks the terminator and the whole script fails to parse** — which would have
+surfaced as a bare syntax error inside the scheduled task, with no sweep and no log.
+
+🔑 **In a comment the same mangling is harmless**, which is exactly why the emoji already present
+in `Invoke-FrequencySweep.ps1` and `Sync-Kit.ps1` have never caused trouble and this looked safe.
+Comments yes, strings no.
+
+## Verified
+
+Three consecutive start/stop cycles in one HWiNFO session, distinct names, one in a directory
+with spaces — because a four-run session drives this four times and everything before it had
+tested exactly **one** cycle from a freshly opened window:
+
+| cycle | file | start | stop | bytes | rows |
+|---|---|---|---|---|---|
+| 1 | `cycle-1.csv` | 0 | 0 | 93980 | 30 |
+| 2 | `cycle 2 with spaces.csv` | 0 | 0 | 93890 | 30 |
+| 3 | `cycle-3.csv` | 0 | 0 | 91766 | 29 |
+
+First data timestamps 20:47:19 / 20:47:43 / 20:48:06 — sequential and non-overlapping, so each
+file is its own and none continues a previous log. **That was the failure worth ruling out:** the
+Save As dialog remembers the last filename, and a partial replace would silently append a later
+run to an earlier log.
+
+Both scripts also run clean under the task's exact invocation,
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...`, which is a different code path
+from running them in an open shell.
+
+⚠️ **Still unproven: the wrapper has never driven a real sweep.** Every test above used
+`-WhatIfOnly` or exercised the logging tool alone. The first live run should be a short one
+you are present for.
