@@ -39,11 +39,16 @@ $wl   = "$py $repo\tools\frequency-sweep\gpu_workload.py --workload gemm --json"
 ```
 
 ⚠️ **Start an HWiNFO log before each run and stop it after.** One log must never span two
-configurations — the join bins by core clock and cannot separate them afterwards.
+configurations: historical clock joins cannot separate them, and a separate log makes the
+profile state auditable even when the new benchmark-window join is available.
 
 ---
 
-# 🥇 4b — the descending fine floor. **12 min. Do this one first.**
+# 4b — the descending fine floor. **12 min. Run after 4i in the stock block.**
+
+**ORDER CORRECTED 2026-09-21.** This heading previously said *"Do this one first."* It was written
+before `GPU-WORKLIST-5060TI.md` grouped 4i, 4b, and 4h into a same-day stock block. In that block,
+4i is the ascending reference, then 4b runs descending against it at the same logging interval.
 
 **The floor the entire project rests on has only ever been measured in one direction.** Registered
 as §4d. Today's ascending run gives 0.720 V flat across 1378–1560; if the descending run agrees,
@@ -130,6 +135,13 @@ step. This is for stating the floor end as a measured number rather than a brack
 Today's logs sampled at the main machine's **2.00 s**, giving only **5–9 samples per point**.
 Set `SensorInterval=500` in HWiNFO (or copy the kit's `HWiNFO64.INI`) and re-run 4a for ~4× the
 samples.
+
+When running the stock block, use this ascending command **before 4b**, after applying Profile 3
+and starting a fresh 0.50 s HWiNFO log:
+
+```powershell
+& "$repo\tools\frequency-sweep\Invoke-FrequencySweep.ps1" -SessionLabel "5060ti-finefloor-gemm-asc-050s" -WorkloadCommand $wl -MinFrequencyMhz 1380 -MaxFrequencyMhz 1760 -FrequencyCount 13 -AppliedSettings "stock Profile 3, PL 180 W default, ascending order, HWiNFO 0.50 s"
+```
 
 🔑 **The 2060 Super dithered 23–26% between adjacent codes; whether the 5060 Ti's 5 mV grid does is
 unknown**, and 5–9 samples per point cannot answer it. If it dithers, sub-code voltage resolution is

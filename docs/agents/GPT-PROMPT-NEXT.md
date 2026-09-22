@@ -1,4 +1,9 @@
-# The next prompt — send this one
+# Historical prompt — completed 2026-09-20
+
+⛔ **Do not send this as new work.** The predictor audit requested below is archived in
+[`2026-09-20-curve-predictor-regret-adversarial-audit.md`](../gpt-findings/2026-09-20-curve-predictor-regret-adversarial-audit.md).
+The citation and datasheet follow-up is recorded in
+[`2026-09-22-queue-literature-and-datasheet-check.md`](../gpt-findings/2026-09-22-queue-literature-and-datasheet-check.md).
 
 **Written 2026-09-19, after jobs 1 and 2 both landed and both produced retractions.**
 
@@ -97,10 +102,10 @@ novelty-flavoured answer it returns.
 ## What is still queued behind these
 
 1. **The ~95 citing papers judged by title only** — the largest remaining literature hole.
-2. **Verify the MP2884A datasheet** — 6.25 mV/LSB command path against 1 mV/LSB `READ_VOUT`. A short
-   errand, load-bearing in `CLAUDE.md`, and nobody here has opened the PDF.
-3. **The blocked retrievals** — Reddit "Method 4" (August 2022) above all. If it holds, the repair
-   curve's *shape* is published prior art.
+2. **MP2884A datasheet verified 2026-09-22** — 6.25 mV/LSB command path against 1 mV/LSB
+   `READ_VOUT`, directly checked in MPS Rev. 1.02. [Source record](../gpt-findings/2026-09-22-queue-literature-and-datasheet-check.md).
+3. **Blocked retrievals partially resolved 2026-09-22** — Reddit's stock-lower-curve recipe is
+   Method 3, while Method 4 gradually raises the middle. Overclock.net and TechPowerUp remain unread.
 
 ⛔ **Still do not ask it:** anything settled (`GPT-QUEUE.md` lists them), anything that writes into
 the paper, and anything the hardware settles faster — `GPU-WORKLIST.md` item 4j answers a real

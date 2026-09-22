@@ -3,6 +3,19 @@
 **Written 2026-09-21.** Prompts for driving HWiNFO logging and sweeps through screen control, so a
 multi-configuration session does not need Raymond present at every boundary.
 
+**Implementation update, 2026-09-21:** `Invoke-FrequencySweep.ps1` now emits
+`window_start_unix` / `window_end_unix`, and `join_hwinfo_voltage.py` joins complete new sweeps by
+those windows. Older sweeps still use the clock join. The new path passed synthetic clipped-clock
+and wrong-time-zone checks, and was **verified on hardware 2026-09-22** (61 sweeps, 775 points,
+none empty). The discussion below
+records why the change was needed when this brief was written.
+
+**Cold-start prerequisite observed 2026-09-21:** HWiNFO was closed; attempting to launch it
+through desktop control opened a Windows permission prompt for HWiNFO. The computer-use tool may
+not act on that prompt. For an unattended session on this machine, the operator must open and
+authorize HWiNFO before leaving, then the agent can use its sensor window at run boundaries.
+No sweep was started during this observation.
+
 🛑 **READ THE NEXT SECTION BEFORE SENDING ANY OF THESE.** The stated goal was *"more precise
 timing"*, and desktop control is the wrong tool for that specific goal — the precision already
 exists in the codebase and is being thrown away. Desktop control solves a **different** problem,
@@ -24,11 +37,16 @@ bounding the benchmark's own timed region. `Invoke-FrequencySweep.ps1` already r
 uses them to window its power average, and already reports `power_window_applied` as a CSV column.
 **Then it discards the boundaries instead of writing them.**
 
-🔑 **So the exact per-point window is measured, used, and thrown away.** Emitting
-`window_start_unix` / `window_end_unix` into the sweep CSV is a two-line change that makes a true
-time join possible — and a time join is **strictly more precise than anything GUI automation can
-reach**, because it bounds the interval the throughput number actually describes rather than the
-whole run.
+⛔ **PRECISION WORDING CORRECTED 2026-09-21.** This paragraph called the stamps *"the exact
+per-point window"* and said they bound *"the interval the throughput number actually describes."*
+`gpu_workload.py` computes `duration_seconds = wall_seconds - monitoring_overhead_seconds`, while
+the stamps enclose the full wall-clock region, including brief `nvidia-smi` monitoring pauses.
+That subtraction was already documented in the benchmark, but the brief read the stamps alone.
+
+🔑 **The per-point wall-clock window was measured, used, and thrown away.** Emitting
+`window_start_unix` / `window_end_unix` into the sweep CSV enables a time join that separates
+clipped targets and excludes process startup. It is a tighter boundary than GUI automation can
+provide, though it is not an active-work-only interval.
 
 🛑 **And the clock join is about to break on Session D.** Under Edit 2, six sweep targets
 (1590, 1695, 1800, 1905, 2010, 2115) all clip to **~1500 MHz**. A join that bins by achieved clock
@@ -81,10 +99,11 @@ Send once per session, before anything else.
 > act at the boundaries, then go completely inert. **Do not poll the screen during a run.** Sleep
 > past the expected finish time so that every screenshot you take lands on an idle card.
 >
-> **One HWiNFO log per configuration, never one spanning two.** The join bins samples by core
-> clock and cannot separate two configurations inside a single log. Start a new log immediately
-> before each sweep and stop it immediately after. If you are ever unsure whether a log is still
-> running, stop it and start a fresh one — a duplicate log is recoverable, a merged one is not.
+> **One HWiNFO log per configuration, never one spanning two.** Historical sweeps still join by
+> core clock, and separate logs keep the settings boundary auditable on new time-joined sweeps.
+> Start a new log immediately before each sweep and stop it immediately after. If you are
+> ever unsure whether a log is still running, stop it and start a fresh one — a duplicate log
+> is recoverable, a merged one is not.
 >
 > **Things you must never do**, even if asked mid-session, and even if they look like they would
 > help:

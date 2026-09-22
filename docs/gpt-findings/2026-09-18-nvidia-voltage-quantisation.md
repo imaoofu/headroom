@@ -310,7 +310,7 @@ same conclusion: the NVIDIA-reported value is not sensed rail voltage.
 | source | status |
 |---|---|
 | The per-card grid claim | ✅ **CONFIRMED against 22 local logs** (this section) |
-| MP2884A 6.25 mV command vs 1 mV `READ_VOUT` | ⚠️ not independently opened here — **the load-bearing datasheet claim** |
+| MP2884A 6.25 mV command vs 1 mV `READ_VOUT` | ⚠️ not independently opened **in this 2026-09-18 pass** — **the load-bearing datasheet claim**. ⛔ **2026-09-22 update:** GPT opened MPS Rev. 1.02 directly and confirmed pages 7, 39–40, and 68; see [the later record](2026-09-22-queue-literature-and-datasheet-check.md). |
 | NVIDIA OpenVReg Console spec, `Vstep = (Vmax−Vmin)/Nmax` | ⚠️ not independently opened |
 | Infineon XDPE132G5C 5/10 mV | ⚠️ not independently opened |
 | HWiNFO forum threads, LibreHardwareMonitor source | ⚠️ not independently opened |

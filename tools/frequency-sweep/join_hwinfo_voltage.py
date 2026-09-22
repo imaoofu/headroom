@@ -7,14 +7,15 @@ WHY THIS EXISTS
     tools/frequency-sweep/probe_nvml_fields.py). HWiNFO does read it, so every voltage statement
     in this project has to come through an HWiNFO log rather than the sweep tool itself.
 
-WHY IT BINS BY CLOCK RATHER THAN JOINING ON TIMESTAMP
-    The sweep CSV records durations per point, not absolute timestamps, so a time join would
-    have to reconstruct point boundaries from the session start plus accumulated settle and
-    measure intervals - fragile, and wrong the moment a point runs long. Binning HWiNFO samples
-    by the core clock they were taken at avoids the problem entirely: the sweep locks each
-    frequency to a distinct value and holds it for ~28 s, so samples group unambiguously.
+HOW IT JOINS
+    New sweep CSVs preserve the benchmark's absolute timed-region boundaries. Join HWiNFO's
+    dated samples to those windows when every point has valid stamps. This separates targets
+    even if the card clips several of them to the same achieved clock. Legacy sweeps have no
+    boundaries and still use clock bins; they must have distinct achieved clocks to separate.
 
-    Samples taken while the card was idle between points are discarded by a power threshold.
+    In clock mode, samples taken while the card was idle between points are discarded by a
+    power threshold. Time mode uses only the benchmark's timed region, so it keeps every
+    sample inside that interval, including a low-power reading that may be a real failure.
     Without that filter the ramp-up and ramp-down samples - which sit at boost voltage - pull
     the per-point medians upward and manufacture a voltage-frequency slope that is not there.
 
@@ -26,11 +27,13 @@ WHICH COLUMNS
     the wrong sensor.
 
 Usage:
-    python join_hwinfo_voltage.py <sweep.csv> <hwinfo.csv> [--min-power W]
+    python join_hwinfo_voltage.py <sweep.csv> <hwinfo.csv> [--join-by auto|time|clock]
 """
 
 import argparse
 import csv
+from datetime import datetime, timedelta, timezone
+import re
 import statistics
 import sys
 from pathlib import Path
@@ -44,7 +47,18 @@ CLOCK_TOLERANCE_MHZ = 25.0
 SAME_POINT_MHZ = 10.0
 
 
-def loadHwinfo(path):
+def parseUtcOffset(value):
+    """Parse an explicit offset for logs collected in another local time zone."""
+    match = re.fullmatch(r"([+-])(\d{2}):(\d{2})", value)
+    if not match or int(match.group(2)) > 23 or int(match.group(3)) > 59:
+        raise SystemExit("HWiNFO UTC offset must be signed HH:MM, for example -07:00.")
+    minutes = int(match.group(2)) * 60 + int(match.group(3))
+    if match.group(1) == "-":
+        minutes = -minutes
+    return timezone(timedelta(minutes=minutes))
+
+
+def loadHwinfo(path, includeTime=False, utcOffset=None):
     rows = list(csv.reader(open(path, encoding="latin-1")))
     header = [h.strip() for h in rows[0]]
 
@@ -55,6 +69,11 @@ def loadHwinfo(path):
     clockCandidates = findAll("GPU Clock [MHz]")
     crossbarCandidates = findAll("GPU Crossbar Clock [MHz]")
     powerCandidates = findAll("GPU Power [W]")
+
+    if includeTime and ("Date" not in header or "Time" not in header):
+        raise SystemExit("Time join needs HWiNFO Date and Time columns.")
+    dateIndex = header.index("Date") if includeTime else None
+    timeIndex = header.index("Time") if includeTime else None
 
     if not voltageCandidates or not clockCandidates:
         raise SystemExit("Could not find 'GPU Core Voltage [V]' and 'GPU Clock [MHz]' columns.")
@@ -77,7 +96,7 @@ def loadHwinfo(path):
     powerIndex = min(powerCandidates, key=lambda i: abs(i - clockIndex)) if powerCandidates else None
 
     samples = []
-    for r in rows[1:]:
+    for rowNumber, r in enumerate(rows[1:], start=2):
         needed = [clockIndex, voltageIndex]
         if max(needed) >= len(r):
             continue
@@ -88,7 +107,18 @@ def loadHwinfo(path):
             power = float(r[powerIndex]) if powerIndex is not None and powerIndex < len(r) else None
         except ValueError:
             continue
-        samples.append({"clock": clock, "voltage": voltage, "crossbar": crossbar, "power": power})
+        sample = {"clock": clock, "voltage": voltage, "crossbar": crossbar, "power": power}
+        if includeTime:
+            try:
+                localTime = datetime.strptime(f"{r[dateIndex]} {r[timeIndex]}",
+                                              "%d.%m.%Y %H:%M:%S.%f")
+            except (IndexError, ValueError):
+                raise SystemExit(f"HWiNFO row {rowNumber} has no parseable Date/Time.")
+            awareTime = (localTime.replace(tzinfo=utcOffset) if utcOffset is not None
+                         else localTime.astimezone())
+            sample["timestamp"] = awareTime.timestamp()
+            sample["utcOffsetMinutes"] = int(awareTime.utcoffset().total_seconds() / 60)
+        samples.append(sample)
 
     return samples, {"clock": clockIndex, "voltage": voltageIndex,
                      "crossbar": crossbarIndex, "power": powerIndex}
@@ -97,19 +127,55 @@ def loadHwinfo(path):
 def loadSweep(path):
     rows = list(csv.reader(open(path, encoding="utf-8-sig")))
     header = rows[0]
+    hasStart = "window_start_unix" in header
+    hasEnd = "window_end_unix" in header
+    if hasStart != hasEnd:
+        raise SystemExit("Sweep CSV has only one timed-region boundary column.")
     out = []
     for r in rows[1:]:
         if not r:
             continue
         d = dict(zip(header, r))
-        out.append({
+        point = {
             "target": int(float(d["target_frequency_mhz"])),
             "achieved": float(d["achieved_frequency_avg"]),
             "throughputGbs": float(d["bench_throughput"]) / 1e9,
             "powerW": float(d["power_avg_w"]),
             "memoryMhz": float(d.get("memory_clock_avg_mhz", "nan")),
-        })
+        }
+        if hasStart:
+            try:
+                point["windowStart"] = float(d["window_start_unix"]) if d["window_start_unix"] else None
+                point["windowEnd"] = float(d["window_end_unix"]) if d["window_end_unix"] else None
+            except ValueError:
+                raise SystemExit(f"Sweep row for {point['target']} MHz has invalid timed-region stamps.")
+        out.append(point)
     return out
+
+
+def selectJoinMode(sweep, requested):
+    """Choose time for complete new sweeps; refuse a partially stamped one."""
+    if requested == "clock":
+        return "clock"
+    stamped = [p.get("windowStart") is not None and p.get("windowEnd") is not None
+               for p in sweep]
+    anyStamp = any(p.get("windowStart") is not None or p.get("windowEnd") is not None
+                   for p in sweep)
+    if not sweep or not all(stamped):
+        if requested == "time" or anyStamp:
+            raise SystemExit("Time join requires both benchmark window stamps on every sweep point.")
+        return "clock"
+    windows = sorted((p["windowStart"], p["windowEnd"]) for p in sweep)
+    if any(start >= end for start, end in windows):
+        raise SystemExit("A benchmark timed region has a non-positive duration.")
+    if any(b[0] <= a[1] for a, b in zip(windows, windows[1:])):
+        raise SystemExit("Benchmark timed regions overlap; HWiNFO samples would be shared.")
+    return "time"
+
+
+def matchTimeSamples(samples, startUnix, endUnix):
+    """Keep dated HWiNFO samples inside the benchmark's inclusive timed region."""
+    return [s for s in samples if startUnix <= s["timestamp"] <= endUnix]
 
 
 def filterIdle(samples, minPower):
@@ -132,8 +198,8 @@ def filterIdle(samples, minPower):
 def matchSamples(samples, achievedMhz, toleranceMhz=CLOCK_TOLERANCE_MHZ):
     """Bin samples to a sweep point by the core clock they were taken at.
 
-    The sweep CSV has no absolute timestamps, so the clock itself is the join key - see the
-    module docstring. The tolerance has to be wide enough to absorb the reported clock jitter
+    Legacy sweep CSVs have no absolute timestamps, so the clock itself is the join key. The
+    tolerance has to be wide enough to absorb the reported clock jitter
     within one held point and narrow enough not to reach the neighbouring point; the grid steps
     are ~75 MHz apart at the low end, so 25 MHz leaves margin on both sides.
 
@@ -207,52 +273,89 @@ def main():
                              f"{CLOCK_TOLERANCE_MHZ}, which is written for grids stepping ~75 MHz "
                              f"or wider. A finer grid REQUIRES an explicit value - the join "
                              f"refuses rather than let neighbouring points share samples.")
+    parser.add_argument("--join-by", choices=("auto", "time", "clock"), default="auto",
+                        help="Use benchmark windows when present (auto), require them (time), "
+                             "or force legacy clock bins (clock).")
+    parser.add_argument("--hwinfo-utc-offset", type=parseUtcOffset,
+                        help="UTC offset at HWiNFO collection, e.g. --hwinfo-utc-offset=-07:00. "
+                             "If omitted, use this computer's local time zone.")
     args = parser.parse_args()
 
-    samples, indices = loadHwinfo(args.hwinfo)
     sweep = loadSweep(args.sweep)
+    mode = selectJoinMode(sweep, args.join_by)
+    samples, indices = loadHwinfo(args.hwinfo, includeTime=(mode == "time"),
+                                  utcOffset=args.hwinfo_utc_offset)
     print(f"HWiNFO columns used: {indices}")
     print(f"{len(samples)} samples, {len(sweep)} sweep points\n")
 
+    if mode == "time":
+        loaded = samples
+        offsets = {sample["utcOffsetMinutes"] for sample in loaded}
+        if len(offsets) > 1:
+            raise SystemExit("HWiNFO log spans a UTC-offset change; split it at the time change.")
+        offsetMinutes = next(iter(offsets)) if offsets else None
+        print("Joining HWiNFO samples inside each benchmark timed region (inclusive).")
+        if args.clock_tolerance is not None:
+            print("NOTE: --clock-tolerance is ignored in a time join.")
+        if args.min_power != IDLE_POWER_WATTS:
+            print("NOTE: --min-power is ignored in a time join.")
+        if args.hwinfo_utc_offset is None:
+            print("HWiNFO Date/Time interpreted in this computer's local time zone. "
+                  "Use --hwinfo-utc-offset when the log came from a different zone.")
+        else:
+            print(f"HWiNFO Date/Time interpreted at UTC offset {args.hwinfo_utc_offset}.")
+        print("All in-window power readings are kept; the idle-power filter applies only to clock joins.\n")
+    else:
+        loaded = filterIdle(samples, args.min_power)
+        print(f"{len(loaded)} of {len(samples)} samples are above {args.min_power} W and kept\n")
 
-    loaded = filterIdle(samples, args.min_power)
-    print(f"{len(loaded)} of {len(samples)} samples are above {args.min_power} W and kept\n")
-
-    tolerance = args.clock_tolerance if args.clock_tolerance is not None else CLOCK_TOLERANCE_MHZ
-    contested, totalLoaded = contestedSamples(loaded, sweep, tolerance)
-    if contested and args.clock_tolerance is None:
-        spacings = sorted({round(b["achieved"] - a["achieved"])
-                           for a, b in zip(sorted(sweep, key=lambda p: p["achieved"]),
-                                           sorted(sweep, key=lambda p: p["achieved"])[1:])
-                           if b["achieved"] - a["achieved"] >= SAME_POINT_MHZ})
-        suggested = (spacings[0] / 2 - 0.5) if spacings else tolerance / 2
-        print(f"*** REFUSING TO JOIN: {contested} of {totalLoaded} samples are claimed by more "
-              f"than one sweep point. ***")
-        print(f"The bin is +/-{tolerance:.0f} MHz and this grid steps "
-              f"{spacings[0] if spacings else '?'} MHz, so neighbouring points share samples.")
-        print("Each affected point absorbs its neighbour's readings, inflating its sample count "
-              "and pulling the median toward the wrong clock. Nothing downstream would show it.")
-        print(f"Re-run with an explicit bin, e.g.  --clock-tolerance {suggested:.0f}")
-        return 2
-    if contested:
-        print(f"NOTE: {contested} of {totalLoaded} samples are claimed by more than one point at "
-              f"this tolerance. You set it explicitly, so proceeding." + chr(10))
-    print(f"binning samples within +/-{tolerance:.0f} MHz of each point's achieved clock\n")
+        tolerance = args.clock_tolerance if args.clock_tolerance is not None else CLOCK_TOLERANCE_MHZ
+        contested, totalLoaded = contestedSamples(loaded, sweep, tolerance)
+        if contested and args.clock_tolerance is None:
+            spacings = sorted({round(b["achieved"] - a["achieved"])
+                               for a, b in zip(sorted(sweep, key=lambda p: p["achieved"]),
+                                               sorted(sweep, key=lambda p: p["achieved"])[1:])
+                               if b["achieved"] - a["achieved"] >= SAME_POINT_MHZ})
+            suggested = (spacings[0] / 2 - 0.5) if spacings else tolerance / 2
+            print(f"*** REFUSING TO JOIN: {contested} of {totalLoaded} samples are claimed by more "
+                  f"than one sweep point. ***")
+            print(f"The bin is +/-{tolerance:.0f} MHz and this grid steps "
+                  f"{spacings[0] if spacings else '?'} MHz, so neighbouring points share samples.")
+            print("Each affected point absorbs its neighbour's readings, inflating its sample count "
+                  "and pulling the median toward the wrong clock. Nothing downstream would show it.")
+            print(f"Re-run with an explicit bin, e.g.  --clock-tolerance {suggested:.0f}")
+            return 2
+        if contested:
+            print(f"NOTE: {contested} of {totalLoaded} samples are claimed by more than one point at "
+                  f"this tolerance. You set it explicitly, so proceeding." + chr(10))
+        print(f"binning samples within +/-{tolerance:.0f} MHz of each point's achieved clock\n")
 
     print(f"{'target':>7} {'achieved':>9} {'GB/s':>8} {'W':>6} {'n':>4} "
           f"{'volts':>7} {'crossbar':>9} {'xbar/core':>10}")
     merged = []
+    emptyWindows = []
     for point in sweep:
-        matched = matchSamples(loaded, point["achieved"], tolerance)
+        matched = (matchTimeSamples(loaded, point["windowStart"], point["windowEnd"])
+                   if mode == "time" else matchSamples(loaded, point["achieved"], tolerance))
         if not matched:
             print(f"{point['target']:>7} {point['achieved']:>9.1f} "
                   f"{point['throughputGbs']:>8.1f} {point['powerW']:>6.1f} {0:>4}  (no samples)")
+            if mode == "time":
+                emptyWindows.append(point["target"])
             continue
         voltage, crossbar, ratio = summarisePoint(matched, point["achieved"])
         print(f"{point['target']:>7} {point['achieved']:>9.1f} {point['throughputGbs']:>8.1f} "
               f"{point['powerW']:>6.1f} {len(matched):>4} {voltage:>7.3f} {crossbar:>9.1f} {ratio:>10.3f}")
-        merged.append({**point, "voltage": voltage, "crossbar": crossbar,
-                       "sampleCount": len(matched)})
+        entry = {**point, "voltage": voltage, "crossbar": crossbar,
+                 "sampleCount": len(matched)}
+        if mode == "time":
+            entry["hwinfoUtcOffsetMinutes"] = offsetMinutes
+        merged.append(entry)
+
+    if emptyWindows:
+        print(f"REFUSING TO WRITE: no HWiNFO samples in timed regions for targets {emptyWindows} MHz. "
+              "Check log coverage and the HWiNFO UTC offset.")
+        return 2
 
     if len(merged) >= 2:
         voltages = [m["voltage"] for m in merged]

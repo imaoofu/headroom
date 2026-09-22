@@ -134,7 +134,7 @@ Ask it cold, with the actual claim:
 
 ---
 
-# 3. The ~95 citing papers judged by title only
+# 3. PARTIAL 2026-09-22 — forward citations beyond titles
 
 **The largest remaining hole in the literature, named in `PRIOR-ART-20260913.md` and never closed.**
 Forward citations from Schoonhoven (2211.07260), Guerreiro (HPCA 2018 / TPDS 2019) and Mendes
@@ -143,9 +143,14 @@ Forward citations from Schoonhoven (2211.07260), Guerreiro (HPCA 2018 / TPDS 201
 🔑 **Two of those three were found by GPT itself**, so it is working from a citation graph it
 partly built.
 
+**Update 2026-09-22:** A fresh four-seed OpenAlex graph yielded 123 incoming edges, 109 distinct
+records, and 95 available abstracts. Relevant abstracts were screened beyond titles and close
+adjacent work was identified. Full-text review and 14 records without abstracts remain open.
+See [the dated record and inventory](../gpt-findings/2026-09-22-queue-literature-and-datasheet-check.md).
+
 ---
 
-# 4. Verify the MP2884A datasheet claim
+# 4. ✅ VERIFIED 2026-09-22 — MP2884A datasheet
 
 ⚠️ **The load-bearing documentation claim behind the voltage-grid finding, and I could not open
 it.** The assertion is that MP2884A specifies **6.25 mV/LSB** for the reference DAC and
@@ -154,34 +159,53 @@ it.** The assertion is that MP2884A specifies **6.25 mV/LSB** for the reference 
 That distinction is what separates "command path" from "sensor resolution" and it is doing real
 work in `CLAUDE.md`. **One person needs to open the PDF and confirm the two numbers and the wording.**
 
+**Update 2026-09-22:** MPS Rev. 1.02 was opened directly. Printed pages 7, 39–40, and 68
+confirm reference DAC and `VOUT_COMMAND` at 6.25 mV/LSB, and `READ_VOUT` at 1 mV/LSB
+as sensed output voltage. See [the source check](../gpt-findings/2026-09-22-queue-literature-and-datasheet-check.md).
+
 ---
 
-# 5. The blocked retrievals — it can reach what I cannot
+# 5. PARTIAL 2026-09-22 — blocked retrievals
 
 🆕 **Recorded 2026-09-18: we have different reach, in both directions.** Reddit returns 403 to me
 and GPT opened several threads; I have an authenticated `gh`, Crossref scripting, local PDFs and
 code execution.
 
-Still unread and inside its reach, not mine:
-- **Reddit "Method 4" (August 2022)** — reportedly describes retaining stock curve points below the
-  target. ⛔ **If real, the repair curve's SHAPE is published prior art** and only the diagnosis
-  plus advance prediction carries the distinction. Currently an unconfirmed lead in `CLAUDE.md`.
+Sources to resolve (the Reddit post is now read):
+- **Reddit "Method 4" (August 2022)** — ~~reportedly describes retaining stock curve points below the
+  target.~~ ⛔ **The post's Method 3 describes that shape; Method 4 is a gradual lower-curve uplift.**
+  The repair curve's shape is published prior art, and only the diagnosis
+  plus advance prediction carries the distinction. ~~Currently an unconfirmed lead in `CLAUDE.md`.~~
 - Overclock.net post 29608363 and the RTX 5090 owners' thread page 2002
 - TechPowerUp thread 300907
 
+**Update 2026-09-22:** Reddit was opened. Its stock-below-target recipe is **Method 3**;
+Method 4 gradually raises the middle of the curve. The other three links still presented
+access challenges and remain unread. See [the source check](../gpt-findings/2026-09-22-queue-literature-and-datasheet-check.md).
+
 ---
 
-# 6. Attack the regret metric and the predictor
+# 6. ✅ DELIVERED 2026-09-20 — regret metric and predictor
 
-**Not yet asked, and it is the other half of the paper.** `predict_from_curve.py` scores 0.675%
+~~Not yet asked, and it is the other half of the paper.~~ `predict_from_curve.py` scores 0.675%
 mean regret over 192 sweeps, "tying a hindsight-fitted per-configuration constant exactly while
 needing no measurement."
 
 > What is wrong with this evaluation? The comparator is fitted with hindsight on the same data.
-> 192 sweeps come from four chips and a handful of configurations. What is the effective n, and
+> ~~192 sweeps come from four chips and a handful of configurations.~~ What is the effective n, and
 > what would a fair baseline be?
 
 🔑 **Prompt 2 showed it is good at exactly this**, and it raised pseudoreplication unprompted.
+
+⛔ **CORRECTION, 2026-09-22.** The old question read *“192 sweeps come from four chips and a
+handful of configurations.”* The 192 curves actually come from **one RTX 5060 Ti**,
+four configurations, 16 run legs, and 12 repeated workloads. The project's four-card
+scope was carried into a single-model prompt without checking the model's input list.
+The [completed September 20 audit](../gpt-findings/2026-09-20-curve-predictor-regret-adversarial-audit.md)
+recomputed the table and addressed effective units, held-out baselines, full-tune removal,
+coarse-grid effects, voltage-code sensitivity, and the V100 comparison. Its 2.90×
+advantage over a global constant comes entirely from one configuration on one chip;
+no unseen configuration test is available. Do not assign this item again as open work.
 
 ---
 

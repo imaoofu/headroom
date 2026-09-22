@@ -865,6 +865,10 @@ try {
             utilization_avg_pct    = [math]::Round($utilStats.Average, 1)
             power_avg_process_w    = [math]::Round($processPowerStats.Average, 2)
             power_window_applied   = $windowApplied
+            # Preserve the benchmark's wall-clock timed region for an HWiNFO time join.
+            # These stamps remain useful even if sparse power telemetry forced a fallback.
+            window_start_unix      = if ($null -ne $workloadJson) { $workloadJson.timed_region_start_unix } else { $null }
+            window_end_unix        = if ($null -ne $workloadJson) { $workloadJson.timed_region_end_unix } else { $null }
             workload_seconds       = $workloadSeconds
             bench_seconds          = if ($null -ne $workloadJson) { $workloadJson.duration_seconds } else { $null }
             bench_wall_seconds     = if ($null -ne $workloadJson) { $workloadJson.wall_seconds } else { $null }

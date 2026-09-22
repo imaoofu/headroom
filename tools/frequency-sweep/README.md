@@ -129,6 +129,21 @@ and keeping the whole-process figure as `power_avg_process_w` for comparison. If
 missing or fewer than two samples land in the window, it falls back to the process-wide average
 and says so loudly rather than reporting a diluted number silently.
 
+Since 2026-09-21 the sweep CSV also preserves those bounds as `window_start_unix` and
+`window_end_unix`. `join_hwinfo_voltage.py` uses the benchmark windows automatically when both
+stamps are present on every point; older CSVs still join by achieved clock. A partially stamped
+CSV is refused. Time joins keep every HWiNFO reading inside the timed region, including a low-power
+reading that could signal a failed run, and refuse to write an extract if any point has no samples.
+HWiNFO writes local Date/Time without a time zone: join on the collection machine or supply
+`--hwinfo-utc-offset=-07:00` with the offset that applied when the log was collected. The tool
+records the resolved UTC offset in every time-joined extract row and refuses a log spanning an
+offset change. It has a `--join-by clock` override for comparing against the historical method.
+No existing voltage extract is changed by this update. A synthetic clipped-clock test covers the
+new path. **Verified on hardware 2026-09-22:** all 61 sweeps collected that day time-joined,
+775 points, none empty, minimum 13 samples, 1.99 samples/s recovered against a 0.50 s interval. The stamps bound
+the benchmark's wall-clock region, including brief monitoring pauses; `duration_seconds` subtracts
+those pauses, so the window is not an exact active-work-only interval.
+
 **Why this mattered more than the absolute error:** both were fixed wall-clock offsets, so each
 shrank as a fraction of the run when the sweep locked the clock lower — and they tilted the
 efficiency curve in *opposite* directions. Overhead-in-timer penalised high frequencies (pushing

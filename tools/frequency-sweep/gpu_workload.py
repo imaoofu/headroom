@@ -49,8 +49,10 @@ MEASUREMENT INTEGRITY
     are both reported alongside it so the correction is auditable rather than assumed.
 
     The timed region is also stamped in Unix epoch time (timed_region_start_unix /
-    _end_unix) so Invoke-FrequencySweep.ps1 can window its power samples to exactly the
-    interval that produced the performance number. Without that, power was averaged over
+    _end_unix) so Invoke-FrequencySweep.ps1 can window its power samples to the benchmark's
+    wall-clock region. That region includes the brief nvidia-smi monitoring pauses, which
+    duration_seconds subtracts; it is not an exact active-work-only interval. Without the
+    stamps, power was averaged over
     the whole process lifetime - including ~2.3 s of Python import and CUDA init at idle,
     which understated load power by 16% (124.77 W recorded against 148.52 W actual).
 

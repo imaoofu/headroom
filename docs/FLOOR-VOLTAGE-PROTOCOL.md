@@ -106,8 +106,9 @@ than by reading a setting — `CLAUDE.md` asserted "2 s polling" as a single pro
 2026-09-11 and it was never true of the kit.
 
 Start the CSV log **before** the sweep and stop it **after**. ⛔ **One log must never span a
-settings change** — the join bins samples by core clock, and a log covering two configurations
-silently mixes them.
+settings change.** Historical clock joins silently mix configurations at the same frequency;
+new time joins separate complete benchmark windows, but a separate log still records which
+settings produced each run without reconstructing a profile-change boundary.
 
 ### 3. Run a single-workload sweep
 

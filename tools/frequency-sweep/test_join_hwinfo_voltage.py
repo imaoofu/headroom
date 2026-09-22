@@ -51,10 +51,14 @@ from pathlib import Path
 import tempfile
 import os
 import math
+import csv
+from datetime import datetime, timezone
+import subprocess
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from join_hwinfo_voltage import (loadHwinfo, loadSweep, filterIdle,
-                                 matchSamples, summarisePoint, contestedSamples)
+                                 matchSamples, summarisePoint, contestedSamples,
+                                 selectJoinMode)
 
 failures = []
 
@@ -394,6 +398,94 @@ check("an empty sample list is uncontested", contested22 == 0 and total22 == 0,
 contested23, _ = contestedSamples([sample(1000)], [point(1000)], 500.0)
 check("one point cannot contest with itself even at an absurd tolerance", contested23 == 0,
       f"got {contested23}")
+
+# Time join: two different requested clocks clip to the same achieved clock. A clock join pools
+# both voltage levels, but the benchmark windows must recover each one separately. Include one
+# low-power reading inside a valid benchmark window: time mode must not silently discard it.
+with tempfile.TemporaryDirectory() as directory:
+    sweepPath = Path(directory) / "clipped_sweep.csv"
+    hwinfoPath = Path(directory) / "hwinfo.csv"
+    start = datetime(2026, 9, 21, 12, 0, tzinfo=timezone.utc).timestamp()
+    with sweepPath.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["target_frequency_mhz", "achieved_frequency_avg", "bench_throughput",
+                         "power_avg_w", "window_start_unix", "window_end_unix"])
+        writer.writerow([1590, 1500, 300000000000, 100, start, start + 5])
+        writer.writerow([1695, 1500, 310000000000, 105, start + 10, start + 15])
+    with hwinfoPath.open("w", newline="", encoding="latin-1") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["Date", "Time", "GPU Clock [MHz]", "GPU Core Voltage [V]",
+                         "GPU Crossbar Clock [MHz]", "GPU Power [W]"])
+        # HWiNFO does not always zero-pad minutes and seconds (e.g. 22:30:1.879).
+        writer.writerow(["21.9.2026", "12:0:1.000", 1500, 0.7, 1300, 100])
+        writer.writerow(["21.9.2026", "12:00:02.000", 1500, 0.7, 1300, 100])
+        writer.writerow(["21.9.2026", "12:00:11.000", 1500, 0.8, 1400, 20])
+        writer.writerow(["21.9.2026", "12:00:12.000", 1500, 0.8, 1400, 105])
+
+    check("complete stamps select the time join by default",
+          selectJoinMode(loadSweep(sweepPath), "auto") == "time")
+    command = [sys.executable, str(Path(__file__).with_name("join_hwinfo_voltage.py")),
+               str(sweepPath), str(hwinfoPath), "--hwinfo-utc-offset=+00:00"]
+    result = subprocess.run(command, capture_output=True, text=True)
+    outputPath = sweepPath.with_name("clipped_sweep_voltage.csv")
+    check("time join succeeds for clipped clocks", result.returncode == 0,
+          result.stdout + result.stderr)
+    if outputPath.exists():
+        with outputPath.open(newline="", encoding="utf-8") as handle:
+            merged = list(csv.DictReader(handle))
+        check("time join separates equal achieved clocks by benchmark window",
+              len(merged) == 2 and [float(p["voltage"]) for p in merged] == [0.7, 0.8]
+              and [int(p["sampleCount"]) for p in merged] == [2, 2]
+              and [int(p["hwinfoUtcOffsetMinutes"]) for p in merged] == [0, 0], str(merged))
+        outputPath.unlink()
+    else:
+        check("time join writes a voltage extract", False, result.stdout + result.stderr)
+
+    wrongZone = subprocess.run(command[:-1] + ["--hwinfo-utc-offset=-01:00"],
+                               capture_output=True, text=True)
+    check("wrong time zone refuses an empty join and writes no extract",
+          wrongZone.returncode != 0 and not outputPath.exists(),
+          wrongZone.stdout + wrongZone.stderr)
+
+    # The normal bench path omits --hwinfo-utc-offset. HWiNFO writes the host's local time,
+    # so reconstruct a second log in that zone and verify the automatic interpretation.
+    localHwinfoPath = Path(directory) / "hwinfo-local.csv"
+    localOffset = None
+    with localHwinfoPath.open("w", newline="", encoding="latin-1") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["Date", "Time", "GPU Clock [MHz]", "GPU Core Voltage [V]",
+                         "GPU Crossbar Clock [MHz]", "GPU Power [W]"])
+        for seconds, voltage in [(1, 0.7), (2, 0.7), (11, 0.8), (12, 0.8)]:
+            localTime = datetime.fromtimestamp(start + seconds).astimezone()
+            localOffset = int(localTime.utcoffset().total_seconds() / 60)
+            writer.writerow([localTime.strftime("%d.%m.%Y"),
+                             localTime.strftime("%H:%M:%S.%f"),
+                             1500, voltage, 1300, 100])
+    localRun = subprocess.run(command[:3] + [str(localHwinfoPath)],
+                              capture_output=True, text=True)
+    check("host-local HWiNFO time joins without an explicit UTC offset",
+          localRun.returncode == 0, localRun.stdout + localRun.stderr)
+    if outputPath.exists():
+        with outputPath.open(newline="", encoding="utf-8") as handle:
+            localMerged = list(csv.DictReader(handle))
+        check("time extract records the inferred host-local UTC offset",
+              len(localMerged) == 2
+              and [float(p["voltage"]) for p in localMerged] == [0.7, 0.8]
+              and [int(p["hwinfoUtcOffsetMinutes"]) for p in localMerged]
+              == [localOffset, localOffset], str(localMerged))
+        outputPath.unlink()
+    else:
+        check("host-local time join writes a voltage extract", False,
+              localRun.stdout + localRun.stderr)
+
+    with sweepPath.open("a", newline="", encoding="utf-8") as handle:
+        csv.writer(handle).writerow([1800, 1500, 320000000000, 110, "", ""])
+    try:
+        selectJoinMode(loadSweep(sweepPath), "auto")
+        partialRejected = False
+    except SystemExit:
+        partialRejected = True
+    check("partially stamped sweep is refused rather than silently clock-joined", partialRejected)
 
 if failures:
     print(f"FAILED: {', '.join(failures)}")

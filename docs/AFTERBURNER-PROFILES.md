@@ -30,11 +30,17 @@ the factory curve as 122 points whose per-point **offsets are all zero**, so `ap
 Zero curve offsets, zero memory offset, zero core offset, and PL 100 — which is **180 W, this card's
 factory default**. That is stock in every respect the profile store can express.
 
-⚠️ **Verified on disk, NOT yet verified in application.** Nothing has yet confirmed that
-`-profile3 -q` actually *returns* a tuned card to stock rather than merely declining to change it.
-The check is one minute of work — apply it and read the memory clock under load, expecting **13801**
-rather than 16301 — and it has not been run. Do not describe P3 as a working stock control until it
-has.
+⛔ **STALE APPLICATION WARNING, CORRECTED 2026-09-21.** This paragraph said *"Verified on disk,
+NOT yet verified in application"* and *"the check ... has not been run."* It was left in place
+after the **2026-09-09 11:38** application probe, which was recorded in
+`data/frequency-sweeps/stock-bracket-20260909/README.md` and the stock leg's session JSON. The
+guide was updated for the disk decode but its pending application check was not revisited.
+
+✅ **Profile 3 was verified in application on 2026-09-09:** after `-profile3 -q`, the enforced power
+limit fell **200 → 180 W**, memory under load read **13801 MHz** rather than 16301, and peak core
+clock read **2640 MHz** against Profile 4's ~2976. The stock sweep's CSV and JSON preserve the
+180 W enforced limit and stock memory readings. This verifies that historical application; a new
+session must still check the live card after applying the profile.
 
 ⚠️ **The operator states that none of the five has been stability tested.** The repository records
 30-minute protocol runs on 2026-08-23 for "the split curve" and "the original tune", but those were
@@ -241,8 +247,8 @@ store with no benchmark run at all.
 used to apply Profile 5 and Profile 4 programmatically with the operator away from the machine, a
 first for this project. No CLI flag resets to stock, and the `[Startup]` section — which holds empty
 values, i.e. no settings — does not appear to be reachable from the command line. **Since 2026-09-09
-that no longer matters: Profile 3 holds stock, so `-profile3 -q` is the stock control**, subject to
-the application check flagged at the top of this file.
+that no longer matters: Profile 3 holds stock, so `-profile3 -q` is the stock control**. The
+2026-09-09 application check is recorded above; verify the live limit and memory clock each time.
 
 ## A second control knob, independent of Afterburner: the NVML P0 clock offset
 

@@ -72,8 +72,11 @@ reach, in both directions:
 🔑 **So "could not verify" means different things from each of them, and neither list is the truth.**
 The XBAR pass produced a concrete example: GPT read a January 2023 Hardwareluxx post *and* a 2022
 Reddit post; Claude could open the first and independently confirm it, and **could not open the
-second at all**. That Reddit source remains an unconfirmed lead for exactly that reason — not
-because anyone doubts it, but because nobody here has seen it.
+second at all**. ⛔ **2026-09-22 update:** the old conclusion *“nobody here has seen it”*
+is superseded: GPT opened the original post directly and found that **Method 3**, not
+Method 4, retains stock points below the target. See the dated
+[source record](../gpt-findings/2026-09-22-queue-literature-and-datasheet-check.md). Human
+project review is still pending before a paper change.
 
 ✅ **Use it deliberately.** Send GPT the sources Claude bounced off; send Claude the things that need
 an API, a local file, or a script. **And record which assistant failed to reach what**, because a

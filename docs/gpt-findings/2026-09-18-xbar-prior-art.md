@@ -240,7 +240,7 @@ records what was independently checked and what was not. It does not alter the r
 | LACT #1147, NVIDIA #1266 and the `loong0x00.com` article are one author | ✅ **VERIFIED** via `gh api` — both issues return user `Loong0x00` |
 | NVIDIA #1266 exists, title, author, 2026-07-28 | ✅ **VERIFIED** via `gh api` |
 | #1266's FPS table (256 → 173, −32.4%) | ⚠️ **NOT independently checked** — reported by the issue author |
-| Reddit "Method 4", August 2022 | ⛔ **NOT VERIFIABLE from this environment** — Reddit returns 403 to both the JSON API and `old.reddit.com`. **Unconfirmed lead.** |
+| Reddit "Method 4", August 2022 | ⛔ **NOT VERIFIABLE in this 2026-09-18 pass** — Reddit returned 403 to both the JSON API and `old.reddit.com`. **Historical unconfirmed lead.** ⛔ **2026-09-22 update:** GPT opened the original post and distinguished Method 3 (stock lower points) from Method 4 (gradual uplift); see [the later record](2026-09-22-queue-literature-and-datasheet-check.md). |
 | overclockers.ru mitigation advice, patents, envytools, mVolt guide | ⛔ not independently opened here |
 
 ## What verified, in the source's own words
