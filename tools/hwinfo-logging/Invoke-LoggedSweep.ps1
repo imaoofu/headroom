@@ -92,10 +92,15 @@ if ($applied.Trim().Length -lt 20) {
 }
 if ($applied.Length -gt 600) { Die "appliedSettings is implausibly long ($($applied.Length) chars)." 2 }
 
+# ⚠️ ONE workload per sweep here, so iterations is ONE integer - not the comma-separated list the
+# kit's Collect.ps1 takes for a twelve-workload suite. It reaches the benchmark through
+# gpu_workload.py --iterations, because Invoke-FrequencySweep.ps1 has no such parameter.
 $iterations = ""
 if ($job.PSObject.Properties.Name -contains "iterations" -and $job.iterations) {
     $iterations = [string]$job.iterations
-    if ($iterations -notmatch '^\d+(,\d+)*$') { Die "iterations must be digits separated by commas. Got '$iterations'." 2 }
+    if ($iterations -notmatch '^\d{1,9}$') {
+        Die "iterations must be a single integer for a one-workload sweep. Got '$iterations'." 2
+    }
 }
 
 $descending = $false
@@ -138,23 +143,61 @@ Say "---- preflight ----" "Cyan"
 $power = (& nvidia-smi --query-gpu=power.limit,power.default_limit --format=csv,noheader) -join " | "
 Say ("  power limit : {0}" -f $power)
 
-$pmon = & nvidia-smi pmon -c 3 -s u 2>&1
-$busy = $false
+# ⛔ THIS GATED ON THE `mem` COLUMN UNTIL 2026-09-22 AND REFUSED A LEGITIMATE RUN.
+# pmon -s u prints: gpu pid type sm mem enc dec jpg ofa command. `mem` is memory-BANDWIDTH
+# utilisation, not a busy signal - a desktop compositor reads 12% there while doing nothing that
+# competes for SMs. The documented protocol gates on SM baseline and on the VIDEO ENGINES
+# (Instant Replay is invisible in sm and shows up in enc), so those are what is checked.
+# 🔑 Sum sm ACROSS PROCESSES per sample: two processes at 6% is a busier card than one at 9%.
+$pmon = & nvidia-smi pmon -c 4 -s u 2>&1
+
+$samples = @{}          # sample index -> summed sm
+$videoBusy = $false
+$sampleIndex = -1
+$seenPids = @{}
 foreach ($line in $pmon) {
     if ($line -match '^\s*#') { continue }
     $cols = ($line -split '\s+') | Where-Object { $_ -ne "" }
-    if ($cols.Count -lt 5) { continue }
-    foreach ($idx in 3, 4) {
+    if ($cols.Count -lt 7) { continue }
+    $processId = $cols[1]
+    # pmon repeats the whole process list once per sample, so a repeated pid starts a new sample.
+    if ($seenPids.ContainsKey($processId)) { $seenPids = @{}; }
+    if ($seenPids.Count -eq 0) { $sampleIndex++; $samples[$sampleIndex] = 0 }
+    $seenPids[$processId] = $true
+
+    $sm = 0
+    if ([int]::TryParse($cols[3], [ref]$sm)) { $samples[$sampleIndex] += $sm }
+    foreach ($videoIdx in 5, 6) {
         $v = 0
-        if ([int]::TryParse($cols[$idx], [ref]$v)) { if ($v -gt 10) { $busy = $true } }
+        if ([int]::TryParse($cols[$videoIdx], [ref]$v)) { if ($v -gt 0) { $videoBusy = $true } }
     }
 }
-if ($busy) {
-    Say "  pmon shows a busy GPU. REFUSING to start." "Red"
+
+$smValues = @($samples.Values)
+$smPeak = 0
+foreach ($v in $smValues) { if ($v -gt $smPeak) { $smPeak = $v } }
+$smMean = 0
+if ($smValues.Count -gt 0) { $smMean = [math]::Round(($smValues | Measure-Object -Sum).Sum / $smValues.Count, 1) }
+
+Say ("  pmon sm     : mean {0}%, peak {1}% across {2} sample(s)" -f $smMean, $smPeak, $smValues.Count)
+
+if ($videoBusy) {
     $pmon | ForEach-Object { Say ("    " + $_) "Gray" }
-    Die "Preflight failed: the card is not idle." 4
+    Die "Preflight failed: encoder or decoder is active. Switch off Instant Replay / ShadowPlay." 4
 }
-Say "  pmon        : idle enough" "Green"
+# 10% matches Invoke-FrequencySweep's own -MaxBaselineUtilization default, so this refuses
+# before the sweep does rather than after it has locked clocks.
+if ($smPeak -gt 10) {
+    $pmon | ForEach-Object { Say ("    " + $_) "Gray" }
+    Die ("Preflight failed: SM baseline peaked at {0}%, over the 10% guard." -f $smPeak) 4
+}
+# ⚠️ Not a pass/fail, but it goes in the record: the committed CLEAN reference run of 2026-09-18
+# declares "baseline 3.4 pct mean / 5 pct max". A run materially above that is comparable to it
+# only with the caveat stated.
+if ($smMean -gt 5) {
+    Say "  NOTE: baseline is above the 5% the 2026-09-18 clean reference declares - recorded, not fatal." "Yellow"
+}
+Say "  pmon        : idle enough to proceed" "Green"
 
 # ---- log start -------------------------------------------------------------------------------
 
@@ -172,24 +215,53 @@ $startedAt = Get-Date
 try {
     Say ""
     Say "---- sweep ----" "Cyan"
-    $cmd = '"{0}" "{1}" --workload {2} --json' -f (Join-Path $env:SystemRoot "..\..\Python312\python.exe"), $workload, $work
-    # Prefer whatever python is actually on PATH; the line above is only a fallback shape.
     $py = (Get-Command python -ErrorAction SilentlyContinue)
-    if ($py) { $cmd = '"{0}" "{1}" --workload {2} --json' -f $py.Source, $workload, $work }
+    if (-not $py) { throw "python is not on PATH - the workload cannot be launched." }
 
-    $args = @(
-        "-SessionLabel",    $label,
-        "-WorkloadCommand", $cmd,
-        "-MinFrequencyMhz", $minMhz,
-        "-MaxFrequencyMhz", $maxMhz,
-        "-FrequencyCount",  $count,
-        "-OutputDirectory", $outDir,
-        "-AppliedSettings", $applied
-    )
-    if ($descending) { $args += "-Descending" }
-    if ($iterations) { $args += @("-Iterations", $iterations) }
+    # ⛔ DO NOT QUOTE THESE PATHS. Invoke-FrequencySweep runs the command through
+    #      Start-Process -FilePath cmd.exe -ArgumentList "/c", $WorkloadCommand
+    #    and `cmd /c` strips the outer quote pair of the string it is handed. A command that
+    #    begins with a quote therefore arrives mangled, and the workload dies with
+    #    "The filename, directory name, or volume label syntax is incorrect" - which looks like
+    #    a path problem and is really a quoting problem. Cost one run on 2026-09-22.
+    #    ✅ The committed 2026-09-18 sweep that this run is compared against is unquoted too.
+    #
+    # 🔑 Unquoted only works while no path contains a space, so that is checked rather than
+    #    assumed. Refusing here is far better than discovering it at the first frequency.
+    foreach ($p in @($py.Source, $workload)) {
+        if ($p -match '\s') {
+            Die ("Cannot build an unquoted workload command: '{0}' contains a space. " -f $p +
+                 "Quoting would be stripped by cmd /c inside the sweep tool. Move it to a path without spaces.") 3
+        }
+    }
 
-    & $sweep @args
+    $cmd = '{0} {1} --workload {2} --json' -f $py.Source, $workload, $work
+    if ($iterations) { $cmd = "$cmd --iterations $iterations" }
+    Say ("  workload cmd: {0}" -f $cmd) "Gray"
+
+    # ⛔ TWO BUGS LIVED HERE UNTIL 2026-09-22 AND BOTH SURFACED ON THE FIRST REAL RUN.
+    #
+    # 1. This built an ARRAY called $args and splatted it. `$args` is a PowerShell AUTOMATIC
+    #    variable, and an array splat binds POSITIONALLY rather than treating "-Name" strings as
+    #    parameter names - so FrequencyCount received the literal string "-WorkloadCommand".
+    #    A HASHTABLE splat is unambiguous. Never name a variable $args.
+    #
+    # 2. It passed "-Iterations" to Invoke-FrequencySweep.ps1, WHICH HAS NO SUCH PARAMETER.
+    #    Iteration count is a property of the WORKLOAD, not of the sweep, and reaches it through
+    #    gpu_workload.py's --iterations. The kit's Collect.ps1 does take -Iterations, which is
+    #    where the wrong idea came from - two different scripts with two different interfaces.
+    $sweepArgs = @{
+        SessionLabel    = $label
+        WorkloadCommand = $cmd
+        MinFrequencyMhz = $minMhz
+        MaxFrequencyMhz = $maxMhz
+        FrequencyCount  = $count
+        OutputDirectory = $outDir
+        AppliedSettings = $applied
+    }
+    if ($descending) { $sweepArgs["Descending"] = $true }
+
+    & $sweep @sweepArgs
     $sweepExit = $LASTEXITCODE
 }
 finally {
