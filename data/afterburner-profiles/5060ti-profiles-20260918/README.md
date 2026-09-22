@@ -43,3 +43,37 @@ recorded and not explained.
 
 ⚠️ **Driver was 616.92** at snapshot time — the reboot that preceded this session picked up an
 update from 616.64. Read it off the sweep JSON, never off a document.
+
+## ✅ Re-verified against the live store 2026-09-22, before P1 is overwritten
+
+Every file was compared by SHA-256 with `C:\Program Files (x86)\MSI Afterburner\Profiles\` on the
+evening of 2026-09-22, immediately before Profile 1 was to be overwritten with ladder rung B (4e).
+**All five `ProfileN.cfg` stubs and all three `VEN_*.cfg` device files are byte-identical**, including the
+curve file (`e5cbe0ecd89d899c…`). The only difference is `MSIAfterburner.cfg`, Afterburner's
+own window settings: `WindowY` 48 → 49. **So this directory is the pre-edit snapshot for the
+2026-09-22 rung build; no second copy was taken, because it would be identical.**
+
+## How to restore these curves exactly
+
+Afterburner holds its profiles in memory and can write them back to disk when it exits. **Copying
+files in while it is running can therefore be silently undone.**
+
+1. **Exit Afterburner completely**: right-click its tray icon, then Exit. Closing the window only
+   minimises it.
+2. From an **elevated** PowerShell in the repository root:
+
+   ```powershell
+   Copy-Item "data\afterburner-profiles\5060ti-profiles-20260918\VEN_10DE*.cfg" "C:\Program Files (x86)\MSI Afterburner\Profiles\" -Force
+   Copy-Item "data\afterburner-profiles\5060ti-profiles-20260918\Profile?.cfg" "C:\Program Files (x86)\MSI Afterburner\Profiles\" -Force
+   ```
+
+   Leave `MSIAfterburner.cfg` alone. It holds no curves.
+3. Start Afterburner, then check that the live file hashes back to `e5cbe0ecd89d899c…`:
+   `(Get-FileHash "C:\Program Files (x86)\MSI Afterburner\Profiles\VEN_10DE*.cfg").Hash`
+4. **Apply the profile you want and verify it by memory clock under load**: stock reads 13801,
+   the +2500 profiles 16301. A slot number is not an identity.
+
+⚠️ **Restoring the VEN file restores ALL FIVE slots at once**, because every profile's curve lives
+in that one file. It also undoes any rung saved into P1 since, so snapshot that first if it
+matters. **This procedure has not been exercised.** It is the documented file layout, not a
+tested restore.
