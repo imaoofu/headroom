@@ -38,7 +38,9 @@ git history: `git show fc1ca61:docs/agents/GPT-PROMPT-NEXT.md`.
 > 5. 🛑 **Check the GPU is not mid-sweep before running anything heavy**, including
 >    `python run_tests.py`. The test suite beside a sweep cost **9.38% throughput** on 2026-09-18.
 >    Run this first, and if it prints anything, wait:
->    `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'Invoke-FrequencySweep|Invoke-LoggedSweep|gpu_workload' } | Select-Object ProcessId, CommandLine`
+>    `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'Invoke-(Frequency|Logged)Sweep[.]ps1|gpu_workload[.]py' -and $_.CommandLine -notmatch 'Get-CimInstance' } | Select-Object ProcessId, CommandLine`
+>    (Written so it cannot match its own command line. The first version could, and reported a sweep
+>    that was not running.)
 > 6. **Shared tree.** Run `git status` first. Do not edit a file that already has someone else's
 >    uncommitted changes unless the job names it. **Do not commit.** Leave your changes for review
 >    and list every file you touched.
@@ -176,7 +178,7 @@ search, not a novelty check. A genuine cold check still needs a fresh chat, no r
 
 ## Job 6, small: `distinct_clocks_measured` false-alarms on fine grids
 
-> `docs/TODO-20260915.md` item 17. `Invoke-FrequencySweep.ps1` buckets achieved clocks at a fixed
+> Originally `docs/TODO-20260915.md` item 17 (file removed 2026-09-22; everything needed is below). `Invoke-FrequencySweep.ps1` buckets achieved clocks at a fixed
 > **25 MHz**, so a fine grid under-reports: the 2026-09-18 fine-floor run recorded
 > `distinct_clocks_measured` **10** against **13** genuinely distinct clocks, with every lock held.
 > It is the same fixed-width assumption the voltage join had. Make the bucket width follow the

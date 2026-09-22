@@ -82,7 +82,11 @@ $files = @(
     # that tell the operator how to use them - and it is worse, because a stale tool usually
     # errors while a stale instruction is simply followed.
     @{ From = "docs\SESSION-D-COMMANDS.md";                     To = "SESSION-D-COMMANDS.md" },
-    @{ From = "docs\GPU-WORKLIST.md";                           To = "GPU-WORKLIST.md" },
+    # The combined GPU-WORKLIST.md was split into one list per card on 2026-09-22. The kit
+    # goes to the shop machines, so it carries their two lists and the shared rules.
+    @{ From = "docs\GPU-BENCH-RULES.md";                        To = "GPU-BENCH-RULES.md" },
+    @{ From = "docs\GPU-WORKLIST-3070TI.md";                    To = "GPU-WORKLIST-3070TI.md" },
+    @{ From = "docs\GPU-WORKLIST-2060S.md";                     To = "GPU-WORKLIST-2060S.md" },
     @{ From = "data\frequency-sweeps\rtx3070ti-20260825\SESSION-D-RUNSHEET.md"; To = "SESSION-D-RUNSHEET.md" },
     @{ From = "data\frequency-sweeps\rtx2060s-20260912\SESSION-E-RUNSHEET.md";  To = "SESSION-E-RUNSHEET.md" }
 )
@@ -151,6 +155,23 @@ if ($missing.Count -gt 0) {
     Say ""
     Say "Files are missing from the repository itself. The kit was NOT fully synced." "Red"
     exit 1
+}
+
+# ---- retired operator documents ----
+# Copying never deletes, so a document removed from the repository stays on the kit and can
+# still be followed at the machine - the stale-instruction failure noted above, in its
+# worst form. Only names on this explicit list are ever removed.
+$retired = @("GPU-WORKLIST.md", "WEEKEND-PLAN-20260919.md", "5060TI-SWEEP-QUEUE.md")
+foreach ($name in $retired) {
+    $old = Join-Path $KitPath $name
+    if (Test-Path $old) {
+        if ($WhatIfOnly) {
+            Say ("  [WOULD REMOVE retired] {0}" -f $name) "Yellow"
+        } else {
+            Remove-Item $old -Force
+            Say ("  [removed retired] {0}" -f $name) "Yellow"
+        }
+    }
 }
 
 Say ""

@@ -787,7 +787,7 @@ and say so every time.**
 ## Open right now — 2026-09-13
 
 ⚠️ **This header read 2026-09-12 and the list below it is now PARTLY SUPERSEDED.** The live,
-priority-ordered list is `docs/TODO-20260914.md`; this section is the roadmap-level view and defers
+priority-ordered list is `docs/TODO-20260918.md` (GPU work: `docs/GPU-WORKLIST-*.md`, one per card); this section is the roadmap-level view and defers
 to it on ordering. Three things changed on 09-13 and all three change what is open:
 
 1. ✅ **The framing rewrite is DONE** (`5452004`, `995cdf9`, `0b2f5d8`, `854bd96`). §2.1–2.5 and

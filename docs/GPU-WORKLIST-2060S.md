@@ -1,0 +1,115 @@
+# RTX 2060 Super — the bench list
+
+**Written 2026-09-22.** A shop machine, so **it ships, date unknown**, and it outranks the 5060 Ti
+on any day it is reachable. **Session D on the 3070 Ti outranks it** if both are reachable: one USB
+kit, so they cannot run in parallel. Shared protocol: [`GPU-BENCH-RULES.md`](GPU-BENCH-RULES.md).
+Run sheet: [`SESSION-E-RUNSHEET.md`](../data/frequency-sweeps/rtx2060s-20260912/SESSION-E-RUNSHEET.md).
+Predictions: [`REGISTERED-PREDICTIONS.md`](REGISTERED-PREDICTIONS.md) §4c–4d.
+
+🔑 **Why this card matters:** it is the one card where the load-floor rule **cannot be applied**.
+Its voltage leaves the floor 6 mV at a time. It is also a **measured** Turing V/F curve, where
+Schoonhoven et al. **assumed** a Turing floor rather than reading one. That statement is about what
+was done here and what they did, **not** a claim that nobody has measured Turing.
+
+⚠️ **Logging is by hand on this machine.** The HWiNFO automation is not on the USB kit.
+
+---
+
+## 🛠️ Curves to build — one
+
+**Snapshot the Afterburner profile store verbatim into `data/afterburner-profiles/` before the edit.**
+No decoded profile for this card is on file, so the snapshot is the only record.
+
+| slot | curve | how |
+|---|---|---|
+| any free slot | **STOCK** | Save untouched first, to revert to |
+| another slot | **Part 2 edit: shorten the floor** | **CAP every point BELOW 0.669 V at 810 MHz.** 0.669 V and above stay exactly at stock. Drag **down** only; a point already below 810 stays |
+
+| point | stock clock | set to |
+|---|---|---|
+| ≤ 0.631 V | up to 975 | **810** |
+| 0.637 V | 1035 | **810** |
+| 0.644 V | 1065 | **810** |
+| 0.650 V | 1095 | **810** |
+| 0.656 / 0.662 V, **if the editor shows them** | ~1110–1140 (from sweep readings; this card's curve was never decoded) | **810** |
+| ≥ 0.669 V | 1170 → top | **unchanged** |
+
+⛔ **CLARIFIED 2026-09-22, before any collection.** The run sheet specifies ≤ 0.650 V and ≥ 0.669 V
+and says nothing about 0.656 and 0.662 V, which exist on a 6.25 mV grid. **Its design needs them
+capped:** the stated point of the edit is that reaching anything above 810 MHz then requires a
+**38 mV** jump, 0.631 → 0.669 V. Leave 0.656 V at stock and the jump is 25 mV, and the edit no
+longer tests what it was registered to test. **Registered prediction unchanged:** the median suite
+optimum moves from **1065 MHz** toward **855 MHz**.
+
+🛑 **This is the same edit shape Afterburner refused on the 3070 Ti** (see
+[`GPU-WORKLIST-3070TI.md`](GPU-WORKLIST-3070TI.md)). **Cap from the left edge rightward**, and
+build it before the first sweep, so a refusal costs minutes rather than a session.
+
+✅ **Safe by construction.** After the edit every clock above 810 MHz costs more voltage than at
+stock. Instability is not reachable.
+
+---
+
+## Open items
+
+| # | id | what | time | tier |
+|---|---|---|---|---|
+| 1 | **E1** | **Part 1b: descending fine floor**, 900–1140 MHz, 13 points, stock | ~20 min | 0 |
+| 2 | **E2** | **Part 2: the boundary manipulation**, stock → edit → stock, full suites | ~3½ h | 0 |
+
+### E1 — is the floor a property of the curve, or of a cold card? (§4d)
+
+**Nothing applied, nothing to clean up.** Part 1 found the voltage non-monotonic: 0.644 V at 900 MHz,
+**0.631** at 975–1005, then rising. But that sweep climbed while the card warmed 42 → 59 °C, so on
+the falling limb **frequency and temperature were perfectly collinear**.
+
+⛔ **Re-sync the kit first**: `-Descending` did not exist until 2026-09-15.
+
+```powershell
+.\tools\collection-kit\Sync-Kit.ps1 -KitPath D:\headroom-kit
+```
+
+Then start a **new** HWiNFO log and run the command in the run sheet's Part 1b. **Check the banner
+counts DOWN from 1140.**
+
+| result | reading |
+|---|---|
+| minimum stays at **975–1005** | ✅ the shape belongs to the V/F curve |
+| minimum **follows the cold end** | ⛔ thermal, and **every floor extent on all four cards** needs re-reading |
+
+✅ **The 5060 Ti answered the same question on 2026-09-22:** descending matched ascending within
+±0.08%, so its floor is a curve property. That makes the thermal reading here less likely. It does
+not rule it out, because this is the card that showed the non-monotonicity.
+
+### E2 — the boundary manipulation (§4c), registered as a disjunction
+
+**Either** the floor end becomes sharp enough to locate and the optimum tracks it, **or** it stays
+undecidable and the ambiguity belongs to the silicon rather than the vendor's curve. **Both outcomes
+are publishable.**
+
+⛔ **Two corrections to the run sheet, 2026-09-22, both made before collection:**
+
+1. **Full twelve-workload suites, not `gemm` and `membw`.** The prediction is about the **median
+   suite optimum**, and two workloads cannot measure a median of twelve. It is the same error the
+   3070 Ti's run sheet carried until 2026-09-16.
+2. **Do NOT re-derive iteration counts: reuse the 2026-09-12 suite's.** The prediction's 1065 MHz
+   baseline came from `rtx2060super-suite`. New counts change the work per point, and run 1 would
+   stop being comparable to it:
+
+   ```
+   2936,3180,2377,1628,1163,2986,1935,1076,297,88,223,120
+   ```
+
+   These are positional, in the order `copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm`.
+   Grid **855–2115 MHz, 13 points**, the same as that suite.
+
+**Order: stock → edit → stock.** If the closing stock run does not match the opening one, the
+result is not interpretable. Report that instead of an effect.
+
+---
+
+## Before the card ships — every time
+
+**Revert to stock and verify three ways:** power limit, memory clock under load, and peak core
+against its stock ceiling. Then **remove Afterburner and its profile store.** E1 leaves nothing
+behind; E2 does.

@@ -620,8 +620,8 @@ of their range, so it is **not** evidence for a "top of the floor" rule. It is e
 the V/F relationship moves the optimum, which is the part this project cannot claim to have shown
 first.
 
-🔑 **HOW IT WAS MISSED — the mechanism is worth more than the entry.** `TODO-20260913.md` recorded this
-paper as a lead behind IEEE Xplore. On 2026-09-18 GPT surfaced the **same group's 2022 JPDC paper**,
+🔑 **HOW IT WAS MISSED — the mechanism is worth more than the entry.** `TODO-20260913.md` (removed 2026-09-22;
+`git show 994093f:docs/TODO-20260913.md`) recorded this paper as a lead behind IEEE Xplore. On 2026-09-18 GPT surfaced the **same group's 2022 JPDC paper**,
 which was read in full (§8) and found to locate a Vmin and a minimum-energy *plateau*, not an optimal
 frequency — and `TODO-20260918.md` then recorded *"Closed the SBAC-PAD lead."* **Reading a later
 paper by the same authors closed a lead on an earlier one it did not describe.** The 2020 paper does

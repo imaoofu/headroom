@@ -111,7 +111,8 @@ the result afterward and record when that boundary ended.
 | `HANDOFF.md` | how to get running on another machine |
 | `docs/RELATED-WORK.md` | every source, with **whether the primary source was actually opened** |
 | `docs/agents/` | 🆕 briefs and protocol for working alongside another assistant |
-| `docs/TODO-20260915.md` | current priorities |
+| `docs/TODO-20260918.md` | current priorities, desk work |
+| `docs/GPU-WORKLIST-*.md` | GPU work and curves to build, one list per card; shared protocol in `docs/GPU-BENCH-RULES.md` |
 
 ---
 

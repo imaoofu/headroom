@@ -252,6 +252,12 @@ interesting outcome is the negative one.
 > **Set every curve point at or below 0.650 V to 810 MHz. Leave every point at 0.669 V and above
 > exactly at stock.**
 
+⛔ **CLARIFIED 2026-09-22, before collection: CAP every point BELOW 0.669 V at 810, including 0.656 and
+0.662 V if the editor shows them.** The sentence above does not mention them, but the 38 mV jump that
+the edit exists to create requires them capped. **Afterburner will not apply a curve that decreases**,
+so cap from the left edge rightward, and leave a point already below 810 where it is. The same edit shape
+would not apply on the 3070 Ti. Full note: `docs/GPU-WORKLIST-2060S.md`.
+
 | curve point | stock clock | set to |
 |---|---|---|
 | ≤ 0.631 V | up to 975 | **810** |
@@ -274,9 +280,21 @@ headline.
 
 ### Sweep it on the suite grid
 
-**855 → 2115 MHz in 105 MHz steps**, gemm and membw, so the optimum is comparable with the as-found
+~~**855 → 2115 MHz in 105 MHz steps**, gemm and membw, so the optimum is comparable with the as-found
 run of 2026-09-12. Hold iteration counts constant across both configurations, and **re-derive them
-on this card first** — the 5060 Ti and 3070 Ti counts do not transfer.
+on this card first** — the 5060 Ti and 3070 Ti counts do not transfer.~~
+
+⛔ **CORRECTED 2026-09-22, before any Part 2 collection. Two errors, the same two the 3070 Ti's run
+sheet carried:**
+
+1. **Full twelve-workload suites, not `gemm` and `membw`.** The registered prediction is about the
+   **median suite optimum**, and two workloads cannot measure a median of twelve.
+2. **Do NOT re-derive iteration counts: reuse `20260912-124138_rtx2060super-suite`'s**, the run that
+   produced the 1065 MHz baseline. New counts change the work per point, and the comparison with it
+   is lost:
+   `2936,3180,2377,1628,1163,2986,1935,1076,297,88,223,120`
+   (in the order `copy,reduce,softmax,layernorm,bgemm32,bgemm64,bgemm128,bgemm256,bgemm1024,attention,conv,gemm`).
+   Grid **855–2115 MHz, 13 points**, the same as that suite.
 
 **Order: stock → edit → stock.** Shorter than the 3070 Ti's A/B/B/A because this is the secondary
 experiment; if the closing stock run does not match the opening one, the result is not interpretable.
