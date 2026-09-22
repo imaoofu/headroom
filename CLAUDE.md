@@ -500,10 +500,16 @@ review" did not stop the items being written as established. Full log: `docs/PRI
 correlation between ridge point and optimum on the vendor's shipped curve. This project MOVES the
 floor by hand (`abba-20260908`) and the **median** optimum moves **+465 MHz with all 12 workloads
 moving upward** (range **+79 to +540**, 6 of 12 exactly +465 — corrected 2026-09-19); then
-changes the curve **above** the floor by 570 MHz and the optimum moves by **nothing**. Nothing found
-reshapes a V/F curve and re-locates the optimum, and nothing found pairs such a test with a negative
-control or with predictions registered in advance. **This is the project's strongest remaining
-claim** — and it rests on an absence, so treat it as "not found" rather than "proven absent".
+changes the curve **above** the floor by 570 MHz and the optimum moves by **nothing**. ⛔ **NARROWED 2026-09-22.** This said *"Nothing found reshapes a V/F curve and re-locates the
+optimum"*. **Mendes, Tomás & Roma, SBAC-PAD 2020 (read here, Table IV) does the broad form:** on an
+AMD Vega 10, decoupling voltage from frequency moves the EDP-optimal frequency from **1270 to
+1530 / 1440 / 1530 MHz** on three of four CNN models, at the same 1.0 V. 🔑 **It got through because
+a lead on that paper was marked closed after reading the same group's 2022 paper instead** —
+`RELATED-WORK.md` §9. ✅ **What survives, narrowly:** a **region-targeted** reshape of a vendor curve
+whose voltage cannot be written, on NVIDIA, with a **negative control** (their work has none), an
+efficiency objective rather than EDP, and a relocation **predicted from the floor voltage** rather
+than found by exhaustive search. **Still the strongest remaining claim — but it is now a claim about
+control design, not about the phenomenon.** Never write "first to show the optimum moves".
 
 **2. ⛔ FELL ENTIRELY — and its narrow replacement fell too, 2026-09-13.** "No published DVFS study
 uses consumer silicon" is false: Leng et al. (MICRO-48, 2015) used GTX 480/580/680/780, Trakosa et
@@ -675,7 +681,8 @@ ridge-point literature above.
 
 ⚠️ **What it must NOT grow back into:** not "we found the rule" (Schoonhoven 2022), not "we found
 it on consumer parts" (Mei 2013, Tang 2019), not "the floor voltage is per-card" (Leng 2015,
-Trakosa 2025). Full index of who owns what: `docs/RELATED-WORK.md`. Sections 2.1-2.5 of the paper need rewriting
+Trakosa 2025), not "we showed that changing the V/F relationship moves the optimum" (Mendes,
+SBAC-PAD 2020 — added 2026-09-22). Full index of who owns what: `docs/RELATED-WORK.md`. Sections 2.1-2.5 of the paper need rewriting
 against all of this.
 
 📄 **There are now TWO logs, and the second corrects the first.**
@@ -706,7 +713,9 @@ energy-optimal frequency changes with it — observed on a consumer GPU, through
 2013.** Never write "nobody has changed voltage and seen the optimum move". What survives is the
 SYSTEMATIC, REGIONAL, CONTROLLED version: they never located where it moved to, it was one
 benchmark of 37 raised as an aside and then abandoned, they shifted global voltage rather than
-reshaping a region, and there was no negative control.
+reshaping a region, and there was no negative control. ⛔ **"Systematic" no longer separates us, 2026-09-22:**
+Mendes et al. SBAC-PAD 2020 located where the optimum moved, on four workloads — see the load-floor item 1.
+**Regional and controlled still do.**
 
 🔑 **THEIR FREQUENCY RESULT RUNS THE OPPOSITE WAY TO OURS, AND THE REASON IS THE MEASUREMENT
 SCOPE.** Only 5 of 37 applications benefit from lower f_core; for the other 32 "energy consumption

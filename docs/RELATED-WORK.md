@@ -448,6 +448,10 @@ minimum-energy *plateau*, and they do not locate an energy-optimal *frequency*. 
 was the only way to see that, which is the standing rule here — **an AI-supplied summary is a lead,
 not a source.**
 
+⛔ **2026-09-22: true of THIS paper, false of the group.** Their SBAC-PAD 2020 paper *does* locate an
+EDP-optimal frequency per workload and shows it moving when the V–F relationship changes. This entry
+was taken as closing that lead, and it could not. See §9.
+
 ### 🟡 A lead for the open §4d thermal question — do NOT over-read it
 
 §3.4 reports that undervolt capability is roughly flat to **70–75 °C**, is **greatest at 55 °C**,
@@ -564,3 +568,81 @@ their model: *"searching for the optimal frequency state without exhaustive exec
 
 ✅ So the region↔optimum link and the causal manipulation remain untouched by both Guerreiro
 papers. What moves is the **measurement's** ownership, already recorded above.
+
+---
+
+## 9. Found 2026-09-22 by GPT's forward-citation screen, then checked here
+
+GPT screened the works citing Guerreiro (HPCA 2018, TPDS 2019), Mendes (JPDC 2022) and Schoonhoven
+(PMBS 2022) through OpenAlex: **109 records, 95 with abstracts, 56 flagged** — counts re-derived here
+from its [inventory CSV](gpt-findings/2026-09-22-forward-citation-abstract-inventory.csv). Full
+record: [`2026-09-22-queue-literature-and-datasheet-check.md`](gpt-findings/2026-09-22-queue-literature-and-datasheet-check.md).
+⚠️ **An abstract screen, not a full-text review.** 14 records had no abstract.
+
+### ⛔ Mendes, Tomás, Roma — *Exploiting non-conventional DVFS on GPUs: application to Deep Learning*
+
+SBAC-PAD 2020 (IEEE 32nd). Author PDF:
+`web.tecnico.ulisboa.pt/~ist14359/wordpress/nfvr_pubs/sbac-pad20.pdf`. **Read here 2026-09-22 from
+the extracted text, 9 pages** — Table II, Table IV, Table V and the setup section quoted below.
+
+🛑 **THIS IS THE CLOSEST PRE-EMPTION OF THE MANIPULATION CLAIM YET FOUND, AND IT WAS SITTING IN A
+LEAD THAT THIS REPOSITORY RECORDED AS CLOSED.** Their Table IV:
+
+| configuration | AlexNet | LeNet | VGG11 | WideResNet |
+|---|---|---|---|---|
+| default | 1600 MHz – 1.2 V | 1600 – 1.2 | 1600 – 1.2 | 1600 – 1.2 |
+| *"Standard DVFS\*"* | **1270 – 1.0** | **1270 – 1.0** | **1270 – 1.0** | **1270 – 1.0** |
+| *"Proposed @ best EDP"* | **1530 – 1.0** | 1270 – 1.0 | **1440 – 1.0** | **1530 – 1.0** |
+
+\* *"DVFS setup that optimizes EDP using manufacturer voltage values."*
+
+🔑 **That is a before/after comparison of an optimum under two V–F relationships.** With the
+vendor's pairs the EDP-optimal frequency is 1270 MHz; decouple voltage from frequency so that 1.0 V
+is available higher up, and the EDP optimum moves **up** — by **+260, +170, +260 MHz** on three of
+four models, unchanged on LeNet — **at the same 1.0 V**. Change the V/F relationship, re-locate the
+optimum, find it higher, at the same voltage: **structurally the same shape as `abba-20260908`.**
+
+⛔ **So "nothing found reshapes a V/F curve and re-locates the optimum" is false in any broad form.**
+
+✅ **What separates it from this project — narrow, and every item checked in the text:**
+
+| | Mendes et al. 2020 | this project |
+|---|---|---|
+| hardware | **AMD** Vega 10 Frontier Edition, one card | NVIDIA RTX 5060 Ti (manipulation, one card) |
+| control | voltage **written directly** via `rocm-smi`, 900–1200 mV in 50 mV steps | voltage unwritable; a vendor curve **reshaped by region** in Afterburner |
+| objective | **EDP** (energy × delay) | throughput per watt — EDP weights delay, so the optima need not coincide |
+| how the optimum is found | exhaustive search of the V–F grid down to computation errors | predicted from the floor voltage, then measured |
+| negative control | **none** | a 570 MHz edit above the floor, median moved 0 |
+| power cap | **raised** 220 → 300 W | stock |
+
+⚠️ **Do not over-read the similarity either.** Their optimum sits at 1.0 V, not at the 0.9 V bottom
+of their range, so it is **not** evidence for a "top of the floor" rule. It is evidence that moving
+the V/F relationship moves the optimum, which is the part this project cannot claim to have shown
+first.
+
+🔑 **HOW IT WAS MISSED — the mechanism is worth more than the entry.** `TODO-20260913.md` recorded this
+paper as a lead behind IEEE Xplore. On 2026-09-18 GPT surfaced the **same group's 2022 JPDC paper**,
+which was read in full (§8) and found to locate a Vmin and a minimum-energy *plateau*, not an optimal
+frequency — and `TODO-20260918.md` then recorded *"Closed the SBAC-PAD lead."* **Reading a later
+paper by the same authors closed a lead on an earlier one it did not describe.** The 2020 paper does
+exactly what the 2022 paper was found not to do. ⛔ **A lead is closed by opening that source, never
+by a sibling.**
+
+### 🟡 Zamani, Bhuyan, Chen, Chen — *GreenMD* (ACM TOPC 2023). **Abstract only.**
+
+`10.1145/3583590`. Abstract read via OpenAlex 2026-09-22; ACM DL returns 403 here. **The same group
+as SAOU (§1).** Undervolting on CPUs and GPUs with a profiling phase that extracts *"the minimum safe
+voltages (V safeMin)"* before execution; 21% GPU energy saving on MAGMA LU factorisation.
+⚠️ **GPT reports from the publisher text — a GTX 1660 Super, MSI Afterburner, 10 mV steps, a safe
+minimum voltage at each frequency. None of that is in the abstract and none is verified here.** If it
+holds it is close consumer-NVIDIA undervolting prior art — a **Vmin** quantity, like Leng and Mendes
+2022, not an efficiency optimum. **Lead, not a source.**
+
+### 🟡 Wang, Hao, Zhang, Wang — *Model-Free GPU Online Energy Optimization* (IEEE TSUSC 2023). **Abstract only.**
+
+`10.1109/TSUSC.2023.3314916`. Abstract read via OpenAlex 2026-09-22. MF-GPOEO searches clock
+configurations online with a PID controller on an **RTX 3080 Ti**, 74 applications, **26.2% mean
+energy saving at +3.4% time** against NVIDIA's default scheduling. **More consumer-NVIDIA,
+below-default optimum finding** — further weight on item 2 of the load-floor section of `CLAUDE.md`,
+which already fell. Bears on the V100 null's framing (online per-application search vs a constant),
+not on the manipulation.
