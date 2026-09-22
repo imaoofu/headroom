@@ -59,3 +59,61 @@ Throughput saturates hard at the top: 387.6 / 388.3 / 388.8 / 388.8 GB/s at 1860
 2084 MHz, agreeing across all three replicates to **0.01–0.08%**. The bandwidth ceiling is flat
 and extremely reproducible — consistent with §3.3.1's *"ceiling near 281 GB/s"* being a property of
 the path rather than of any one run, at the higher figure this stock 10-point grid reaches.
+
+---
+
+# The like-for-like test: three silent replicates on the SPLIT CURVE (P5)
+
+The stock replicates above could not exclude a **configuration-dependent** dip, because the seven
+historical runs were split-curve, repair and memory-only sweeps. P5 is the split curve — one of
+the configurations those runs actually used. Same grid, same workload, agent silent.
+
+Profile verified live: memory **13801 → 16301 → 13801** (+2500 applied, then reverted), 180 W.
+
+| run | worst single-point departure below the local trend |
+|---|---|
+| P5 r1 | **−0.84%** at 1627 MHz |
+| P5 r2 | **−0.85%** at 1627 MHz |
+| P5 r3 | −0.15% at 1552 MHz |
+
+Cross-replicate spread: max 1.35%, mean 0.57%.
+
+## ✅ Part one is settled: the LARGE dips are activity, not configuration
+
+**−2.17%, −5.93% and −6.91% appear in none of six silent replicates across two configurations.**
+The worst seen anywhere today is −0.85%. The hole stated in the stock section above is closed:
+the large historical dips are not a property of the split curve, and they are the same
+activity-driven transient measured on `gemm` in `../5060ti-finefloor-20260922/`.
+
+🔑 **Six weeks of "cause unidentified" resolves to machine activity during the run.**
+
+## 🛑 Part two is NEW: a reproducible dip at 1627 MHz
+
+**Four of six silent replicates, across two different configurations, dip at exactly 1627 MHz:**
+
+| configuration | replicates dipping at 1627 | magnitude |
+|---|---|---|
+| stock P3 | 2 of 3 | −0.43%, −0.51% |
+| **split curve P5** | **2 of 3** | **−0.84%, −0.85%** |
+
+⛔ **The activity mechanism does not explain this.** That one lands on a *different* frequency each
+run — it is transient by definition. **A feature that recurs at one frequency, on two
+configurations, under verified silence, is a property of the card or the workload.**
+
+⚠️ **And it is larger on the split curve than on stock** (−0.85% against −0.51%), which is the
+direction a memory-path effect would take, since P5 carries +2500 memory. **That is an
+observation, not a mechanism — nothing here identifies a cause.**
+
+✅ **It is consistent with the two smallest historical values** (−0.36%, −0.59%), which suggests
+the historical seven were a *mixture*: a small reproducible feature plus large activity noise
+layered on top. Separating them is what six replicates bought.
+
+**What would settle it:** a fine grid around 1627 MHz — the 10-point grid steps ~78 MHz there, so
+the feature's width is entirely unresolved. It could be one narrow notch or a broad shallow bowl.
+⛔ **Do not write it into the paper before that runs.** n=4 of 6 on a coarse grid is a lead.
+
+## Note on the two configurations' levels
+
+P5 reaches **451 GB/s** at the top against stock's **389** — the split curve's memory overclock,
+behaving as the §5.7 record describes. The comparison above is deliberately *within* each
+configuration (departure from its own local trend), never across them.
