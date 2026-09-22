@@ -41,6 +41,13 @@ adjacent grid points whose efficiency is indistinguishable.
 
 ## 🛑 What this recalibrates
 
+⛔ **NARROWED 2026-09-22 by an outside audit (`docs/gpt-findings/2026-09-22-5060ti-session-results-audit.md`), recomputed here.**
+The counts all reproduce: 9 of 12, margin median 0.986%, 13 of 24 under 1%. **But one stock pair is ONE
+draw of a movement count.** It cannot estimate the null distribution for a comparison that changes
+profiles, and P1/P4 and the P2 control each rest on single suites. 🔑 **Read §1 and §2 below as
+cautions, not calibrations**: a per-workload count of 3–6 of 12 cannot be *distinguished* from
+noise at this n. It is not *shown* to be noise. The headings below are kept as written.
+
 ### 1. "6 of 12 per-workload optima differ between P1 and P4" means nothing
 
 **3 of 12 differ between two runs of the SAME configuration.** Six is barely above that floor.
@@ -54,8 +61,10 @@ CLAUDE.md records the `repair-suite-p2-20260909` control as **"partially leaky"*
 **4 of 12 workloads move**, and warns it "must not be described as a clean null."
 
 🔑 **Two identical runs move 3 of 12.** So "4 of 12" is within one workload of the noise floor.
-**The leak that the file treats as a real weakness is largely measurement reproducibility**, and
-the control is closer to clean than it has been credited. ⚠️ This does not license calling it a
+~~**The leak that the file treats as a real weakness is largely measurement reproducibility**, and
+the control is closer to clean than it has been credited.~~ ⛔ **Struck 2026-09-22:** one pair
+cannot show that. What it shows is that the leak is **of the same size as** one measured
+same-configuration flip count. ⚠️ This does not license calling it a
 clean null either — it licenses saying that a per-workload movement count near 3–4 of 12 carries
 almost no information, in either direction.
 

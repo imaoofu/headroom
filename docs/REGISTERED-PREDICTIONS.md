@@ -139,6 +139,13 @@ Decode each saved profile from `Profiles\*.cfg` and confirm mechanically:
 > land on it individually** (attention, bgemm64, bgemm128, bgemm256, bgemm1024, conv, copy).
 > The other five: gemm 1852, bgemm32 1545, layernorm 2167, softmax 2167, reduce 2475.
 
+✅ **Checked by an outside audit against the pre-collection revision `1f6f3d6`, 2026-09-22.** The
+registered test was **the median alone**: 2010 MHz, refuted by any other grid point. It passed.
+⚠️ **The 7 of 12 is descriptive. No per-workload threshold was registered, so it is not a second
+success.** And the test is **coarse**: the registration expected P1 and P4 floor extents 30 MHz
+apart, which a ~155 MHz grid cannot resolve. P1 and P4 also differ in power limit and memory
+together. Record: `docs/gpt-findings/2026-09-22-5060ti-session-results-audit.md`.
+
 🔑 **What it tests that nothing else did.** The manipulation moved the floor and the optimum
 followed; the negative control moved the curve *above* the floor and it did not. **P1 holds the
 floor region fixed and changes POWER LIMIT (180 W against P4's 200 W) and MEMORY (+2000 against

@@ -55,6 +55,18 @@ clamp rather than a regulation target.
 **Three replicates of one configuration, 15 minutes apart, differ by up to 11% at isolated points —
 and the number of bad points tracks how busy the driving agent was.**
 
+⛔ **NARROWED 2026-09-22 by an outside audit (`docs/gpt-findings/2026-09-22-5060ti-session-results-audit.md`), recomputed here.** Two
+corrections:
+
+1. **`asc-r2` has TWO degraded points, not one:** −8.78% at 1597 and **−3.27% at 1627** against
+   `asc-r3`. It was counted as one because only one fell in the 8–11% class. **The sequence is
+   4 → 2 → 0.**
+2. 🛑 **"Tracks how busy the driving agent was" is an ASSOCIATION, not a cause.** Agent activity,
+   run order and **time since the card was switched on** all changed together (r1, r2, r3 started
+   08:59, 09:07, 09:14; the operator reports a cold start that morning). The argument below that
+   "warm-up is monotonic" rules out a *smooth* drift, not an intermittent cold-session effect.
+   ✅ **What would separate them:** alternate active and silent runs on a card already warm.
+
 | run | what the agent was doing | degraded points |
 |---|---|---|
 | `asc` | running `nvidia-smi pmon` checks and composing replies | **4** — 1560, 1590, 1620, 1747 |
@@ -80,13 +92,16 @@ find either**, which is why three replicates were needed.
 
 ✅ **It is almost certainly the same unexplained defect CLAUDE.md has carried since August** —
 *"every verified-quiet `membw` sweep on the 10-point grid has a worst point"*, *"a defect that
-lands on a different frequency each time is transient"*. **This is the first time it has been
+lands on a different frequency each time is transient"*. ~~**This is the first time it has been
 caught on `gemm` with a controlled A/B/C, and the first evidence that it is driven by machine
-activity rather than being intrinsic.**
+activity rather than being intrinsic.**~~ ⛔ **Struck 2026-09-22:** it was not controlled. Activity,
+run order and warm-up changed together. It is the first time the signature was **caught on `gemm`
+in replicate**, and activity is the leading hypothesis.
 
 ### The protocol that follows
 
-**Replicate and take the maximum.** The defect only ever removes throughput, so the max across
+**Replicate and take the maximum.** ⚠️ *This assumes the losses are one-sided, which holds in every
+run so far and is not proven in general.* The defect only ever removes throughput, so the max across
 replicates is the uncontended value — and r3 achieves it at all thirteen points. ⛔ **A single
 fine-grid sweep is not trustworthy at the ~1% level no matter how quiet the machine looks**, and
 the preflight cannot help: every one of these runs passed preflight at 2–3% SM baseline.
@@ -135,7 +150,7 @@ being tested. Replication was a precondition, not a nicety.
 
 | | |
 |---|---|
-| descending vs ascending, 13 points | **mean +0.00%**, range **−0.04% to +0.08%** |
+| descending vs ascending, 13 points | **mean +0.00%**, range ~~−0.04% to +0.08%~~ **−0.08% to +0.08%** ⛔ *corrected 2026-09-22: `bench_throughput` by matched target against `asc-r3`. desc-r1 −0.0025% mean, −0.082 to +0.080; desc-r2 −0.0115%, −0.061 to +0.067. The old range matched neither.* |
 | descending r1 vs r2 | max spread **0.06%** |
 | floor end, both directions | **0.720 V through 1560, first rise at 1590** |
 
@@ -160,7 +175,8 @@ Across `asc-r3`, `desc-r1` and `desc-r2` — three runs, two directions — **ev
 points agrees to better than 0.1%.** That is roughly eight times tighter than the ~0.76%
 within-session spread this project cites elsewhere, and it is what the fine grid plus 0.50 s
 sampling plus a silent machine buys. ⚠️ It also means the 8-11% excursions documented above are
-**four orders of magnitude outside the noise floor of this measurement**, which is why they are
+~~**four orders of magnitude**~~ **about two orders of magnitude outside the noise floor of this
+measurement** ⛔ *(corrected 2026-09-22: 8–11% against 0.1% is ~100x, not 10,000x)*, which is why they are
 attributable at all.
 
 ✅ **Corroboration of the dither finding, unlooked for:** `desc-r1` reports **0.738 V** at 1620 where
