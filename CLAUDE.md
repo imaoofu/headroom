@@ -278,7 +278,7 @@ attribute nothing to it. Read the driver off a sweep JSON, never off this file.
 | `nvmlDeviceSetClockOffsets` (per-P-state) | ✅ Available. Graphics ±1000 MHz, memory −2000/+6000. Writes return `NO_PERMISSION` un-elevated — **not** `NOT_SUPPORTED`, so it works with elevation. |
 | `nvmlDeviceGetGpcClkVfOffset` (global V/F) | ❌ **NOT_SUPPORTED** on this card. Closed on consumer Blackwell. |
 | **Read or write voltage via NVML** | ❌ **Impossible.** Zero voltage exports across all 260 NVML device functions; a scan of field IDs 1–259 returns 44 readable fields and no voltage at any scale. |
-| **Read voltage via HWiNFO** | ✅ **Works, and is load-bearing.** Core voltage and crossbar clock, **binned onto sweeps by CORE CLOCK, not by timestamp** — `join_hwinfo_voltage.py` rejects a time join because the sweep CSV records durations rather than absolute timestamps. **18 voltage extracts across 7 directories and 3 chips.** ⚠️ Sampling rate is **NOT** one number: the main machine logs at **2.00 s** and the USB collection kit at **0.50 s** (`HWiNFO64.INI`, `SensorInterval=500`), so kit runs carry ~4x the samples per frequency bin. This is the project's central mechanism result — see below. |
+| **Read voltage via HWiNFO** | ✅ **Works, and is load-bearing.** Core voltage and crossbar clock. **Historical extracts were binned by core clock.** Since 2026-09-21 the sweep CSV preserves the benchmark's absolute timed-region bounds and `join_hwinfo_voltage.py` uses them when complete; legacy CSVs still use clock bins. The new time path has synthetic tests but **no hardware-collected sweep has verified it yet**. **18 voltage extracts across 7 directories and 3 chips.** ⚠️ Sampling rate is **NOT** one number: the main machine logs at **2.00 s** and the USB collection kit at **0.50 s** (`HWiNFO64.INI`, `SensorInterval=500`), so kit runs carry ~4x the samples per frequency bin. This is the project's central mechanism result — see below. |
 | `nvidia-smi -svfd` | ❌ Rubin+ only. Not Blackwell. |
 | Per-point V/F curve reshaping | ⚠️ Undocumented NVAPI only (`ClockClientClkVfPointsSetControl`, `0x0733E009`). Out of scope — breaks on driver updates. |
 
@@ -598,9 +598,21 @@ undervolting imposes an otherwise invisible XBAR ceiling and proposes changing t
 mVolt+ or setting a voltage ceiling instead. **Never write "no workaround has been published."**
 
 🟡 **A recipe matching the repair's SHAPE also predates it** — a 2022 Reddit "Method 4" post
-describing retention of stock curve points below the target voltage. ⚠️ **NOT VERIFIED HERE**:
-Reddit blocks automated retrieval from this environment, so this rests on the outside reader's
-report alone. Treat as an unconfirmed lead until someone opens it. **If it holds, the curve shape
+describing retention of stock curve points below the target voltage. ⚠️ **NOT VERIFIED HERE**, and
+the URL is known: `reddit.com/r/nvidia/comments/wghb9d/i_present_to_you_method_4_of_undervolting_your_gpu/`
+(recorded in `docs/gpt-findings/2026-09-18-xbar-prior-art.md`). This rests on the outside reader's
+report alone. Treat as an unconfirmed lead until someone opens it.
+
+⛔ **THIS SAID "REDDIT BLOCKS AUTOMATED RETRIEVAL FROM THIS ENVIRONMENT" UNTIL 2026-09-21. THAT
+ATTRIBUTES THE BLOCK TO THE WRONG SIDE.** Re-tested that day: the in-app browser refuses both
+`reddit.com` and `old.reddit.com` as *"not allowed due to safety restrictions"*, and `WebFetch`
+returns *"unable to fetch from www.reddit.com"*. **Both are this environment's own domain policy,
+not Reddit's anti-bot defences.** 🔑 The wrong reason points at the wrong fix: "Reddit blocks us"
+invites trying a cleverer retrieval tool, when in fact **no tool running in this session will ever
+reach it.** ✅ **The cheapest close is Raymond opening the URL himself and pasting the text** —
+thirty seconds, and it yields the primary-source read this file's citation discipline demands.
+⚠️ **Do not settle for a third-party Reddit mirror.** That is the "convenient summary" that has
+already produced four citation errors here. **If it holds, the curve shape
 alone carries no distinction** and the contribution is the diagnosis plus the advance prediction.
 
 The CPU analogue (Intel uncore frequency scaling gating DRAM bandwidth) is long-established.
