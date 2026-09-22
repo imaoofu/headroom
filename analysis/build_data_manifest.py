@@ -51,13 +51,13 @@ MANIFEST_CSV = REPO_ROOT / "data" / "MANIFEST.csv"
 # figure rather than a remembered one; if the abstract changes, this must change with it and the
 # mismatch is the point.
 PAPER_CLAIMS = {
-    "NVIDIA GeForce RTX 5060 Ti": 351,
+    "NVIDIA GeForce RTX 5060 Ti": 375,
     "NVIDIA GeForce RTX 3070 Ti": 25,
     "NVIDIA GeForce RTX 2060 SUPER": 18,
     "NVIDIA GeForce RTX 3060": 14,
 }
 PAPER_VERIFICATION_RUNS = 3
-PAPER_TOTAL = 411
+PAPER_TOTAL = 435
 
 # ---------------------------------------------------------------------------------------------
 # CLASSIFICATION. Every exclusion names itself. A sweep is never dropped silently, and the reason
