@@ -117,3 +117,52 @@ other two are kept because the comparison between them *is* the methodological f
 **Files:** `_sweep.csv` / `_sweep.json` per run, `_sweep_voltage.csv` the HWiNFO join.
 🆕 These are the first sweeps carrying `window_start_unix` / `window_end_unix`, so the voltage join
 ran in **time mode** rather than binning by clock — its first use on hardware-collected data.
+
+---
+
+# 4b — the descending twin. **The floor is a curve property, not a thermal one.**
+
+Two descending replicates (`*-desc-r1`, `*-desc-r2`), same band, same config, same session. The
+sweep counts DOWN from 1760, which *is* the experiment: the card arrives at each low frequency
+having just been hot, instead of warming into it.
+
+⛔ **Run TWICE deliberately.** 4i above showed isolated points losing 8-11% transiently on a
+different frequency each time. 4b asks whether the floor differs by direction — **one descending
+run with a transient bad point would look exactly like a direction effect**, which is the thing
+being tested. Replication was a precondition, not a nicety.
+
+## The answer
+
+| | |
+|---|---|
+| descending vs ascending, 13 points | **mean +0.00%**, range **−0.04% to +0.08%** |
+| descending r1 vs r2 | max spread **0.06%** |
+| floor end, both directions | **0.720 V through 1560, first rise at 1590** |
+
+✅ **And the thermal histories really are different**, which is what makes the null meaningful
+rather than vacuous:
+
+| | at 1378 MHz | at 1747 MHz |
+|---|---|---|
+| ascending (warming in) | **43.8 °C** | 51.1 °C |
+| descending (cooling down) | **46.5 °C** | 48.2 °C |
+
+**Up to ~4 °C apart at the extremes, and the floor and the throughput do not move at all.**
+
+🔑 **So the floor extent belongs to the applied V/F curve, not to the card's thermal state** — the
+✅ branch of the worklist's reading table. ⚠️ **This is one chip.** `SESSION-E-RUNSHEET.md` §4d asks
+the same question of the RTX 2060 Super, whose floor is the ambiguous one, and this does not answer
+it there.
+
+## A precision note worth keeping
+
+Across `asc-r3`, `desc-r1` and `desc-r2` — three runs, two directions — **every one of the thirteen
+points agrees to better than 0.1%.** That is roughly eight times tighter than the ~0.76%
+within-session spread this project cites elsewhere, and it is what the fine grid plus 0.50 s
+sampling plus a silent machine buys. ⚠️ It also means the 8-11% excursions documented above are
+**four orders of magnitude outside the noise floor of this measurement**, which is why they are
+attributable at all.
+
+✅ **Corroboration of the dither finding, unlooked for:** `desc-r1` reports **0.738 V** at 1620 where
+r3 reports 0.740. That is the 0.735/0.740 mixture showing up in the median — the same point 4i
+independently flags at a 38% minority.
