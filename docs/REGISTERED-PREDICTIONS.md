@@ -130,9 +130,33 @@ Decode each saved profile from `Profiles\*.cfg` and confirm mechanically:
 
 ---
 
-## 2. Profile 1 — PENDING, registered 2026-09-11
+## 2. Profile 1 — ✅ COLLECTED 2026-09-22, THE PREDICTION HOLDS
 
-**Status: not yet swept.**
+**Status: swept.** `data/frequency-sweeps/5060ti-p1-suite-20260922/`, twelve workloads
+× 13 frequencies, unattended, operator absent.
+
+> **Measured median optimum: 2010 MHz — the registered grid point. Seven of twelve workloads
+> land on it individually** (attention, bgemm64, bgemm128, bgemm256, bgemm1024, conv, copy).
+> The other five: gemm 1852, bgemm32 1545, layernorm 2167, softmax 2167, reduce 2475.
+
+🔑 **What it tests that nothing else did.** The manipulation moved the floor and the optimum
+followed; the negative control moved the curve *above* the floor and it did not. **P1 holds the
+floor region fixed and changes POWER LIMIT (180 W against P4's 200 W) and MEMORY (+2000 against
++2500)** — the two variables neither existing arm touches. The optimum did not move.
+
+⚠️ **Two variables at once, so a movement would not have identified which caused it.** That
+asymmetry is what makes the test admissible: the prediction is refuted *by movement*, whatever its
+cause, because the mechanism claims the floor extent is sufficient. **State it that way, never as a
+clean single-variable control.**
+
+✅ **Provenance is independently witnessed, not asserted.** P1 carries memory +2000 where stock
+carries +0, so the memory clock confirms the profile was live: **13801 MHz before, 15801 after
+applying, 13801 after reverting.** The runner refused to sweep unless the post-apply reading
+cleared stock, and reverted in a `finally`. ⚠️ Check the memory **maximum**, not the average — the
+average is diluted by 810 MHz idle samples between iterations and looks alarming without meaning
+anything.
+
+**Original registration follows, unedited:**
 
 P1 is easy to mis-remember as the memory-only profile. It is not: it carries the **same +478 MHz
 floor offset as P4**, giving a floor extent of **1972 MHz**. It differs from P4 in **power limit
