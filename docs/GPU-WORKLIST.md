@@ -16,6 +16,24 @@ outrank this one:** if a card that leaves is reachable on a given day, its items
 
 **Roughly 19 hours of bench work remains. About 10 of it is on cards that leave.**
 
+## 🆕 2026-09-21 — the operator no longer has to be present at run boundaries
+
+⛔ **EVERY TIME ESTIMATE BELOW WAS COSTED ON THE ASSUMPTION THAT A HUMAN CLICKS HWiNFO'S LOGGING
+BUTTON BETWEEN RUNS.** That is no longer true. `tools/hwinfo-logging/` presses it by Win32 message
+and verifies the log by file growth, and `Invoke-LoggedSweep.ps1` wraps preflight, log start,
+sweep and log stop into one elevated scheduled task an unelevated process can trigger.
+
+| what changed | consequence for this list |
+|---|---|
+| logging start/stop is automated | 🔑 **multi-configuration items stop needing an operator at each boundary** |
+| the wrapper stops the log in a `finally` | a sweep that dies can no longer leave logging running into the next configuration |
+| the agent never screenshots during a run | it cannot reproduce the 9.38% contamination a GUI-driving agent would |
+
+⚠️ **What has NOT changed.** Afterburner curve edits are still by hand, so anything with a profile
+change still needs a person between arms. And the wrapper **has never driven a real sweep** — every
+test so far was `-WhatIfOnly` or the logging tool alone. **The first live run should be short and
+watched.** Full rationale and exit codes: `tools/hwinfo-logging/README.md`.
+
 | card | remaining | expires? |
 |---|---|---|
 | **RTX 3070 Ti** | ~5 h 40 | ✅ **yes — it ships** |
@@ -226,8 +244,10 @@ core curve untouched, and +2500 → +0 is strictly the safe direction. ~10 min o
 
 ⛔ **Read the five-slot rules above first.** Snapshot, and do not take P1 before 4k has run.
 
-⚠️ **The operator must be present twice**, once per configuration, because one HWiNFO log must
-never span two. It is not an unattended run.
+⚠️ **Two configurations, so two logs** — one HWiNFO log must never span two. ⛔ **This bullet
+said "the operator must be present twice... it is not an unattended run" until 2026-09-21.** The
+logging half is now automated (`tools/hwinfo-logging/`), so what still needs a person is only the
+**profile change between the arms**, not the log boundaries.
 
 ⛔ **What it does NOT settle: mediation.** That needs direct XBAR intervention at fixed core curve
 and fixed MCLK, which needs runtime XBAR control this card does not have. 4j removes a confound; it

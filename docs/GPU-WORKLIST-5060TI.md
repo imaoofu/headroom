@@ -28,6 +28,17 @@ are the main thing this document adds over the master list.
 ⚠️ **Set `HEADROOM_SKIP_HOOKS=1` for the session.** The PostToolUse gate is only 0.18 s, but 0.18 s
 of this machine is not nothing while it is the instrument.
 
+**3. 🆕 2026-09-21 — the boundaries are automated, so "contamination" now means the operator's
+OTHER work, not the run's own setup.** `tools/hwinfo-logging/Invoke-LoggedSweep.ps1` does preflight
+→ log start → sweep → log stop as one elevated scheduled task, triggered by `schtasks /run`. That
+removes the operator from every boundary in this list **except an Afterburner curve change**, which
+is still by hand. 🔑 **Which means the items that batch cleanly are the ones with no profile change
+— Block 1 is exactly that**, and it is now runnable start to finish without anyone at the desk.
+
+⚠️ **The wrapper has never driven a real sweep.** Every test was `-WhatIfOnly` or the logging tool
+alone. **Make the first live run a short watched one** — 4i at 13 points is ~15 minutes — and only
+then leave a session unattended.
+
 ---
 
 ## 🛑 The five-slot problem, in the order it actually binds
@@ -67,16 +78,24 @@ nvidia-smi pmon -c 5 -s u
    1545 MHz once.
 4. ⛔ **Then leave the machine alone.** A passing preflight says nothing about what happens during
    the run.
-5. **One HWiNFO log per configuration.** The join bins by core clock and cannot separate two
-   configurations inside one log.
+5. **One HWiNFO log per configuration.** Historical joins bin by core clock and cannot separate
+   configurations in one log. New benchmark-window joins can separate complete new sweeps, but
+   separate logs keep each configuration's provenance explicit.
 
 ---
 
-# BLOCK 1 — the stock fine-sweep block. **~65 min, four items, no Afterburner at all.**
+# BLOCK 1 — the stock fine-sweep block. **~65 min, four items.**
 
 🔑 **This is the highest-value hour on the list and it did not exist as a unit before today.** Four
-items share stock Profile 3, one band, one preflight and one HWiNFO session. Two of them are Tier 3
+items share stock Profile 3, one band and one preflight. Each run needs its own HWiNFO log. Two of them are Tier 3
 and would never justify a session of their own; inside this block they cost only their run time.
+
+**CORRECTED 2026-09-21.** The heading previously said *"no Afterburner at all"* and this paragraph
+said *"one HWiNFO session"*. That assumed Profile 3 would already be live and used "session" for
+the shared bench block. The live card read 200 W on 2026-09-21, versus the stock 180 W default,
+so applying and verifying saved Profile 3 is required before this block. The protocol has always
+required a separate HWiNFO log per run. Neither application nor logging occurred during this
+correction.
 
 ⛔ **Set `SensorInterval=500` in the main machine's `HWiNFO64.INI` before starting, and run the
 whole block at it.** The machine normally logs at **2.00 s**, giving only 5–9 samples per point.
@@ -95,8 +114,9 @@ confounds gone for no extra minutes.**
 | 3 | **4h** | **1530–1620**, 13 pts, ~7.5 MHz | 15 | 3 |
 | 4 | **4c** | ascending same band with a **−300 MHz NVML P0 offset** | 10 | **1** |
 
-**New HWiNFO log per run.** 🛑 **Join with `--clock-tolerance 7`** — the ±25 MHz default shares
-samples on a grid this fine, and it now refuses rather than doing it silently.
+**New HWiNFO log per run.** New stamped sweeps join by benchmark time automatically. For an older
+sweep without stamps, 🛑 **join with `--clock-tolerance 7`** — the ±25 MHz default shares samples
+on a grid this fine, and the clock join refuses rather than doing it silently.
 
 ### 4i — does the 5 mV grid dither?
 
