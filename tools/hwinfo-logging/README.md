@@ -190,7 +190,7 @@ you are present for.~~
 exited 0. Every log was non-empty and recorded **118–121 rows per minute** against the 120 expected
 at 0.50 s. That covered 4.6 hours of sweeps between 08:59 and 14:29, including Afterburner profile
 changes verified by memory clock. Each run's `wrapper-result.json` is in
-`C:\headroom-benchesults\`. ⚠️ **The scheduled task was never registered**; that day's runs
+`C:\headroom-bench\results\`. ⚠️ **The scheduled task was never registered**; that day's runs
 were driven from an already-elevated agent shell. **Two things still need a person:** opening
 HWiNFO and its Sensors window, because launching it triggers UAC, and keeping the machine awake and
 un-rebooted.
