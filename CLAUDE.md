@@ -316,7 +316,8 @@ stored +176 is the previous record's offset**: the lag appears wherever the offs
 only at the 935 mV plateau boundary. 🛑 **Never trust `base + offset` at a point where the offset
 changes.** And P5's committed data runs 2462 and 2602 MHz at 0.845 V although its 845 point decodes to
 2362, so **the driver's use of that region is not readable from the stored points at all.** Measure
-it. `data/afterburner-profiles/5060ti-profiles-20260922-rungB/README.md`.
+it. `data/afterburner-profiles/5060ti-profiles-20260922-rungB/README.md`. ✅ **The committed decoder,
+`tools/afterburner/decode_profiles.py`, flags every such point** instead of summing it.
 
 ⛔ **Both earlier explanations are struck.** The original — "a naive stride-3 read mispairs at the
 zero-offset boundary" — was right in kind, wrong in place: P1 and P4 have no zero-offset point above

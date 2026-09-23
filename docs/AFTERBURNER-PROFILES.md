@@ -159,10 +159,18 @@ power, so a single locked point at 2010 MHz identifies which family is live in a
 INI text. Each `[ProfileN]` section carries `PowerLimit` (percent), `CoreClkBoost` and `MemClkBoost`
 (both in kHz, so `2500000` is +2500 MHz), and `VFCurve` as a hex blob.
 
-The blob is **3224 bytes: an 8-byte header (`000002007f000000`) followed by 268 float32 triples**, of
-which the first 127 are real curve points and the remainder are zero padding. Each triple is
-**(offset, voltage_mV, base_clock_MHz)** and the applied clock is `base + offset`. Voltages run
-450–1240 mV.
+The blob is **3224 bytes: an 8-byte header (`000002007f000000`) followed by 268 float32 triple
+slots**, of which the first 127 are real curve points. Each real triple is **(offset,
+voltage_mV, base_clock_MHz)**; the raw arithmetic is `base + offset`. Voltages run 450–1240 mV.
+
+⛔ **PADDING CLAIM CORRECTED, 2026-09-22.** This paragraph said *"the remainder are zero
+padding."* That is false in **all 20 profile blobs** checked across the 2026-09-08, 09-08b,
+09-18 and 09-22 snapshots: the first float32 after the 127th triple repeats the last real
+offset (−2500, −2586, −2423 or 0 MHz), and only the bytes after it are zero. The old claim came
+from treating the header's 127-point count as the end of all nonzero data without examining the
+first padding slot. `tools/afterburner/decode_profiles.py` now checks the observed tail explicitly.
+The older `data/afterburner-profiles/5060ti-profiles-20260908.json` still carries the wrong
+`format_note`; that source snapshot is read-only and is preserved as recorded, not rewritten.
 
 ### How the plateau is encoded, and the one record that decodes impossibly
 
