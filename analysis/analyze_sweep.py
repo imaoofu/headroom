@@ -75,12 +75,17 @@ def loadSweep(path):
     return sorted(rows, key=lambda r: r["mhz"])
 
 
+def efficiencyPeak(rows):
+    """Select the same maximum-efficiency row used by sweep descriptions."""
+    return max(rows, key=lambda r: r["efficiency"])
+
+
 def describe(name, rows):
     if len(rows) < 3:
         print(f"{name}: only {len(rows)} usable points - skipping.\n")
         return None
 
-    peak = max(rows, key=lambda r: r["efficiency"])
+    peak = efficiencyPeak(rows)
     fastest = max(rows, key=lambda r: r["mhz"])
     scale = 1e12 if "FLOP" in rows[0]["unit"] else 1e9
     label = "TFLOP/s" if scale == 1e12 else "GB/s"

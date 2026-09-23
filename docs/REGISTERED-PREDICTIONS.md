@@ -503,6 +503,40 @@ the headline** — the 5060 Ti result would then be a single-chip curiosity rath
 reviewer specifically defended this design: sharing chip, session and operator is what a negative
 control is *for*. If the session is cut short, run 4b, not a second replicate of 4a.
 
+### ⛔ AMENDMENT, recorded 2026-09-22: the design changed BEFORE collection, and this file never said so
+
+**Found by GPT while writing the Session D scorer (`docs/gpt-findings/2026-09-22-session-d-scorer.md`),
+verified here against git.** 4a and 4b above are unedited, as the rules require. **They do not
+describe the experiment that will run.**
+
+| | registered above, 2026-09-11 | what will run: `SESSION-D-RUNSHEET.md` |
+|---|---|---|
+| 4a direction | **extend** the floor **upward** | **shorten** it **downward**: cap ≤0.825 V at 1200 MHz |
+| 4a boundary | ≤0.819 V | ≤0.819 V at first (`9ab8ba6`, 09-13), **0.825 V** from `8d2a22e` (09-20) |
+| 4a prediction | "moves with the new floor end… comparable fraction" | **median 1485 → 1170 or 1275 MHz**, first stated 09-13 |
+| 4b dose | **at least 300 MHz** | **263 MHz**: all the range the card has above its floor |
+
+**Why it changed:** the runsheet gives the reason in its first version (`9ab8ba6`, 2026-09-13). The
+card is **power-capped at ~1763 MHz**, so an upward edit has at most +263 MHz of dose, and any result
+would be entangled with the power cap. Shortening has −300 MHz available with nothing in the way,
+and it is the safe direction.
+
+✅ **What is still a genuine advance prediction:** the runsheet's numbers are committed in git on
+2026-09-13 and 2026-09-20. **No Session D data exists as of this amendment.** The mechanism predicts
+movement *with* the floor end in either direction, so reversing the direction tests the same
+claim.
+
+⛔ **What must be said when this is reported:**
+1. §4a as worded above did **not** predict the shortening direction or the 1170/1275 numbers.
+   **Cite the runsheet's commits for those, not this file.**
+2. The control's dose is **263 MHz, below the 300 MHz registered.** Report the shortfall. Do not
+   round it away.
+
+🔑 **How it got in: the same way as the 2026-09-19 registration error.** The run record was right and
+the ledger that summarises it drifted. This time the runsheet even said *"predictions are already
+registered in §4, do not change them"* while describing the opposite edit. **Whenever a runsheet
+changes a design, amend this file in the same commit.**
+
 ## 4c. 2060 Super — the boundary condition, made decidable or shown not to be
 
 > **Reshaping the floor region on a card whose voltage leaves the floor 6 mV at a time will produce

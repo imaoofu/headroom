@@ -7,7 +7,8 @@
 |---|---|
 | [`SESSION-D-COMMANDS.md`](SESSION-D-COMMANDS.md) | **the commands, in order**: read this at the machine |
 | [`SESSION-D-RUNSHEET.md`](../data/frequency-sweeps/rtx3070ti-20260825/SESSION-D-RUNSHEET.md) | the design, the stock curve as measured, why each edit is shaped as it is, what each outcome means |
-| [`REGISTERED-PREDICTIONS.md`](REGISTERED-PREDICTIONS.md) §4a–4b | the predictions, registered before any edit |
+| [`REGISTERED-PREDICTIONS.md`](REGISTERED-PREDICTIONS.md) §4a–4b | the predictions. ⛔ **Read the amendment under §4b**: the design reversed from extending the floor to shortening it on 2026-09-13, and the control's dose is 263 MHz, not the ≥300 registered. Cite the runsheet's commits for the numbers |
+| `analysis/score_session_d.py` | 🆕 **the scoring, written before the data**: `python analysis/score_session_d.py <results dir>`. Needs every sweep's voltage extract. It will not score the session unless stock run 1's median is **1485** |
 
 🔑 **Session D is the single item that changes what the paper can claim.** The causal result is
 one chip. This makes it two chips and two architectures, with the negative control. After the
