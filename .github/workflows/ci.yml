@@ -98,6 +98,13 @@ jobs:
       - name: Tests
         run: python run_tests.py
 
+      # A reviewed hash list lives outside data/. This deliberately fails closed until the
+      # initial baseline is approved and added; CI must never create or refresh it itself.
+      # The dedicated step makes a data-integrity failure visible beside the tests and claims
+      # audit rather than hiding it inside either result.
+      - name: Measurement file integrity
+        run: python analysis/check_data_hashes.py --check
+
       - name: Claims audit
         run: python analysis/audit_claims.py
 

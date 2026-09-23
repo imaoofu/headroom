@@ -55,7 +55,18 @@ making an accident. It is not an integrity control and must never be cited as on
 file, verified in CI. `data/MANIFEST.json` already censuses 367 files with `path`, `category`,
 `rule`, `driver` and more, and **carries no hash of any kind**. Adding one and checking it is
 agent-agnostic, survives a harness nobody has heard of yet, and is the only version of this that
-does not need updating every time a new tool gains write access. **Not yet built.**
+does not need updating every time a new tool gains write access. ~~**Not yet built.**~~
+
+✅ **BUILT 2026-09-22**: `analysis/check_data_hashes.py`, built by GPT and reviewed and widened by
+Claude. The reviewed baseline, `docs/data-measurement-hashes.json`, covers **1,106 files**: every
+tracked file under `data/` except Markdown, `.gitkeep` and the two generated manifests. All 1,106 were
+verified against their committed versions before it was accepted. Hashes ignore line endings. It
+runs as its own **CI step**, so a silently altered measurement fails CI even while the tests and the
+claims audit pass. The demonstrated case (855 MHz, 0.819 → 0.900 V) is in its test suite.
+
+🛑 **After committing new sweeps, run `python analysis/check_data_hashes.py --write` and READ THE DIFF.**
+CI fails until then, which is intended. A `--write` accepted without reading **legitimises whatever
+changed** — the gate detects changes; it cannot judge them.
 
 ## Why the test suite is NOT in a hook
 
