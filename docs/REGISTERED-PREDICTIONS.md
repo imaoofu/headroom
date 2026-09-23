@@ -134,8 +134,10 @@ P5. Check 4 passes: 850 → 860 mV rises. ⛔ **Check 3 FAILS, and the fault is 
 not the build.** "Every point below 850 mV lies between stock and P4" is impossible at **650–690 mV**,
 because **P4 IS stock there**, so any raised rung exceeds it: rung B has 997 MHz at 650 mV against P4's
 817. The card never runs below 0.720 V under load, so this matters at light load only. But the
-envelope argument above is false at those points. ⚠️ **845 mV is unresolved:** the editor shows 2362,
-the file stores base 2362 + offset 176. Settle it before collection.
+envelope argument above is false at those points. ~~⚠️ **845 mV is unresolved.**~~ ✅ **Resolved
+2026-09-22:** the editor shows 2362, +0, and a re-save was byte-identical, so the stored (+176, 2362) is
+the same state, mispaired by the decoder at an offset boundary. Check 5 is done: snapshot
+`data/afterburner-profiles/5060ti-profiles-20260922-rungB/`. **Rung B is ready for collection.**
 
 ---
 

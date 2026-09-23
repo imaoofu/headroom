@@ -309,6 +309,15 @@ PREVIOUS record's base to the plateau. The offset field lags the base field by o
 boundary, which is invisible everywhere else because a shift inside a constant-offset block changes
 nothing. **So it IS a pairing problem**, and only its location was ever misdescribed.
 
+⛔ **"EXACTLY ONE RECORD… ALWAYS AT 935 mV" IS NOT THE WHOLE STORY, found 2026-09-22 on rung B.** Its
+845 mV point is stored as (offset +176, base 2362), which decodes to 2538. The curve editor shows
+**2362, +0**, and a re-save produced a **byte-identical file**, so both describe the same state. **The
+stored +176 is the previous record's offset**: the lag appears wherever the offset changes value, not
+only at the 935 mV plateau boundary. 🛑 **Never trust `base + offset` at a point where the offset
+changes.** And P5's committed data runs 2462 and 2602 MHz at 0.845 V although its 845 point decodes to
+2362, so **the driver's use of that region is not readable from the stored points at all.** Measure
+it. `data/afterburner-profiles/5060ti-profiles-20260922-rungB/README.md`.
+
 ⛔ **Both earlier explanations are struck.** The original — "a naive stride-3 read mispairs at the
 zero-offset boundary" — was right in kind, wrong in place: P1 and P4 have no zero-offset point above
 695 mV and P5's ends at 850 mV, yet all three put the artifact at 935. Its replacement, written hours

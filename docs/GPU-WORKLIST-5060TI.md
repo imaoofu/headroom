@@ -43,9 +43,11 @@ so those points only apply at light load, but the "inside a tested envelope" cla
 ✅ **Rung B was built into P1 on 2026-09-22 and decoded.** 720 mV reads **1702**, the predicted grid
 point. The floor region is lifted +165 to +172, because Afterburner stores clocks on a grid where
 +170 exactly does not exist. Everything at 850 mV and above is identical to P5.
-⚠️ **OPEN: 845 mV.** Raymond set it back to 2362 in the editor and saved. The file still stores
-**base 2362 + offset 176 = 2538**, while the editor shows +0 at 2362. **Resolve which one the
-driver uses before the 4e suite runs.** Snapshot P1 into `data/afterburner-profiles/` once it is settled. **Never use the
+✅ **845 mV RESOLVED, and rung B is READY (snapshot `data/afterburner-profiles/5060ti-profiles-20260922-rungB/`).**
+The editor shows 2362, +0, and a re-save produced a byte-identical file. The stored "+176" is the
+decoder mispairing the offset at a boundary, not a different curve. ⚠️ Points below 700 mV cannot be
+edited in the GUI, yet decode as lifted; they matter only at light load. **Above-floor equivalence to
+P5 is checked by measurement:** compare the 4e suite's voltage extracts with P5's at the same targets. **Never use the
 core-clock slider** for these, because it would move the top of the curve.
 
 **Not curves, but also yours to do:** OCCT (4l, 4g). The first NVML offset write (4c) is done.
