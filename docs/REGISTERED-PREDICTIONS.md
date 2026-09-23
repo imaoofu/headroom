@@ -128,6 +128,15 @@ Decode each saved profile from `Profiles\*.cfg` and confirm mechanically:
 
 *(empty — to be filled after collection, without editing anything above)*
 
+⛔ **Pre-run verification of rung B, 2026-09-22 (built into P1, decoded from the live store).**
+Check 1 passes: 720 mV reads **1702**, inside 1624–1777. Check 2 passes: everything at 850 mV and above is
+P5. Check 4 passes: 850 → 860 mV rises. ⛔ **Check 3 FAILS, and the fault is in this registration,
+not the build.** "Every point below 850 mV lies between stock and P4" is impossible at **650–690 mV**,
+because **P4 IS stock there**, so any raised rung exceeds it: rung B has 997 MHz at 650 mV against P4's
+817. The card never runs below 0.720 V under load, so this matters at light load only. But the
+envelope argument above is false at those points. ⚠️ **845 mV is unresolved:** the editor shows 2362,
+the file stores base 2362 + offset 176. Settle it before collection.
+
 ---
 
 ## 2. Profile 1 — ✅ COLLECTED 2026-09-22, THE PREDICTION HOLDS
@@ -648,7 +657,7 @@ shell: `powershell -ExecutionPolicy Bypass -File tools\hwinfo-logging\experiment
 
 ---
 
-## 6. RTX 5060 Ti: does the load floor survive an NVML clock offset? (worklist 4c) Registered 2026-09-22, PENDING
+## 6. RTX 5060 Ti: does the load floor survive an NVML clock offset? (worklist 4c) Registered 2026-09-22 — ✅ COLLECTED, HOLDS
 
 **Why.** Guerreiro et al., TPDS 2019, report that voltage shows two regions (constant, then rising)
 when the frequency is changed through NVML, but that *"the voltage stays constant across all
@@ -684,6 +693,22 @@ way the voltage comparison above is made at achieved clock.
 **Validity:** A2 must match A1, with voltage within one 5 mV code at every point and throughput
 within ~1%. Otherwise the session drifted, or the reset did not take, and B is not interpretable.
 The offset is reset in a `finally` block and read back, whatever happens.
+
+### ✅ Result, collected 2026-09-22 — THE PREDICTION HOLDS
+
+`data/frequency-sweeps/5060ti-nvml-offset-20260922/`. Nothing above was edited.
+
+| registered | measured |
+|---|---|
+| B shows two regions | ✅ 0.720 V through **1245** achieved, rising from **1290** |
+| floor end within 50 MHz of ~1270 | ✅ **1245–1290** |
+| V_B(f) = V_A1(f+300) within one 5 mV code | ✅ **≤2 mV** at all 8 on-grid pairs, and **≤3 mV** at 8 pairs against the 09-22 morning stock run |
+| *open:* does the lock hold under the offset? | **Yes.** Every point held; achieved clocks within 7.3 MHz of A1 |
+| validity: A2 matches A1 | ✅ voltage identical at all 15 points, throughput within 0.78%, reset verified |
+
+**Refutation did not occur:** B's voltage is not constant across the band. ⚠️ One run per condition,
+one offset (−300), one workload, one chip. 4d is superseded; its criterion could not hold as worded
+(see CLAUDE.md).
 
 ---
 

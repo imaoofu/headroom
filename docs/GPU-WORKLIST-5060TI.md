@@ -11,7 +11,7 @@ sweeps. What still needs Raymond:
 
 1. Opening HWiNFO and its Sensors window before leaving, because launching it needs UAC.
 2. Building curves.
-3. The first NVML offset write.
+3. ~~The first NVML offset write.~~ Done 2026-09-22. Offset runs can now be unattended.
 4. OCCT, which is a GUI program.
 
 ---
@@ -35,10 +35,20 @@ Raising everything at or below 840 mV creates **no new downward step**: 840 mV l
 already in P5, and Afterburner accepts it there.
 
 🛑 **Safe by construction:** below 850 mV every point sits between stock (+0) and P4 (+472), and at
-or above 860 mV the curve is P5 unchanged. Both bounds have run multi-hour suites. **Never use the
+or above 860 mV the curve is P5 unchanged. Both bounds have run multi-hour suites. ⛔ **Wrong at
+650–690 mV, found 2026-09-22 when rung B was decoded.** P4 **is** stock there, so a raised rung sits
+above P4: rung B has 997 MHz at 650 mV where P4 has 817. The card never runs below 0.720 V under load,
+so those points only apply at light load, but the "inside a tested envelope" claim does not hold there.
+
+✅ **Rung B was built into P1 on 2026-09-22 and decoded.** 720 mV reads **1702**, the predicted grid
+point. The floor region is lifted +165 to +172, because Afterburner stores clocks on a grid where
++170 exactly does not exist. Everything at 850 mV and above is identical to P5.
+⚠️ **OPEN: 845 mV.** Raymond set it back to 2362 in the editor and saved. The file still stores
+**base 2362 + offset 176 = 2538**, while the editor shows +0 at 2362. **Resolve which one the
+driver uses before the 4e suite runs.** Snapshot P1 into `data/afterburner-profiles/` once it is settled. **Never use the
 core-clock slider** for these, because it would move the top of the curve.
 
-**Not curves, but also yours to do:** the first NVML offset write (4c), and OCCT (4l, 4g).
+**Not curves, but also yours to do:** OCCT (4l, 4g). The first NVML offset write (4c) is done.
 
 ---
 
@@ -49,8 +59,7 @@ core-clock slider** for these, because it would move the top of the curve.
 | 1 | **A/B** | **Activity A/B test**, `REGISTERED-PREDICTIONS.md` §5 | ~80 min + uptime wait | HWiNFO open | 2 |
 | 2 | **4e** | **Rung B suite**, `REGISTERED-PREDICTIONS.md` §1 | ~55 min | building curve 1 | 3 |
 | 3 | **4f** | **Rung C suite** | ~55 min | building curve 2 | 3 |
-| 4 | **4c** | NVML offset precondition | ~15 min | 🛑 **present for the first write** | **1** |
-| 5 | **4d** | NVML offset validation pair, only if 4c passes | ~25 min | present | 3 |
+| 4 | **4o** | 🆕 **NVML offset ladder**, e.g. −150 / −300 / −450, a suite per rung. Needs registering first | ~3 h | nothing | 3 |
 | 6 | **4j** | memory-matched flattened vs stock, `membw` + `gemm` | ~25 min | building curve 3 | 2 |
 | 7 | **4n** | 🆕 `membw` fine grid around the **1627 MHz stall**, stock + P5 | ~25 min | nothing | 3 |
 | 8 | **4m** | `reduce` residual: suite order or mechanism? | ~45 min | nothing | 2 |
@@ -75,10 +84,17 @@ advance**, and a ladder is the quantitative form of that. ⚠️ The registratio
 as the primary test. Its per-workload threshold (7 of 12) was set before 2026-09-22 showed that per-workload
 optima reproduce only 9 of 12 between identical runs, so report it, but weight the median.
 
-### 4c / 4d — NVML clock offsets
+### 4c / 4d — NVML clock offsets — ✅ 4c DONE 2026-09-22; 4d superseded
 
-⛔ **The write has never been exercised on this card**, and no tool for it exists yet. Claude
-writes the tool and tests it **read-only**. The first write happens with Raymond present:
+✅ **Run with Raymond present, registered in advance (`REGISTERED-PREDICTIONS.md` §6).** The two
+regions survive: −300 MHz shifts the whole V/F curve, the floor end moves to 1245–1290 MHz, and locks
+still hold. **4d is superseded**: its "power should match" criterion cannot hold as worded, and the
+voltage pairing answers its question directly.
+`data/frequency-sweeps/5060ti-nvml-offset-20260922/`. 🆕 **Next: an offset ladder** (e.g. −150 / −300
+/ −450) as a suite per rung. It can run unattended, because there is no curve to build. It needs
+registering first.
+
+The original plan, kept:
 
 1. Apply stock.
 2. Write a **−300 MHz** offset. Negative only: lower clock at every voltage, the safe direction.
@@ -124,6 +140,8 @@ never "stable".
 | id | what | where |
 |---|---|---|
 | 4a | fine floor 1380–1760, ×2 | `5060ti-finefloor-20260918/` |
+| 4c | NVML −300 MHz offset: **the two regions survive, and the curve shifts by the offset** | `5060ti-nvml-offset-20260922/` |
+| 4d | superseded by 4c's voltage pairing; its criterion could not hold as worded | — |
 | 4i | ascending fine floor at 0.50 s, ×3: dither **only above** the floor | `5060ti-finefloor-20260922/` |
 | 4b | descending fine floor, ×2: **matches ascending within ±0.08%** | same |
 | 4h | floor end: **0.720 V through 1567, 0.730 at 1575** | same |

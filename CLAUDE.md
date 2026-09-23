@@ -275,7 +275,7 @@ attribute nothing to it. Read the driver off a sweep JSON, never off this file.
 |---|---|
 | `nvidia-smi -lgc` (lock core clock) | ✅ Works. Volta+. **Requires admin.** |
 | `nvidia-smi -pl` (power limit) | ✅ Works, 150–200 W. Requires admin. |
-| `nvmlDeviceSetClockOffsets` (per-P-state) | ✅ Available. Graphics ±1000 MHz, memory −2000/+6000. Writes return `NO_PERMISSION` un-elevated — **not** `NOT_SUPPORTED`, so it works with elevation. |
+| `nvmlDeviceSetClockOffsets` (per-P-state) | ✅ Available. Graphics ±1000 MHz, memory −2000/+6000. Writes return `NO_PERMISSION` un-elevated — **not** `NOT_SUPPORTED`, so it works with elevation. ✅ **Write exercised 2026-09-22** (−300 MHz, verified by read-back, reset verified): it shifts the V/F curve by the offset and locks still hold. See the offset paragraph below. |
 | `nvmlDeviceGetGpcClkVfOffset` (global V/F) | ❌ **NOT_SUPPORTED** on this card. Closed on consumer Blackwell. |
 | **Read or write voltage via NVML** | ❌ **Impossible.** Zero voltage exports across all 260 NVML device functions; a scan of field IDs 1–259 returns 44 readable fields and no voltage at any scale. |
 | **Read voltage via HWiNFO** | ✅ **Works, and is load-bearing.** Core voltage and crossbar clock. **Historical extracts were binned by core clock.** Since 2026-09-21 the sweep CSV preserves the benchmark's absolute timed-region bounds and `join_hwinfo_voltage.py` uses them when complete; legacy CSVs still use clock bins. ✅ **The time path is now verified on hardware, 2026-09-22:** all **61** extracts collected that day joined by window, **775 points, none empty, minimum 13 samples**, and the recovered rate is **1.99 samples/s** against a 0.50 s interval. ⛔ This line said *"no hardware-collected sweep has verified it yet"* until then. **85 voltage extracts across 13 directories and 4 chips** — count with `find data/frequency-sweeps -name "*_voltage.csv"`, not from here. ⛔ It said *"18 across 7 directories and 3 chips"*, which was already wrong before 09-22 (24 across 8, four chips). ⚠️ Sampling rate is **NOT** one number: the main machine logs at **2.00 s** and the USB collection kit at **0.50 s** (`HWiNFO64.INI`, `SensorInterval=500`), so kit runs carry ~4x the samples per frequency bin. This is the project's central mechanism result — see below. |
@@ -334,9 +334,22 @@ profile** rather than being the mechanism a profile uses. A global offset slides
 and therefore slides *the frequency at which the 0.720 V load floor ends* — the one quantity
 `voltage-curve-20260908` records as set by the profile rather than by the experimenter. Negative
 offsets are the safe direction: lower clock at every voltage, so a given clock takes **more** voltage.
-⛔ **The write has NEVER been exercised on this card.** Reading back works; a validation pair — power
-at a locked *f* with a −300 offset should match power at *f*+300 without one — was designed
-2026-09-09 and not run. **Claim nothing about its effect until it has been.**
+~~⛔ **The write has NEVER been exercised on this card.**~~ ✅ **EXERCISED 2026-09-22, and it SHIFTS
+THE V/F CURVE.** `tools/nvml-offset/Set-NvmlClockOffset.ps1` (negative only, verified by read-back)
+wrote −300 MHz on stock P3, A–B–A, registered in advance (`REGISTERED-PREDICTIONS.md` §6):
+- **Locked clocks still achieve their target.** The offset moves the voltage for a given clock,
+  not the lock.
+- **Voltage at f under −300 equals stock voltage at f+300, within 3 mV** at every pairable point.
+- **The 0.720 V floor survives and its end moves down to 1245–1290 MHz**, against ~1270 predicted.
+- The reset to 0 verified, and A2 matched A1 at every point.
+`data/frequency-sweeps/5060ti-nvml-offset-20260922/`. ⚠️ One run per condition, one offset, one
+workload. **Not yet verified:** survival across a driver reset, and an Afterburner profile applied
+after the offset.
+
+⛔ **The validation pair's criterion, "power at a locked *f* with a −300 offset should match power at
+*f*+300 without one", CANNOT HOLD AS WORDED.** The two sit at the same voltage but 300 MHz apart, so
+the offset arm draws less at every pair (49.98 W at 1004 against 60.34 W at 1295). The question it
+existed for, whether an offset is a curve shift, is answered directly by the voltage pairing above.
 
 🛑 **AND THAT PAIR MAY NOT MEASURE WHAT IT WAS DESIGNED TO — READ THIS BEFORE RUNNING IT.**
 Guerreiro et al., TPDS 2019 (`10.1109/TPDS.2019.2917181`, **read in full 2026-09-18**,
@@ -348,6 +361,13 @@ Blackwell, so it does not transfer automatically. **But if it holds here, the of
 locked arm are not the same machine state and the pair validates nothing.** ✅ **Precondition: log
 voltage under a live offset first and check whether the two regions survive.** Cheap, and it is the
 difference between a result and a wasted session.
+
+✅ **RUN 2026-09-22: THE TWO REGIONS SURVIVE.** Guerreiro's offset behaviour, voltage constant
+across all frequencies, does **not** occur with `nvmlDeviceSetClockOffsets` on this Blackwell card.
+That differs from their Maxwell/Pascal/Kepler `nvidia-settings` result; it does not contradict it on
+their hardware. 🔑 **So an offset moves the load floor programmatically**, with no Afterburner slot
+and no hand-built curve. An offset ladder could run unattended. ⚠️ It shifts the WHOLE curve, not
+just the floor region, so it complements the registered rungs rather than replacing them.
 
 ⚠️ **`CoreClkBoost` reads −502 MHz on P1/P2/P4/P5 and +0 on stock, and nobody knows what it means.**
 It is treated as *not* additively applied, on two pieces of evidence: NVML reports a 0 MHz offset with
@@ -891,7 +911,8 @@ survives it anyway.**
 ⚠️ The grid is ~155 MHz wide (105 MHz on the 3060), so a prediction needs only to fall within half a
 step to select the right point. Genuine, and coarse. And the *extent* of the floor is still read
 from a decoded curve rather than set — the NVML offset ladder above is the experiment that would
-change that, and it has not been run.
+change that. ✅ **Its first step ran 2026-09-22:** a −300 MHz offset moved the floor end from
+1567–1575 to 1245–1290, as predicted. The full ladder has not been run.
 
 **Regret, not megahertz, is the honest metric** — `analysis/models/predict_from_curve.py` scores the
 predictor at **0.675% mean regret over 192 sweeps**, tying a hindsight-fitted per-configuration

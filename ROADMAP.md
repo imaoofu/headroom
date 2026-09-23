@@ -840,11 +840,13 @@ become the hard part. ⚠️ **Read counts off `python run_tests.py` and
 
 **Designed and never run:**
 
-- ⛔ **[CORE] The NVML clock-offset validation pair.** `nvmlDeviceSetClockOffsets` reads back
-  fine and **the write has never been exercised on this card.** The test — power at a locked
-  *f* with a −300 MHz offset against power at *f*+300 with none — was designed 2026-09-09
-  and not run. **Claim nothing about its effect until it has been.** Negative offsets are the safe
-  direction.
+- ✅ **[CORE] The NVML clock-offset question — ANSWERED 2026-09-22.** The write was exercised
+  (−300 MHz, registered in advance as REGISTERED-PREDICTIONS §6). It **shifts the V/F curve**:
+  locks hold, and voltage at f equals stock voltage at f+300. The planned validation pair's
+  criterion, "power at *f* with −300 should match *f*+300 without", cannot hold as worded,
+  because the two arms differ by 300 MHz at the same voltage. The voltage pairing answers the
+  question it existed for. Next: an **offset ladder**, runnable unattended.
+  `data/frequency-sweeps/5060ti-nvml-offset-20260922/`.
 
 ---
 
