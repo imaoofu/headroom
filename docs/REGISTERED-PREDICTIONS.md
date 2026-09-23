@@ -648,6 +648,45 @@ shell: `powershell -ExecutionPolicy Bypass -File tools\hwinfo-logging\experiment
 
 ---
 
+## 6. RTX 5060 Ti: does the load floor survive an NVML clock offset? (worklist 4c) Registered 2026-09-22, PENDING
+
+**Why.** Guerreiro et al., TPDS 2019, report that voltage shows two regions (constant, then rising)
+when the frequency is changed through NVML, but that *"the voltage stays constant across all
+frequencies"* when it is changed through clock offsets. Their offset path was `nvidia-settings` on
+Maxwell/Pascal/Kepler. **If it holds for `nvmlDeviceSetClockOffsets` on Blackwell, the planned
+offset-validation pair (4d) compares two different machine states and validates nothing.**
+
+**Design, fixed before collection.** Runner: `tools/hwinfo-logging/experiments/Run-OffsetPrecondition.ps1`.
+Tool: `tools/nvml-offset/Set-NvmlClockOffset.ps1`, which accepts negative offsets only and verifies
+each write by reading it back. Stock Profile 3, verified by memory clock. `gemm`, ascending,
+**1000–1700 MHz, 15 points, 50 MHz apart.** Runs **A1** (no offset), **B** (**−300 MHz**
+P0 graphics offset), **A2** (offset reset to 0, verified). One HWiNFO log per run, at 0.50 s.
+The operator is present for the first write.
+
+⛔ **The grid differs from the worklist's 1380–1760, deliberately.** A −300 MHz shift should move the
+floor end from ~1570 to ~1270, below that band, so that band could not tell "two regions, shifted"
+from "no floor". And 300 MHz is six steps of 50, so B at f pairs with A at f+300 on the same grid.
+
+**Prediction: the offset shifts the V/F curve.** B shows **two regions**: 0.720 V held, then rising.
+Its floor end sits within one grid step (50 MHz) of **~1270 MHz**, the A floor end of 1567–1575
+minus 300. Equivalently, **B's voltage at target f equals A1's voltage at f+300 within one 5 mV
+code**, wherever f+300 is on the grid.
+
+**Refuted by:**
+- **B's voltage constant across the whole band.** That would be Guerreiro's offset behaviour. Then 4d
+  is cancelled and this gets written up as a Blackwell confirmation of their finding.
+- B has two regions, but its floor end is not within 50 MHz of ~1270.
+
+**Registered as OPEN, with no prediction:** whether a locked clock still achieves its target under
+the offset, or the lock target itself shifts by 300. The achieved-clock column answers it. Either
+way the voltage comparison above is made at achieved clock.
+
+**Validity:** A2 must match A1, with voltage within one 5 mV code at every point and throughput
+within ~1%. Otherwise the session drifted, or the reset did not take, and B is not interpretable.
+The offset is reset in a `finally` block and read back, whatever happens.
+
+---
+
 ## Safety envelope — these cards are going to be sold
 
 **The hardware risk of a floor manipulation is low and should be stated plainly rather than
