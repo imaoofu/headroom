@@ -657,6 +657,30 @@ revised one, never only the revised one.** One chip, one session, a scripted pro
 shell: `powershell -ExecutionPolicy Bypass -File tools\hwinfo-logging\experiments\Run-ActivityAB.ps1`
 (~85 minutes plus the uptime wait). The driving agent stays silent until it exits.
 
+### ⛔ Revised BEFORE collection, 2026-09-22 — five defects fixed; design and thresholds unchanged
+
+An outside preflight review (`docs/gpt-findings/2026-09-22-activity-ab-preflight.md`) found five
+defects. Each was reproduced here before fixing. **Two of them could have produced a wrong
+registered verdict:**
+
+1. **An exact 2% tie counted as degraded.** `100 × (1 − 98/100)` is 2.0000000000000018 in floating
+   point. Four ties could print "SUPPORTED". "More than 2%" is now tested without subtraction.
+2. **An active run was scored without proof that the activity ran.** A dead generator would have
+   turned "active" into silent, and could have produced a false null. The generator now logs its
+   start, every action's success, and its reason for stopping. The scorer requires that log to cover
+   the sweep with no gap over 15 s, or the run is invalid.
+3. **The stock gate was one-sided.** It accepted any lower memory clock. It now requires 13801 ± 200
+   MHz and a 180 W power limit.
+4. **An incomplete collection still printed a registered verdict.** It now prints **INCOMPLETE — NO
+   REGISTERED VERDICT** unless two warm-ups and twelve valid runs exist in S A A S × 3 order.
+5. **The grid was not validated** and blocks used the post-exclusion index. Every run must now carry
+   the registered 13 points, and blocks follow the recorded order.
+
+The generator is also stopped in a `finally` block, its time limit went from 15 to 20 minutes, the
+exact sweep CSV path is recorded per run, and the uptime and block counts are constants rather than
+parameters. **12 synthetic checks** in `analysis/test_score_activity_ab.py`; the tie check was
+confirmed to fail on the old comparison. **No threshold, condition or prediction changed.**
+
 ---
 
 ## 6. RTX 5060 Ti: does the load floor survive an NVML clock offset? (worklist 4c) Registered 2026-09-22 — ✅ COLLECTED, HOLDS

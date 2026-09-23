@@ -27,10 +27,10 @@
 
     Score it with: python analysis/score_activity_ab.py <experiment directory>
 #>
-param(
-    [int]$MinUptimeMinutes = 30,
-    [int]$Blocks = 3
-)
+# The registered values, fixed rather than parameters: the 2026-09-22 preflight review noted that
+# caller-supplied overrides could run something other than the registered collection.
+$MinUptimeMinutes = 30
+$Blocks = 3
 $ErrorActionPreference = "Continue"
 $repo      = "C:\Users\Raymond\Documents\headroom"
 $wrapper   = Join-Path $repo "tools\hwinfo-logging\Invoke-LoggedSweep.ps1"
@@ -79,12 +79,18 @@ function Get-MemClockUnderLoad {
 Start-Sleep -Seconds 8
 $mem = Get-MemClockUnderLoad
 Say ("Memory clock under load: {0} MHz (stock is {1})." -f $mem, $STOCK_MEM)
-if ($mem -lt 0 -or $mem -gt ($STOCK_MEM + 200)) {
-    Say "The card is NOT verifiably on stock. Refusing to run." "Red"
+# Two-sided since the preflight review: the first version accepted ANY lower memory clock.
+if ($mem -lt ($STOCK_MEM - 200) -or $mem -gt ($STOCK_MEM + 200)) {
+    Say "The card is NOT verifiably on stock (memory). Refusing to run." "Red"
     exit 5
 }
-$pl = (& nvidia-smi --query-gpu=power.limit --format=csv,noheader) | Select-Object -First 1
-Say "Stock verified. Power limit: $pl" "Green"
+$plText = (& nvidia-smi --query-gpu=power.limit --format=csv,noheader,nounits) | Select-Object -First 1
+$pl = 0.0
+if (-not [double]::TryParse($plText, [ref]$pl) -or [math]::Abs($pl - 180.0) -gt 0.5) {
+    Say "Power limit reads '$plText', not the stock 180 W. Refusing to run." "Red"
+    exit 5
+}
+Say "Stock verified: memory $mem MHz under load, power limit $pl W. The core curve itself cannot be read back; Profile 3 is the verified stock slot." "Green"
 
 # ---- 4. the schedule, fixed here and in the registration --------------------------------------
 $schedule = @(@{ tag = "warmup-1"; cond = "warmup" }, @{ tag = "warmup-2"; cond = "warmup" })
@@ -128,33 +134,51 @@ foreach ($s in $schedule) {
         -RedirectStandardOutput $out -RedirectStandardError ($out + ".err")
     $null = $p.Handle   # PS 5.1: without touching Handle, ExitCode can come back null after exit
 
-    $loaded = Wait-ForLoad 180
     $gen = $null
     $events = $null
+    $genExit = $null
+    $genKilled = $false
+    $loaded = $false
     $stop = Join-Path $expDir ($s.tag + ".stop")
-    if ($s.cond -eq "active") {
-        if ($loaded) {
-            $events = Join-Path $expDir ($s.tag + "-events.csv")
-            $gen = Start-Process -FilePath "powershell.exe" -PassThru -WindowStyle Hidden `
-                -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $generator, "-EventLog", $events, "-StopFile", $stop)
-            Say "  activity generator started" "Yellow"
-        } else {
-            Say "  load never appeared - generator NOT started; this run will be scored as invalid" "Red"
+    try {
+        $loaded = Wait-ForLoad 180
+        if ($s.cond -eq "active") {
+            if ($loaded) {
+                $events = Join-Path $expDir ($s.tag + "-events.csv")
+                $gen = Start-Process -FilePath "powershell.exe" -PassThru -WindowStyle Hidden `
+                    -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $generator, "-EventLog", $events, "-StopFile", $stop)
+                $null = $gen.Handle
+                Say "  activity generator started" "Yellow"
+            } else {
+                Say "  load never appeared - generator NOT started; this run will be scored as invalid" "Red"
+            }
+        }
+        $p.WaitForExit()
+    }
+    finally {
+        # Stop the generator whatever happened, so it can never outlive its run into the next one.
+        if ($gen) {
+            New-Item -ItemType File -Path $stop -Force | Out-Null
+            if (-not $gen.WaitForExit(30000)) { $gen.Kill(); $genKilled = $true; [void]$gen.WaitForExit(10000) }
+            $genExit = $gen.ExitCode
+            Say ("  activity generator stopped (exit {0}, killed {1})" -f $genExit, $genKilled) "Yellow"
         }
     }
-
-    $p.WaitForExit()
     $exit = $p.ExitCode
-    if ($gen) {
-        New-Item -ItemType File -Path $stop -Force | Out-Null
-        if (-not $gen.WaitForExit(30000)) { $gen.Kill() }
-        Say "  activity generator stopped" "Yellow"
-    }
     Say ("  wrapper exit {0}" -f $exit)
+    # Record the exact sweep CSV, so the scorer never has to search for it by label.
+    $sweepCsv = $null
+    $result = Get-ChildItem "C:\headroom-bench\results" -Directory -Filter ("*_" + $label) |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($result) {
+        $csv = Get-ChildItem $result.FullName -Filter "*_sweep.csv" | Select-Object -First 1
+        if ($csv) { $sweepCsv = $csv.FullName }
+    }
     $records += [pscustomobject]@{
         order = $records.Count; tag = $s.tag; label = $label; condition = $s.cond
         uptime_min_at_start = $uptime; wrapper_exit = $exit; load_seen = $loaded
-        event_log = $events; wrapper_log = $out
+        event_log = $events; generator_exit = $genExit; generator_killed = $genKilled
+        sweep_csv = $sweepCsv; wrapper_log = $out
     }
     $records | ConvertTo-Json | Set-Content -Path (Join-Path $expDir "experiment.json") -Encoding UTF8
     if ($exit -ne 0) { Say "Stopping: a failed run is reported, not worked around." "Red"; exit 6 }

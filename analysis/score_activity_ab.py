@@ -8,15 +8,26 @@ revised one, never only the revised one.
     python analysis/score_activity_ab.py C:\\headroom-bench\\results\\activity-ab-<stamp>
 
 What it measures. Every scored run sweeps the same 13 targets. For each target the ENVELOPE is the
-best throughput any scored run reached there. A point is DEGRADED if it falls more than
+best throughput any scored run reached there. A point is DEGRADED if it falls MORE than
 DEGRADE_PCT below that envelope. The 2026-09-22 losses were 8-11 pct; a quiet three-run set agreed
 to better than 0.1 pct, so 2 pct sits far above the noise and far below the effect.
+
+REVISED BEFORE COLLECTION, 2026-09-22, after an outside preflight review
+(docs/gpt-findings/2026-09-22-activity-ab-preflight.md). No threshold changed. What changed:
+  - "more than 2 pct" is tested without floating-point subtraction, so an exact 2 pct tie is NOT
+    degraded (the first version counted it, and could print a false SUPPORTED)
+  - no registered verdict is printed unless the collection is COMPLETE: two warm-ups, then twelve
+    valid scored runs in the registered S A A S x 3 order (the first version printed one anyway)
+  - an ACTIVE run is valid only if its generator log proves the activity ran across the sweep
+  - every scored run must carry exactly the registered 13-point grid
+  - descriptive blocks follow the recorded order, not the index after exclusions
 
 What it cannot do. The active condition is a scripted PROXY for agent activity. A null result
 weakens the activity hypothesis for that proxy only.
 """
 import glob
 import json
+import math
 import os
 import sys
 
@@ -28,66 +39,119 @@ SUPPORT_MIN_ACTIVE_RUNS = 3  # registered: ...and the losses must appear in at l
 NULL_MARGIN = 1            # registered: active exceeding silent by at most this is "not supported"
 SILENT_LOSSES_MEAN_OTHER_CAUSE = 3  # registered
 
+REGISTERED_ORDER = ["warmup", "warmup"] + ["silent", "active", "active", "silent"] * 3
+REGISTERED_POINTS = 13
+MAX_ACTIVITY_GAP_S = 15.0  # the generator cycles every 5 s; three missed cycles is not "running"
 
-def findSweepCsv(label, roots):
+
+def findSweepCsv(record, roots):
+    recorded = record.get("sweep_csv")
+    if recorded and os.path.isfile(recorded):
+        return recorded
     for root in roots:
-        hits = glob.glob(os.path.join(root, "**", f"*_{label}_sweep.csv"), recursive=True)
+        hits = glob.glob(os.path.join(root, "**", f"*_{record['label']}_sweep.csv"), recursive=True)
         if len(hits) == 1:
             return hits[0]
         if len(hits) > 1:
-            raise SystemExit(f"Ambiguous: {len(hits)} sweep CSVs for {label} under {root}.")
+            return None   # ambiguous: refuse rather than guess
     return None
 
 
-def loadRuns(experimentDir, extraRoots=()):
+def activityProblems(record, sweep):
+    """Why an ACTIVE run cannot count as active, or [] if its generator log proves it ran."""
+    path = record.get("event_log")
+    if not record.get("load_seen"):
+        return ["the load never appeared, so the generator never started"]
+    if not path or not os.path.exists(path):
+        return ["no generator event log"]
+    events = pd.read_csv(path)
+    if "ok" not in events.columns:
+        return ["event log has no ok column (pre-revision generator)"]
+    problems = []
+    if record.get("generator_killed"):
+        problems.append("generator had to be killed")
+    if (events.event == "generator_stop_stop_file").sum() != 1:
+        problems.append("generator did not stop on its stop file")
+    actions = events[events.event.isin(["pmon", "cpu_burst", "screen_capture"])]
+    if (actions.ok != 1).any():
+        problems.append(f"{int((actions.ok != 1).sum())} generator action(s) failed")
+    pmon = events[events.event == "pmon"].start_unix.sort_values().tolist()
+    first, last = float(sweep.window_start_unix.min()), float(sweep.window_end_unix.max())
+    starts = events[events.event == "generator_start"].start_unix
+    if starts.empty or float(starts.iloc[0]) > first:
+        problems.append("generator started after the first measured window")
+    if not pmon or pmon[-1] < last - MAX_ACTIVITY_GAP_S:
+        problems.append("activity stopped before the last measured window ended")
+    inside = [t for t in pmon if first - MAX_ACTIVITY_GAP_S <= t <= last + MAX_ACTIVITY_GAP_S]
+    gaps = [b - a for a, b in zip(inside, inside[1:])]
+    if gaps and max(gaps) > MAX_ACTIVITY_GAP_S:
+        problems.append(f"a {max(gaps):.1f} s gap in activity during the sweep")
+    return problems
+
+
+def loadExperiment(experimentDir, extraRoots=()):
+    """Returns (scored runs, problems). Any problem means NO registered verdict."""
     with open(os.path.join(experimentDir, "experiment.json"), encoding="utf-8-sig") as f:
         records = json.load(f)
     if isinstance(records, dict):
         records = [records]
+    records = sorted(records, key=lambda r: r["order"])
+    problems = []
+    conditions = [r["condition"] for r in records]
+    if conditions != REGISTERED_ORDER:
+        problems.append(f"schedule is {conditions}, not the registered two warm-ups + S A A S x 3")
     roots = [os.path.dirname(os.path.abspath(experimentDir)), *extraRoots]
-    runs, excluded = [], []
+    runs, grids = [], []
     for r in records:
         if r["condition"] == "warmup":
-            excluded.append((r["label"], "warm-up, excluded by registration"))
             continue
+        tag = r.get("tag", r["label"])
         if r.get("wrapper_exit") != 0:
-            excluded.append((r["label"], f"wrapper exit {r.get('wrapper_exit')}"))
+            problems.append(f"{tag}: wrapper exit {r.get('wrapper_exit')}")
             continue
-        if r["condition"] == "active" and not r.get("load_seen"):
-            excluded.append((r["label"], "active run whose generator never started"))
-            continue
-        path = findSweepCsv(r["label"], roots)
+        path = findSweepCsv(r, roots)
         if path is None:
-            excluded.append((r["label"], "sweep CSV not found"))
+            problems.append(f"{tag}: sweep CSV missing or ambiguous")
             continue
         sweep = pd.read_csv(path, encoding="utf-8-sig")
+        needed = {"target_frequency_mhz", "bench_throughput", "window_start_unix", "window_end_unix",
+                  "temperature_avg_c"}
+        if not needed <= set(sweep.columns):
+            problems.append(f"{tag}: missing columns {sorted(needed - set(sweep.columns))}")
+            continue
+        targets = sweep.target_frequency_mhz.tolist()
+        if len(targets) != REGISTERED_POINTS or len(set(targets)) != REGISTERED_POINTS:
+            problems.append(f"{tag}: {len(targets)} points ({len(set(targets))} unique), not {REGISTERED_POINTS}")
+            continue
+        if not all(math.isfinite(v) and v > 0 for v in sweep.bench_throughput):
+            problems.append(f"{tag}: non-finite or non-positive throughput")
+            continue
+        if r["condition"] == "active":
+            why = activityProblems(r, sweep)
+            if why:
+                problems.append(f"{tag}: activity not proven - " + "; ".join(why))
+                continue
+        grids.append(tuple(sorted(targets)))
         runs.append({**r, "sweep": sweep, "path": path})
-    return runs, excluded
-
-
-def eventsInWindow(eventLog, start, end):
-    if not eventLog or not os.path.exists(eventLog):
-        return {}
-    events = pd.read_csv(eventLog)
-    inside = events[(events.end_unix >= start) & (events.start_unix <= end)]
-    return inside.event.value_counts().to_dict()
+    if len(set(grids)) > 1:
+        problems.append("scored runs do not share one grid")
+    return runs, problems
 
 
 def score(runs):
-    table = pd.concat(
-        [run["sweep"][["target_frequency_mhz", "bench_throughput"]].assign(order=run["order"]) for run in runs])
+    table = pd.concat([run["sweep"][["target_frequency_mhz", "bench_throughput"]] for run in runs])
     envelope = table.groupby("target_frequency_mhz").bench_throughput.max()
     perRun = []
     for run in runs:
         sweep = run["sweep"]
-        loss = 100 * (1 - sweep.bench_throughput.values / envelope.loc[sweep.target_frequency_mhz].values)
-        degraded = [(int(t), round(float(l), 2)) for t, l in zip(sweep.target_frequency_mhz, loss) if l > DEGRADE_PCT]
-        eventsAtDegraded = [
-            eventsInWindow(run.get("event_log"), sweep.window_start_unix[i], sweep.window_end_unix[i])
-            for i in range(len(sweep)) if loss[i] > DEGRADE_PCT]
+        env = envelope.loc[sweep.target_frequency_mhz].values
+        tp = sweep.bench_throughput.values
+        # "more than DEGRADE_PCT below" without subtraction: an exact tie is NOT degraded.
+        isDegraded = tp * 100 < env * (100 - DEGRADE_PCT)
+        loss = 100 * (1 - tp / env)
+        degraded = [(int(t), round(float(l), 2)) for t, l, d in zip(sweep.target_frequency_mhz, loss, isDegraded) if d]
         perRun.append({"order": run["order"], "tag": run["tag"], "condition": run["condition"],
                        "uptime": run.get("uptime_min_at_start"), "degraded": degraded,
-                       "events_at_degraded": eventsAtDegraded,
                        "temp_range": (sweep.temperature_avg_c.min(), sweep.temperature_avg_c.max())})
     return perRun
 
@@ -100,16 +164,16 @@ def verdict(perRun):
     activeRunsHit = sum(1 for r in active if r["degraded"])
     lines = [f"Degraded points (> {DEGRADE_PCT} pct below the per-target envelope): "
              f"ACTIVE {dA} across {len(active)} runs ({activeRunsHit} runs hit), SILENT {dS} across {len(silent)} runs."]
-    if len(active) < 6 or len(silent) < 6:
-        lines.append(f"INCOMPLETE: the registration requires 6 scored runs per condition; have "
-                     f"{len(active)} active and {len(silent)} silent. The verdict below is NOT the registered one.")
     if dA >= dS + SUPPORT_MARGIN and activeRunsHit >= SUPPORT_MIN_ACTIVE_RUNS:
+        code = "SUPPORTED"
         lines.append("VERDICT: ACTIVITY SUPPORTED - the scripted activity produces isolated losses that "
                      "silence does not, on a warm card, with run order balanced.")
     elif dA <= dS + NULL_MARGIN:
+        code = "NOT_SUPPORTED"
         lines.append("VERDICT: NOT SUPPORTED FOR THIS PROXY - the scripted activity does not add losses. "
                      "It does not rule out the parts of real agent activity the proxy does not imitate.")
     else:
+        code = "INCONCLUSIVE"
         lines.append("VERDICT: INCONCLUSIVE - between the registered thresholds.")
     if dS >= SILENT_LOSSES_MEAN_OTHER_CAUSE:
         lines.append(f"ALSO: {dS} losses in SILENT runs on a warm card - something other than this activity "
@@ -118,34 +182,40 @@ def verdict(perRun):
         lines.append("ALSO: no losses at all. The 2026-09-22 losses happened on a cold card and/or under real "
                      "agent activity; this run removed the first and imitated the second, so they are still "
                      "not separated.")
-    return lines
+    return code, lines
+
+
+def evaluate(experimentDir, extraRoots=()):
+    """Returns (code, lines). code is SUPPORTED / NOT_SUPPORTED / INCONCLUSIVE, or INCOMPLETE."""
+    runs, problems = loadExperiment(experimentDir, extraRoots)
+    if problems:
+        return "INCOMPLETE", (["INCOMPLETE - NO REGISTERED VERDICT. The registration requires two warm-ups "
+                               "and twelve valid scored runs in S A A S x 3 order. Problems:"]
+                              + [f"  - {p}" for p in problems])
+    perRun = score(runs)
+    lines = ["Per run, in collection order:"]
+    for r in perRun:
+        lines.append(f"  {r['order']:>2} {r['tag']:<12} {r['condition']:<7} uptime {r['uptime']} min, "
+                     f"temp {r['temp_range'][0]:.1f}-{r['temp_range'][1]:.1f} C, degraded {r['degraded']}")
+    blocks = {}
+    for r in perRun:   # by RECORDED order: warm-ups are orders 0 and 1
+        block = (r["order"] - 2) // 4 + 1
+        blocks[block] = blocks.get(block, 0) + len(r["degraded"])
+    lines.append(f"Degraded points by block of four (a time trend shows here, not in the verdict): {blocks}")
+    code, verdictLines = verdict(perRun)
+    lines += verdictLines
+    lines.append("This is one chip, one session, and a scripted proxy for agent activity.")
+    return code, lines
 
 
 def main():
     if len(sys.argv) < 2:
         raise SystemExit("Usage: python analysis/score_activity_ab.py <experiment directory> [extra search root ...]")
-    runs, excluded = loadRuns(sys.argv[1], sys.argv[2:])
-    for label, why in excluded:
-        print(f"Excluded {label}: {why}.")
-    if not runs:
-        raise SystemExit("No scorable runs.")
-    perRun = score(runs)
-    print("Per run, in collection order:")
-    for r in perRun:
-        print(f"  {r['order']:>2} {r['tag']:<12} {r['condition']:<7} uptime {r['uptime']} min, "
-              f"temp {r['temp_range'][0]:.1f}-{r['temp_range'][1]:.1f} C, degraded {r['degraded']}")
-        for e in r["events_at_degraded"]:
-            print(f"       events inside a degraded window: {e}")
-    blocks = {}
-    for i, r in enumerate(perRun):   # index among SCORED runs, so the warm-ups do not shift blocks
-        blocks.setdefault(i // 4 + 1, 0)
-        blocks[i // 4 + 1] += len(r["degraded"])
-    print(f"Degraded points by block of four (a time trend shows here, not in the verdict): {blocks}")
-    for line in verdict(perRun):
+    code, lines = evaluate(sys.argv[1], sys.argv[2:])
+    for line in lines:
         print(line)
-    print("This is one chip, one session, and a scripted proxy for agent activity. "
-          "Event overlap is descriptive: the generator cycles every 5 s, so most windows overlap some event.")
+    return 2 if code == "INCOMPLETE" else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
