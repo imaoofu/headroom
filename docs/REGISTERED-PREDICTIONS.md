@@ -741,6 +741,66 @@ the verdict is unchanged. **"≤2 mV / ≤3 mV"** interpolated between 5 mV code
 **identical VID codes at 9 of 9 six-step pairs**. And 4d's criterion is **not a valid prediction**
 (retire it), but "superseded" overstates: its wider machine-state question is still open.
 
+## 7. RTX 5060 Ti: does an NVML offset ladder relocate the suite optimum? (worklist 4o) Registered 2026-09-22 — PENDING
+
+**Why.** 4c showed that a −300 MHz offset moves the 0.720 V floor end from 1567–1575 to 1245–1290,
+on **one workload**. This asks whether the **twelve-workload median optimum** follows the floor
+when the offset is changed, with no Afterburner slot and no hand-built curve. ⚠️ The curve-shift
+mechanism is prior art (170tune, `RELATED-WORK.md` §10). This tests a **predictive rule on one
+chip**, not the mechanism.
+
+**Drafted by GPT (Job 10), reviewed and changed before registration.** Draft and review:
+`docs/agents/DRAFT-offset-ladder-registration.md`. ⛔ **The draft's −450 rung is DROPPED.** Its
+prediction, 1237, is the same grid point as −300's, so it could confirm nothing. **A closing stock
+suite replaces it**, as a drift bracket. Chosen by Raymond, 2026-09-22.
+
+**Design, fixed before collection.** Runner: `tools/hwinfo-logging/experiments/Run-OffsetLadder.ps1`.
+- Apply stock Profile 3 **before** any offset. Verify memory at 13801 MHz under load and the power
+  limit at 180 W enforced / 180 W default.
+- **Four suites in this order: 0 / −150 / −300 / 0 MHz**, set with `Set-NvmlClockOffset.ps1`, each
+  write verified by read-back. The offset is reset to 0 in `finally` and read back.
+- Each suite runs the twelve standard workloads in a fixed order (`copy` … `gemm`). Each sweep is
+  ascending, **13 points, 1237–3090 MHz**, with the iteration counts from
+  `5060ti-stock-repro-20260922`. **48 sweeps, ~4 h** (one stock suite took 57 min on 09-22).
+- HWiNFO logs at 0.50 s, one log per sweep, with the machine quiet and unattended.
+
+**Statistic.** For each workload, take the target with the highest efficiency (timed throughput
+over windowed mean power). The **ordinary median of the 12 target optima** is the statistic; a 6/6
+split whose median falls between two grid points is **not** rounded. Per-workload optima are
+reported but not scored, because two identical stock suites agreed on only 9 of 12.
+
+**Predictions:** floor end 1567–1575 minus the offset, then the nearest grid target.
+
+| suite | predicted floor end | **predicted median** | what a pass can show |
+|---|---:|---:|---|
+| opening 0 MHz | 1567–1575 | **1545** | baseline |
+| −150 MHz | 1417–1425 | **1395** | 🔑 **the only interior test.** 1395 sits between 1237 and 1545, so a pass locates the move |
+| −300 MHz | 1267–1275 | **1237** | ⚠️ **edge-limited.** 1237 is the lowest grid target, so a pass fits any optimum at or below ~1316 MHz. It shows a move of at least two steps, **not** a move to ~1270 |
+| closing 0 MHz | 1567–1575 | **1545** | drift bracket, not a prediction |
+
+**Refuted by**, per rung: any other median for opening 0, −150 or −300, including a between-grid
+median from a 6/6 split. **Trend:** the medians must not increase from 0 to −150 to −300. An upward
+step refutes the trend even if a rung passes.
+
+**Validity, separate from refutation:**
+- **Drift bracket.** The opening and closing stock medians must be **equal**. If they differ, the
+  session drifted and **no rung is scored**. That is reported as uninterpretable, never as a pass or a
+  null. Two identical stock suites on 09-22 both gave 1545.
+- Every sweep must be complete, with no failed benchmark or missed lock. Each must carry the
+  registered grid and iteration count, stock memory and power, one driver across all 48, and **its
+  own** time-joined voltage extract.
+- The runner's console log must show every offset read-back and the final reset. The CSVs cannot
+  prove them.
+
+**Limits, stated now.** One chip, one suite per rung, one session. Twelve workloads are repeated
+outcomes on one card, not twelve chips. The reported voltage is a VID lookup, not rail voltage. A
+global offset shifts the **whole** curve, unlike the Afterburner rungs, which edit only the floor
+region. So agreement between the two ladders would show a shared predictive rule, not the same
+electrical state. The grid cannot locate any optimum below 1237.
+
+**Scorer:** `python analysis/score_offset_ladder.py <results-directory>`, after running
+`join_hwinfo_voltage.py --join-by time` on each sweep against its own log.
+
 ---
 
 ## Safety envelope — these cards are going to be sold

@@ -1,14 +1,16 @@
 <#
 .SYNOPSIS
-    DRAFT worklist 4o: stock Profile 3, then four NVML P0 offset suites.
+    Worklist 4o, REGISTERED-PREDICTIONS.md section 7: stock Profile 3, then four
+    NVML P0 offset suites at 0 / -150 / -300 / 0 MHz.
 
 .DESCRIPTION
-    This runner changes GPU state. Do not execute before the draft in
-    docs/agents/DRAFT-offset-ladder-registration.md is reviewed and registered.
-    It applies Profile 3 BEFORE any offset, checks stock memory under load,
-    then runs 12 logged 13-point sweeps at each offset: 0, -150, -300, -450 MHz.
-    Each NVML write is verified by Set-NvmlClockOffset.ps1. The offset is reset
-    and read back in finally, including after a failed sweep or Ctrl+C.
+    This runner changes GPU state. It applies Profile 3 BEFORE any offset, checks
+    stock memory under load, then runs 12 logged 13-point sweeps at each offset:
+    0, -150, -300, then 0 again. The closing stock suite is a drift bracket; the
+    draft's -450 rung was dropped at review because it shared -300's prediction.
+    Each NVML write, including the reset before the closing suite, is verified
+    by Set-NvmlClockOffset.ps1. The offset is reset and read back in finally,
+    including after a failed sweep or Ctrl+C.
 
     Requires an elevated shell and HWiNFO64 Sensors open. -WhatIfOnly prints
     the fixed plan without accessing HWiNFO, Afterburner, NVML or the GPU.
@@ -42,7 +44,7 @@ $rungs = @(
     [pscustomobject]@{tag="offset0"; mhz=0},
     [pscustomobject]@{tag="offsetm150"; mhz=-150},
     [pscustomobject]@{tag="offsetm300"; mhz=-300},
-    [pscustomobject]@{tag="offsetm450"; mhz=-450}
+    [pscustomobject]@{tag="offset0close"; mhz=0}
 )
 
 function Say([string]$message, [string]$color="White") {
@@ -82,7 +84,7 @@ function Run-Sweep([string]$tag, [int]$mhz, $work) {
         label=$label; workload=$work.name; minMhz=1237; maxMhz=3090
         frequencyCount=13; descending=$false; iterations=[string]$work.iterations
         expectedMinutes=10
-        appliedSettings=("DRAFT 4o offset ladder. Stock Profile 3 verified under load at 13801 MHz. " +
+        appliedSettings=("4o offset ladder, registered section 7, suite $tag. Stock Profile 3 verified under load at 13801 MHz. " +
             "NVML P0 graphics offset $mhz MHz, verified by read-back before sweep. " +
             "13-point ascending 1237-3090 MHz grid, HWiNFO SensorInterval 500. " +
             "Iterations $($work.iterations) from 5060ti-stock-repro-20260922. " +
@@ -98,7 +100,7 @@ function Run-Sweep([string]$tag, [int]$mhz, $work) {
     return [int]$code
 }
 
-Say "DRAFT 4o: stock Profile 3, 13 targets, 12 workloads, offsets 0/-150/-300/-450."
+Say "4o: stock Profile 3, 13 targets, 12 workloads, offsets 0/-150/-300/0 (closing drift bracket)."
 Say "48 sweeps total; stock-repro-20260922 iteration counts; final offset reset in finally."
 if ($WhatIfOnly) {
     foreach ($rung in $rungs) {
@@ -158,11 +160,17 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Initial 0 MHz offset did not verify." }
 
     foreach ($rung in $rungs) {
-        if ($rung.mhz -ne 0) {
-            Say "Setting NVML P0 graphics offset to $($rung.mhz) MHz." "Yellow"
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $offsetTool -SetMhz $rung.mhz | Out-Host
-            if ($LASTEXITCODE -ne 0) { throw "Offset $($rung.mhz) MHz did not verify." }
+        # Every suite sets its own offset and verifies it, so the closing stock
+        # suite cannot inherit -300 from the suite before it.
+        if ($rung.mhz -eq 0) {
+            Say "Setting NVML P0 graphics offset to 0 MHz for $($rung.tag)." "Yellow"
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $offsetTool -Reset | Out-Host
         }
+        else {
+            Say "Setting NVML P0 graphics offset to $($rung.mhz) MHz for $($rung.tag)." "Yellow"
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $offsetTool -SetMhz $rung.mhz | Out-Host
+        }
+        if ($LASTEXITCODE -ne 0) { throw "Offset $($rung.mhz) MHz for $($rung.tag) did not verify." }
         foreach ($work in $workloads) {
             if ((Run-Sweep $rung.tag $rung.mhz $work) -ne 0) {
                 throw "Sweep failed at $($rung.tag)/$($work.name); remaining sweeps skipped."

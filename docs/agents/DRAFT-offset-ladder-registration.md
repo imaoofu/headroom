@@ -1,5 +1,9 @@
 # DRAFT ONLY: RTX 5060 Ti NVML offset ladder (worklist 4o)
 
+⛔ **SUPERSEDED 2026-09-22 by the live registration, `docs/REGISTERED-PREDICTIONS.md` §7, which
+runs 0 / −150 / −300 / 0.** The −450 rung below was dropped. Kept as the record of what was
+proposed and why it changed; score against §7, not against this file.
+
 Written 2026-09-22 **before any 4o data**. This file is a proposal for review. It is not part of
 `docs/REGISTERED-PREDICTIONS.md` and does not register an experiment until accepted there in a
 commit before collection. The runner is

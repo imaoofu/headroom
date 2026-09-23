@@ -1,10 +1,11 @@
-"""Score the *draft* RTX 5060 Ti NVML offset ladder without changing GPU state.
+"""Score the RTX 5060 Ti NVML offset ladder (REGISTERED-PREDICTIONS.md section 7).
 
 Usage: python analysis/score_offset_ladder.py PATH_TO_4O_RESULTS
 
 The path may contain the 48 wrapper result directories or collected files. Run the
 time-based HWiNFO join for each sweep first: the scorer requires each sweep's own
-_sweep_voltage.csv. This program scores the fixed draft, not a live registration.
+_sweep_voltage.csv. Suites run 0 / -150 / -300 / 0 MHz; the closing stock suite is a
+drift bracket, and no rung is scored unless its median equals the opening one.
 """
 
 import argparse
@@ -23,8 +24,9 @@ WORKLOADS = (
     "bgemm128", "bgemm256", "bgemm1024", "attention", "conv", "gemm",
 )
 ITERATIONS = (2660, 2870, 2600, 1597, 2673, 2661, 2467, 1579, 414, 147, 151, 120)
-RUNG_MHZ = {"offset0": 0, "offsetm150": -150, "offsetm300": -300, "offsetm450": -450}
-PREDICTED = {"offset0": 1545, "offsetm150": 1395, "offsetm300": 1237, "offsetm450": 1237}
+RUNG_MHZ = {"offset0": 0, "offsetm150": -150, "offsetm300": -300, "offset0close": 0}
+# The closing stock suite carries no prediction: it must equal the opening median.
+PREDICTED = {"offset0": 1545, "offsetm150": 1395, "offsetm300": 1237}
 TARGETS = (1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090)
 
 
@@ -137,14 +139,20 @@ def score(root):
         raise ValueError(f"driver changed during ladder: {sorted(drivers)}")
     medians = {rung: statistics.median(item["best_target"] for item in suite.values())
                for rung, suite in results.items()}
-    rungs = tuple(RUNG_MHZ)
+    rungs = tuple(PREDICTED)
+    drift_ok = medians["offset0"] == medians["offset0close"]
+    if not drift_ok:
+        # A drifted session is uninterpretable, never a pass or a null.
+        return {"driver": next(iter(drivers)), "results": results, "medians": medians,
+                "drift_ok": False, "per_rung": {rung: "UNINTERPRETABLE" for rung in rungs},
+                "nonincreasing": None, "strict_drops": None}
     return {
         "driver": next(iter(drivers)), "results": results, "medians": medians,
+        "drift_ok": True,
         "per_rung": {rung: "PASS" if medians[rung] == PREDICTED[rung] else "FAIL"
                      for rung in rungs},
         "nonincreasing": all(medians[a] >= medians[b] for a, b in zip(rungs, rungs[1:])),
-        "strict_first_two": medians[rungs[0]] > medians[rungs[1]] > medians[rungs[2]],
-        "last_tied": medians[rungs[2]] == medians[rungs[3]],
+        "strict_drops": medians[rungs[0]] > medians[rungs[1]] > medians[rungs[2]],
     }
 
 
@@ -160,16 +168,23 @@ def main():
     for rung, offset in RUNG_MHZ.items():
         observed = result["medians"][rung]
         optima = result["results"][rung]
-        print(f"{offset:>4} MHz: median target {observed:g}; predicted {PREDICTED[rung]}; "
-              f"{result['per_rung'][rung]}; individual matches "
-              f"{sum(item['best_target'] == PREDICTED[rung] for item in optima.values())}/12")
+        expected = PREDICTED.get(rung, PREDICTED["offset0"])
+        verdict = result["per_rung"].get(rung, "drift bracket")
+        print(f"{rung} ({offset} MHz): median target {observed:g}; expected {expected}; "
+              f"{verdict}; individual matches "
+              f"{sum(item['best_target'] == expected for item in optima.values())}/12")
         print("  " + ", ".join(f"{work}={optima[work]['best_target']} "
                                f"(achieved {optima[work]['best_achieved']:.1f})"
                                for work in WORKLOADS))
-    print("Nonincreasing median trend:", "PASS" if result["nonincreasing"] else "FAIL")
-    print("Strict first two drops:", "PASS" if result["strict_first_two"] else "FAIL")
-    print("Final 1237 MHz tie:", "PASS" if result["last_tied"] else "FAIL")
-    print("The -450 median shares the -300 grid point; a matching tie cannot resolve further movement.")
+    if not result["drift_ok"]:
+        print("DRIFT: the opening and closing stock medians differ, so the session drifted.")
+        print("No rung is scored. This is uninterpretable, not a pass and not a null.")
+    else:
+        print("Drift bracket: opening and closing stock medians agree.")
+        print("Nonincreasing median trend:", "PASS" if result["nonincreasing"] else "FAIL")
+        print("Strict drops 0 > -150 > -300:", "PASS" if result["strict_drops"] else "FAIL")
+    print("The -300 rung is edge-limited: 1237 is the lowest grid target, so a pass fits any")
+    print("optimum at or below ~1316 MHz. Only the -150 rung locates the move.")
     print("Offset read-back must be verified from the runner log; VID is not rail voltage.")
 
 

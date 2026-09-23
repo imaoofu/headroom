@@ -1,4 +1,4 @@
-"""Synthetic precollection checks for the draft offset-ladder scorer."""
+"""Synthetic precollection checks for the offset-ladder scorer (registered section 7)."""
 
 import csv
 import json
@@ -15,7 +15,7 @@ def check(condition, message):
 
 
 def fixture(root, achieved_shift=7.3, split_rung=None, bad_target=False,
-            missing_voltage=False, missed_lock=False, wrong_iterations=False):
+            missing_voltage=False, missed_lock=False, wrong_iterations=False, peaks=None):
     for rung in RUNG_MHZ:
         for index, workload in enumerate(WORKLOADS):
             label = f"5060ti-4o-{rung}-{workload}"
@@ -33,7 +33,7 @@ def fixture(root, achieved_shift=7.3, split_rung=None, bad_target=False,
                                      f"--iterations {iterations}"),
             }
             path.with_suffix(".json").write_text(json.dumps(metadata), encoding="utf-8")
-            peak = PREDICTED[rung]
+            peak = (peaks or {}).get(rung, PREDICTED.get(rung, PREDICTED["offset0"]))
             if split_rung == rung and index >= 6:
                 peak = 1545
             with path.open("w", newline="", encoding="utf-8") as handle:
@@ -58,7 +58,7 @@ def fixture(root, achieved_shift=7.3, split_rung=None, bad_target=False,
                         "power_window_applied": "True",
                         "memory_clock_avg_mhz": 13801,
                     })
-            if missing_voltage and rung == "offsetm450" and workload == "gemm":
+            if missing_voltage and rung == "offset0close" and workload == "gemm":
                 continue
             voltage_path = path.with_name(path.stem + "_voltage.csv")
             with voltage_path.open("w", newline="", encoding="utf-8") as handle:
@@ -90,10 +90,23 @@ def expect_invalid(message, **kwargs):
 
 def main():
     passing = evaluate(achieved_shift=7.3)
-    check(passing["medians"] == PREDICTED, "score target grid, not achieved clocks")
-    check(set(passing["per_rung"].values()) == {"PASS"}, "all four matching rungs pass")
-    check(passing["nonincreasing"] and passing["strict_first_two"] and passing["last_tied"],
+    check({rung: passing["medians"][rung] for rung in PREDICTED} == PREDICTED,
+          "score target grid, not achieved clocks")
+    check(set(passing["per_rung"]) == {"offset0", "offsetm150", "offsetm300"},
+          "the closing stock suite carries no prediction of its own")
+    check(passing["drift_ok"] and set(passing["per_rung"].values()) == {"PASS"},
+          "all three predicted rungs pass inside an agreeing drift bracket")
+    check(passing["nonincreasing"] and passing["strict_drops"],
           "registered trend components pass")
+
+    drifted = evaluate(peaks={"offset0close": 1702})
+    check(not drifted["drift_ok"]
+          and set(drifted["per_rung"].values()) == {"UNINTERPRETABLE"},
+          "a drifted bracket scores no rung, even when every rung matches")
+
+    upward = evaluate(peaks={"offsetm300": 1545})
+    check(upward["per_rung"]["offsetm300"] == "FAIL" and not upward["nonincreasing"],
+          "an upward step at -300 refutes both its rung and the trend")
 
     split = evaluate(split_rung="offsetm150", achieved_shift=0.6)
     check(split["medians"]["offsetm150"] == 1470, "six/six median falls between grid points")

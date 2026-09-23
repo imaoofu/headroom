@@ -61,7 +61,7 @@ core-clock slider** for these, because it would move the top of the curve.
 | 1 | **A/B** | **Activity A/B test**, `REGISTERED-PREDICTIONS.md` §5 | ~80 min + uptime wait | HWiNFO open | 2 |
 | 2 | **4e** | **Rung B suite**, `REGISTERED-PREDICTIONS.md` §1 | ~55 min | building curve 1 | 3 |
 | 3 | **4f** | **Rung C suite** | ~55 min | building curve 2 | 3 |
-| 4 | **4o** | 🆕 **NVML offset ladder**, e.g. −150 / −300 / −450, a suite per rung. Needs registering first | ~3 h | nothing | 3 |
+| 4 | **4o** | 🆕 **NVML offset ladder, 0 / −150 / −300 / 0**, a suite per rung; the closing stock suite is a drift bracket. ✅ **Registered** (`REGISTERED-PREDICTIONS.md` §7). Runner `Run-OffsetLadder.ps1`, unattended | ~4 h | nothing | 3 |
 | 6 | **4j** | memory-matched flattened vs stock, `membw` + `gemm` | ~25 min | building curve 3 | 2 |
 | 7 | **4n** | 🆕 `membw` fine grid around the **1627 MHz stall**, stock + P5 | ~25 min | nothing | 3 |
 | 8 | **4m** | `reduce` residual: suite order or mechanism? | ~45 min | nothing | 2 |

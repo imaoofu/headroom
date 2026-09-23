@@ -63,3 +63,7 @@ on a GUI program. **Design note added to the draft:** −300 is edge-limited as 
 1237 is the lowest grid target, so −150 is the only interior test. Recommended rungs 0 / −150 / −300
 / 0, with the closing stock suite as a drift bracket in place of the −450 rung, which can confirm
 nothing. Registration waits on Raymond's choice.
+
+✅ **Registered the same evening as 0 / −150 / −300 / 0** (`REGISTERED-PREDICTIONS.md` §7), with
+Raymond choosing to drop −450. The runner now verifies a reset to 0 before the closing suite, and
+the scorer refuses to score any rung unless the opening and closing stock medians are equal.
