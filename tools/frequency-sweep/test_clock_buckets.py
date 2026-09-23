@@ -20,7 +20,9 @@ def clock_counts(batches):
     script = (
         f". '{HELPER}';"
         "$parsed = ConvertFrom-Json ([Console]::In.ReadToEnd());"
-        "$batches = @($parsed);"
+        # Wrapped in an object: PowerShell 7 (CI's Linux leg) unrolls a top-level JSON array
+        # and 5.1 does not, which turned each batch into single rows on Linux and counted 1.
+        "$batches = @($parsed.batches);"
         "$counts = @(foreach ($batch in $batches) {"
         "  $rows = @($batch);"
         "  $targets = @($rows | ForEach-Object { [double]$_.target_frequency_mhz });"
@@ -31,7 +33,7 @@ def clock_counts(batches):
     command = [SHELL, "-NoProfile", "-NonInteractive"]
     if sys.platform == "win32":
         command += ["-ExecutionPolicy", "Bypass"]
-    result = subprocess.run(command + ["-Command", script], input=json.dumps(batches),
+    result = subprocess.run(command + ["-Command", script], input=json.dumps({"batches": batches}),
                             text=True, capture_output=True, timeout=30)
     if result.returncode or not result.stdout.strip():
         raise RuntimeError(f"ClockBuckets.ps1 failed: {result.stderr.strip()}")
