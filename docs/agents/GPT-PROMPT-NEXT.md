@@ -1,19 +1,22 @@
-# GPT — the next prompts, 2026-09-22
+# GPT — the next prompts, batch 2 (Jobs 7–14), 2026-09-22
 
-**Written 2026-09-22 by Claude, after GPT's 09-21 tooling pass and 09-22 literature pass both
-checked out.** The previous version of this file (the predictor audit, completed 2026-09-20) is in
-git history: `git show fc1ca61:docs/agents/GPT-PROMPT-NEXT.md`.
+**Written 2026-09-22 by Claude, after GPT's Jobs 1–6 were all reviewed and committed.** Batch 1 is
+in git history: `git show ee82b33:docs/agents/GPT-PROMPT-NEXT.md`. Earlier: `git show fc1ca61:…`.
 
-🔑 **What changed: GPT now gets in-repo work, not just searches.** Its record says it can take it:
+## How batch 1 went — every job was used, and every one needed something at review
 
-| pass | what was checked here | result |
+| job | outcome | what review found |
 |---|---|---|
-| 09-21 time-join tooling | ran on hardware across **61 sweeps, 775 points** on 09-22 | ✅ no empty point, 1.99 samples/s against a 0.50 s interval |
-| 09-22 inventory counts | re-derived from its CSV | ✅ 109 / 95 / 56 exact |
-| 09-22 MP2884A, Reddit Method 3/4 | spot-checked | ✅ |
-| 09-22 SBAC-PAD 2020 | **read here in full** | ⚠️ it cited Table IV without flagging that Table IV **relocates the optimum**. That turned out to narrow a live claim (`RELATED-WORK.md` §9). **Report what a table shows, not only what the paper is about.** |
+| 1 audit of the 09-22 results | ✅ every figure reproduced | caught three overclaims: the "dip" never fell, "activity-driven" was confounded, one stock pair is one draw |
+| 2 hash gate | ✅ in CI, both OSes | scope was CSV/JSON only and missed 76 provenance files. **That gap was in Claude's brief** |
+| 3 Session D scorer | ✅ after fixes | **scored on achieved clock with EXACT equality**; every fixture had achieved == target, so no test could see it. Also found the registration-vs-runsheet mismatch, which was confirmed |
+| 4 DOI verifier | ✅ | one read label (preprint vs published) tightened |
+| 5 directed literature | ✅ clean | — |
+| 6 grid-aware clock count | ✅ after fixes | **the new file was not added to the USB kit sync**, and **its test broke CI's Linux leg**: PowerShell 7 unrolls a top-level JSON array, 5.1 does not |
 
-**Literature work continues** (Job 5). It is no longer the only kind of job.
+🔑 **Three of those defects share a shape: the code was right for the case the author pictured and
+wrong for a case one step away.** Achieved ≠ target. Kit ≠ repo. PowerShell 7 ≠ 5.1. Rules 9–12
+below exist for that.
 
 ---
 
@@ -27,176 +30,193 @@ git history: `git show fc1ca61:docs/agents/GPT-PROMPT-NEXT.md`.
 > **Hard rules for every job:**
 >
 > 1. **`data/` is read-only.** Never write, re-save, re-encode or re-line-end any file under it,
->    not even temporarily. The edit guard in `tools/claude-hooks/` covers Claude only; it does not
->    cover you, and all four CI gates **pass on a silently altered measurement**. Work on copies in
->    a temp directory.
-> 2. **Never edit `docs/PAPER_DRAFT.md`.** Findings about the paper go in your record.
+>    not even temporarily. Work on copies in a temp directory.
+> 2. **Never edit `docs/PAPER_DRAFT.md`.** Proposed paper text goes in a separate draft file.
 > 3. **Never change a claim formula in `analysis/claims_*.py` to make the audit pass.** A claim that
 >    does not match the paper is a *finding*: report it.
 > 4. **Never change GPU state.** No `nvidia-smi -lgc/-rgc/-pl`, no Afterburner, no NVML writes, no
->    HWiNFO control.
+>    HWiNFO control, and **never execute a runner under `tools/hwinfo-logging/experiments/`**.
 > 5. 🛑 **Check the GPU is not mid-sweep before running anything heavy**, including
->    `python run_tests.py`. The test suite beside a sweep cost **9.38% throughput** on 2026-09-18.
->    Run this first, and if it prints anything, wait:
->    `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'Invoke-(Frequency|Logged)Sweep[.]ps1|gpu_workload[.]py' -and $_.CommandLine -notmatch 'Get-CimInstance' } | Select-Object ProcessId, CommandLine`
->    (Written so it cannot match its own command line. The first version could, and reported a sweep
->    that was not running.)
+>    `python run_tests.py`. The test suite beside a sweep cost **9.38% throughput**. Run this, and if
+>    it prints anything, wait:
+>    `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'Invoke-(Frequency|Logged)Sweep[.]ps1|gpu_workload[.]py|Run-(Activity|Offset)' -and $_.CommandLine -notmatch 'Get-CimInstance' } | Select-Object ProcessId, CommandLine`
 > 6. **Shared tree.** Run `git status` first. Do not edit a file that already has someone else's
->    uncommitted changes unless the job names it. **Do not commit.** Leave your changes for review
->    and list every file you touched.
-> 7. **Recompute; do not reason from a summary.** Say, for every number in your record, whether you
->    recomputed it or took it from a document.
-> 8. **One job per session.** If it grows, stop and report what you found rather than widening it.
+>    uncommitted changes unless the job names it. **Do not commit.** List every file you touched.
+> 7. **Recompute; do not reason from a summary.** Say, for every number, whether you recomputed it
+>    or took it from a document.
+> 8. **One job per session.** If it grows, stop and report rather than widening it.
+> 9. 🆕 **Never run `python analysis/check_data_hashes.py --write`.** It re-baselines the measurement
+>    hashes, and only a reviewer who has read the diff may do that.
+> 10. 🆕 **Test fixtures must include the awkward case, not just the pictured one.** Achieved clocks
+>     that are *not* equal to their targets. An even split of twelve that puts the median between
+>     two grid points. A clipped bin. **If every fixture is exact, a comparison bug is invisible.**
+> 11. 🆕 **CI runs Python tests on Linux under PowerShell 7 as well as Windows 5.1.** Any test that
+>     shells out to PowerShell must work under both. Known difference: PS7's `ConvertFrom-Json`
+>     unrolls a top-level array; wrap input as an object.
+> 12. 🆕 **If a sweep or kit tool gains a file it depends on, add that file to
+>     `tools/collection-kit/Sync-Kit.ps1`.** Otherwise the shop-machine kit breaks, at the end of a
+>     run.
 >
 > **Finish every job by** running `python run_tests.py`, `python analysis/audit_claims.py`,
-> `python analysis/build_data_manifest.py --check` and `python analysis/verify_citations.py --check`
-> (after rule 5's check), then filing `docs/gpt-findings/YYYY-MM-DD-<slug>.md` with a row in that
-> README. State what you did **not** verify.
+> `python analysis/build_data_manifest.py --check`, `python analysis/verify_citations.py --check`
+> and `python analysis/check_data_hashes.py --check` (after rule 5), then filing
+> `docs/gpt-findings/YYYY-MM-DD-<slug>.md` with a row in that README. State what you did **not**
+> verify.
 
 ---
 
-## Job 1: adversarial audit of today's 5060 Ti results. **Send first.**
+## Job 7: pre-flight review of tomorrow's unattended activity test. **Send first — it runs tomorrow.**
 
-**Why first:** five results landed on 2026-09-22 and none has had an outside reader. All three of
-GPT's earlier audits produced retractions that held up when checked.
+**Why first:** it runs unattended on the bench with nobody watching, and nobody outside has read it.
+The last registered scorer written before its data (Session D) had a verdict-breaking bug.
 
-> **Adversarial audit: the RTX 5060 Ti results of 2026-09-22.** One chip, one session, driver
-> 616.92, run unattended. Recompute each from the committed CSVs. For each, say whether the
-> README's conclusion follows, and give the strongest case that it does not.
+> **Adversarially review the registered activity A/B test before it runs. Do not run it.**
+> Read `docs/REGISTERED-PREDICTIONS.md` §5, `tools/hwinfo-logging/experiments/Run-ActivityAB.ps1`,
+> `tools/hwinfo-logging/experiments/Start-ActivityLoad.ps1` and `analysis/score_activity_ab.py`.
 >
-> | claim | directory under `data/frequency-sweeps/` |
-> |---|---|
-> | Per-workload optima reproduce **9 of 12** between two identical stock suites; winner margins median **0.99%**; this recalibrates three existing claims | `5060ti-stock-repro-20260922/` |
-> | Large historical `membw` dips are **activity-driven**; a **reproducible ~0.5–0.85% dip at 1627 MHz** appears in 4 of 6 silent replicates across two configurations | `5060ti-membw-silent-20260922/` |
-> | The registered Profile 1 prediction **holds** (median 2010, 7 of 12 individually) | `5060ti-p1-suite-20260922/`, `5060ti-p4-suite-20260922/`, `docs/REGISTERED-PREDICTIONS.md` §2 |
-> | The floor ends between **1567 and 1575 MHz**; descending equals ascending (**+0.00%**) | `5060ti-finefloor-20260922/` |
-> | Isolated 8–11% point losses are **caused by agent activity** (4 bad points, then 1, then 0 as the agent went quiet) | `5060ti-finefloor-20260922/README.md` |
+> 1. **Does the runner do what §5 registers?** Check the uptime gate, the two warm-ups, S A A S × 3,
+>    and that load detection runs identically in both conditions.
+> 2. **PowerShell 5.1 traps.** Can function output leak into a return value? Does
+>    `Start-Process -PassThru` give a real exit code? What happens if the activity generator
+>    outlives its run? Is there non-ASCII inside a string literal?
+> 3. **Does the scorer compute what §5 registers?** Test it on synthetic experiment directories
+>    in a temp dir, with rule 10's awkward cases: a missing run, an excluded active run, losses
+>    tied at the 2% threshold, a warm-up with losses, which must not count.
+> 4. **Is the design able to fail?** Could the proxy activity be too light to produce any loss,
+>    so the registered "supported" outcome is unreachable? Say so if yes. Do not change §5.
 >
-> Attack these specifically:
->
-> 1. **9 of 12:** is "agree" defined on the target grid or on achieved clock? What agreement rate
->    would chance produce, given 13 grid points and near-ties? Can **n = 2 passes** recalibrate
->    the P1/P4 comparison and the negative control, as the README says it does?
-> 2. **The 1627 MHz dip:** how is "departure from the local trend" computed, and does the dip
->    survive a different trend definition? Is it a grid artifact? Check achieved clock, memory
->    clock and power at that point against its neighbours.
-> 3. **Activity as the cause:** the operator noted the card had **just been switched on** that
->    morning. Is "agent went silent" confounded with warm-up or time since boot? What would
->    separate them?
-> 4. **P1 "holds":** compare the result with what `REGISTERED-PREDICTIONS.md` §2 said *before*
->    collection. Was a success criterion stated? Is 7 of 12 consistent with it?
-> 5. **+0.00%:** what quantity was compared between the descending and ascending runs, and over
->    which points?
+> Report defects with a proposed fix; **do not edit the registered thresholds.**
 
 ---
 
-## Job 2: content-hash integrity gate for measurement files
+## Job 8: the search log that tonight's result now owes
 
-**The known hole** (`docs/TODO-20260918.md` item 16): a Codex agent changed one voltage reading, and
-the audit, 828 tests and both `--check` gates all passed.
+**The search rule in CLAUDE.md fires:** a result that earns a 🔑 must carry a search log. Tonight's
+4c result carries one: *"an NVML offset moves the load floor programmatically."*
 
-> **Build a content-hash gate for `data/`.** Detection, not prevention: it must catch an altered or
-> deleted measurement file whichever agent or person made the change.
+> **Is it already known that a core-clock offset shifts the whole NVIDIA V/F curve, so that the
+> voltage at clock f under offset −k equals the stock voltage at f+k?** Tonight's measurement, on one
+> RTX 5060 Ti: `data/frequency-sweeps/5060ti-nvml-offset-20260922/README.md`.
 >
-> - **Decide where the hashes live, and justify it in the record.** Put them **outside `data/`**.
->   Claude's edit guard denies writes inside `data/` by default, so a file there would block the
->   agent that most often adds sweeps. `data/MANIFEST.json` has no hashes today.
-> - 🛑 **Make the hashes independent of line endings.** Windows working copies are CRLF, CI checks
->   out LF, and this repository already has two third-party hashes that differ only by line ending
->   (`CLAUDE.md`, the consumer-dataset section). Normalise before hashing, and record the convention
->   inside the hash file.
-> - Write `--write` and `--check` modes. Wire `--check` into `run_tests.py` or CI
->   (`.github/workflows/ci.yml`), and state which one and why.
-> - **Scope:** measurement files (CSV, JSON). Exclude `.md`, which is legitimately edited.
->   Decide what an **unhashed new file** does: fail or warn. A new sweep must not slip in unhashed.
-> - **Prove it catches the demonstrated case.** Use a temp copy of
->   `rtx3070ti-20260825/hwinfo-silent/*_voltage.csv`, change 855 MHz from 0.819 to 0.900 V in the
->   copy, and show the gate fails. Include a test suite.
-> - ⛔ **Do not run `--write` against the real `data/` tree.** Hand the first real write to review.
+> - **Search the enthusiast and tool communities first.** Afterburner's core-clock slider is widely
+>   described as shifting the curve, and this may be common knowledge. Search MSI Afterburner and
+>   Unwinder's docs and forum posts, LACT, GreenWithEnvy, `nvidia-settings` and Coolbits docs,
+>   NVIDIA's own NVML reference for `nvmlDeviceSetClockOffsets`, and overclocking guides.
+> - Then academic sources: GPU DVFS papers that apply clock offsets and log voltage.
+> - **Specifically:** does anyone contrast it with Guerreiro et al. (TPDS 2019), who report voltage
+>   *constant* under `nvidia-settings` offsets on Maxwell/Pascal/Kepler?
+> - Write a **search log**: the queries, the date, what was found, what could not be reached. State
+>   honestly if the curve-shift behaviour is well known, because then the only literature-facing
+>   content is the Guerreiro contrast.
 
 ---
 
-## Job 3: a registered analysis for Session D, written before the data exists
+## Job 9: adversarial audit of the 4c offset result
 
-**Why this matters:** RTX 3070 Ti Session D is the planned causal replication on a second chip, and
-its predictions are registered in the runsheet. If the scoring code is committed before collection,
-the **analysis** is registered too, and nobody can tune it to the result afterwards.
-
-> **Write `analysis/score_session_d.py`.** Read the registered predictions in
-> `data/frequency-sweeps/rtx3070ti-20260825/SESSION-D-RUNSHEET.md`: **4a** (Edit 1, shorten the
-> floor), **4b** (Edit 2, the negative control), and the section "What each outcome means".
-> ⚠️ **The edits may still change before collection.** Applying Edit 1 in Afterburner is unresolved
-> at the time of writing. Keep every runsheet-derived number (edit boundaries, predicted optima,
-> floor voltage) in **one named constants block** that quotes the runsheet line it came from, so a
-> changed edit is a one-place diff and not a silent retune. Given a Session D sweep directory, the script computes the median and
-> per-workload efficiency optima, the floor extent from the voltage extracts, and a verdict
-> against **each** registered outcome, including the ones where the claim fails.
+> **Audit `data/frequency-sweeps/5060ti-nvml-offset-20260922/` against `REGISTERED-PREDICTIONS.md` §6**,
+> registered in `d0b9724`, before the data. Recompute from the CSVs and voltage extracts.
 >
-> - Efficiency and optimum must be computed **exactly as the existing suites compute them**. Find
->   that code, reuse it rather than re-deriving it, and cite where it lives.
-> - Report the median. Apply the **9 of 12 reproducibility result** (Job 1's first claim): do not
->   let a per-workload count carry a verdict alone.
-> - Under Edit 2, six targets clip to about 1500 MHz. The runsheet says to report the clipped rows
->   as **one bin**. Handle that.
-> - Test on synthetic fixtures covering a pass, a fail and a control-also-moves case. **Never edit
->   the runsheet's predictions.**
+> 1. **The pairing** "V_B(f) = V_A1(f+300)" interpolates voltage in achieved clock. Does a different
+>    pairing rule change the verdict? How much does a 5 mV VID grid constrain the result?
+> 2. **The reported voltage is a VID lookup, not a rail measurement** (CLAUDE.md). What exactly does a
+>    shifted lookup demonstrate, and what does it not?
+> 3. **Is "4d is superseded" right?** 4d's criterion was "power at f with −300 should match f+300
+>    without". Is it truly ill-posed, or was it meant differently? Check the git history of the 4d
+>    wording, e.g. `git log -S "f+300"`.
+> 4. **The XBAR observation**: is it as "tracks the operating point" as the README says, across all
+>    15 points?
 
 ---
 
-## Job 4: DOI support in `verify_citations.py`
+## Job 10: register the NVML offset ladder (worklist 4o) — draft, before any data
 
-> `analysis/verify_citations.py` registers arXiv ids only. Add DOIs via Crossref
-> (`https://doi.org/<doi>` with `Accept: application/vnd.citationstyles.csl+json`). Follow the
-> arXiv path's existing contract: offline is not a citation failure, and `--check` must stay
-> network-free in CI. Register the DOIs cited in `docs/RELATED-WORK.md` §8–9, and report any whose
-> Crossref title or author list disagrees with what the file says. **This project has
-> invented a co-author before.**
+**Why:** 4c showed an offset moves the load floor programmatically, so a ladder can run
+unattended with no hand-built curves. It must be registered before it runs.
 
----
-
-## Job 5: literature, targeted at the claim that just narrowed
-
-**The cold boundary is closed for this model:** it has read `CLAUDE.md`. So this is a directed
-search, not a novelty check. A genuine cold check still needs a fresh chat, no repository, and
-`NOVELTY-CHECK-BRIEF.md`.
-
-> 1. **Forward citations of Mendes, Tomás & Roma, SBAC-PAD 2020**, *Exploiting non-conventional
->    DVFS on GPUs*. Its Table IV moves an EDP optimum when the V–F relationship changes. Find who
->    built on it, and look specifically for: a **region-targeted** curve edit rather than a global
->    voltage; **NVIDIA** hardware; a **negative control** (an edit that should not move the
->    optimum); or an optimum **predicted in advance** from a floor voltage. Report the table
->    evidence, not the abstract's framing.
-> 2. **GreenMD** (ACM TOPC 2023, `10.1145/3583590`): verify the GTX 1660 Super, MSI Afterburner
->    and 10 mV details you reported. **None is in the abstract.** Quote the page they come from, or
->    withdraw them.
-> 3. **The 14 no-abstract records** in `docs/gpt-findings/2026-09-22-forward-citation-abstract-inventory.csv`.
-> 4. **Wang et al. Figure 4, 20 benchmarks against the CSV's 30 applications:** check
->    `HKBU-HPML` GitHub repositories (branch `master`, not `main`) for a benchmark list that maps
->    the two.
-
----
-
-## Job 6, small: `distinct_clocks_measured` false-alarms on fine grids
-
-> Originally `docs/TODO-20260915.md` item 17 (file removed 2026-09-22; everything needed is below). `Invoke-FrequencySweep.ps1` buckets achieved clocks at a fixed
-> **25 MHz**, so a fine grid under-reports.
+> **Draft a registration and a runner. Do not add them to `REGISTERED-PREDICTIONS.md`, and do not run
+> anything.** Write:
+> - `docs/agents/DRAFT-offset-ladder-registration.md`
+> - `tools/hwinfo-logging/experiments/Run-OffsetLadder.ps1`, following `Run-OffsetPrecondition.ps1`
+>   closely, including its reset-in-`finally` and its two fixed PowerShell traps
 >
-> ⛔ **RUN DATE CORRECTED 2026-09-22.** The earlier example read: *"the 2026-09-18 fine-floor run
-> recorded `distinct_clocks_measured` 10 against 13 genuinely distinct clocks, with every lock held."*
-> The 09-18 RTX 5060 Ti fine-floor CSVs each give 13 under the old calculation. The **2026-09-15
-> RTX 2060 Super fine-floor run** is the 10-versus-13 case, with 13 locks held. The prompt copied
-> the count from that run but attached the date of the later fine-floor run.
-> It is the same fixed-width assumption the voltage join had. Make the bucket width follow the
-> grid spacing. Reproduce the 10-versus-13 miscount from the committed 09-15 CSV (read-only) before
-> fixing it, and show that the coarse grids already committed give **unchanged** counts. You are
-> editing a script that locks GPU clocks: **edit and test it, never run a sweep with it.**
-> Misreporting, not corruption: low priority.
+> - **Design:** stock Profile 3, the standard twelve-workload suite on the 13-point 1237–3090 MHz
+>   grid, offsets **0 / −150 / −300 / −450** (the tool refuses below −500). Reuse the iteration counts
+>   of `data/frequency-sweeps/5060ti-stock-repro-20260922/`, and cite where you got them.
+> - **Predictions, derived from committed data and not tuned:** the stock floor ends at 1567–1575 MHz
+>   (`../5060ti-finefloor-20260922/`). Under −k the rule predicts the median suite optimum at the grid
+>   point nearest to (floor end − k). Work out each rung's predicted grid point, and **say which rungs
+>   the 155 MHz grid can actually distinguish**. If two rungs predict the same point, say so; that
+>   rung tests nothing.
+> - **What refutes it**, stated per rung and for the monotone trend.
+> - **What it does NOT test:** a global offset shifts the whole curve, while the Afterburner rungs
+>   move only the floor region. Say how the two ladders complement each other.
+> - Include a scorer or reuse one, with rule-10 fixtures.
+
+---
+
+## Job 11: a committed, tested Afterburner profile decoder
+
+**Why:** the decoder that verified rung B tonight exists only in a scratch file. And tonight showed
+it is **wrong at offset boundaries**: see the rung B snapshot README.
+
+> Write `tools/afterburner/decode_profiles.py` and its tests. It reads the `VEN_*.cfg` `VFCurve`
+> hex as documented in `docs/AFTERBURNER-PROFILES.md`: a header, then 127 × (offset, voltage mV,
+> base MHz) float32.
+> - **It must reproduce the committed decodes exactly.** Test against
+>   `data/afterburner-profiles/5060ti-profiles-20260908b-p4-plateau-3030.json` for every profile.
+> - **It must FLAG, not silently decode, any point where the offset field changes value.** Rung B's
+>   845 mV point is stored (+176, base 2362); the editor shows 2362, +0; and a byte-identical re-save
+>   proved they are one state. Snapshot: `data/afterburner-profiles/5060ti-profiles-20260922-rungB/`.
+>   Test that this point is flagged.
+> - Add a `--verify-rung` mode that runs §1's five registered pre-run checks against a snapshot and
+>   prints each result. Rung B's expected outcome: checks 1, 2, 4, 5 pass and check 3 fails at
+>   650–690 mV.
+
+---
+
+## Job 12, analysis only: is the `membw` 1627 MHz stall in the historical data too?
+
+> On 2026-09-22, 5 of 6 silent `membw` runs sat below their own chord at **1627 MHz** achieved, while
+> the rest of each curve sat above it. That is a **stall in the rise, not a fall**:
+> `data/frequency-sweeps/5060ti-membw-silent-20260922/README.md`. **Using only committed CSVs**, check
+> every other `membw` sweep on the 5060 Ti that has a point near 1627 MHz. Compute chord residuals
+> at every interior point, in achieved clock, exactly as that README does. Does 1627 stand out
+> historically, across configurations and dates? Report the count, and every sweep that does not
+> fit.
+
+---
+
+## Job 13: draft replacement text for the paper's §2 — as a proposal file
+
+**Why:** CLAUDE.md says §§2.1–2.5 need rewriting against `docs/RELATED-WORK.md`, and **the paper cites
+no Mendes paper at all**, although SBAC-PAD 2020 now bounds the causal claim.
+
+> **Write `docs/drafts/section2-related-work-proposal.md`. Do not touch `PAPER_DRAFT.md`.**
+> Propose replacement text for §§2.1–2.5, built only from sources `RELATED-WORK.md` marks as read.
+> Mark every sentence that depends on an abstract-only source. Follow the "What it must NOT grow
+> back into" list in CLAUDE.md's contribution section: **no "first", no "novel", no "unpublished"**.
+> Include a table mapping each current §2 sentence to its replacement and the reason. Claude
+> reviews it and edits the paper.
+
+---
+
+## Job 14, larger: pin the numbers in one unaudited paper section
+
+> CLAUDE.md lists unaudited sections that carry real numbers: 3.3.2, 3.3.3, 5.4.2, 5.5.5, 5.6.3, 5.7
+> and 5.7.7. **Pick ONE, say why, and write claims for its numbers** in the right `claims_*.py`
+> module. Follow "The claims auditor" section of CLAUDE.md exactly: each claim renders its string
+> from the CSVs.
+> - 🛑 **A claim that does not match the paper is a FINDING. Report it; change neither the paper nor
+>   the formula to make it pass.**
+> - Adding claims changes the counts in CLAUDE.md's canonical coverage block, which
+>   `claims_repo.py` audits. Update **only that block**, and show the before/after counts.
 
 ---
 
 ## ⛔ Still do not ask it
 
 - **Anything settled.** `GPT-QUEUE.md` lists these.
-- **To write the paper.** It files records; the paper is changed after verification.
-- **Anything the hardware settles faster.** The 1627 MHz fine grid is an unattended sweep Claude
-  can run, not a question to reason about.
+- **To write the paper.** It drafts; Claude edits the paper after verification.
+- **Anything the hardware settles faster.**
+- **A cold novelty check.** This model has read the repository, so its boundary is closed. A
+  genuine cold check needs a fresh chat, no repository, and `NOVELTY-CHECK-BRIEF.md`.

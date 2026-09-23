@@ -20,7 +20,9 @@ being right.
 
 ---
 
-📤 **THE PROMPTS TO SEND NEXT ARE IN [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md), rewritten 2026-09-22.**
+📤 **BATCH 2 (Jobs 7–14) IS IN [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md), written 2026-09-22 evening.** Send Job 7 first: it pre-flights tomorrow's unattended activity test. Batch 1 (Jobs 1–6) is all delivered and reviewed; each review's outcome is in the table at the top of that file.
+
+~~📤 **THE PROMPTS TO SEND NEXT ARE IN [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md), rewritten 2026-09-22.**~~
 🆕 **GPT now gets IN-REPO work**, not only searches: a session preamble of hard rules (`data/` is read-only,
 no commits, a GPU-quiet check before any test run), then six jobs. Job 1 audits the 09-22 results,
 Job 2 builds the data hash gate, Job 3 registers the Session D analysis in advance, Job 4 adds DOI
