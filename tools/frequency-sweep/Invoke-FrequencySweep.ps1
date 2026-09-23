@@ -683,6 +683,10 @@ if ($workloadVerdictAvailable) {
     Write-Host "[SWEEP] benchmark produced any result. A workload that fails to launch will look normal."
 }
 
+# Reporting only: derive clock bucket width from the requested grid. This helper never
+# changes a lock, voltage, power limit, or any measurement.
+. (Join-Path $PSScriptRoot "ClockBuckets.ps1")
+
 $results = New-Object System.Collections.ArrayList
 $abortedByUser = $false
 $workloadNeverRan = $false
@@ -941,9 +945,9 @@ $undilutedPoints = @($results | Where-Object { -not $_.power_window_applied })
 $overshotPoints = @($results | Where-Object { $_.lock_miss_direction -eq "above" })
 $undershotPoints = @($results | Where-Object { $_.lock_miss_direction -eq "below" })
 
-# Grid points that landed on the same achieved clock. Bucketed at 25 MHz because a lock that
-# holds still wanders a few MHz; two targets inside one bucket are one measurement, not two.
-$clockGroups = @($results | Group-Object { [math]::Round($_.achieved_frequency_avg / 25) })
+# The 25 MHz bucket is retained for coarse grids. Fine grids use half their smallest target
+# spacing so adjacent achieved clocks cannot collapse solely because of the reporting bucket.
+$clockGroups = @(Get-ClockGroups -Rows @($results) -TargetFrequencies @($targets))
 $collapsedGroups = @($clockGroups | Where-Object { $_.Count -gt 1 })
 
 $session = [ordered]@{

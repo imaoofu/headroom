@@ -179,10 +179,15 @@ search, not a novelty check. A genuine cold check still needs a fresh chat, no r
 ## Job 6, small: `distinct_clocks_measured` false-alarms on fine grids
 
 > Originally `docs/TODO-20260915.md` item 17 (file removed 2026-09-22; everything needed is below). `Invoke-FrequencySweep.ps1` buckets achieved clocks at a fixed
-> **25 MHz**, so a fine grid under-reports: the 2026-09-18 fine-floor run recorded
-> `distinct_clocks_measured` **10** against **13** genuinely distinct clocks, with every lock held.
+> **25 MHz**, so a fine grid under-reports.
+>
+> ⛔ **RUN DATE CORRECTED 2026-09-22.** The earlier example read: *"the 2026-09-18 fine-floor run
+> recorded `distinct_clocks_measured` 10 against 13 genuinely distinct clocks, with every lock held."*
+> The 09-18 RTX 5060 Ti fine-floor CSVs each give 13 under the old calculation. The **2026-09-15
+> RTX 2060 Super fine-floor run** is the 10-versus-13 case, with 13 locks held. The prompt copied
+> the count from that run but attached the date of the later fine-floor run.
 > It is the same fixed-width assumption the voltage join had. Make the bucket width follow the
-> grid spacing. Reproduce the 10-versus-13 miscount from the committed 09-18 CSV (read-only) before
+> grid spacing. Reproduce the 10-versus-13 miscount from the committed 09-15 CSV (read-only) before
 > fixing it, and show that the coarse grids already committed give **unchanged** counts. You are
 > editing a script that locks GPU clocks: **edit and test it, never run a sweep with it.**
 > Misreporting, not corruption: low priority.

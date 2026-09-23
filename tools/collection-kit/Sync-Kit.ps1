@@ -50,6 +50,9 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 # Source in the repository -> destination relative to the kit root.
 $files = @(
     @{ From = "tools\frequency-sweep\Invoke-FrequencySweep.ps1"; To = "tools\frequency-sweep\Invoke-FrequencySweep.ps1" },
+    # Dot-sourced by the sweep since 2026-09-22. Without it the kit's sweep fails at the end of a
+    # run, when it groups achieved clocks - after every measurement has been taken.
+    @{ From = "tools\frequency-sweep\ClockBuckets.ps1";          To = "tools\frequency-sweep\ClockBuckets.ps1" },
     # ⛔ MISSING FROM THIS LIST UNTIL 2026-09-14, AND ITS ABSENCE WAS SILENT BY DESIGN.
     # Invoke-FrequencySweep.ps1 dot-sources this helper to check that the benchmark actually
     # produced numbers. When it is not found the sweep prints a NOTE and carries on WITHOUT the
