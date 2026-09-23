@@ -9,6 +9,10 @@ Network is NOT touched here. `--live` is exercised by running the tool, not by a
 that needs arXiv to be reachable fails on a train, and a test people skip is worse than none.
 """
 
+import contextlib
+import io
+import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -48,6 +52,15 @@ for text, expected in shapes.items():
 check("a 4-digit suffix parses", vc.ARXIV_ID.findall("arXiv:1407.8116") == ["1407.8116"])
 check("a 5-digit suffix parses", vc.ARXIV_ID.findall("arXiv:2211.07260") == ["2211.07260"])
 
+doiShapes = {
+    "doi:10.1016/j.jpdc.2022.03.004.": "10.1016/j.jpdc.2022.03.004",
+    "[paper](https://doi.org/10.1109/HPCA.2018.00072)": "10.1109/hpca.2018.00072",
+    "`10.1145/3583590`": "10.1145/3583590",
+}
+for text, expected in doiShapes.items():
+    hits = [match.group().rstrip(".,;:!?").lower() for match in vc.DOI_ID.finditer(text)]
+    check(f"DOI shape {text!r}", hits == [expected])
+
 print()
 print("the registry - every entry asserts someone opened the source")
 
@@ -59,6 +72,17 @@ for arxivId, record in vc.CITATIONS.items():
 
 check("no id is both a citation and a lead - it is one or the other",
       not (set(vc.CITATIONS) & set(vc.LEADS)))
+for doi, record in vc.DOI_CITATIONS.items():
+    check(f"{doi} has full title, author order, and read status",
+          bool(record.get("title")) and bool(record.get("authors"))
+          and bool(record.get("readStatus")))
+check("the five section 8-9 DOIs are registered", {
+    "10.1016/j.jpdc.2022.03.004", "10.1109/hpca.2018.00072",
+    "10.1109/tpds.2019.2917181", "10.1145/3583590",
+    "10.1109/tsusc.2023.3314916",
+} <= set(vc.DOI_CITATIONS))
+check("no DOI is both a citation and a lead",
+      not (set(vc.DOI_CITATIONS) & set(vc.DOI_LEADS)))
 
 print()
 print("surname extraction")
@@ -77,6 +101,10 @@ problems, cited = vc.checkCoverage()
 check("the repository cites at least the eight registered sources", len(cited) >= len(vc.CITATIONS))
 check("coverage is currently clean - every cited id is registered or a recorded lead",
       problems == [])
+doiProblems, citedDois = vc.checkDoiCoverage()
+check("DOI coverage is currently clean", doiProblems == [])
+check("all registered DOIs are present in live markdown",
+      set(vc.DOI_CITATIONS) <= set(citedDois))
 
 # ⛔ THE REGRESSION THAT MATTERS. An unregistered id must FAIL, or the guard is decoration. This
 # asserts the failure path directly rather than trusting that a clean run means it works.
@@ -91,6 +119,69 @@ finally:
     vc.CITATIONS.update(realCitations)
 
 check("the registry is restored after the failure-path test", "2211.07260" in vc.CITATIONS)
+
+doiRecord = vc.DOI_CITATIONS.pop("10.1145/3583590")
+try:
+    withoutDoi, _ = vc.checkDoiCoverage()
+    check("removing a DOI registration makes offline coverage fail",
+          any("10.1145/3583590" in problem for problem in withoutDoi))
+finally:
+    vc.DOI_CITATIONS["10.1145/3583590"] = doiRecord
+
+print()
+print("DOI live metadata and offline boundary")
+
+liveDoi = {
+    "DOI": "10.1016/j.jpdc.2022.03.004",
+    "title": "Decoupling GPGPU voltage-frequency scaling for deep-learning applications",
+    "author": [{"family": "Mendes"}, {"family": "Tomas"}, {"family": "Roma"}],
+}
+realFetchDoi = vc.fetchDoi
+try:
+    vc.fetchDoi = lambda doi: liveDoi
+    check("Crossref accents are normalized for author comparison",
+          vc.checkLiveDoi("10.1016/j.jpdc.2022.03.004",
+                          vc.DOI_CITATIONS["10.1016/j.jpdc.2022.03.004"]) == [])
+    vc.fetchDoi = lambda doi: {**liveDoi, "title": "Wrong title",
+                               "author": list(reversed(liveDoi["author"]))}
+    diffs = vc.checkLiveDoi("10.1016/j.jpdc.2022.03.004",
+                            vc.DOI_CITATIONS["10.1016/j.jpdc.2022.03.004"])
+    check("wrong title and author order are both detected",
+          len(diffs) == 2 and any("title" in diff for diff in diffs)
+          and any("author order" in diff for diff in diffs))
+    vc.fetchDoi = lambda doi: None
+    check("unreachable DOI is skipped rather than called a citation failure",
+          vc.checkLiveDoi("10.1016/j.jpdc.2022.03.004",
+                          vc.DOI_CITATIONS["10.1016/j.jpdc.2022.03.004"]) is None)
+finally:
+    vc.fetchDoi = realFetchDoi
+
+realRun = vc.subprocess.run
+try:
+    calls = []
+
+    def fakeRun(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, json.dumps(liveDoi), "")
+
+    vc.subprocess.run = fakeRun
+    fetched = vc.fetchDoi("10.1016/j.jpdc.2022.03.004")
+    check("DOI fetch uses doi.org and the CSL JSON Accept header",
+          fetched == liveDoi and "https://doi.org/10.1016/j.jpdc.2022.03.004" in calls[0]
+          and "Accept: application/vnd.citationstyles.csl+json" in calls[0])
+finally:
+    vc.subprocess.run = realRun
+
+realFetchArxiv = vc.fetchArxiv
+try:
+    vc.fetchArxiv = lambda arxivId: (_ for _ in ()).throw(AssertionError("network"))
+    vc.fetchDoi = lambda doi: (_ for _ in ()).throw(AssertionError("network"))
+    with contextlib.redirect_stdout(io.StringIO()):
+        offlineExit = vc.main(["--check"])
+    check("--check does not call either live metadata fetcher", offlineExit == 0)
+finally:
+    vc.fetchArxiv = realFetchArxiv
+    vc.fetchDoi = realFetchDoi
 
 print()
 print("the one discrepancy this checker found, and how it resolved")
