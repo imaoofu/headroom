@@ -683,6 +683,6 @@ Afterburner users describe the core slider moving every curve point (Reddit post
 *"GPCCLK VF offset"* and points to `nvmlDeviceSetClockOffsets` as its successor. **Reddit is
 unreachable from this environment**, so those posts are GPT's read.
 
-✅ **What 4c adds, narrowly:** measured voltage readback, the f ↔ f+300 pairing within 3 mV, and the
+✅ **What 4c adds, narrowly:** measured voltage readback, the f ↔ f+300 pairing (identical VID codes at 9 of 9 pairs), and the
 floor end located under an offset, on Blackwell. The Guerreiro contrast is method **and** generation
 together.

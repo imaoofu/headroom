@@ -90,8 +90,9 @@ optima reproduce only 9 of 12 between identical runs, so report it, but weight t
 
 ✅ **Run with Raymond present, registered in advance (`REGISTERED-PREDICTIONS.md` §6).** The two
 regions survive: −300 MHz shifts the whole V/F curve, the floor end moves to 1245–1290 MHz, and locks
-still hold. **4d is superseded**: its "power should match" criterion cannot hold as worded, and the
-voltage pairing answers its question directly.
+still hold. **4d's power-equality test is retired**: it is not a valid prediction of a shifted
+lookup. Its wider machine-state question is still **open**, and would need a new matched-clock
+design. ⛔ The curve-shift mechanism is prior art (`RELATED-WORK.md` §10).
 `data/frequency-sweeps/5060ti-nvml-offset-20260922/`. 🆕 **Next: an offset ladder** (e.g. −150 / −300
 / −450) as a suite per rung. It can run unattended, because there is no curve to build. It needs
 registering first.
@@ -143,7 +144,7 @@ never "stable".
 |---|---|---|
 | 4a | fine floor 1380–1760, ×2 | `5060ti-finefloor-20260918/` |
 | 4c | NVML −300 MHz offset: **the two regions survive, and the curve shifts by the offset** | `5060ti-nvml-offset-20260922/` |
-| 4d | superseded by 4c's voltage pairing; its criterion could not hold as worded | — |
+| 4d | power-equality test retired (not a valid prediction); the machine-state question stays open | — |
 | 4i | ascending fine floor at 0.50 s, ×3: dither **only above** the floor | `5060ti-finefloor-20260922/` |
 | 4b | descending fine floor, ×2: **matches ascending within ±0.08%** | same |
 | 4h | floor end: **0.720 V through 1567, 0.730 at 1575** | same |

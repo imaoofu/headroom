@@ -736,6 +736,11 @@ The offset is reset in a `finally` block and read back, whatever happens.
 one offset (−300), one workload, one chip. 4d is superseded; its criterion could not hold as worded
 (see CLAUDE.md).
 
+⛔ **Two wordings above narrowed the same evening by an outside audit** (`docs/gpt-findings/2026-09-22-5060ti-offset-4c-adversarial-audit.md`);
+the verdict is unchanged. **"≤2 mV / ≤3 mV"** interpolated between 5 mV codes. The accurate form is
+**identical VID codes at 9 of 9 six-step pairs**. And 4d's criterion is **not a valid prediction**
+(retire it), but "superseded" overstates: its wider machine-state question is still open.
+
 ---
 
 ## Safety envelope — these cards are going to be sold

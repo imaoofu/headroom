@@ -348,7 +348,9 @@ THE V/F CURVE.** `tools/nvml-offset/Set-NvmlClockOffset.ps1` (negative only, ver
 wrote −300 MHz on stock P3, A–B–A, registered in advance (`REGISTERED-PREDICTIONS.md` §6):
 - **Locked clocks still achieve their target.** The offset moves the voltage for a given clock,
   not the lock.
-- **Voltage at f under −300 equals stock voltage at f+300, within 3 mV** at every pairable point.
+- **Voltage at f under −300 equals stock voltage at f+300: 9 of 9 six-step pairs report the IDENTICAL
+  VID code.** ⛔ This said *"within 3 mV"* until the same evening. Those millivolts came from
+  interpolating between 5 mV codes, so they measured the interpolation, not agreement (`docs/gpt-findings/2026-09-22-5060ti-offset-4c-adversarial-audit.md`).
 - **The 0.720 V floor survives and its end moves down to 1245–1290 MHz**, against ~1270 predicted.
 - The reset to 0 verified, and A2 matched A1 at every point.
 `data/frequency-sweeps/5060ti-nvml-offset-20260922/`. ⚠️ One run per condition, one offset, one
@@ -356,9 +358,13 @@ workload. **Not yet verified:** survival across a driver reset, and an Afterburn
 after the offset.
 
 ⛔ **The validation pair's criterion, "power at a locked *f* with a −300 offset should match power at
-*f*+300 without one", CANNOT HOLD AS WORDED.** The two sit at the same voltage but 300 MHz apart, so
-the offset arm draws less at every pair (49.98 W at 1004 against 60.34 W at 1295). The question it
-existed for, whether an offset is a curve shift, is answered directly by the voltage pairing above.
+*f*+300 without one", is NOT A VALID PREDICTION of a shifted lookup — retire it.** The two sit at the
+same reported voltage but 300 MHz apart, and the offset arm draws **8.9–11.3 W less at all nine
+pairs**. ~~CANNOT HOLD AS WORDED~~ was too categorical, and ~~"answered directly by the voltage
+pairing"~~ overclaims: **the VID pairing shows the lookup shifted, not that the whole machine state
+matches.** That wider question would need a matched-clock comparison of an offset against a
+separately configured curve, with VID, XBAR, throughput and power as distinct outcomes. Not
+specified, not run. Narrowed by an outside audit the same evening.
 
 🛑 **AND THAT PAIR MAY NOT MEASURE WHAT IT WAS DESIGNED TO — READ THIS BEFORE RUNNING IT.**
 Guerreiro et al., TPDS 2019 (`10.1109/TPDS.2019.2917181`, **read in full 2026-09-18**,
@@ -388,7 +394,7 @@ power at a pinned 1350 MHz (**174.6 → 132.0 W** for +0 → +300), and notes th
 bottoms out… extra offset is inert"*. **That is a load floor under an offset, three weeks before 4c.**
 ✅ **What 4c adds, narrowly:**
 - **measured voltage readback**; 170tune had no voltage telemetry;
-- the **f ↔ f+300 voltage pairing** within 3 mV;
+- the **f ↔ f+300 pairing**: identical VID codes at 9 of 9 six-step pairs;
 - the floor end located under an offset;
 - on **Blackwell**.
 ⚠️ The Guerreiro contrast is **method AND generation together** (`nvidia-settings` on

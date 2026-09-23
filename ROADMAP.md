@@ -843,9 +843,11 @@ become the hard part. ⚠️ **Read counts off `python run_tests.py` and
 - ✅ **[CORE] The NVML clock-offset question — ANSWERED 2026-09-22.** The write was exercised
   (−300 MHz, registered in advance as REGISTERED-PREDICTIONS §6). It **shifts the V/F curve**:
   locks hold, and voltage at f equals stock voltage at f+300. The planned validation pair's
-  criterion, "power at *f* with −300 should match *f*+300 without", cannot hold as worded,
-  because the two arms differ by 300 MHz at the same voltage. The voltage pairing answers the
-  question it existed for. Next: an **offset ladder**, runnable unattended.
+  criterion, "power at *f* with −300 should match *f*+300 without", is not a valid prediction,
+  because the two arms differ by 300 MHz at the same reported voltage: retire it. ⚠️ The VID pairing
+  shows the lookup shifted, **not** that the machine state matches; that wider question stays open.
+  Next: an **offset ladder**, runnable unattended. ⛔ The mechanism is prior art (170tune,
+  RELATED-WORK §10), so it is a capability, not a finding.
   `data/frequency-sweeps/5060ti-nvml-offset-20260922/`.
 
 ---

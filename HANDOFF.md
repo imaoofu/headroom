@@ -253,9 +253,10 @@ by **negative control** (move the curve above the floor by 570 MHz, optimum move
    **set**. `nvmlDeviceSetClockOffsets` reads back 0 mV with a profile live, so it stacks on top of
    Afterburner and a negative offset slides the whole curve — four deliberate extents in one session.
    ~~⛔ **The write has never been exercised.**~~ ✅ **Exercised 2026-09-22:** −300 MHz shifts the curve
-   (voltage at f = stock voltage at f+300, within 3 mV), and the floor end moves to 1245–1290.
-   `data/frequency-sweeps/5060ti-nvml-offset-20260922/`. ⛔ The old validation criterion, "power at
-   locked *f* with −300 should match *f*+300 without", cannot hold as worded. See CLAUDE.md.
+   (voltage at f = stock voltage at f+300: identical VID codes at 9 of 9 pairs), and the floor end
+   moves to 1245–1290. `data/frequency-sweeps/5060ti-nvml-offset-20260922/`. ⛔ The old validation
+   criterion, "power at locked *f* with −300 should match *f*+300 without", is not a valid prediction:
+   retire it. The wider machine-state question is still open. See CLAUDE.md.
 2. **Nothing in the profile set is stability tested.** Two 30-minute runs exist from 2026-08-23 on
    hand-set curves, and nothing verifies those match what is now in the slots.
 3. **`reduce` is sub-optimal in 16 of 16 sweeps** and carries most of the curve-predictor's residual.
