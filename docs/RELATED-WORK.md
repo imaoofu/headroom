@@ -604,6 +604,11 @@ optimum, find it higher, at the same voltage: **structurally the same shape as `
 
 ⛔ **So "nothing found reshapes a V/F curve and re-locates the optimum" is false in any broad form.**
 
+**Forward citations, screened 2026-09-22 (GPT Job 5).** OpenAlex lists **5 distinct works citing it**.
+None showed a region-targeted curve edit, a negative control or an optimum predicted from a floor
+voltage. Two of the five were read at abstract or indexed-text level only. **A bounded result: 5
+indexed citers, not the literature.**
+
 ✅ **What separates it from this project — narrow, and every item checked in the text:**
 
 | | Mendes et al. 2020 | this project |
@@ -637,6 +642,12 @@ voltages (V safeMin)"* before execution; 21% GPU energy saving on MAGMA LU facto
 minimum voltage at each frequency. None of that is in the abstract and none is verified here.** If it
 holds it is close consumer-NVIDIA undervolting prior art — a **Vmin** quantity, like Leng and Mendes
 2022, not an efficiency optimum. **Lead, not a source.**
+
+⛔ **2026-09-22, GPT Job 5: withdrawn as page-verified.** The ACM-indexed text shows "GPU GTX 1660
+super", "MSI After Burner" and "10 mv steps". But the article's pages returned 403, so none of it is
+page-verified. The first author's dissertation independently mentions the GTX 1660 Super and
+Afterburner profiling (PDF pp. 88–89). It is not the TOPC article, though, and no dissertation page
+gives the 10 mV step. **Still a lead.** `gpt-findings/2026-09-22-directed-dvfs-literature-followup.md`.
 
 ### 🟡 Wang, Hao, Zhang, Wang — *Model-Free GPU Online Energy Optimization* (IEEE TSUSC 2023). **Abstract only.**
 

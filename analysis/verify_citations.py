@@ -123,6 +123,46 @@ CITATIONS = {
 # This registry verifies bibliographic identity, not the paper's claims. readStatus is the
 # repository's own documented access level, not an inference from the Crossref record.
 DOI_CITATIONS = {
+    "10.1007/978-3-032-11422-8_2": {
+        "title": "Challenges",
+        "authors": ("Gheibi-Fetrat", "Safari", "Hessabi", "Sarbazi-Azad"),
+        "readStatus": "Crossref metadata and secondary abstract checked; chapter not read",
+    },
+    "10.1007/978-3-032-27574-5_19": {
+        "title": "Fast and Energy-Efficient Polynomial Multiplication Using FFT, FFNT, and NTT on GPUs for Fully Homomorphic Encryption",
+        "authors": ("Özcan", "Tezcan", "Savaş"),
+        "readStatus": "Crossref metadata and publisher abstract checked; chapter not read",
+    },
+    "10.1007/978-981-95-8405-5_23": {
+        "title": "CoDVFS: Improving the Energy Efficiency of AI Servers Through Coordinated DVFS",
+        "authors": ("Zhang", "Wang", "Zhang", "Wang"),
+        "readStatus": "Crossref metadata and publisher abstract checked; chapter not read",
+    },
+    "10.1007/978-981-95-8411-6_36": {
+        "title": "Improving the Energy Efficiency of AI Clusters Through Variability-Aware Frequency Scaling and Task Allocation",
+        "authors": ("Zhang", "Zhang", "Wang", "Wang", "Zhang"),
+        "readStatus": "Crossref metadata and publisher abstract checked; chapter not read",
+    },
+    "10.1007/s11227-023-05807-x": {
+        "title": "Utilization-prediction-aware energy optimization approach for heterogeneous GPU clusters",
+        "authors": ("Wang", "Chen", "Shi"),
+        "readStatus": "Crossref metadata and publisher abstract checked; article not read",
+    },
+    "10.1016/j.jpdc.2018.12.006": {
+        "title": "Comparative assessment of GPGPU technologies to accelerate objective functions: A case study on parsimony",
+        "authors": ("Santander-Jiménez", "Vega-Rodríguez", "Vicente-Viola", "Sousa"),
+        "readStatus": "Crossref metadata and secondary abstract checked; article not read",
+    },
+    "10.1109/tce.2024.3378706": {
+        "title": "Dynamic Precision-Scalable Thermal Mapping Algorithm for Three Dimensional Systolic-Array Based Neural Network Accelerator",
+        "authors": ("Lin", "Tsai", "Kao"),
+        "readStatus": "Crossref metadata and secondary abstract checked; article not read",
+    },
+    "10.1145/3801487.3801822": {
+        "title": "How Much Energy Is Wasted in LLM operations? Evidence from Kernel-Level DVFS",
+        "authors": ("Spaan", "Chen", "Varbanescu"),
+        "readStatus": "Crossref metadata and publisher-indexed text checked; full article not read",
+    },
     "10.1016/j.future.2023.07.011": {
         "title": "An automated and portable method for selecting an optimal GPU frequency",
         "authors": ("Ali", "Side", "Bhalachandra", "Wright", "Chen"),
@@ -195,6 +235,8 @@ DOI_CITATIONS = {
 DOI_LEADS = {
     "10.1145/3605573.3605600": "PAPER_DRAFT says its figures could not be confirmed and omits them. "
                               "Keep this as an unread lead, not a verified citation.",
+    "10.2139/ssrn.6106227": "Crossref metadata opened 2026-09-22. The SSRN preprint itself could not "
+                             "be retrieved; the finding screens the published version only.",
 }
 
 # ✅ THE ONE DISCREPANCY THIS CHECKER FOUND, AND HOW IT RESOLVED.
