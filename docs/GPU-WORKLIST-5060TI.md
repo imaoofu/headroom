@@ -26,7 +26,7 @@ Claude snapshots P1 before each rebuild.
 | # | curve | build | into | verify before any run | for |
 |---|---|---|---|---|---|
 | **1** | **Rung B** | Apply **P5**. Raise **every point at or below 840 mV by exactly +170 MHz**. Leave **845 mV and above untouched**. Sliders untouched (memory stays +2500). Save → **1** | P1 | 720 mV reads **1700**, inside the registered window **1624–1777**. ≥860 mV identical to P5. <850 mV between stock and P4 | **4e** |
-| **2** | **Rung C** | Same as rung B with **+320**: 720 mV → **1850**, 840 mV → 2307 | P1, after 4e runs | 720 mV inside **1778–1931**. Same other checks | **4f** |
+| **2** | **Rung C** | Same as rung B with **+320**: 720 mV → **1850**, 840 mV → 2307 | P1 — ✅ **4e has run, so buildable now** | 720 mV inside **1778–1931**. Same other checks | **4f** |
 | **3** | **P4, memory +0** | Apply **P4**. Set the **memory slider to +0**. Touch nothing else. Save → **1** | P1, after 4f runs | memory under load reads **13801**, not 16301. Curve identical to P4 | **4j** |
 
 ✅ **Both rungs are applicable as registered — checked against P5's decoded curve, 2026-09-22.**
@@ -58,8 +58,8 @@ core-clock slider** for these, because it would move the top of the curve.
 
 | # | id | what | time | needs Raymond for | tier |
 |---|---|---|---|---|---|
-| 1 | **A/B** | **Activity A/B test**, `REGISTERED-PREDICTIONS.md` §5 | ~80 min + uptime wait | HWiNFO open | 2 |
-| 2 | **4e** | **Rung B suite**, `REGISTERED-PREDICTIONS.md` §1 | ~55 min | building curve 1 | 3 |
+| 1 | ~~**A/B**~~ | ✅ **Ran 2026-09-23: registered verdict INCOMPLETE** (generator started 0.1–0.2 s late in 3 of 6 active runs). Descriptively **zero losses anywhere**. A re-run needs the generator started before the sweep. `data/frequency-sweeps/5060ti-activity-ab-20260923/` | — | — | 2 |
+| 2 | ~~**4e**~~ | ✅ **Rung B suite, 2026-09-23: HOLDS.** Median 1702, 9 of 12 on it. `data/frequency-sweeps/5060ti-rungB-suite-20260923/` | — | — | 3 |
 | 3 | **4f** | **Rung C suite** | ~55 min | building curve 2 | 3 |
 | 4 | **4o** | 🆕 **NVML offset ladder, 0 / −150 / −300 / 0**, a suite per rung; the closing stock suite is a drift bracket. ✅ **Registered** (`REGISTERED-PREDICTIONS.md` §7). Runner `Run-OffsetLadder.ps1`, unattended | ~4 h | nothing | 3 |
 | 6 | **4j** | memory-matched flattened vs stock, `membw` + `gemm` | ~25 min | building curve 3 | 2 |

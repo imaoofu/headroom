@@ -1,0 +1,69 @@
+﻿[08:18:33] Experiment directory: C:\headroom-bench\results\activity-ab-20260923-081833
+[08:18:33] Machine has been up 6 min; waiting 24 more so a cold start cannot be the cause.
+[08:19:33] Machine has been up 7 min; waiting 23 more so a cold start cannot be the cause.
+[08:20:33] Machine has been up 8 min; waiting 22 more so a cold start cannot be the cause.
+[08:21:33] Machine has been up 9 min; waiting 21 more so a cold start cannot be the cause.
+[08:22:33] Machine has been up 10 min; waiting 20 more so a cold start cannot be the cause.
+[08:23:33] Machine has been up 11 min; waiting 19 more so a cold start cannot be the cause.
+[08:24:33] Machine has been up 12 min; waiting 18 more so a cold start cannot be the cause.
+[08:25:33] Machine has been up 13 min; waiting 17 more so a cold start cannot be the cause.
+[08:26:33] Machine has been up 14 min; waiting 16 more so a cold start cannot be the cause.
+[08:27:33] Machine has been up 15 min; waiting 15 more so a cold start cannot be the cause.
+[08:28:33] Machine has been up 16 min; waiting 14 more so a cold start cannot be the cause.
+[08:29:33] Machine has been up 17 min; waiting 13 more so a cold start cannot be the cause.
+[08:30:33] Machine has been up 18 min; waiting 12 more so a cold start cannot be the cause.
+[08:31:33] Machine has been up 19 min; waiting 11 more so a cold start cannot be the cause.
+[08:32:33] Machine has been up 20 min; waiting 10 more so a cold start cannot be the cause.
+[08:33:33] Machine has been up 21 min; waiting 9 more so a cold start cannot be the cause.
+[08:34:33] Machine has been up 22 min; waiting 8 more so a cold start cannot be the cause.
+[08:35:33] Machine has been up 23 min; waiting 7 more so a cold start cannot be the cause.
+[08:36:33] Machine has been up 24 min; waiting 6 more so a cold start cannot be the cause.
+[08:37:33] Machine has been up 25 min; waiting 5 more so a cold start cannot be the cause.
+[08:38:33] Machine has been up 26 min; waiting 4 more so a cold start cannot be the cause.
+[08:39:33] Machine has been up 27 min; waiting 3 more so a cold start cannot be the cause.
+[08:40:33] Machine has been up 28 min; waiting 2 more so a cold start cannot be the cause.
+[08:41:33] Machine has been up 29 min; waiting 1 more so a cold start cannot be the cause.
+[08:42:33] Uptime 30 min. Boot time 9/23/2026 8:12:30 AM.
+[08:43:11] Memory clock under load: 13801 MHz (stock is 13801).
+[08:43:11] Stock verified: memory 13801 MHz under load, power limit 180 W. The core curve itself cannot be read back; Profile 3 is the verified stock slot.
+[08:43:11] ==== 5060ti-actab-warmup-1  (WARMUP) ====
+[08:48:40]   wrapper exit 0
+[08:48:40] ==== 5060ti-actab-warmup-2  (WARMUP) ====
+[08:54:07]   wrapper exit 0
+[08:54:07] ==== 5060ti-actab-01-silent  (SILENT) ====
+[08:59:36]   wrapper exit 0
+[08:59:36] ==== 5060ti-actab-02-active  (ACTIVE) ====
+[08:59:40]   activity generator started
+[09:05:06]   activity generator stopped (exit 0, killed False)
+[09:05:06]   wrapper exit 0
+[09:05:06] ==== 5060ti-actab-03-active  (ACTIVE) ====
+[09:05:33]   activity generator started
+[09:10:34]   activity generator stopped (exit 0, killed False)
+[09:10:34]   wrapper exit 0
+[09:10:34] ==== 5060ti-actab-04-silent  (SILENT) ====
+[09:16:03]   wrapper exit 0
+[09:16:03] ==== 5060ti-actab-05-silent  (SILENT) ====
+[09:21:31]   wrapper exit 0
+[09:21:31] ==== 5060ti-actab-06-active  (ACTIVE) ====
+[09:21:58]   activity generator started
+[09:27:05]   activity generator stopped (exit 0, killed False)
+[09:27:05]   wrapper exit 0
+[09:27:05] ==== 5060ti-actab-07-active  (ACTIVE) ====
+[09:27:09]   activity generator started
+[09:32:35]   activity generator stopped (exit 0, killed False)
+[09:32:35]   wrapper exit 0
+[09:32:35] ==== 5060ti-actab-08-silent  (SILENT) ====
+[09:38:03]   wrapper exit 0
+[09:38:03] ==== 5060ti-actab-09-silent  (SILENT) ====
+[09:43:32]   wrapper exit 0
+[09:43:32] ==== 5060ti-actab-10-active  (ACTIVE) ====
+[09:43:36]   activity generator started
+[09:49:02]   activity generator stopped (exit 0, killed False)
+[09:49:02]   wrapper exit 0
+[09:49:02] ==== 5060ti-actab-11-active  (ACTIVE) ====
+[09:49:29]   activity generator started
+[09:54:30]   activity generator stopped (exit 0, killed False)
+[09:54:30]   wrapper exit 0
+[09:54:30] ==== 5060ti-actab-12-silent  (SILENT) ====
+[09:59:58]   wrapper exit 0
+[09:59:58] All runs complete. Score with: python analysis/score_activity_ab.py "C:\headroom-bench\results\activity-ab-20260923-081833"

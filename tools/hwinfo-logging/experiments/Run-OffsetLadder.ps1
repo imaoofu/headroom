@@ -159,6 +159,11 @@ try {
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $offsetTool -Reset | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Initial 0 MHz offset did not verify." }
 
+    # On 2026-09-23 a first sweep's preflight refused at 26% SM, drawn by the Claude desktop app
+    # rendering the driving agent's message. Let the desktop settle before the first preflight.
+    Say "Waiting 90 s for the desktop to settle before the first preflight." "Yellow"
+    Start-Sleep -Seconds 90
+
     foreach ($rung in $rungs) {
         # Every suite sets its own offset and verifies it, so the closing stock
         # suite cannot inherit -300 from the suite before it.

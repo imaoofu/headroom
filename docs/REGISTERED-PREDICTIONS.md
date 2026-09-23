@@ -19,7 +19,7 @@ lives from now on, so a reader does not have to take the claim on trust.
 
 ---
 
-## 1. The floor ladder — PENDING, registered 2026-09-11
+## 1. The floor ladder — registered 2026-09-11. Rung B ✅ COLLECTED 2026-09-23, HOLDS; rung C PENDING
 
 **Status: profiles not yet built, no data collected.**
 
@@ -126,7 +126,28 @@ Decode each saved profile from `Profiles\*.cfg` and confirm mechanically:
 
 ### Result
 
-*(empty — to be filled after collection, without editing anything above)*
+*(filled after collection, without editing anything above)*
+
+✅ **Rung B, collected 2026-09-23 — primary and secondary both HOLD.**
+`data/frequency-sweeps/5060ti-rungB-suite-20260923/`, twelve workloads, unattended, profile store
+verified byte-identical to the rung B snapshot and +2500 memory witnessed live at every point.
+
+| registered | measured |
+|---|---|
+| **primary:** median optimum 1702 | ✅ **1702** |
+| **secondary:** at least 7 of 12 on 1702 | ✅ **9 of 12**. copy and bgemm32 at 1852, `reduce` at 2167; none excluded |
+| **tertiary:** 1545 / 1702 / 1852 / 2010, monotone | 🟡 **3 of 4 rungs on their points (A, B, D), in order.** C is not collected, so this is not scored |
+
+**Refutation did not occur** for rung B: its median is the predicted grid point. The "both new rungs
+on one point" refutation needs rung C. ⚠️ **One chip, one suite, a ~155 MHz grid**; twelve workloads
+are repeated outcomes on one card.
+
+**Also measured, not registered:** `gemm` holds 0.720 V through **1695 MHz achieved** on rung B,
+where P5 had already risen to 0.755, and matches P5's VID codes from 2317 to 2782 MHz. That is the
+above-floor equivalence the pre-run check below could not establish from the file. Details and the
+missed-lock pattern above 2317 MHz are in the data README.
+
+**Rung C** can now be built into P1: the rung B store is preserved in its snapshot.
 
 ⛔ **Pre-run verification of rung B, 2026-09-22 (built into P1, decoded from the live store).**
 Check 1 passes: 720 mV reads **1702**, inside 1624–1777. Check 2 passes: everything at 850 mV and above is
@@ -613,7 +634,7 @@ number that appears in the paper's headline mechanism.
 🛑 **Keep the raw HWiNFO log again**, and record the per-point temperatures — they are the
 independent variable this time, not a footnote.
 
-## 5. RTX 5060 Ti: do isolated throughput losses come from ACTIVITY? Registered 2026-09-22, PENDING
+## 5. RTX 5060 Ti: do isolated throughput losses come from ACTIVITY? Registered 2026-09-22 — COLLECTED 2026-09-23, ⛔ INCOMPLETE
 
 **Why.** On 2026-09-22, three stock `4i` replicates lost 8–11% at isolated points: **4, then 2, then
 0** degraded points, while the driving agent went from busy to silent. An outside audit
@@ -680,6 +701,26 @@ The generator is also stopped in a `finally` block, its time limit went from 15 
 exact sweep CSV path is recorded per run, and the uptime and block counts are constants rather than
 parameters. **12 synthetic checks** in `analysis/test_score_activity_ab.py`; the tie check was
 confirmed to fail on the old comparison. **No threshold, condition or prediction changed.**
+
+### ⛔ Result, collected 2026-09-23 — INCOMPLETE, NO REGISTERED VERDICT
+
+`data/frequency-sweeps/5060ti-activity-ab-20260923/`. Nothing above was edited. All 14 sweeps ran
+(two warm-ups, then S A A S × 3), uptime gate met, stock verified, every wrapper exit 0.
+
+**The registered scorer withholds its verdict:** in **3 of 6 ACTIVE runs (03, 06, 11)** the generator
+started **0.1–0.2 s after** the first measured window opened, so activity is not proven across that
+window. Every other validity check passed. The cause is the runner's load trigger: it waited for GPU
+utilisation ≥ 50%, which in those three runs was the sweep's own first point. **The rule is not
+relaxed after the fact.** A re-run should start the generator before the sweep.
+
+**Descriptive only, and labelled as such:** there were **zero degraded points in all twelve scored
+runs, active and silent, and none in either warm-up**. The worst point anywhere is **0.14%** below the
+envelope, against 8–11% on 2026-09-22. That is the same whether the three late runs are excluded or
+included. Had the collection been complete, the rules above would have printed *NOT SUPPORTED FOR THIS
+PROXY* and *no losses at all*. **That is a counterfactual, not a result.**
+
+It points away from this proxy and toward the cold start, or toward some part of real agent activity
+the script does not imitate. It does not separate those two. ⚠️ One chip, one session.
 
 ---
 

@@ -1,0 +1,94 @@
+﻿[10:00:13] Live profile store matches the rung B snapshot (110AA774D5FC4123).
+[10:00:13] Applying Profile 1 (rung B).
+[10:00:47] Memory under load 16301 MHz (rung B expects ~16301); power limit 200.00 W.
+[10:00:47] Rung B verified live.
+[10:00:47] [1/12] copy
+
+================ PLAN ================
+  label        : 5060ti-rungB-suite-copy
+  workload     : copy
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 2660
+  output dir   : C:\headroom-bench\results\20260923-100048_5060ti-rungB-suite-copy
+  hwinfo log   : C:\headroom-bench\results\20260923-100048_5060ti-rungB-suite-copy\5060ti-rungB-suite-copy-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG B (worklist 4e, REGISTERED-PREDICTIONS section 1): P5 with points at or below 840 mV raised ~+170 MHz, 720 mV at 1702 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16301 MHz) and power limit 200.00 W. Profile store SHA-256 110AA774D5FC4123, byte-identical to data/afterburner-profiles/5060ti-profiles-20260922-rungB. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2660 as 5060ti-stock-repro-20260922. Same session as the activity A/B test.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 7.8%, peak 26% across 4 sample(s)
+    # gpu         pid   type     sm    mem    enc    dec    jpg    ofa    command 
+    # Idx           #    C/G      %      %      %      %      %      %    name 
+        0       1196   C+G      -      -      -      -      -      -    dwm.exe        
+        0       5056   C+G      -      -      -      -      -      -    ChatGPT.exe    
+        0       8180   C+G      -      -      -      -      -      -    codex-computer-
+        0       8620   C+G      -      -      -      -      -      -    CrossDeviceResu
+        0       8728   C+G      -      -      -      -      -      -    ChatGPT.exe    
+        0       9076   C+G      -      -      -      -      -      -    explorer.exe   
+        0       9104   C+G      -      -      -      -      -      -    claude.exe     
+        0       9116   C+G      -      -      -      -      -      -    ShellHost.exe  
+        0       9656   C+G      -      -      -      -      -      -    SearchHost.exe 
+        0      10248   C+G      -      -      -      -      -      -    StartMenuExperi
+        0      10708   C+G      -      -      -      -      -      -    SystemSettings.
+        0      11616   C+G      -      -      -      -      -      -    ShellExperience
+        0      12872   C+G      -      -      -      -      -      -    msedgewebview2.
+        0      13896   C+G      -      -      -      -      -      -    LockApp.exe    
+        0      16868   C+G     26     13      -      -      -      -    claude.exe     
+        0      18128   C+G      -      -      -      -      -      -    ApplicationFram
+        0       1196   C+G      -      -      -      -      -      -    dwm.exe        
+        0       5056   C+G      -      -      -      -      -      -    ChatGPT.exe    
+        0       8180   C+G      -      -      -      -      -      -    codex-computer-
+        0       8620   C+G      -      -      -      -      -      -    CrossDeviceResu
+        0       8728   C+G      -      -      -      -      -      -    ChatGPT.exe    
+        0       9076   C+G      -      -      -      -      -      -    explorer.exe   
+        0       9104   C+G      -      -      -      -      -      -    claude.exe     
+        0       9116   C+G      -      -      -      -      -      -    ShellHost.exe  
+        0       9656   C+G      -      -      -      -      -      -    SearchHost.exe 
+        0      10248   C+G      -      -      -      -      -      -    StartMenuExperi
+        0      10708   C+G      -      -      -      -      -      -    SystemSettings.
+        0      11616   C+G      -      -      -      -      -      -    ShellExperience
+        0      12872   C+G      -      -      -      -      -      -    msedgewebview2.
+        0      13896   C+G      -      -      -      -      -      -    LockApp.exe    
+        0      16868   C+G      3      0      -      -      -      -    claude.exe     
+        0      18128   C+G      -      -      -      -      -      -    ApplicationFram
+        0       1196   C+G      1      0      -      -      -      -    dwm.exe        
+        0       5056   C+G      -      -      -      -      -      -    ChatGPT.exe    
+        0       8180   C+G      -      -      -      -      -      -    codex-computer-
+        0       8620   C+G      -      -      -      -      -      -    CrossDeviceResu
+        0       8728   C+G      -      -      -      -      -      -    ChatGPT.exe    
+        0       9076   C+G      0      0      -      -      -      -    explorer.exe   
+        0       9104   C+G      -      -      -      -      -      -    claude.exe     
+        0       9116   C+G      -      -      -      -      -      -    ShellHost.exe  
+        0       9656   C+G      -      -      -      -      -      -    SearchHost.exe 
+        0      10248   C+G      -      -      -      -      -      -    StartMenuExperi
+        0      10708   C+G      -      -      -      -      -      -    SystemSettings.
+        0      11616   C+G      -      -      -      -      -      -    ShellExperience
+    # gpu         pid   type     sm    mem    enc    dec    jpg    ofa    command 
+    # Idx           #    C/G      %      %      %      %      %      %    name 
+        0      12872   C+G      -      -      -      -      -      -    msedgewebview2.
+        0      13896   C+G      -      -      -      -      -      -    LockApp.exe    
+        0      16868   C+G      0      0      -      -      -      -    claude.exe     
+        0      18128   C+G      -      -      -      -      -      -    ApplicationFram
+        0       1196   C+G      0      0      -      -      -      -    dwm.exe        
+        0       5056   C+G      -      -      -      -      -      -    ChatGPT.exe    
+        0       8180   C+G      -      -      -      -      -      -    codex-computer-
+        0       8620   C+G      -      -      -      -      -      -    CrossDeviceResu
+        0       8728   C+G      -      -      -      -      -      -    ChatGPT.exe    
+        0       9076   C+G      0      0      -      -      -      -    explorer.exe   
+        0       9104   C+G      -      -      -      -      -      -    claude.exe     
+        0       9116   C+G      -      -      -      -      -      -    ShellHost.exe  
+        0       9656   C+G      -      -      -      -      -      -    SearchHost.exe 
+        0      10248   C+G      -      -      -      -      -      -    StartMenuExperi
+        0      10708   C+G      -      -      -      -      -      -    SystemSettings.
+        0      11616   C+G      -      -      -      -      -      -    ShellExperience
+        0      12872   C+G      -      -      -      -      -      -    msedgewebview2.
+        0      13896   C+G      -      -      -      -      -      -    LockApp.exe    
+        0      16868   C+G      1      0      -      -      -      -    claude.exe     
+        0      18128   C+G      -      -      -      -      -      -    ApplicationFram
+Preflight failed: SM baseline peaked at 26%, over the 10% guard.
+[10:00:51] exit 4 for copy
+[10:00:51] A run failed - stopping rather than working around it.
+[10:00:51] Reverting to Profile 3 (stock).
+[10:01:29] Memory under load after revert: 13801 MHz
+[10:01:29] Card is back on stock.
+180.00 W, 180.00 W
