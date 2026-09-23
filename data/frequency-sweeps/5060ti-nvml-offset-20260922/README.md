@@ -33,8 +33,9 @@ write ever exercised on this card.** Registered before collection in
   - Both are under one 5 mV code.
 - ⛔ **So Guerreiro et al.'s offset behaviour, voltage constant across all frequencies, does NOT
   occur here.** Their path was `nvidia-settings` on Maxwell/Pascal/Kepler. **This one run does not
-  contradict their result on their hardware.** It says `nvmlDeviceSetClockOffsets` on Blackwell
-  behaves differently.
+  contradict their result on their hardware.** ~~It says `nvmlDeviceSetClockOffsets` on Blackwell
+  behaves differently.~~ ⛔ *Narrowed 2026-09-22:* their control method and GPU generation both differ
+  from this run, **together**, so this does not show that the API caused the difference.
 
 **Registered as open, and now answered: locked clocks still achieve their target.** Every B point
 reads `held`, and B's achieved clocks match A1's to within 7.3 MHz, one step of the card's
@@ -83,10 +84,22 @@ designed to test. It is an observation, not a result.**
 - Whether the offset survives a driver reset, or an Afterburner profile applied **after** it, is still
   unverified. The runner applied the profile first and reset the offset at the end.
 
+## ⛔ Prior art — the mechanism is known; searched the same evening
+
+Search log: `docs/gpt-findings/2026-09-22-nvml-offset-prior-art-search.md`. **A global offset shifting
+the whole V/F curve is established practice**, from Afterburner users and NVIDIA's NVML naming.
+**170tune** (`cachenetics/170tune`, 2026-08-30, read here) shows it on a CMP 170HX by pinning the
+clock and watching power fall, and describes a floor: *"below about 1350 the rail bottoms out… extra
+offset is inert"*. **What this directory adds is narrower:**
+- measured voltage readback, where 170tune had none;
+- the f ↔ f+300 pairing within 3 mV;
+- the floor end located under an offset;
+- on Blackwell.
+
 ## Why it matters for what comes next
 
-🔑 **An NVML offset moves the load floor programmatically**: no Afterburner, no hand-built curve, no
-slot juggling. The floor-ladder design (`REGISTERED-PREDICTIONS.md` §1) currently needs curves built
+🔑 **For this project, an NVML offset moves the load floor programmatically**: no Afterburner, no
+hand-built curve, no slot juggling. *A capability, not a discovery; see the prior-art section above.* The floor-ladder design (`REGISTERED-PREDICTIONS.md` §1) currently needs curves built
 by hand, one per slot. **An offset ladder could run unattended.** ⚠️ It would not be the same
 manipulation: a global offset shifts the **whole** curve, while the registered rungs raise only the
 floor region. So it would complement the rungs, not replace them.

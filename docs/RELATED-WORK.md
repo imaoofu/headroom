@@ -657,3 +657,32 @@ energy saving at +3.4% time** against NVIDIA's default scheduling. **More consum
 below-default optimum finding** — further weight on item 2 of the load-floor section of `CLAUDE.md`,
 which already fell. Bears on the V100 null's framing (online per-application search vs a constant),
 not on the manipulation.
+
+---
+
+## 10. Offsets shift the V/F curve — prior art for 4c, found 2026-09-22
+
+Search log: [`gpt-findings/2026-09-22-nvml-offset-prior-art-search.md`](gpt-findings/2026-09-22-nvml-offset-prior-art-search.md)
+(GPT, 28 queries). **The mechanism is established practice. Never present it as new.**
+
+### 🔑 170tune — `cachenetics/170tune`, `tools/170tune`, commit dated 2026-08-30. **Read here, lines 590–605.**
+
+On a **CMP 170HX (GA100)**, via `nvmlDeviceSetGpcClkVfOffset`: *"The offset shifts the whole
+voltage/frequency curve, so a positive offset means a given clock is reached at a LOWER voltage.
+Proven by holding the clock fixed and watching watts: at a pinned 1350 MHz, offset +0 to +300 took
+174.6 W down to 132.0 W"*. It also states *"Below about 1350 the rail bottoms out: power goes flat and
+extra offset is inert"*, which is **a load floor under an offset**. ⚠️ **No voltage telemetry**: the
+author says the SKU has none, so the curve shift is inferred from power. **One enthusiast tool author,
+one card.** Still prior art, under this file's rule that a well-documented enthusiast measurement
+counts.
+
+### 🟡 Community accounts and NVIDIA docs — **GPT-read, not opened here**
+
+Afterburner users describe the core slider moving every curve point (Reddit posts from 2020, 2021 and
+2023, cited in the search log). NVIDIA's NVML reference names `nvmlDeviceSetGpcClkVfOffset` a
+*"GPCCLK VF offset"* and points to `nvmlDeviceSetClockOffsets` as its successor. **Reddit is
+unreachable from this environment**, so those posts are GPT's read.
+
+✅ **What 4c adds, narrowly:** measured voltage readback, the f ↔ f+300 pairing within 3 mV, and the
+floor end located under an offset, on Blackwell. The Guerreiro contrast is method **and** generation
+together.

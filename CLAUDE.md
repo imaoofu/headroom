@@ -378,6 +378,23 @@ their hardware. 🔑 **So an offset moves the load floor programmatically**, wit
 and no hand-built curve. An offset ladder could run unattended. ⚠️ It shifts the WHOLE curve, not
 just the floor region, so it complements the registered rungs rather than replacing them.
 
+⛔ **THAT 🔑 IS A CAPABILITY, NOT A DISCOVERY — search log 2026-09-22, the same evening**
+(`docs/gpt-findings/2026-09-22-nvml-offset-prior-art-search.md`, 28 queries, sources opened). An
+offset shifting the whole V/F curve is **established practice**: Afterburner users have described it
+for years, and NVIDIA's NVML reference calls the older call a *VF offset*. 🔑 **The closest prior art
+was read here: 170tune** (`cachenetics/170tune`, commit dated **2026-08-30**, lines 590–605). On a
+CMP 170HX (GA100) it states *"The offset shifts the whole voltage/frequency curve"*, shows it with
+power at a pinned 1350 MHz (**174.6 → 132.0 W** for +0 → +300), and notes that below ~1350 *"the rail
+bottoms out… extra offset is inert"*. **That is a load floor under an offset, three weeks before 4c.**
+✅ **What 4c adds, narrowly:**
+- **measured voltage readback**; 170tune had no voltage telemetry;
+- the **f ↔ f+300 voltage pairing** within 3 mV;
+- the floor end located under an offset;
+- on **Blackwell**.
+⚠️ The Guerreiro contrast is **method AND generation together** (`nvidia-settings` on
+Maxwell/Pascal/Kepler versus NVML on Blackwell), so it does not show that the API caused the
+difference.
+
 ⚠️ **`CoreClkBoost` reads −502 MHz on P1/P2/P4/P5 and +0 on stock, and nobody knows what it means.**
 It is treated as *not* additively applied, on two pieces of evidence: NVML reports a 0 MHz offset with
 those profiles live, and optimum predictions computed from the curve **without** subtracting 502 hit
