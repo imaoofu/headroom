@@ -200,8 +200,12 @@ def verify_rung(snapshot, profiles, rung="B"):
     cfg_path = next(snapshot.glob("VEN_10DE*.cfg"), None) if snapshot.is_dir() else snapshot
     readme_text = readme.read_text(encoding="utf-8-sig") if readme.is_file() else ""
     sha_prefix = re.search(r"SHA-256 begins `([0-9a-fA-F]+)`", readme_text)
-    hash_matches = bool(sha_prefix and cfg_path and cfg_path.is_file() and
-                        hashlib.sha256(cfg_path.read_bytes()).hexdigest().startswith(
+    # The README hash is of the file as Afterburner wrote it, with CRLF endings. Git stores it
+    # with LF, so a Linux checkout differs byte-wise; hash the CRLF form on every platform.
+    cfg_crlf = (cfg_path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+                if cfg_path and cfg_path.is_file() else b"")
+    hash_matches = bool(sha_prefix and cfg_crlf and
+                        hashlib.sha256(cfg_crlf).hexdigest().startswith(
                             sha_prefix.group(1).lower()))
     check5 = bool(hash_matches and "before any rung" in readme_text)
 

@@ -64,3 +64,8 @@ these committed snapshots remain undocumented.
 - **Added at review:** `tools/afterburner/README.md`, because every tool directory carries one. It
   warns that the CLI exits nonzero for **any** raised rung, because check 3's 650–690 mV failure
   comes from the registration, so the five printed lines are what to read.
+- ⛔ **One defect, found by CI on Linux after the first commit.** Check 5 hashed the cfg's raw
+  bytes. Git stores that file with LF endings and Windows checks it out as CRLF. The README's hash
+  is of the CRLF file Afterburner wrote, so the check passed on Windows and failed on Linux. **It
+  now hashes the CRLF form on every platform**, confirmed by rerunning it against an LF-converted
+  copy. This is the line-ending provenance trap CLAUDE.md already records for third-party hashes.
