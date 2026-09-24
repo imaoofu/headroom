@@ -15,7 +15,8 @@ def check(condition, message):
 
 
 def fixture(root, achieved_shift=7.3, split_rung=None, bad_target=False,
-            missing_voltage=False, missed_lock=False, wrong_iterations=False, peaks=None):
+            missing_voltage=False, missed_lock=False, wrong_iterations=False, peaks=None,
+            overclocked=False, top_miss=False, peak_miss=False):
     for rung in RUNG_MHZ:
         for index, workload in enumerate(WORKLOADS):
             label = f"5060ti-4o-{rung}-{workload}"
@@ -40,23 +41,32 @@ def fixture(root, achieved_shift=7.3, split_rung=None, bad_target=False,
                 writer = csv.DictWriter(handle, fieldnames=(
                     "target_frequency_mhz", "achieved_frequency_avg", "bench_throughput",
                     "power_avg_w", "bench_ok", "lock_held", "lock_miss_direction",
-                    "power_window_applied", "memory_clock_avg_mhz",
+                    "power_window_applied", "memory_clock_avg_mhz", "memory_clock_max_mhz",
                 ))
                 writer.writeheader()
                 for target in TARGETS:
                     grid_target = (1402 if bad_target and rung == "offset0" and
                                    workload == "copy" and target == 1395 else target)
+                    # Stock cannot reach 3090: a real miss is BELOW target, far off it.
+                    below = ((top_miss and target == 3090) or
+                             (peak_miss and rung == "offsetm150" and workload == "gemm"
+                              and target == peak))
                     writer.writerow({
                         "target_frequency_mhz": grid_target,
-                        "achieved_frequency_avg": grid_target - achieved_shift,
+                        "achieved_frequency_avg": (2640 if below and target == 3090 else
+                                                   grid_target - achieved_shift),
                         "bench_throughput": 200 if target == peak else 100,
                         "power_avg_w": 100,
                         "bench_ok": "True",
-                        "lock_held": ("False" if missed_lock and rung == "offsetm300"
-                                      and workload == "gemm" and target == 1237 else "True"),
-                        "lock_miss_direction": "none",
+                        "lock_held": ("False" if below or (missed_lock and rung == "offsetm300"
+                                      and workload == "gemm" and target == 1237) else "True"),
+                        "lock_miss_direction": "below" if below else "none",
                         "power_window_applied": "True",
-                        "memory_clock_avg_mhz": 13801,
+                        # Real sweeps average in idle memory; the maximum is the witness.
+                        "memory_clock_avg_mhz": 12873.1,
+                        "memory_clock_max_mhz": (16301 if overclocked and rung == "offsetm150"
+                                                 and workload == "conv" and target == 1702
+                                                 else 14001 if target == 3090 else 13801),
                     })
             if missing_voltage and rung == "offset0close" and workload == "gemm":
                 continue
@@ -67,16 +77,18 @@ def fixture(root, achieved_shift=7.3, split_rung=None, bad_target=False,
                 ))
                 writer.writeheader()
                 for target in TARGETS:
-                    writer.writerow({"target": target, "achieved": target - achieved_shift,
+                    writer.writerow({"target": target,
+                                     "achieved": (2640 if top_miss and target == 3090
+                                                  else target - achieved_shift),
                                      "voltage": 0.720 if target <= peak else 0.730,
                                      "sampleCount": 25})
 
 
-def evaluate(**kwargs):
+def evaluate(revised=False, **kwargs):
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
         fixture(root, **kwargs)
-        return score(root)
+        return score(root, revised)
 
 
 def expect_invalid(message, **kwargs):
@@ -117,6 +129,16 @@ def main():
     expect_invalid("missing voltage extract rejected", missing_voltage=True)
     expect_invalid("missed lock rejected", missed_lock=True)
     expect_invalid("wrong iteration count rejected", wrong_iterations=True)
+    expect_invalid("a memory overclock at one point rejected", overclocked=True)
+
+    # 2026-09-23: stock misses 2932/3090 in every committed sweep, so the REGISTERED rule
+    # is unsatisfiable; the REVISED rule is reported beside it, never instead of it.
+    expect_invalid("registered rule rejects a below-target miss at 3090", top_miss=True)
+    revised = evaluate(revised=True, top_miss=True)
+    check({rung: revised["medians"][rung] for rung in PREDICTED} == PREDICTED,
+          "revised rule keeps a below-target 3090 miss and scores the same medians")
+    expect_invalid("revised rule still rejects a sweep whose optimum missed its lock",
+                   revised=True, peak_miss=True)
 
 
 if __name__ == "__main__":

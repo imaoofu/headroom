@@ -782,7 +782,7 @@ the verdict is unchanged. **"≤2 mV / ≤3 mV"** interpolated between 5 mV code
 **identical VID codes at 9 of 9 six-step pairs**. And 4d's criterion is **not a valid prediction**
 (retire it), but "superseded" overstates: its wider machine-state question is still open.
 
-## 7. RTX 5060 Ti: does an NVML offset ladder relocate the suite optimum? (worklist 4o) Registered 2026-09-22 — PENDING
+## 7. RTX 5060 Ti: does an NVML offset ladder relocate the suite optimum? (worklist 4o) Registered 2026-09-22 — COLLECTED 2026-09-23: registered verdict ⛔ INVALID; revised ✅ all hold
 
 **Why.** 4c showed that a −300 MHz offset moves the 0.720 V floor end from 1567–1575 to 1245–1290,
 on **one workload**. This asks whether the **twelve-workload median optimum** follows the floor
@@ -841,6 +841,33 @@ electrical state. The grid cannot locate any optimum below 1237.
 
 **Scorer:** `python analysis/score_offset_ladder.py <results-directory>`, after running
 `join_hwinfo_voltage.py --join-by time` on each sweep against its own log.
+
+### Result, collected 2026-09-23 — registered verdict INVALID; revised scoring reported beside it
+
+`data/frequency-sweeps/5060ti-offset-ladder-20260923/`. Nothing above was edited. 48 of 48 sweeps
+exited 0, and all five offset writes and the final reset were verified by read-back in the console log.
+
+⛔ **Registered verdict: INVALID, by an error in this registration.** "Every sweep must be complete,
+with no … missed lock" can never be met on stock: 2932 and 3090 MHz are unreachable, and the stock
+suites this design was built from miss them in **24 of 24** sweeps. The scorer also required ±15 MHz
+where the sweep tool defines a held lock as ±30, and checked stock memory with the average column
+instead of the maximum. The maximum reads 13801–14001 at all 624 points, so memory was stock
+throughout. **All three were found after collection and before any median was computed.**
+
+✅ **Revised scoring, POST HOC** (`--revised`): keep rows that missed **below** target, use the tool's
+±30 MHz, and invalidate any sweep whose optimum is a missed-lock row. None was.
+
+| registered | measured (revised) |
+|---|---|
+| opening 0: median 1545 | ✅ **1545**, 10 of 12 |
+| **−150: median 1395** (the interior test) | ✅ **1395**, 9 of 12 |
+| −300: median 1237 (edge-limited) | ✅ **1237**, 10 of 12 |
+| drift bracket: closing = opening | ✅ **1545 = 1545** |
+| trend non-increasing | ✅, strictly dropping |
+
+The `gemm` voltage column moves one grid step per −150: the last 0.720 V point runs 1537 → 1387 → 1230
+MHz achieved, and the two stock suites read identically. ⚠️ **One chip, one session, one suite per
+offset.** −300's pass is edge-limited; only −150 locates the move. **Report both verdicts, always.**
 
 ---
 

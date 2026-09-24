@@ -68,7 +68,7 @@ def read_voltage(path):
     return values
 
 
-def read_sweep(path, rung, workload):
+def read_sweep(path, rung, workload, revised=False):
     label = f"5060ti-4o-{rung}-{workload}"
     metadata_path = path.with_suffix(".json")
     voltage_path = path.with_name(path.stem + "_voltage.csv")
@@ -100,39 +100,59 @@ def read_sweep(path, rung, workload):
         raw_rows = list(csv.DictReader(handle))
     if len(raw_rows) != len(TARGETS):
         raise ValueError(f"{path}: expected 13 raw sweep rows")
+    missed = set()
     for raw in raw_rows:
-        if (raw.get("bench_ok") not in ("True", "true")
-                or raw.get("lock_held") not in ("True", "true")
+        held = raw.get("lock_held") in ("True", "true")
+        if not held:
+            missed.add(int(float(raw["target_frequency_mhz"])))
+        # REGISTERED rule: every row must hold its lock. On stock this can never be met at
+        # 2932/3090 MHz (24 of 24 committed stock-repro sweeps miss them), so the registered
+        # verdict is INVALID by construction. The REVISED rule, defined 2026-09-23 after
+        # collection and before any median was computed, keeps rows that missed BELOW target
+        # and invalidates a sweep only if a missed row is that workload's optimum.
+        lock_ok = held or (revised and raw.get("lock_miss_direction") == "below")
+        if (raw.get("bench_ok") not in ("True", "true") or not lock_ok
                 or raw.get("power_window_applied") not in ("True", "true")):
             raise ValueError(f"{path}: failed benchmark, missed lock or unwindowed power")
+        # The MAXIMUM is the witness, not the average: the average takes in idle memory
+        # (810 MHz) between iterations (5060ti-p1-suite-20260922/README.md). Stock has two
+        # loaded states, 13801 and 14001; any Afterburner memory offset reads 15801 or more.
+        # Corrected 2026-09-23 after collection and BEFORE any median was computed.
         try:
-            memory = float(raw["memory_clock_avg_mhz"])
+            memory = float(raw["memory_clock_max_mhz"])
         except (KeyError, TypeError, ValueError) as exc:
             raise ValueError(f"{path}: invalid memory clock") from exc
-        if not math.isfinite(memory) or abs(memory - 13801) > 100:
+        if not math.isfinite(memory) or not 13701 <= memory <= 14101:
             raise ValueError(f"{path}: memory clock does not verify stock Profile 3")
 
     try:
         rows = loadSweep(path)
     except (ValueError, ZeroDivisionError) as exc:
         raise ValueError(f"{path}: invalid sweep: {exc}") from exc
+    # Registered: 15 MHz. The sweep tool itself calls a lock held within 30 MHz
+    # (Invoke-FrequencySweep.ps1, lock_held), and stock reaches 2782 only as 2752.5, so the
+    # REVISED rule defers to the tool's own definition.
+    tolerance = 30 if revised else 15
     if len(rows) != len(TARGETS) or {row["target"] for row in rows} != set(TARGETS):
         raise ValueError(f"{path}: usable rows do not match the fixed 13-point target grid")
     if any(not all(math.isfinite(row[key]) and row[key] > 0
                    for key in ("mhz", "throughput", "power", "efficiency"))
-           or abs(row["mhz"] - row["target"]) > 15 for row in rows):
+           or (row["target"] not in missed and abs(row["mhz"] - row["target"]) > tolerance)
+           for row in rows):
         raise ValueError(f"{path}: invalid value or failed frequency lock")
     volts = read_voltage(voltage_path)
     if any(abs(row["mhz"] - volts[row["target"]][0]) > 10 for row in rows):
         raise ValueError(f"{voltage_path}: achieved clocks disagree with sweep")
     best = efficiencyPeak(rows)
+    if best["target"] in missed:
+        raise ValueError(f"{path}: the efficiency optimum is a missed-lock row")
     return {"best_target": best["target"], "best_achieved": best["mhz"],
             "driver": metadata["driver_version"], "voltage": volts}
 
 
-def score(root):
+def score(root, revised=False):
     files = find_files(Path(root))
-    results = {rung: {work: read_sweep(files[rung][work], rung, work)
+    results = {rung: {work: read_sweep(files[rung][work], rung, work, revised)
                       for work in WORKLOADS} for rung in RUNG_MHZ}
     drivers = {item["driver"] for suite in results.values() for item in suite.values()}
     if len(drivers) != 1:
@@ -159,9 +179,14 @@ def score(root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("results", type=Path)
+    parser.add_argument("--revised", action="store_true",
+                        help="POST HOC: keep below-target missed-lock rows (see read_sweep)")
     args = parser.parse_args()
+    if args.revised:
+        print("REVISED SCORING, defined after collection and before any median was computed.")
+        print("It is NOT the registered verdict; report both.")
     try:
-        result = score(args.results)
+        result = score(args.results, args.revised)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         parser.exit(2, f"UNSCOREABLE: {exc}\n")
     print(f"Driver: {result['driver']}; one chip, one suite per offset")

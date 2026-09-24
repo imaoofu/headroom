@@ -1,6 +1,6 @@
 # Headroom — paper draft
 
-> **Status: complete in structure, still a draft in places.** Results rest on **464 committed
+> **Status: complete in structure, still a draft in places.** Results rest on **512 committed
 > sweeps across four consumer GPUs**, including core-voltage and crossbar telemetry.
 > **284 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
@@ -36,7 +36,7 @@ descends into it.
 
 This work contributes an open dataset of consumer-GPU frequency, power and performance
 measurements swept across 40–100% of maximum core clock, released with its collection tooling and
-a locked protocol: **464 dataset-grade sweeps across four chips and three architectures** — 404 on
+a locked protocol: **512 dataset-grade sweeps across four chips and three architectures** — 452 on
 an RTX 5060 Ti (Blackwell GB206), 25 on an RTX 3070 Ti (Ampere GA104), 18 on an RTX 2060 Super
 (Turing TU106), 14 on an RTX 3060 (Ampere GA106), and three early three-point verification runs.
 

@@ -61,7 +61,7 @@ core-clock slider** for these, because it would move the top of the curve.
 | 1 | ~~**A/B**~~ | ✅ **Ran 2026-09-23: registered verdict INCOMPLETE** (generator started 0.1–0.2 s late in 3 of 6 active runs). Descriptively **zero losses anywhere**. A re-run needs the generator started before the sweep. `data/frequency-sweeps/5060ti-activity-ab-20260923/` | — | — | 2 |
 | 2 | ~~**4e**~~ | ✅ **Rung B suite, 2026-09-23: HOLDS.** Median 1702, 9 of 12 on it. `data/frequency-sweeps/5060ti-rungB-suite-20260923/` | — | — | 3 |
 | 3 | **4f** | **Rung C suite** | ~55 min | building curve 2 | 3 |
-| 4 | **4o** | 🆕 **NVML offset ladder, 0 / −150 / −300 / 0**, a suite per rung; the closing stock suite is a drift bracket. ✅ **Registered** (`REGISTERED-PREDICTIONS.md` §7). Runner `Run-OffsetLadder.ps1`, unattended | ~4 h | nothing | 3 |
+| 4 | ~~**4o**~~ | ✅ **Offset ladder ran 2026-09-23.** Registered verdict **INVALID** (its no-missed-lock rule is unsatisfiable on stock); revised scoring: **1545 / 1395 / 1237 / 1545, all as predicted**. `data/frequency-sweeps/5060ti-offset-ladder-20260923/` | — | — | 3 |
 | 6 | **4j** | memory-matched flattened vs stock, `membw` + `gemm` | ~25 min | building curve 3 | 2 |
 | 7 | **4n** | 🆕 `membw` fine grid around the **1627 MHz stall**, stock + P5 | ~25 min | nothing | 3 |
 | 8 | **4m** | `reduce` residual: suite order or mechanism? | ~45 min | nothing | 2 |
