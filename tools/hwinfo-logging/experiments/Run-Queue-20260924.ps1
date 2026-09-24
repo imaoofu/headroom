@@ -29,14 +29,17 @@ function Get-MemClockUnderLoad {
     $py = (Get-Command python).Source
     $wl = Join-Path $repo "tools\frequency-sweep\gpu_workload.py"
     $j = Start-Job -ScriptBlock { param($p, $w) & $p $w --workload gemm --iterations 400 --json 2>&1 | Out-Null } -ArgumentList $py, $wl
-    Start-Sleep -Seconds 3
+    # Sample only while the load is actually running. The first run of this queue (09:07) read the
+    # idle 810 MHz: a fixed 3 s wait was shorter than a cold PyTorch start, so no read was under load.
     $reads = @()
-    for ($i = 0; $i -lt 6; $i++) {
-        $v = (& nvidia-smi --query-gpu=clocks.mem --format=csv,noheader,nounits) | Select-Object -First 1
-        $n = 0; if ([int]::TryParse($v, [ref]$n)) { $reads += $n }
+    $until = (Get-Date).AddSeconds(90)
+    while ((Get-Date) -lt $until -and $reads.Count -lt 6 -and $j.State -eq 'Running') {
+        $row = ((& nvidia-smi --query-gpu=utilization.gpu,clocks.mem --format=csv,noheader,nounits) | Select-Object -First 1) -split ','
+        $u = 0; $n = 0
+        if ($row.Count -eq 2 -and [int]::TryParse($row[0].Trim(), [ref]$u) -and $u -ge 50 -and [int]::TryParse($row[1].Trim(), [ref]$n)) { $reads += $n }
         Start-Sleep -Milliseconds 400
     }
-    Wait-Job $j -Timeout 60 | Out-Null; Remove-Job $j -Force -ErrorAction SilentlyContinue
+    Wait-Job $j -Timeout 90 | Out-Null; Remove-Job $j -Force -ErrorAction SilentlyContinue
     if ($reads.Count -eq 0) { return -1 }
     return ($reads | Measure-Object -Maximum).Maximum
 }
