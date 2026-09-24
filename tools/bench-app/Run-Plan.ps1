@@ -137,6 +137,9 @@ function Run-Child($job) {
     $errorPath=$jobPath+'.err.txt'
     [IO.File]::WriteAllText($jobPath,($job | ConvertTo-Json -Depth 15),(New-Object Text.UTF8Encoding($false)))
     $p=Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $PSScriptRoot 'Run-Child.ps1'),'-JobPath',$jobPath) -PassThru -WindowStyle Hidden -RedirectStandardOutput $outputPath -RedirectStandardError $errorPath
+    # PS 5.1: read Handle at once, or ExitCode comes back empty once a redirected process exits
+    # (reproduced 2026-09-23; the first live suite completed and was then reported as failed).
+    $null=$p.Handle
     $previousLength=0
     $pointIndex=0
     $pointCount=if ($job.type -eq 'sweep') { [int]$job.points } else { 13 }
@@ -212,6 +215,7 @@ function Run-Witness($step) {
             $workload = Join-Path $script:kit 'tools\frequency-sweep\gpu_workload.py'
             $args = @($workload,'--workload',$step.workload,'--iterations',[string]$step.iterations,'--json')
             $p = Start-Process -FilePath $python -ArgumentList $args -PassThru -WindowStyle Hidden
+            $null = $p.Handle   # PS 5.1: read at once so ExitCode survives the exit
             try {
                 while (-not $p.HasExited) {
                     Check-Control $false

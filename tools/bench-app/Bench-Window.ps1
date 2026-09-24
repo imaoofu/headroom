@@ -252,6 +252,7 @@ $start=Button 'Start' 300 291 90 {
     if ($resume) { $args+='-Resume' }
     if ($DryRun) { $args+=@('-DryRun','-MockPath',$MockPath) }
     $script:engine=Start-Process -FilePath 'powershell.exe' -ArgumentList $args -PassThru -WindowStyle Hidden -RedirectStandardOutput $script:outputPath -RedirectStandardError $script:errorPath
+    $null=$script:engine.Handle   # PS 5.1: keep ExitCode readable after exit
     $script:resumeSession=''
     $status.Text='Running'; $start.Enabled=$false
 }
