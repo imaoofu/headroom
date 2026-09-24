@@ -474,6 +474,29 @@ It also keeps chats in browser storage, where Claude cannot read them.
 >    A malformed line is shown as malformed, never dropped silently.
 > 4. **Queue viewer.** List `tools/local-model/runs/*/summary.json` (written by `run_queue.py`) as a
 >    table: job, attempt, verdict, seconds. Link to each answer and acceptance report.
+> 5. **Claude's requests, live. This is the part Raymond asked for most:** he wants to watch what
+>    Claude sends the model, its thinking, and its result, as it happens. Today `ask_local.py` (which
+>    `run_queue.py` calls) waits for the whole reply, so nothing is visible until it ends.
+>    - Change `ask_local.py` to **stream** from llama-server, and append events to
+>      `tools/local-model/runs/console/requests-YYYYMMDD.jsonl`:
+>      - `request_start`: time, request id, spec path, context file paths, sampling settings, and the
+>        **full user and system messages** as sent;
+>      - `reasoning` and `answer` chunks, flushed at least every 0.5 s;
+>      - `request_end`: timings, `done_reason`, the output path, and any error.
+>
+>      `run_queue.py` adds the queue name, job and attempt to `request_start`, and an `accepted`
+>      event with the acceptance verdict.
+>    - **The file `ask_local.py` writes must be byte-identical to what it writes today** for the same
+>      reply. Prove it with a fake streaming server in the tests. Keep all 48 existing
+>      `test_ask_local.py` checks passing, including the four failure modes its docstring lists.
+>    - The console shows these requests newest first, with **"running" requests expanding live**:
+>      the prompt, a Reasoning block filling in, then the answer, and the verdict when it arrives.
+>
+>    This is how Claude and Raymond see the same thing: Claude reads the JSONL; Raymond watches the
+>    page.
+> 6. **A double-click launcher**, `tools/local-model/console/OPEN-CONSOLE.bat`. It starts `server.py`
+>    and opens the page in its own window (`msedge --app=http://127.0.0.1:8098`, falling back to the
+>    default browser), so it looks and feels like an app.
 >
 > **Server start/stop buttons:**
 > - start runs `ask_local.SERVER_COMMAND`, and **refuses while `measurement_running()` is true**;
@@ -499,7 +522,11 @@ It also keeps chats in browser storage, where Claude cannot read them.
 >   without a network;
 > - path traversal refused;
 > - start refused while a (monkeypatched) measurement is running;
-> - the chat log line written even when the request fails.
+> - the chat log line written even when the request fails;
+> - `ask_local.py` streaming against a fake server: the events appear in order, reasoning and answer
+>   chunks join to the full text, and **the output file is byte-identical to the non-streaming
+>   version's**;
+> - a request that fails mid-stream still writes `request_end` with the error.
 >
 > 🛑 **Do not start llama-server or load the model in tests or during development; it runs on the card
 > the project measures.** Mock every call to it. Do not run sweeps, do not touch `data/`, do not
