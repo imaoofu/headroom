@@ -79,11 +79,20 @@ Checked and dropped the same day:
 - **Tests for `Hwinfo-Csv.ps1`.** It already has four tests, including the iGPU case, so the job
   would mostly measure the model's PowerShell.
 
-**What would justify the next queue:** a large, mechanical job with an exact check. Examples:
-- pinning a whole under-covered section whose sources are already known (§5.5 sits at 15 of 352);
-- a batch of data READMEs from generated tables;
-- **scoring fixtures for Session D's section 8, once its data exists.** The scorer itself is Claude's.
+## Future jobs, in order
 
-**Also open:** the auditor's `numbersIn` counts clock times, section references and range hyphens as
-numbers (ROADMAP item 7). That is a judgement about what the auditor should count, so it is
-Claude's, not the model's.
+A job moves into a queue only when its spec and acceptance check exist **and have been run against
+a correct answer and a wrong one**. None of these has a spec yet.
+
+| id | job | waits for | exact check | value |
+|---|---|---|---|---|
+| **L4** | Test fixtures for a `--replicate` mode in `analysis/score_session_d.py` (REGISTERED-PREDICTIONS §8a): synthetic `edit1-5` / `stock-6` sweeps that pass, fail and are NOT SCOREABLE. **Claude writes the scoring code**; the model drafts the fixtures | Session D's data landing, so the file layout is known | each fixture's expected verdict, stated in the spec, is what the reviewed scorer returns | high: Session D is scored this week |
+| **L5** | Claims for §5.5 (15 of 352 numbers pinned, the least-covered section), one subsection at a time, where the sources are already identified | Claude identifying each subsection's source files, which is most of the cost | `audit_claims.py`: each new claim passes and matches exactly once | high if the sources are known, otherwise not worth delegating |
+| **L6** | Data READMEs for directories that lack an inventory, from a generated table of files, points and settings (the `sweep-root-inventory` pattern) | a directory with a gap; `find data -name README.md` against the directory list | every filename checked against the filesystem, and no invented facts | medium |
+| **L7** | The ascending/descending comparison for §8c, run through the L2 tool, **written up as a table only** | §8c's two sweeps from Session D | the table's numbers equal `compare_fine_pair.py --json` | low: Claude can run the tool directly |
+
+**Not for the model:**
+- **Anything that scores a registered prediction.** Claude writes it; the model may draft fixtures.
+- **The auditor's `numbersIn` rule** (ROADMAP item 7). What it should count is a judgement, not a
+  mechanical task.
+- **Anything on the 5060 Ti while it is sweeping.**
