@@ -11,6 +11,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Hwinfo-Csv.ps1')
 . (Join-Path $PSScriptRoot 'Stock-Drift.ps1')
 . (Join-Path $PSScriptRoot 'Pmon-Gate.ps1')
+. (Join-Path $PSScriptRoot 'Profile-Hash.ps1')
 $script:kit = $null
 $script:record = $null
 $script:activeLog = ''
@@ -425,7 +426,10 @@ function Run-Step($step) {
             else {
                 $files = @(Get-ChildItem -Path $path -ErrorAction Stop)
                 if ($files.Count -ne 1) { throw 'Expected exactly one profile store file.' }
-                $hash = Sha256 $files[0].FullName
+                # With "sections", only those slots are pinned, so a section Afterburner rewrites by
+                # itself ([Defaults], 2026-09-24) cannot stop a run. Without it, the whole file.
+                if ($step.sections) { $hash = Get-ProfileSectionHash $files[0].FullName @($step.sections) }
+                else { $hash = Sha256 $files[0].FullName }
             }
             if (-not $hash.StartsWith($step.prefix,[StringComparison]::OrdinalIgnoreCase)) { throw "Profile hash mismatch: $hash" }
             $script:record.profileHash = $hash

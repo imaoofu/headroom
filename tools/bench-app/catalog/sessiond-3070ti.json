@@ -34,10 +34,15 @@
         {
           "id": "profile-hash",
           "type": "gate-hash",
-          "name": "Verify decoded Afterburner profile store",
+          "name": "Verify Afterburner P1-P3 are the decoded curves",
           "estimatedMinutes": 0.1,
           "path": "C:/Program Files (x86)/MSI Afterburner/Profiles/VEN_10DE*.cfg",
-          "prefix": "CCE75E81FE322380"
+          "prefix": "A1159941DA541EB9",
+          "sections": [
+            "Profile1",
+            "Profile2",
+            "Profile3"
+          ]
         },
         {
           "id": "profile",
@@ -130,7 +135,7 @@
           "name": "Collect 12-workload suite",
           "estimatedMinutes": 62,
           "label": "rtx3070ti-sessiond-stock-1",
-          "settings": "STOCK P1, profile store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff), SILENT BIOS verified at 290 W, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904",
+          "settings": "STOCK P1, profile P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS verified at 290 W, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904",
           "workloads": [
             "copy",
             "reduce",
@@ -231,7 +236,7 @@
           "name": "Collect 12-workload suite",
           "estimatedMinutes": 62,
           "label": "rtx3070ti-sessiond-edit1-2",
-          "settings": "EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff); SILENT BIOS, PL default, memory +0",
+          "settings": "EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff); SILENT BIOS, PL default, memory +0",
           "workloads": [
             "copy",
             "reduce",
@@ -316,7 +321,7 @@
           "name": "Collect 12-workload suite",
           "estimatedMinutes": 62,
           "label": "rtx3070ti-sessiond-edit2-3",
-          "settings": "EDIT 2 NEGATIVE CONTROL P3 as built: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff); SILENT BIOS, PL default, memory +0",
+          "settings": "EDIT 2 NEGATIVE CONTROL P3 as built: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff); SILENT BIOS, PL default, memory +0",
           "workloads": [
             "copy",
             "reduce",
@@ -401,7 +406,7 @@
           "name": "Collect 12-workload suite",
           "estimatedMinutes": 62,
           "label": "rtx3070ti-sessiond-stock-4",
-          "settings": "STOCK P1 reverted after both edits, witnessed by peak core, store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0",
+          "settings": "STOCK P1 reverted after both edits, witnessed by peak core, P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0",
           "workloads": [
             "copy",
             "reduce",
@@ -668,7 +673,7 @@
           "points": 13,
           "direction": "descending",
           "output": "kit:/results/edit1-finefloor",
-          "settings": "EDIT 1 P2 as built, store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0 - fine floor 1050-1590 DESCENDING, 13 points; REGISTERED-PREDICTIONS 8b"
+          "settings": "EDIT 1 P2 as built, P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0 - fine floor 1050-1590 DESCENDING, 13 points; REGISTERED-PREDICTIONS 8b"
         },
         {
           "id": "log-stop-edit1-finefloor",
@@ -740,7 +745,7 @@
           "name": "Collect 12-workload suite",
           "estimatedMinutes": 62,
           "label": "rtx3070ti-sessiond-edit1-5",
-          "settings": "EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff); SILENT BIOS, PL default, memory +0 - REPLICATE of edit1-2, REGISTERED-PREDICTIONS 8a, run after stock-4 closed the registered bracket",
+          "settings": "EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff); SILENT BIOS, PL default, memory +0 - REPLICATE of edit1-2, REGISTERED-PREDICTIONS 8a, run after stock-4 closed the registered bracket",
           "workloads": [
             "copy",
             "reduce",
@@ -825,7 +830,7 @@
           "name": "Collect 12-workload suite",
           "estimatedMinutes": 62,
           "label": "rtx3070ti-sessiond-stock-6",
-          "settings": "STOCK P1 closing bracket for the edit1-5 replicate, REGISTERED-PREDICTIONS 8a; store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0",
+          "settings": "STOCK P1 closing bracket for the edit1-5 replicate, REGISTERED-PREDICTIONS 8a; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0",
           "workloads": [
             "copy",
             "reduce",

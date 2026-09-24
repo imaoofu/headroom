@@ -51,6 +51,7 @@ function Validate-Plan($plan) {
                 'gate-hash' {
                     Require ($step.path -and (Is-Absolute $step.path)) 'gate-hash needs an absolute path.'
                     Require ($step.prefix -match '^[0-9a-fA-F]{8,64}$') 'gate-hash needs a SHA-256 prefix.'
+                    if ($null -ne $step.sections) { Require (@($step.sections | Where-Object { $_ -match '^Profile[1-5]$' }).Count -eq @($step.sections).Count -and @($step.sections).Count -gt 0) 'gate-hash sections must be Profile1..Profile5.' }
                 }
                 'gate-drift' {
                     Require ($step.firstRun -and $step.lastRun -and $step.workloads.Count -gt 0 -and $step.maxMedianAbsPct -gt 0) 'gate-drift needs firstRun, lastRun, workloads and maxMedianAbsPct.'

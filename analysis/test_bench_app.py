@@ -29,7 +29,7 @@ class BenchAppTests(unittest.TestCase):
         self.catalog = json.loads(CATALOG.read_text(encoding='utf-8'))
         self.mock = {
             'telemetry': [290, 290, 320, '610.88'],
-            'quietUtil': 0, 'profileHash': 'CCE75E81FE3223800123',
+            'quietUtil': 0, 'profileHash': 'A1159941DA541EB90123',
             'witnesses': {
                 '1': {'core': 1763, 'memory': 9501},
                 '2': {'core': 1395, 'memory': 9501},
@@ -133,6 +133,43 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual((gate['firstRun'], gate['lastRun']), ('stock-4', 'stock-6'))
         labels = [s.get('label') for r in self.catalog['runs'] for s in r['steps'] if s.get('label')]
         self.assertEqual(len(labels), len(set(labels)))
+
+    def section_hash(self, path, sections):
+        helper = str(APP / 'Profile-Hash.ps1').replace("'", "''")
+        names = ','.join("'%s'" % name for name in sections)
+        command = f". '{helper}'; Get-ProfileSectionHash '{str(path)}' @({names})"
+        args = [PS, '-NoProfile'] + (['-ExecutionPolicy', 'Bypass'] if os.name == 'nt' else [])
+        return subprocess.run(args + ['-Command', command], capture_output=True, text=True, timeout=30)
+
+    def test_profile_section_hash_pins_the_slots_not_the_file(self):
+        # 2026-09-24: Afterburner added [Defaults] and [Settings] to the 3070 Ti store by itself and
+        # the whole-file hash stopped Session D, with Profile1-3 unchanged. The gate now hashes the
+        # slots the runs apply; both real snapshots must give the catalog's prefix.
+        slots = ['Profile1', 'Profile2', 'Profile3']
+        prefix = [s for s in self.catalog['runs'][0]['steps'] if s['type'] == 'gate-hash'][0]['prefix']
+        stores = {}
+        for folder in ('3070ti-profiles-20260923', '3070ti-profiles-20260924-afterburner-rewrite'):
+            store = next((ROOT / 'data' / 'afterburner-profiles' / folder).glob('VEN_10DE*.cfg'))
+            stores[folder] = store
+            proc = self.section_hash(store, slots)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(proc.stdout.strip().startswith(prefix), (folder, proc.stdout))
+        # A changed curve in a pinned slot changes the hash; an added unpinned section does not.
+        text = stores['3070ti-profiles-20260923'].read_text(encoding='utf-8-sig')
+        marker = text.index('VFCurve=', text.index('[Profile2]')) + len('VFCurve=') + 40
+        changed = self.dir / 'changed.cfg'
+        changed.write_text(text[:marker] + ('0' if text[marker] != '0' else '1') + text[marker + 1:], encoding='utf-8')
+        self.assertFalse(self.section_hash(changed, slots).stdout.strip().startswith(prefix))
+        extra = self.dir / 'extra.cfg'
+        extra.write_text(text + '\n[Defaults]\nPowerLimit=100\n[Settings]\nCaptureDefaults=0\n', encoding='utf-8')
+        self.assertTrue(self.section_hash(extra, slots).stdout.strip().startswith(prefix))
+        missing = self.section_hash(stores['3070ti-profiles-20260923'], slots + ['Profile4'])
+        self.assertNotEqual(missing.returncode, 0)
+        self.assertIn('no [Profile4] section', missing.stdout + missing.stderr)
+        # The validator accepts only ProfileN slots.
+        bad = copy.deepcopy(self.catalog)
+        [s for s in bad['runs'][0]['steps'] if s['type'] == 'gate-hash'][0]['sections'] = ['Defaults']
+        self.assertNotEqual(self.validate(bad).returncode, 0)
 
     def test_edited_preselected_run_is_flagged_and_recorded(self):
         queue = copy.deepcopy(self.catalog['runs'])
