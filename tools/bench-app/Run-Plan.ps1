@@ -553,6 +553,7 @@ try {
         $max=($clocks | Measure-Object -Maximum).Maximum
         if ($plan.card.minClockMhz -lt $min -or $plan.card.maxClockMhz -gt $max) { throw "Catalog clock range [$($plan.card.minClockMhz),$($plan.card.maxClockMhz)] outside card [$min,$max]." }
         $script:record.supportedClockRange=@($min,$max)
+        $script:cardVerified=$true
         Save-Record
     }
     $total=0; foreach ($run in $plan.runs) { $total += $run.steps.Count }
@@ -607,7 +608,12 @@ try {
         try { $final.clocks=Reset-Clocks } catch { $final.clocks=@{ verified=$false; error=$_.Exception.Message }; $cleanupErrors+=$_.Exception.Message }
         try { Stop-Log } catch { $cleanupErrors+=$_.Exception.Message }
         try {
-            if ($plan.revert) {
+            # Never revert a card the plan was not written for: the revert slot is a slot number, and
+            # on another machine it is a different curve. On 2026-09-23 a 5060 Ti plan resumed on the
+            # 3070 Ti failed "Wrong GPU" and then applied its revert slot, P3, which there is Edit 2.
+            if ($plan.revert -and -not ($DryRun -or $script:cardVerified)) {
+                Write-Host 'Card identity not verified; no profile applied and no revert witness run.'
+            } elseif ($plan.revert) {
                 $revertStep=[pscustomobject]@{ type='apply-profile'; slot=$plan.revert.slot }
                 [void](Run-Step $revertStep)
                 $script:record.revert=Run-Witness $plan.revert.witness

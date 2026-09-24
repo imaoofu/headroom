@@ -378,6 +378,17 @@ if ($AutoCloseSeconds -gt 0) {
     $auto=New-Object Windows.Forms.Timer; $auto.Interval=$AutoCloseSeconds*1000
     $auto.Add_Tick({ $auto.Stop(); $form.Close() }); $auto.Start()
 }
+function Test-ResumableHere($file) {
+    # Offer to resume only a session whose plan was written for THIS card's run list. One USB
+    # serves several machines: on 2026-09-23 the 3070 Ti was offered the 5060 Ti's failed
+    # session, a Yes loaded the 5060 Ti plan, and the engine stopped at "Wrong GPU".
+    try {
+        $stamp=[regex]::Match($file.Name,'bench-session-(.*)[.]json').Groups[1].Value
+        $planPath=Join-Path $file.DirectoryName ('bench-plan-'+$stamp+'.json')
+        if (-not (Test-Path $planPath)) { return $false }
+        return ((Get-Content $planPath -Raw | ConvertFrom-Json).card.name -eq $script:catalog.card.name)
+    } catch { return $false }
+}
 $resultDir=Join-Path $script:kit 'results'
 if (Test-Path $resultDir) {
     # Only the session file itself: its .state.json and .control.json siblings also match the
@@ -386,6 +397,7 @@ if (Test-Path $resultDir) {
         Where-Object { $_.Name -match '^bench-session-\d{8}-\d{6}\.json$' } |
         Sort-Object LastWriteTime -Descending |
         Where-Object { try { (Get-Content $_.FullName -Raw | ConvertFrom-Json).status -ne 'PASS' } catch { $false } } |
+        Where-Object { Test-ResumableHere $_ } |
         Select-Object -First 1)
     if ($pending.Count -gt 0) {
         $choice=[Windows.Forms.MessageBox]::Show(('Resume interrupted session '+$pending[0].Name+'?'),'Headroom Bench',[Windows.Forms.MessageBoxButtons]::YesNo)
