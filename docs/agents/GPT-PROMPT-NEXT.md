@@ -213,93 +213,128 @@ no Mendes paper at all**, although SBAC-PAD 2020 now bounds the causal claim.
 
 ---
 
-## Job 15, larger: a one-click session runner for the USB kit — BUILD ONLY, never run on a GPU
+## Job 15, larger: "Headroom Bench", a clickable .exe for shop machines. BUILD ONLY, never run on a GPU
 
 **Why:** at a shop machine Raymond copies ~20 commands into an elevated PowerShell one at a time
 (`docs/GPU-WORKLIST-3070TI.md`, Commands C0–C10), starts and stops every HWiNFO log by hand, and
-reads each witness check by eye. Session D is ~5 h 40 of that, on a card that leaves in days.
+reads each check by eye. **No agent can help there:** neither Claude nor GPT is installed on shop
+machines. Only Raymond, the USB kit and whatever runs from it.
 
-> Build a **plan-driven session runner** for the collection kit: Claude writes a plan file,
-> Raymond double-clicks one `.bat`, approves **one** UAC prompt, presses **Start**, and the runner
-> executes every step in order, stopping only for what a person must physically do. Put it in
-> `tools/kit-runner/`.
+> Build **Headroom Bench**, an app Raymond runs from the USB kit on a shop machine. He double-clicks
+> `HeadroomBench.exe`, approves **one** UAC prompt, **picks runs from a list**, optionally
+> **customises** them, and presses **Start**. The app then does everything a person does today:
+> the gates, profile switches, HWiNFO logs, checks and sweeps, stopping only for what needs hands.
+> Put it in `tools/bench-app/`. **You write and test the code in this repository. You never run it
+> for real** (rule 4). Its first live run will be by Claude on the local RTX 5060 Ti.
 >
-> **Read first, in full:** `tools/collection-kit/` (Collect.ps1, Sync-Kit.ps1, README),
-> `tools/hwinfo-logging/` (both scripts and the README, especially **"Why an agent cannot click
-> it"** and **"The two mistakes that cost an hour"**), `tools/frequency-sweep/Invoke-FrequencySweep.ps1`,
-> the Commands section of `docs/GPU-WORKLIST-3070TI.md`, `docs/GPU-BENCH-RULES.md`, and CLAUDE.md's
-> "Safety invariants" and "Bugs found by testing".
+> **Read first, in full:**
+> - `tools/collection-kit/`: Collect.ps1, Sync-Kit.ps1, README;
+> - `tools/hwinfo-logging/`: both scripts and the README, especially **"Why an agent cannot click
+>   it"** and **"The two mistakes that cost an hour"**;
+> - `tools/frequency-sweep/Invoke-FrequencySweep.ps1`;
+> - the Commands section of `docs/GPU-WORKLIST-3070TI.md`;
+> - `docs/GPU-BENCH-RULES.md`;
+> - CLAUDE.md's "Safety invariants" and "Bugs found by testing".
 >
-> **The design constraint that decides everything:** HWiNFO runs elevated, and Windows (UIPI)
-> silently ignores input from a lower-integrity process. **So the runner itself must run
-> elevated.** A self-elevating `RUN-SESSION.bat` (one UAC prompt) launches it, and the elevated
-> runner starts HWiNFO and drives `Invoke-HwinfoLogging.ps1` directly. Same integrity, no scheduled
-> task, no second prompt.
+> **HWiNFO logging: the app does it, not Raymond.** HWiNFO runs elevated, and Windows (UIPI)
+> silently drops input from lower-integrity processes, which is why an AI agent cannot press its
+> Log button. **An app that is itself elevated is at the same integrity level and can.**
+> `tools/hwinfo-logging/Invoke-HwinfoLogging.ps1` already does exactly this. It was verified end to
+> end and drove all 61 logs of 2026-09-22. **Reuse it; do not reinvent it.** The app also launches
+> HWiNFO itself from the kit (no second UAC prompt: it inherits the app's elevation).
+> - ⚠️ It was verified on HWiNFO **8.50-6020**. The kit carries **8.52-6060**. So if a
+>   `hwinfo-start` fails (the script's exit codes 4, 6 or 7), **fall back to a `human` step**: show
+>   "click Log Start in the Sensors window, save as <exact path>", then **verify the log is growing**
+>   before continuing, exactly as the script does. Record in the session JSON which path was used.
+> - ⛔ **Do not build a voltage reader of your own.** NVML exposes no voltage. The only alternatives
+>   are undocumented NVAPI, which is out of scope in CLAUDE.md, and HWiNFO shared memory, which the
+>   free version limits to 12 hours. HWiNFO's own CSV stays the voltage source.
 >
 > **What to build:**
-> 1. **A headless engine**, `Run-Plan.ps1 -Plan <json> [-DryRun] [-Resume]`, which does all the
->    work and can be tested without a GUI. Step types, each with a pass/fail verdict:
->    - `gate-power`: power.limit / default / max must equal given values (the SILENT-BIOS check);
+> 1. **`HeadroomBench.exe`, a small C# WinForms front end**, compiled with the C# compiler that ships
+>    in .NET Framework 4 on every Windows 10/11 machine
+>    (`%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`). That compiler is **C# 5**: no `$""`
+>    interpolation, no `?.`, no expression-bodied members. An embedded manifest with
+>    `requireAdministrator` gives the single UAC prompt. A `build.ps1` compiles it, and **the source
+>    is committed; the .exe is not.** **The exe holds no measurement logic:** it shows the list,
+>    collects choices, launches the engine and streams its output. The window shows:
+>    - **Requested runs:** the entries from a catalog file Claude writes (below), each with a short
+>      "why", a time estimate, a priority and a checkbox. Raymond ticks some and drags to reorder.
+>      Steps that must stay in order (for example a stock suite before its edits) are locked together.
+>    - **Custom sweep:** workload, min/max MHz, point count, ascending/descending, iterations,
+>      profile slot. It is added to the same queue and checked by the same validator.
+>    - **Start / Pause after this step / Stop**, the current step's live output, the time
+>      remaining, and, for steps that need hands, the instruction with a **Continue** button.
+> 2. **The engine, `Run-Plan.ps1`, Windows PowerShell 5.1**, which does all the work and runs
+>    headless with `-DryRun` and `-Resume`. Step types, each with a pass/fail verdict:
+>    - `gate-power`: power.limit/default/max must equal given values (the SILENT-BIOS check);
 >    - `gate-quiet`: `pmon` baseline under a threshold, encoder and decoder at 0;
->    - `gate-hash`: a file glob's SHA-256 must start with a given prefix (the profile store check);
->    - `apply-profile`: `MSIAfterburner.exe -profileN -q`, then a settle. ⚠️ A GUI exe does not
->      set `$LASTEXITCODE` reliably: **never judge success by it**; the witness that follows decides;
->    - `witness`: run `gemm` for ~30 s (400 iterations, printing while it runs; see `Show-Load` in
->      the worklist for why a 10 s window caught nothing), optionally under a clock lock, and check
->      peak core, memory, and, when asked, **HWiNFO core voltage** read from a short log it starts
->      and stops itself. Discard the start-up samples. Expected ranges come from the plan;
->    - `hwinfo-start` / `hwinfo-stop`: one log per run, never spanning two profiles;
->    - `suite`: `Collect.ps1` with the plan's label, settings, workloads, iterations and
->      `-ExpectedMemoryClockMhz`. **Do not bypass or duplicate its own guards**;
->    - `sweep`: `Invoke-FrequencySweep.ps1` with the plan's arguments;
->    - `human`: shows an instruction and waits for **Continue**. Used only for what cannot be
->      automated (flipping the BIOS switch, building a curve, closing apps).
-> 2. **Fail closed.** The first failed gate or witness **stops the session**. Nothing continues on a
->    guess. In a `finally`, **always** reset clocks (`nvidia-smi -rgc`) and stop any running HWiNFO
->    log, then, if the plan declares a revert profile, apply it and run its witness. Ctrl+C and a
->    closed window must unwind through the same path.
-> 3. **Resume:** a state file beside the results records each finished step. `-Resume` continues
->    from the first unfinished step. **Never overwrite a result or a log**: refuse instead.
-> 4. **A session record:** one JSON written as it goes, with every step's start and end time, its
->    verdict, the witness readings, the driver version, the power limits and the profile hash. That
->    record is the provenance; a settings string is not evidence.
-> 5. **A thin GUI**, `Session-Runner.ps1`, WinForms (built into Windows PowerShell 5.1, so no
->    installs): the plan's steps as a list with status icons, **Start / Pause after this step /
->    Stop**, the current step's live output, and the `human` instructions with a Continue button.
->    **All logic lives in the engine**; the GUI only calls it.
-> 6. **The first plan:** `plans/sessiond-3070ti.json`, equal step for step to the worklist's
->    C0–C10, with the same thresholds, labels, iteration counts and the profile hash
->    `1B08C2D0854460FF`. Say where your plan differs from the worklist, and why.
-> 7. **A plan validator:** `Test-Plan.ps1` rejects unknown step types, missing fields, relative
->    paths, a `suite` with no `hwinfo-start` before it, and two runs sharing one log.
+>    - `gate-hash`: a file's SHA-256 must start with a given prefix (the profile store check);
+>    - `apply-profile`: `MSIAfterburner.exe -profileN -q`, then a settle. **A GUI exe does not set
+>      `$LASTEXITCODE` reliably, so never judge by it.** The witness that follows decides;
+>    - `witness`: run `gemm` for ~30 s (400 iterations, sampling while it runs; the worklist's
+>      `Show-Load` notes explain why a 10 s window caught nothing), optionally under a clock lock.
+>      Check peak core, memory and, when asked, HWiNFO core voltage from a short log. Discard the
+>      start-up samples. Expected ranges come from the catalog;
+>    - `hwinfo-start` / `hwinfo-stop`: as above, one log per run, never spanning two profiles;
+>    - `suite`: `Collect.ps1` with the catalog's label, settings, workloads, iterations and
+>      `-ExpectedMemoryClockMhz`. **Do not bypass or duplicate its guards**;
+>    - `sweep`: `Invoke-FrequencySweep.ps1`;
+>    - `human`: an instruction plus **Continue**, only for what needs hands (the BIOS switch, building
+>      a curve, closing apps, and the HWiNFO fallback).
+> 3. **The catalog, `catalog/*.json`**: named runs made of steps, written by Claude and carried on the
+>    kit. Ship **`catalog/sessiond-3070ti.json`**, equal step for step to the worklist's C0–C10, with
+>    the same thresholds, labels, iteration counts and the profile hash `1B08C2D0854460FF`. Say where
+>    yours differs, and why. **Include `catalog/SCHEMA.md`** so Claude can write new catalogs without
+>    reading the code.
+> 4. **Fail closed.** The first failed gate or witness **stops the session**. In a `finally`,
+>    **always** reset clocks (`nvidia-smi -rgc`) and stop any running HWiNFO log. Then, if the catalog
+>    declares a revert profile, apply it and run its witness. Closing the window, Stop, and a crash of
+>    the exe must all unwind through that path.
+> 5. **Resume, and never overwrite:** a state file records each finished step, and reopening the app
+>    offers to continue. It refuses to overwrite any result or log.
+> 6. **A session record:** one JSON per session, written as it goes. It holds every step's start and
+>    end time, verdict and witness readings; the driver, power limits and profile hash; **which runs
+>    Raymond selected and every customisation he made**; and whether each HWiNFO log was automatic or
+>    by hand. That record is the provenance.
+> 7. **A validator, `Test-Plan.ps1`**, used by both the exe and the tests. It rejects:
+>    - unknown step types and missing fields;
+>    - relative paths;
+>    - a suite with no `hwinfo-start` before it, and two runs sharing one log;
+>    - custom sweeps outside the card's supported clocks;
+>    - an iteration count that changes within a sweep.
 >
 > **Hard constraints:**
-> - **Windows PowerShell 5.1 and the kit's bundled Python only.** Nothing installed. **ASCII-only
->   `.ps1` files** (5.1 misreads non-ASCII without a BOM). No `??`, no ternary, no `&&`.
-> - Every path derives from the kit root, found by the USB **volume label**, never a typed letter.
-> - The known traps, all in this repo's history:
+> - **No installs on the shop machine:** Windows PowerShell 5.1, .NET Framework 4 and the kit's
+>   bundled Python only. **ASCII-only `.ps1` files.** No `??`, no ternary, no `&&`.
+> - Every path derives from the kit root, found by the USB **volume label** (`ESD-USB` today, but
+>   configurable), never a typed drive letter. Results stay on the USB.
+> - Known traps from this repo's history:
 >   - function output leaks into return values, so pipe child output to `Out-Host`;
 >   - never `return` inside `try` at script scope;
 >   - read `$p.Handle` before `$p.ExitCode`;
 >   - PS 7's `ConvertFrom-Json` unrolls a top-level array.
-> - ⚠️ **The HWiNFO automation was verified on build 8.50-6020 (installed on the local box). The kit
->   carries 8.52-6060.** Controls are found by text, but the dialog could still differ. Say this in
->   the README as **unverified on the kit's build** until someone runs it there.
-> - Add every new file to `tools/collection-kit/Sync-Kit.ps1` (rule 12).
+> - ⚠️ **An unsigned exe may trigger SmartScreen** on each new PC ("More info → Run anyway"), and some
+>   antivirus products dislike an unsigned exe that drives another program's window. Say so in the
+>   README. **Keep a `RUN-BENCH.bat` fallback** that starts the same engine and GUI without the exe.
+> - Add every new file to `tools/collection-kit/Sync-Kit.ps1` (rule 12). The exe is built, then
+>   synced; say how.
 >
-> **Tests** (`analysis/test_kit_runner.py`, run under PS 5.1 and PS 7 as CI does, rule 11): the engine
+> **Tests** (`analysis/test_bench_app.py`, under PS 5.1 and PS 7 as CI does, rule 11): run the engine
 > in `-DryRun` with **mocked** `nvidia-smi`, Afterburner and HWiNFO, covering at least:
-> - a full passing plan;
-> - a failed gate that stops the session and still runs the `finally` revert;
+> - a full passing catalog;
+> - a failed gate that stops the session and still runs the revert;
 > - a witness reading **stock clocks after a profile was applied** (the silent driver-reset case);
+> - a failed `hwinfo-start` that falls back to the human step and waits for file growth;
 > - a resume after an interrupted suite;
 > - a refused overwrite;
-> - the validator rejecting each malformed plan above.
+> - the validator rejecting each malformed plan and each out-of-range custom sweep.
 >
-> 🛑 **Rule 4 is absolute here.** Do not run the engine for real, do not start HWiNFO, do not call
-> Afterburner, do not lock a clock. **Build and dry-run only.** The first live run will be done by
-> Claude on the local 5060 Ti with a small plan, then at a shop machine. File what you could **not**
-> verify, and do not commit.
+> Also: `build.ps1` must compile the exe cleanly on this machine, and the exe must launch and show
+> the catalog in `-DryRun`.
+>
+> 🛑 **Rule 4 is absolute.** Do not run the engine for real, start HWiNFO, call Afterburner or lock a
+> clock. Build and dry-run only. File what you could **not** verify, and do not commit.
 
 ---
 
