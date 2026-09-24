@@ -100,6 +100,22 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(record['finalState']['clocks']['readbackSmClockMhz'], 1763)
         self.assertTrue(record['finalState']['processes']['verified'])
 
+    def test_sensors_step_passes_itself_when_sensors_window_detected(self):
+        # Suggested by Raymond 2026-09-23: with HWiNFO's Sensors window up, run start to finish
+        # untouched. Default (not detected) records the operator; detected records auto.
+        proc, record = self.engine()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        sensors = [s for s in record['steps'] if s['key'] == 'preflight/sensors'][0]
+        self.assertEqual(sensors['witness'], {'acknowledged': True, 'confirmedBy': 'operator'})
+        self.mock['sensorsReady'] = True
+        proc, record = self.engine(session=self.dir / 'auto.json')
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        sensors = [s for s in record['steps'] if s['key'] == 'preflight/sensors'][0]
+        self.assertEqual(sensors['witness'], {'acknowledged': True, 'confirmedBy': 'auto'})
+        # Wait-Human now returns a value; no other step may pick it up as stray output.
+        for step in record['steps']:
+            self.assertNotIn('operator', json.dumps(step['witness']) if step['key'] != 'preflight/sensors' else '')
+
     def test_edited_preselected_run_is_flagged_and_recorded(self):
         queue = copy.deepcopy(self.catalog['runs'])
         queue[1]['steps'][3]['settings'] += ' operator edit'

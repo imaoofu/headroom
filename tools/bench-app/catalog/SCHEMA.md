@@ -20,7 +20,7 @@ Step `id` values are unique within a run. Every step has `type` and `name`. Opti
 | `hwinfo-stop` | none | Stops and checks the log. |
 | `suite` | `label`, `settings`, `workloads`, `iterations`, `expectedMemoryClockMhz` | Calls `Collect.ps1`; verifies one new result directory and throughput-bearing CSVs. |
 | `sweep` | `label`, `settings`, `workload`, `iterations`, `minMhz`, `maxMhz`, `points`, `direction`, `output` | Calls `Invoke-FrequencySweep.ps1`; checks its exit and CSV. `direction` is `ascending` or `descending`. |
-| `human` | `instruction` | Pauses for Continue. Optional `launchHwinfo` starts the bundled HWiNFO first. |
+| `human` | `instruction` | Pauses for Continue. Optional `launchHwinfo` starts the bundled HWiNFO first, and the step then also passes by itself once a Sensors window with a `Log Start` button is detected (recorded as `confirmedBy: auto`, otherwise `operator`). |
 
 The profile-store hash path may be an absolute Windows path. HWiNFO logs and sweep output must use `kit:/results/...`, resolved under the kit root found from the USB volume label; `..` is forbidden. Live plan and session files must also stay on the USB kit. No result or log path is overwritten. A resume keeps the original plan and records a fresh `-resume-<timestamp>` suffix for a restarted run's logs and sweep directory.
 

@@ -23,7 +23,7 @@
         { "id": "power", "type": "gate-power", "name": "SILENT BIOS: 290 / 290 / 320 W", "estimatedMinutes": 0.1, "limit": 290, "default": 290, "max": 320 },
         { "id": "quiet", "type": "gate-quiet", "name": "Quiet pmon baseline and video engines", "estimatedMinutes": 0.3, "maxUtil": 5 },
         { "id": "witness", "type": "witness", "name": "Stock under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 1900, "memoryMin": 9200, "memoryMax": 9550 },
-        { "id": "sensors", "type": "human", "name": "Confirm HWiNFO Sensors window", "estimatedMinutes": 0.5, "instruction": "HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup, then press Continue.", "launchHwinfo": true }
+        { "id": "sensors", "type": "human", "name": "Confirm HWiNFO Sensors window", "estimatedMinutes": 0.5, "instruction": "HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup. The run continues by itself once the Sensors window is detected; Continue also works.", "launchHwinfo": true }
       ]
     },
     {

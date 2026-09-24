@@ -196,9 +196,17 @@ function Check-Control([bool]$betweenSteps) {
         Set-RecordProperty 'operatorState' 'Running'; Save-Record
     }
 }
-function Wait-Human([string]$instruction) {
+function Test-HwinfoSensorsReady {
+    # True when HWiNFO shows a Sensors window whose Log button reads 'Log Start': the state every
+    # hwinfo-start step needs. Same detector as the final stop check. Quiet: polled every 2 s.
+    if (-not (Get-Process HWiNFO64 -ErrorAction SilentlyContinue)) { return $false }
+    $output=@(& (Join-Path $script:kit 'tools\hwinfo-logging\Invoke-HwinfoLogging.ps1') -Status *>&1)
+    return ($LASTEXITCODE -eq 0 -and (($output -join "`n") -match 'Logging is stopped[.]'))
+}
+function Wait-Human([string]$instruction,[scriptblock]$autoReady=$null) {
+    # Returns 'operator' when Continue was pressed, 'auto' when $autoReady came true first.
     Write-Host "ACTION NEEDED: $instruction"
-    if ($DryRun) { return }
+    if ($DryRun) { if ($autoReady -and $script:mock.sensorsReady) { return 'auto' }; return 'operator' }
     if ($script:cleaningUp) {
         # After Stop or a closed window there may be nobody to press Continue. Say it, record
         # it, and keep cleaning up rather than waiting forever.
@@ -206,16 +214,24 @@ function Wait-Human([string]$instruction) {
         $script:record.cleanupWarnings += $instruction
         return
     }
-    if ($ParentPid -le 0) { [void](Read-Host 'Press Enter after completing the instruction'); return }
+    if ($ParentPid -le 0 -and -not $autoReady) { [void](Read-Host 'Press Enter after completing the instruction'); return 'operator' }
+    $tick=0
     while ($true) {
         Start-Sleep -Milliseconds 500
+        $tick++
+        if ($autoReady -and ($tick % 4) -eq 1) {
+            $ready=$false
+            try { $ready=[bool](& $autoReady) } catch { }
+            if ($ready) { Write-Host 'Detected automatically; continuing without Continue.'; return 'auto' }
+        }
+        if ($ParentPid -le 0) { continue }
         if (-not (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue)) { throw 'Window closed.' }
         $control = Get-Content $script:controlPath -Raw | ConvertFrom-Json
         if ($control.stop) { throw 'Operator requested Stop.' }
         if ($control.continue) {
             $control.continue = $false
             [IO.File]::WriteAllText($script:controlPath, ($control | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
-            return
+            return 'operator'
         }
     }
 }
@@ -280,7 +296,7 @@ function Stop-Log {
         $stopped=($LASTEXITCODE -eq 0)
     } catch { Write-Host "HWiNFO automatic stop failed: $($_.Exception.Message)" }
     if (-not $stopped) {
-        Wait-Human 'Click Log Stop in the HWiNFO Sensors window.'
+        [void](Wait-Human 'Click Log Stop in the HWiNFO Sensors window.')
         $a = (Get-Item $script:activeLog).Length
         Start-Sleep -Seconds 5
         $b = (Get-Item $script:activeLog).Length
@@ -425,12 +441,12 @@ function Run-Step($step) {
                 $code = $LASTEXITCODE
                 if ($code -ne 0) {
                     if (@(4,6,7) -notcontains $code) { throw "HWiNFO start failed with exit $code." }
-                    Wait-Human "Click Log Start in the Sensors window, save as $path"
+                    [void](Wait-Human "Click Log Start in the Sensors window, save as $path")
                     Check-Growth $path
                     $script:activeLogMode='manual'
                 } else { $script:activeLogMode='automatic' }
             } else {
-                if ($script:mock.hwinfoStartFail) { Wait-Human "Click Log Start in the Sensors window, save as $path"; $script:activeLogMode='manual' }
+                if ($script:mock.hwinfoStartFail) { [void](Wait-Human "Click Log Start in the Sensors window, save as $path"); $script:activeLogMode='manual' }
                 else { $script:activeLogMode='automatic' }
             }
             return @{ path=$path; mode=$script:activeLogMode }
@@ -470,8 +486,12 @@ function Run-Step($step) {
             if ($step.launchHwinfo -and -not $DryRun -and -not (Get-Process HWiNFO64 -ErrorAction SilentlyContinue)) {
                 Start-Process -FilePath (Join-Path $script:kit 'HWiNFO64.exe') -WindowStyle Normal | Out-Null
             }
-            Wait-Human $step.instruction
-            return @{ acknowledged=$true }
+            # With launchHwinfo, the step also passes by itself once the Sensors window is detected
+            # (suggested by Raymond 2026-09-23), so a session can run start to finish untouched.
+            # Continue still works; if Sensors never appears it waits exactly as before.
+            $ready=if ($step.launchHwinfo) { { Test-HwinfoSensorsReady } } else { $null }
+            $by=Wait-Human $step.instruction $ready
+            return @{ acknowledged=$true; confirmedBy=$by }
         }
     }
 }
@@ -639,7 +659,7 @@ try {
 if ($script:failed) { exit 1 }
 if ($plan.afterRevertHuman -and -not $script:failed) {
     try {
-        Wait-Human $plan.afterRevertHuman
+        [void](Wait-Human $plan.afterRevertHuman)
         $script:record.afterRevertHumanCompleted=$true
         Save-Record
     } catch {

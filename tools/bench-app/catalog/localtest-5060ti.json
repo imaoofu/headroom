@@ -36,7 +36,7 @@
         { "id": "power", "type": "gate-power", "name": "Stock power limits 180 / 180 / 200 W", "estimatedMinutes": 0.1, "limit": 180, "default": 180, "max": 200 },
         { "id": "quiet", "type": "gate-quiet", "name": "Quiet GPU (10% for this test, not the 5% protocol)", "estimatedMinutes": 0.3, "maxUtil": 10 },
         { "id": "witness", "type": "witness", "name": "Stock under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 2300, "coreMax": 2750, "memoryMin": 13700, "memoryMax": 14101 },
-        { "id": "sensors", "type": "human", "name": "Confirm HWiNFO Sensors window", "estimatedMinutes": 0.5, "instruction": "HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup, then press Continue.", "launchHwinfo": true }
+        { "id": "sensors", "type": "human", "name": "Confirm HWiNFO Sensors window", "estimatedMinutes": 0.5, "instruction": "HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup. The run continues by itself once the Sensors window is detected; Continue also works.", "launchHwinfo": true }
       ]
     },
     {

@@ -79,7 +79,7 @@
           "type": "human",
           "name": "Confirm HWiNFO Sensors window",
           "estimatedMinutes": 0.5,
-          "instruction": "HWiNFO has launched from the kit. Open Sensors only and close any update popup; then Continue.",
+          "instruction": "HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup. The run continues by itself once the Sensors window is detected; Continue also works.",
           "launchHwinfo": true
         }
       ]

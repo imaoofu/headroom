@@ -99,7 +99,7 @@ plan = dict(
                 step('quiet', 'gate-quiet', 'Quiet pmon baseline and video engines', maxUtil=5),
                 witness('Stock under load', 1700, 1900),
                 step('sensors', 'human', 'Confirm HWiNFO Sensors window',
-                     instruction='HWiNFO has launched from the kit. Open Sensors only and close any update popup; then Continue.',
+                     instruction='HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup. The run continues by itself once the Sensors window is detected; Continue also works.',
                      launchHwinfo=True)
             ]),
         full_suite('stock-1', 'C4: stock baseline', 'Baseline before any edits.', 0, 1, (1700, 1900), stock1),
