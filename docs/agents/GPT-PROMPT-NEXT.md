@@ -271,13 +271,13 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 >      session record, so a changed run can never pass as the requested one.
 >    - 🆕 **A live view while it runs**, so Raymond can see what is happening:
 >      - the current step's name, **step N of M**, and an overall progress bar;
->      - inside a sweep, **point i of 13**, its target and achieved MHz;
+>      - inside a sweep, **point i of N**, its target and achieved MHz;
 >      - the estimated finish time for the step and for the session;
 >      - **live readings once a second**: core clock, memory clock, power, temperature and
 >        utilisation (from `nvidia-smi`), plus the latest core voltage, read from the tail of the
 >        running HWiNFO CSV (shared read, never locking it);
 >      - whether HWiNFO is logging, and to which file;
->      - a list of finished steps with their verdict (✓ / ✗), duration and the witness readings;
+>      - a list of finished steps with their verdict (PASS / FAIL), duration and the witness readings;
 >      - the scrolling output of the current step.
 >    - ⛔ **The window must be light.** On 2026-09-23 a desktop app drawing 26% SM while rendering
 >      tripped a sweep's 10% preflight guard. So: update at most **once a second**, no animations,
