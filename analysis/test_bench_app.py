@@ -91,7 +91,7 @@ class BenchAppTests(unittest.TestCase):
         proc, record = self.engine()
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertEqual(record['status'], 'PASS')
-        self.assertEqual(len(record['steps']), 33)
+        self.assertEqual(len(record['steps']), 35)
         self.assertEqual(record['selectedRuns'], [r['id'] for r in self.catalog['runs']])
         self.assertEqual(record['revert']['coreMhz'], 1763)
         self.assertTrue(record['afterRevertHumanCompleted'])
@@ -131,8 +131,11 @@ class BenchAppTests(unittest.TestCase):
         self.mock['telemetry'][0] = 310
         proc, record = self.engine()
         self.assertNotEqual(proc.returncode, 0)
-        self.assertEqual(len(record['steps']), 1)
-        self.assertEqual(record['steps'][0]['verdict'], 'FAIL')
+        # Preflight checks the store, applies stock, then gates power, so a tuned
+        # profile left live is replaced before the gate rather than failing it.
+        self.assertEqual([s['type'] for s in record['steps']],
+                         ['gate-hash', 'apply-profile', 'gate-power'])
+        self.assertEqual(record['steps'][2]['verdict'], 'FAIL')
         self.assertEqual(record['revert']['coreMhz'], 1763)
         self.assertTrue(record['finalState']['logging']['stoppedVerified'])
 
@@ -261,8 +264,8 @@ class BenchAppTests(unittest.TestCase):
         altered(lambda p: p['runs'][0]['steps'][0].update(type='unknown'))
         altered(lambda p: p.pop('volumeLabel'))
         altered(lambda p: p['revert']['witness'].pop('memoryMax'))
-        altered(lambda p: p['runs'][0]['steps'][0].pop('limit'))
-        altered(lambda p: p['runs'][0]['steps'][2].update(path='Profiles/VEN.cfg'))
+        altered(lambda p: p['runs'][0]['steps'][2].pop('limit'))
+        altered(lambda p: p['runs'][0]['steps'][0].update(path='Profiles/VEN.cfg'))
         altered(lambda p: p['runs'][1]['steps'].pop(2))  # suite with no start
         altered(lambda p: p['runs'][2]['steps'][1].update(path=p['runs'][1]['steps'][2]['path']))
         altered(lambda p: p['runs'][5]['steps'][1].update(minMhz=50))
@@ -270,7 +273,7 @@ class BenchAppTests(unittest.TestCase):
         altered(lambda p: p['runs'][5]['steps'][1].update(iterations=[120, 200]))
         altered(lambda p: p['runs'][5]['steps'][1].update(workload='gemm;calc'))
         altered(lambda p: p['runs'][2]['steps'][0].update(type='hwinfo-start', path='relative.csv'))
-        altered(lambda p: p['runs'][0]['steps'][1].update(maxUtil=0))
+        altered(lambda p: p['runs'][0]['steps'][3].update(maxUtil=0))
         altered(lambda p: p['runs'][1]['steps'][0].update(slot=0))
         altered(lambda p: p['runs'][1]['steps'][1].pop('memoryMax'))
         altered(lambda p: p['runs'][1]['steps'][1].update(coreMax=3000))
@@ -281,7 +284,7 @@ class BenchAppTests(unittest.TestCase):
         altered(lambda p: p['runs'][1]['steps'][3].pop('settings'))
         altered(lambda p: p['runs'][5]['steps'][1].pop('output'))
         altered(lambda p: p['runs'][5]['steps'][1].update(output='C:/Temp/sweep'))
-        altered(lambda p: p['runs'][0]['steps'][3].update(instruction=''))
+        altered(lambda p: p['runs'][0]['steps'][5].update(instruction=''))
         altered(lambda p: p['runs'][1]['steps'].insert(3, {'id':'bad-profile','type':'apply-profile','name':'Bad','slot':1}))
         altered(lambda p: p['runs'].insert(2, p['runs'].pop(5)))
         altered(lambda p: p['runs'].insert(1, p['runs'].pop(-1)))

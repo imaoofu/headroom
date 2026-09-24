@@ -16,11 +16,13 @@
       "id": "preflight",
       "name": "Preflight: SILENT BIOS, quiet GPU, profile store, HWiNFO",
       "why": "The same gates tomorrow's unattended session depends on, checked with Raymond present.",
-      "minutes": 3, "priority": 0, "preselected": true, "locked": true, "requires": [], "group": null, "finalRun": false,
+      "minutes": 4, "priority": 0, "preselected": true, "locked": true, "requires": [], "group": null, "finalRun": false,
       "steps": [
+        { "id": "profile-hash", "type": "gate-hash", "name": "Verify decoded Afterburner profile store", "estimatedMinutes": 0.1, "path": "C:/Program Files (x86)/MSI Afterburner/Profiles/VEN_10DE*.cfg", "prefix": "1B08C2D0854460FF" },
+        { "id": "profile", "type": "apply-profile", "name": "Apply profile P1 (stock)", "estimatedMinutes": 0.2, "slot": 1 },
         { "id": "power", "type": "gate-power", "name": "SILENT BIOS: 290 / 290 / 320 W", "estimatedMinutes": 0.1, "limit": 290, "default": 290, "max": 320 },
         { "id": "quiet", "type": "gate-quiet", "name": "Quiet pmon baseline and video engines", "estimatedMinutes": 0.3, "maxUtil": 5 },
-        { "id": "profile-hash", "type": "gate-hash", "name": "Verify decoded Afterburner profile store", "estimatedMinutes": 0.1, "path": "C:/Program Files (x86)/MSI Afterburner/Profiles/VEN_10DE*.cfg", "prefix": "1B08C2D0854460FF" },
+        { "id": "witness", "type": "witness", "name": "Stock under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 1900, "memoryMin": 9200, "memoryMax": 9550 },
         { "id": "sensors", "type": "human", "name": "Confirm HWiNFO Sensors window", "estimatedMinutes": 0.5, "instruction": "HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup, then press Continue.", "launchHwinfo": true }
       ]
     },

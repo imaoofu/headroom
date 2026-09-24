@@ -88,11 +88,16 @@ plan = dict(
     runs=[
         run('preflight', 'C0-C3: preflight and profile store',
             'Reject a wrong BIOS, busy GPU, or changed profile store before measuring.',
-            3, 0, [
-                step('power', 'gate-power', 'SILENT BIOS: 290 / 290 / 320 W', limit=290, default=290, max=320),
-                step('quiet', 'gate-quiet', 'Quiet pmon baseline and video engines', maxUtil=5),
+            4, 0, [
+                # Hash first, so slot 1 is known to be stock before it is applied. Applying it
+                # before the power gate means a tuned profile left live is not a false stop:
+                # the BIOS sets default and max, and stock returns the limit to default.
                 step('profile-hash', 'gate-hash', 'Verify decoded Afterburner profile store',
                      path='C:/Program Files (x86)/MSI Afterburner/Profiles/VEN_10DE*.cfg', prefix=HASH),
+                step('profile', 'apply-profile', 'Apply profile P1 (stock)', slot=1),
+                step('power', 'gate-power', 'SILENT BIOS: 290 / 290 / 320 W', limit=290, default=290, max=320),
+                step('quiet', 'gate-quiet', 'Quiet pmon baseline and video engines', maxUtil=5),
+                witness('Stock under load', 1700, 1900),
                 step('sensors', 'human', 'Confirm HWiNFO Sensors window',
                      instruction='HWiNFO has launched from the kit. Open Sensors only and close any update popup; then Continue.',
                      launchHwinfo=True)
