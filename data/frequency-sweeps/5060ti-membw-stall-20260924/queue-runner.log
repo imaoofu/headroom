@@ -1,0 +1,33 @@
+[09:10:27] Queue 2026-09-24 starting. Log: C:\headroom-bench\results\queue-20260924-091027.log
+[09:11:04] Profile 3: memory under load 13801 MHz (expect 13801), power limit 180 W (expect 180).
+[09:11:04] ==== 5060ti-4n-membw1627-p3-r1 ====
+[09:16:00]   wrapper exit 0
+[09:16:33] Profile 5: memory under load 16301 MHz (expect 16301), power limit 200 W (expect 200).
+[09:16:33] ==== 5060ti-4n-membw1627-p5-r1 ====
+[09:21:20]   wrapper exit 0
+[09:21:53] Profile 5: memory under load 16301 MHz (expect 16301), power limit 200 W (expect 200).
+[09:21:53] ==== 5060ti-4n-membw1627-p5-r2 ====
+[09:26:40]   wrapper exit 0
+[09:27:16] Profile 3: memory under load 13801 MHz (expect 13801), power limit 180 W (expect 180).
+[09:27:16] ==== 5060ti-4n-membw1627-p3-r2 ====
+[09:32:13]   wrapper exit 0
+[09:32:49] Profile 3: memory under load 13801 MHz (expect 13801), power limit 180 W (expect 180).
+[09:32:49] ==== 5060ti-4m-01-reduce ====
+[09:37:23]   wrapper exit 0
+[09:37:23] ==== 5060ti-4m-02-copy ====
+[09:41:54]   wrapper exit 0
+[09:41:54] ==== 5060ti-4m-03-copy ====
+[09:46:24]   wrapper exit 0
+[09:46:24] ==== 5060ti-4m-04-reduce ====
+[09:50:58]   wrapper exit 0
+[09:50:58] ==== 5060ti-4m-05-reduce ====
+[09:55:32]   wrapper exit 0
+[09:55:32] ==== 5060ti-4m-06-copy ====
+[10:00:02]   wrapper exit 0
+[10:00:02] ==== 5060ti-4m-07-copy ====
+[10:04:32]   wrapper exit 0
+[10:04:32] ==== 5060ti-4m-08-reduce ====
+[10:09:07]   wrapper exit 0
+[10:09:07] ==== activity A/B re-run (section 5, amended 2026-09-24) ====
+[11:26:34]   Run-ActivityAB exit 0 (output in C:\headroom-bench\results\queue-20260924-activity-ab.log)
+[11:26:34] Profile 3 (stock) applied. Queue finished.

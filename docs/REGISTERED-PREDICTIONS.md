@@ -666,7 +666,7 @@ number that appears in the paper's headline mechanism.
 🛑 **Keep the raw HWiNFO log again**, and record the per-point temperatures — they are the
 independent variable this time, not a footnote.
 
-## 5. RTX 5060 Ti: do isolated throughput losses come from ACTIVITY? Registered 2026-09-22 — COLLECTED 2026-09-23, ⛔ INCOMPLETE
+## 5. RTX 5060 Ti: do isolated throughput losses come from ACTIVITY? Registered 2026-09-22 — COLLECTED 2026-09-23, ⛔ INCOMPLETE; RE-COLLECTED 2026-09-24, ✅ NOT SUPPORTED FOR THIS PROXY
 
 **Why.** On 2026-09-22, three stock `4i` replicates lost 8–11% at isolated points: **4, then 2, then
 0** degraded points, while the driving agent went from busy to silent. An outside audit
@@ -780,6 +780,20 @@ could shape how this one is read. So this re-run is reported **with its own regi
 beside** the 09-23 INCOMPLETE, never merged with it. It runs on 2026-09-24 with the operator absent
 and the driving agent idle. HWiNFO was started by `tools/hwinfo-logging/Start-HwinfoSensors.ps1`,
 not by hand.
+
+### ✅ Result of the re-collection, 2026-09-24: registered verdict NOT SUPPORTED FOR THIS PROXY
+
+`data/frequency-sweeps/5060ti-activity-ab-20260924/`. Nothing above was edited. All 14 wrapper runs
+exited 0, stock was verified, and uptime was 146–206 min.
+
+- **Every active run is valid.** Each generator started 22.0–22.4 s before its first measured
+  window. The trigger fix worked.
+- **Zero degraded points in all 12 scored runs, active and silent.** The scorer printed:
+  *NOT SUPPORTED FOR THIS PROXY — the scripted activity does not add losses*, and *no losses at all*.
+
+It matches the 2026-09-23 counterfactual, and is now a registered verdict rather than a description.
+⚠️ **It still does not separate a cold card from real agent activity** as the cause of 2026-09-22's
+losses: the proxy is not real activity. One chip, one session.
 
 ---
 
@@ -990,7 +1004,7 @@ point. Direction and day are confounded in that pair. This pair puts both direct
 session, and it is reported as the per-point difference, **with no verdict.** ⚠️ It runs after
 ~5 h of load, so it is warm from the start in both directions, unlike either earlier sweep.
 
-## 9. RTX 5060 Ti: is the `reduce` residual a workload property or a run-order artifact? (worklist 4m) Registered 2026-09-24, before collection
+## 9. RTX 5060 Ti: is the `reduce` residual a workload property or a run-order artifact? (worklist 4m) Registered 2026-09-24, before collection — ✅ COLLECTED THE SAME DAY: WORKLOAD PROPERTY
 
 **No data for this section exists as of registration.**
 
@@ -1024,6 +1038,22 @@ whose lock held, as the suite analysis defines it.
 - "not after `copy`" mixes two histories (after the stock checks, and after `reduce`), and the
   suites ran `reduce` 1–2 minutes after `copy` on an already-warm card;
 - `copy` is the only neighbour tested, so any other kind of order effect is not.
+
+### ✅ Result, collected 2026-09-24: WORKLOAD PROPERTY
+
+`data/frequency-sweeps/5060ti-reduce-order-20260924/`. Nothing above was edited.
+
+**`reduce` optima:**
+- 1702 (sweep 1, not after `copy`);
+- 1702 (sweep 4, after `copy`);
+- 1852 (sweep 5, not after `copy`);
+- 1702 (sweep 8, after `copy`).
+
+**All four are above 1545**, so the registered outcome is *workload property*. `copy` optima in the
+same session were 1545, 1545, 1702 and 1545. The offset follows the workload, not its position.
+
+⚠️ The curves are flat near the top: every runner-up is within 0.9–2.6% of its optimum. So "above
+1545" held 4 of 4, but the exact bin (1702 against 1852) is not stable. n = 2 per position, one chip.
 
 ---
 

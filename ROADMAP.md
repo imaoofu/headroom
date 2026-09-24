@@ -820,7 +820,9 @@ four live runs on 2026-09-23, all ending PASS, and ten defects were found and fi
    records whether it was. Test it on the 5060 Ti with a short screen timeout before any run
    depends on it. Until then an unattended run sets Screen: Never.
 3. **Build rung C** and run it, to complete §1's four-rung test.
-4. **Re-run the activity A/B** with a load trigger that starts before the first measured window.
+4. ✅ ~~**Re-run the activity A/B**~~ **Done 2026-09-24**, trigger fixed: registered verdict NOT SUPPORTED FOR THIS
+   PROXY. Same morning, unattended: 4m (§9, `reduce` residual is a WORKLOAD PROPERTY) and 4n (the 1627 MHz
+   `membw` stall is a crossbar step).
 5. ✅ ~~**The afterburner decoder cannot read a 3-slot store** or pair offsets with the next record's
    base~~ **Done 2026-09-24**: `--lenient --pairing next`, drafted by the local model (L1),
    reviewed and tested. The default reading is unchanged.
