@@ -94,7 +94,9 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(len(record['steps']), 63)
         self.assertEqual(record['selectedRuns'], [r['id'] for r in self.catalog['runs']])
         self.assertEqual(record['revert']['coreMhz'], 1763)
-        self.assertTrue(record['afterRevertHumanCompleted'])
+        # Unattended (2026-09-24): no end-of-session prompt, so nothing waits for a person.
+        self.assertIsNone(self.catalog.get('afterRevertHuman'))
+        self.assertFalse(record['afterRevertHumanCompleted'])
         self.assertTrue(record['finalState']['logging']['stoppedVerified'])
         self.assertTrue(record['finalState']['clocks']['verified'])
         self.assertEqual(record['finalState']['clocks']['readbackSmClockMhz'], 1763)
@@ -240,11 +242,28 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(values[-1]['color'], 'Red')
 
     def test_stock_drift_gate_fails_and_reverts(self):
+        # A blocking gate (the default) stops the session and reverts.
+        plan = copy.deepcopy(self.catalog)
+        for run in plan['runs']:
+            for step in run['steps']:
+                step.pop('blocking', None)
         self.mock['driftPct'] = 1.6
-        proc, record = self.engine()
+        proc, record = self.engine(plan)
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn('stock-4/stock-return', [s['key'] for s in record['steps'] if s['verdict'] == 'FAIL'])
         self.assertEqual(record['revert']['coreMhz'], 1763)
+
+    def test_nonblocking_drift_gate_records_and_continues(self):
+        # Session D's gates are non-blocking so an unattended session runs to the end; the breach
+        # is recorded, and the scorer applies the same 1.5% rule afterwards.
+        self.mock['driftPct'] = 1.6
+        proc, record = self.engine()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(record['status'], 'PASS')
+        gates = [s for s in record['steps'] if s['key'].endswith('/stock-return')]
+        self.assertEqual([g['key'] for g in gates], ['stock-4/stock-return', 'stock-6/stock-return'])
+        self.assertTrue(all(g['witness']['exceeded'] for g in gates))
+        self.assertIn('Recorded; not stopping.', proc.stdout)
 
     def test_stock_clocks_after_applied_profile_fail_witness(self):
         self.mock['witnesses']['3']['core'] = 1763

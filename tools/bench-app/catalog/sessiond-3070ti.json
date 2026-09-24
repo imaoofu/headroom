@@ -459,7 +459,8 @@
             "conv",
             "gemm"
           ],
-          "maxMedianAbsPct": 1.5
+          "maxMedianAbsPct": 1.5,
+          "blocking": false
         }
       ]
     },
@@ -882,7 +883,8 @@
             "conv",
             "gemm"
           ],
-          "maxMedianAbsPct": 1.5
+          "maxMedianAbsPct": 1.5,
+          "blocking": false
         }
       ]
     },
@@ -930,6 +932,5 @@
         }
       ]
     }
-  ],
-  "afterRevertHuman": "Uninstall MSI Afterburner and delete its Profiles folder. Confirm the USB has results and logs before taking it home."
+  ]
 }

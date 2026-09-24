@@ -172,15 +172,16 @@ plan = dict(
                 witness('Verify stock core and memory under load', *STOCK)
             ])
     ],
-    afterRevertHuman='Uninstall MSI Afterburner and delete its Profiles folder. Confirm the USB has results and logs before taking it home.'
+    # No afterRevertHuman: the session must end by itself (unattended, 2026-09-24), and Afterburner
+    # stays installed until the results are checked, in case anything needs re-running.
 )
 plan['runs'][4]['steps'].append(step('stock-return', 'gate-drift',
     'Check stock return across 12 workloads', firstRun='stock-1',
-    lastRun='stock-4', workloads=WORKLOADS, maxMedianAbsPct=1.5))
+    lastRun='stock-4', workloads=WORKLOADS, maxMedianAbsPct=1.5, blocking=False))
 [stock6_run] = [r for r in plan['runs'] if r['id'] == 'stock-6']
 stock6_run['steps'].append(step('stock-return', 'gate-drift',
     'Check stock return stock-4 to stock-6 (8a scoreability)', firstRun='stock-4',
-    lastRun='stock-6', workloads=WORKLOADS, maxMedianAbsPct=1.5))
+    lastRun='stock-6', workloads=WORKLOADS, maxMedianAbsPct=1.5, blocking=False))
 
 if __name__ == '__main__':
     (HERE / 'sessiond-3070ti.json').write_text(json.dumps(plan, indent=2) + '\n', encoding='utf-8')

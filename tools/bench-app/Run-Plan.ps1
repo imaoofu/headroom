@@ -376,14 +376,28 @@ function Check-StockDrift($step) {
     if ($DryRun) {
         $pct=0.0
         if ($null -ne $script:mock.driftPct) { $pct=[double]$script:mock.driftPct }
-        if ($pct -gt $step.maxMedianAbsPct) { throw "Stock drift $pct% exceeds $($step.maxMedianAbsPct)%." }
-        return @{ worstMedianAbsPct=$pct; perWorkload=@{} }
+        if ($pct -gt $step.maxMedianAbsPct) {
+            if ($step.blocking -eq $false) { Write-Host "WARNING: stock drift $pct% exceeds $($step.maxMedianAbsPct)%. Recorded; not stopping."; return @{ worstMedianAbsPct=$pct; perWorkload=@{}; exceeded=$true } }
+            throw "Stock drift $pct% exceeds $($step.maxMedianAbsPct)%."
+        }
+        return @{ worstMedianAbsPct=$pct; perWorkload=@{}; exceeded=$false }
     }
     $first=@($script:record.steps | Where-Object { $_.key -eq "$($step.firstRun)/collect" -and $_.verdict -eq 'PASS' } | Select-Object -Last 1)
     $last=@($script:record.steps | Where-Object { $_.key -eq "$($step.lastRun)/collect" -and $_.verdict -eq 'PASS' } | Select-Object -Last 1)
     if ($first.Count -ne 1 -or $last.Count -ne 1) { throw 'Stock drift needs both completed suite directories.' }
     $measurement=Measure-StockDrift $first[0].witness.directory $last[0].witness.directory $step.workloads
-    if ($measurement.worstMedianAbsPct -gt $step.maxMedianAbsPct) { throw "Worst stock return median absolute change $($measurement.worstMedianAbsPct)% exceeds $($step.maxMedianAbsPct)%." }
+    if ($measurement.worstMedianAbsPct -gt $step.maxMedianAbsPct) {
+        # "blocking": false records the breach and carries on. Added 2026-09-23 for the unattended
+        # 3070 Ti Session D: a stop here would lose every later run, while the scorer applies the
+        # same 1.5% rule afterwards and marks the prediction NOT SCOREABLE on its own.
+        if ($step.blocking -eq $false) {
+            Write-Host "WARNING: worst stock return median absolute change $($measurement.worstMedianAbsPct)% exceeds $($step.maxMedianAbsPct)%. Recorded; not stopping."
+            $measurement.exceeded=$true
+            return $measurement
+        }
+        throw "Worst stock return median absolute change $($measurement.worstMedianAbsPct)% exceeds $($step.maxMedianAbsPct)%."
+    }
+    $measurement.exceeded=$false
     return $measurement
 }
 function Run-Step($step) {
