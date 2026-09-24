@@ -43,12 +43,33 @@ It found four defects, all fixed the same evening:
 - the resume offer could pick a `.state.json` or `.control.json` sibling;
 - a resumed session showed FAIL while running.
 
+**Later the same evening, three more live sessions, all PASS** (`bench-session-20260923-*.json`
+on the kit; copied to `Documents\headroom-results-backup\kit-results-20260923`):
+
+| session | machine | what it tested for the first time |
+|---|---|---|
+| 21:26 | 5060 Ti | Job 16's final check **with HWiNFO open**: logging `stopped (verified)`; preflight applying the stock slot itself before the power gate |
+| 21:56 | **3070 Ti** | `shakedown-3070ti.json`, 23/23 on the shop machine: Edit 1 locked 1395 read **0.850 V**, Edit 2 peaked **1515**, C8 fine sweep 10/10 locked |
+| 22:25 | 5060 Ti | **Sensors already open before Start**: no second launch, the Sensors step passed **by itself in 0.7 s** (`confirmedBy: auto`), and the session ran start to finish untouched |
+
+And six more defects, found by those runs, all fixed that night:
+- a tuned profile left live failed the power gate at step 1. Preflight now checks the hash, applies stock, then gates;
+- the step line wrapped and was clipped;
+- **an `nvidia-smi` stderr line in the refresh tick raised a modal .NET dialog** that froze the window (PS 5.1 under Stop, even with `2>$null`). The tick is guarded and logs to `<session>.window-errors.txt`;
+- **the resume offer ignored which card a session was for**. On the 3070 Ti it offered the 5060 Ti's failed session, and the cleanup then applied that plan's revert slot, which is Edit 2 there;
+- the progress bar stopped one short of full;
+- ⛔ **the 3070 Ti stock witness ceiling of 1900 MHz was 10 MHz above a real reading** (1890; 1935 read back after reset). It is now 2115, the card's maximum.
+
+⚠️ **The quiet gate sums SM across processes.** On this PC the Claude desktop app (1-3%) and `dwm` (~1%)
+read 6% at 22:25. HWiNFO has no GPU context and does not appear in `pmon`. The 3070 Ti read 0%.
+
 ⚠️ **Still not tested live:**
 - the drift gate;
 - Stop in the middle of a suite;
 - the manual HWiNFO fallback;
 - the run-list chooser with several matching lists;
-- **anything on a shop machine or on the 3070 Ti catalog itself**.
+- **a full 12-workload suite through the app, on any machine** (Session D is the first);
+- auto-continue with HWiNFO **launched by the app** rather than opened beforehand.
 
 A shop machine may differ in ways this PC cannot show.
 
