@@ -360,7 +360,9 @@ class BenchAppTests(unittest.TestCase):
         mock = self.write('mock.json', self.mock)
         proc = self.ps('Bench-Window.ps1', '-DryRun', '-MockPath', mock, '-AutoCloseSeconds', '1')
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        self.assertIn('CATALOG LOADED: 7 runs, 7 preselected.', proc.stdout)
+        # 6 of 7 since 2026-09-23: C8 runs the evening before in shakedown-3070ti.json, so the
+        # Session D catalog no longer preselects it.
+        self.assertIn('CATALOG LOADED: 7 runs, 6 preselected.', proc.stdout)
 
 
 if __name__ == '__main__':
