@@ -65,12 +65,25 @@ Result: 5 of 9 attempts passed; L1 and L2 installed after review, L3 kept as a r
    in Claude's own spec or check.
 3. Commit only what review accepts, with the review in the commit message.
 
-## Candidates for later queues, not yet specced
+## Is there more for it to do? Not right now, and why (2026-09-24)
 
-A job goes into a queue only once its spec and acceptance check exist and have been run against a
-correct answer.
-- Draft claims for §5.7.7 from the L3 inventory. The check is `audit_claims.py` itself.
-- Tests for `tools/bench-app/Hwinfo-Csv.ps1`'s column choice, from the iGPU case of 2026-09-23.
-  PowerShell 5.1, which is a known weak spot for the model; that is worth measuring in its own right.
-- A `--replicate` mode for `analysis/score_session_d.py` (§8a). ⚠️ **It is scoring code for a
-  registered prediction, so Claude writes it**; the model could draft its test fixtures.
+Raymond asked for more jobs, and whether we were wasting time. **The model's time was never the
+constraint.** The whole queue took ~8 min of generation. Each job cost ~20–30 min of spec and
+acceptance script, plus ~10 min of review. **A job is worth queueing only when it saves more than
+that.** Keeping the card busy is not a reason.
+
+Checked and dropped the same day:
+- **Claims for §5.7.7.** Once L3 had shown which values were real, their sources took two minutes
+  to find, so Claude wrote the two claims directly (`5.7.7-collection-times`,
+  `5.7.7-memonly-out-of-band-power`). A spec would have cost more than the work.
+- **Tests for `Hwinfo-Csv.ps1`.** It already has four tests, including the iGPU case, so the job
+  would mostly measure the model's PowerShell.
+
+**What would justify the next queue:** a large, mechanical job with an exact check. Examples:
+- pinning a whole under-covered section whose sources are already known (§5.5 sits at 15 of 352);
+- a batch of data READMEs from generated tables;
+- **scoring fixtures for Session D's section 8, once its data exists.** The scorer itself is Claude's.
+
+**Also open:** the auditor's `numbersIn` counts clock times, section references and range hyphens as
+numbers (ROADMAP item 7). That is a judgement about what the auditor should count, so it is
+Claude's, not the model's.

@@ -3141,3 +3141,52 @@ def crossbarElasticity():
     a = gain / math.log(high["crossbar"] / low["crossbar"])
     b = gain / math.log(high["achieved"] / low["achieved"])
     return f"elasticity {a:.2f}, against {b:.2f} for the graphics clock"
+
+
+# --------------------------------------------------------------------------------------
+# 5.7.7 Caveats. Pinned 2026-09-24 from the local model's L3 inventory, which showed the section's
+# other "numbers" are clock times, labels, range hyphens or restatements of 5.4.5 and 5.7.2.
+# --------------------------------------------------------------------------------------
+
+CAVEAT_MEMBW = {"stock": "oc-comparison-20260819/20260819-143337_5060ti-kittest-stock-membw-stock_sweep.csv",
+                "full tuned": "membw-anomaly-20260819/20260819-204233_5060ti-oc-membw-anomaly_sweep.csv",
+                "memory-only": "membw-anomaly-20260819/20260820-181307_5060ti-memonly-membw-anomaly_sweep.csv"}
+
+
+@claim("5.7.7-collection-times", PAPER, "5.7.7")
+def caveatCollectionTimes():
+    """The three start times are read from the sweeps' own filenames (YYYYMMDD-HHMMSS), and the
+    sweep() calls record them as this claim's provenance."""
+    stamps = {}
+    for name, path in CAVEAT_MEMBW.items():
+        sweep(path)
+        stamp = path.split("/")[-1][:15]
+        stamps[name] = (f"{stamp[:4]}-{stamp[4:6]}-{stamp[6:8]}", f"{stamp[9:11]}:{stamp[11:13]}")
+    stock, tuned, memonly = stamps["stock"], stamps["full tuned"], stamps["memory-only"]
+    same = "the same day" if tuned[0] == stock[0] else tuned[0]
+    return (f"stock at {stock[1]} on {stock[0]}, full tuned at {tuned[1]} {same}, "
+            f"memory-only at {memonly[1]} the next")
+
+
+@claim("5.7.7-memonly-out-of-band-power", PAPER, "5.7.7")
+def caveatOutOfBandPower():
+    """Power from sweep(), as every other 5.7 claim. Temperature is not in the loader, so it is read
+    from the same two CSVs' temperature_avg_c column; sweep() has already logged both files."""
+    import csv
+    from audit_claims import REPO_ROOT
+    stock = "oc-comparison-20260819/20260819-142844_5060ti-kittest-stock-gemm-stock_sweep.csv"
+    memonly = "membw-anomaly-20260819/20260820-183206_5060ti-memonly-gemm_sweep.csv"
+
+    def temperature(path, target):
+        with (REPO_ROOT / "data" / "frequency-sweeps" / path).open(encoding="utf-8-sig", newline="") as handle:
+            rows = [row for row in csv.DictReader(handle) if int(row["target_frequency_mhz"]) == target]
+        if len(rows) != 1:
+            raise ValueError(f"{path}: expected one {target} MHz row, found {len(rows)}")
+        return float(rows[0]["temperature_avg_c"])
+
+    power, heat = [], []
+    for target in (2475, 2625):
+        power.append(abs(sweep(memonly)[target]["power"] / sweep(stock)[target]["power"] - 1) * 100)
+        heat.append(temperature(memonly, target) - temperature(stock, target))
+    return (f"memory-only drawing {power[0]:.1f}% and {power[1]:.1f}% more power than stock "
+            f"with only {heat[0]:.1f} and {heat[1]:.1f} C to account for it")
