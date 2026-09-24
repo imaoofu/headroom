@@ -81,6 +81,19 @@ function Write-Control($name,$value) {
     $control.$name=$value
     [IO.File]::WriteAllText($path,($control | ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
 }
+function Write-WindowError($err) {
+    # The refresh tick must never raise the modal .NET dialog: it freezes the display until
+    # someone clicks it, which on an unattended run is never. Show it and keep a record instead.
+    # The engine is a separate process and is unaffected either way.
+    $key=$err.Exception.Message+'  '+($err.ScriptStackTrace -replace "`r?`n",' <- ')
+    try { $errorLabel.Text='Window refresh error (measurement unaffected): '+$err.Exception.Message } catch { }
+    if ($key -eq $script:lastWindowError) { return }   # a repeating error is written once, not every second
+    $script:lastWindowError=$key
+    try {
+        $path=if ($script:session) { $script:session+'.window-errors.txt' } else { Join-Path ([IO.Path]::GetTempPath()) 'headroom-bench-window-errors.txt' }
+        [IO.File]::AppendAllText($path,(Get-Date).ToString('s')+'  '+$key+"`r`n",(New-Object Text.UTF8Encoding($false)))
+    } catch { }
+}
 function Update-Row($item) {
     $run=$item.Tag
     $custom=-not $script:original.ContainsKey($run.id)
@@ -279,10 +292,15 @@ $finished=New-Object Windows.Forms.TextBox; $finished.Multiline=$true; $finished
 $output=New-Object Windows.Forms.TextBox; $output.Multiline=$true; $output.ReadOnly=$true; $output.ScrollBars='Vertical'; $output.Font=New-Object Drawing.Font('Consolas',8)
 $output.SetBounds(12,592,1078,112); $form.Controls.Add($output)
 $timer=New-Object Windows.Forms.Timer; $timer.Interval=1000
-$timer.Add_Tick({
+$timer.Add_Tick({ try {
     if ($script:engine -and -not $script:engine.HasExited -and -not $DryRun) {
-        $smi=@(& nvidia-smi '--query-gpu=clocks.sm,clocks.mem,power.draw,temperature.gpu,utilization.gpu' '--format=csv,noheader,nounits' 2>$null)
-        if ($LASTEXITCODE -eq 0 -and $smi.Count -gt 0) { $script:lastSmiLine=[string]$smi[0] }
+        # PS 5.1 under Stop turns ANY nvidia-smi stderr line into a terminating error, even with
+        # 2>$null. Unguarded here it raised a modal .NET dialog ("...set to Stop: Access is denied")
+        # at the end of the 2026-09-23 21:26 live run and froze the window. A failed read keeps the last line.
+        try {
+            $smi=@(& nvidia-smi '--query-gpu=clocks.sm,clocks.mem,power.draw,temperature.gpu,utilization.gpu' '--format=csv,noheader,nounits' 2>$null)
+            if ($LASTEXITCODE -eq 0 -and $smi.Count -gt 0) { $script:lastSmiLine=[string]$smi[0] }
+        } catch { }
     }
     if ($script:outputPath -and (Test-Path $script:outputPath)) {
         $lines=@(Get-Content $script:outputPath -Tail 100 -ErrorAction SilentlyContinue)
@@ -347,7 +365,7 @@ $timer.Add_Tick({
             elseif ($record.operatorState -eq 'Stopping and reverting') { Set-BenchStatus 'Stopping and reverting' }
         } catch { }
     }
-})
+} catch { Write-WindowError $_ } })
 $timer.Start()
 $form.Add_FormClosing({
     if ($script:engine -and -not $script:engine.HasExited) {
