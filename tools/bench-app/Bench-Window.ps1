@@ -334,7 +334,13 @@ if ($AutoCloseSeconds -gt 0) {
 }
 $resultDir=Join-Path $script:kit 'results'
 if (Test-Path $resultDir) {
-    $pending=@(Get-ChildItem $resultDir -Filter 'bench-session-*.json' -File | Sort-Object LastWriteTime -Descending | Where-Object { (Get-Content $_.FullName -Raw | ConvertFrom-Json).status -ne 'PASS' } | Select-Object -First 1)
+    # Only the session file itself: its .state.json and .control.json siblings also match the
+    # wildcard and are often written in the same second (found live, 2026-09-23).
+    $pending=@(Get-ChildItem $resultDir -Filter 'bench-session-*.json' -File |
+        Where-Object { $_.Name -match '^bench-session-\d{8}-\d{6}\.json$' } |
+        Sort-Object LastWriteTime -Descending |
+        Where-Object { try { (Get-Content $_.FullName -Raw | ConvertFrom-Json).status -ne 'PASS' } catch { $false } } |
+        Select-Object -First 1)
     if ($pending.Count -gt 0) {
         $choice=[Windows.Forms.MessageBox]::Show(('Resume interrupted session '+$pending[0].Name+'?'),'Headroom Bench',[Windows.Forms.MessageBoxButtons]::YesNo)
         if ($choice -eq [Windows.Forms.DialogResult]::Yes) { $script:resumeSession=$pending[0].FullName; $status.Text='Resume ready. Press Start.' }

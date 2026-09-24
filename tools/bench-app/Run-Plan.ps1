@@ -195,6 +195,7 @@ function Stop-Log {
 function Run-Witness($step) {
     $locked = $false
     $samples = @()
+    $voltageError = ''
     try {
         if ($step.lockMhz -and -not $DryRun) {
             & nvidia-smi -lgc "$($step.lockMhz),$($step.lockMhz)" | Out-Host
@@ -217,7 +218,9 @@ function Run-Witness($step) {
                     $values = @(Get-Smi 'clocks.sm,clocks.mem,power.draw')
                     $voltageSample=$null
                     if ($step.voltageMin -and $script:activeLog) {
-                        try { $voltageSample=Get-HwinfoCoreVoltage $script:activeLog } catch { }
+                        # Keep the reader's own error: swallowing it turned "two voltage columns"
+                        # into "too few samples" on the first live run, 2026-09-23.
+                        try { $voltageSample=Get-HwinfoCoreVoltage $script:activeLog } catch { if (-not $voltageError) { $voltageError=$_.Exception.Message } }
                     }
                     $samples += [pscustomobject]@{ core=[double]$values[0]; memory=[double]$values[1]; power=[double]$values[2]; voltage=$voltageSample }
                     Start-Sleep -Seconds 1
@@ -240,7 +243,11 @@ function Run-Witness($step) {
             if ($DryRun) { $voltage=Read-Voltage $script:activeLog }
             else {
                 $loaded=@($steady | Where-Object { $null -ne $_.voltage -and $_.voltage -gt 0 } | ForEach-Object { [double]$_.voltage } | Sort-Object)
-                if ($loaded.Count -lt 4) { throw 'Too few loaded HWiNFO voltage samples for the witness.' }
+                if ($loaded.Count -lt 4) {
+                    $why=''
+                    if ($voltageError) { $why=" First reader error: $voltageError" }
+                    throw ("Too few loaded HWiNFO voltage samples for the witness ($($loaded.Count))." + $why)
+                }
                 $voltage=$loaded[[int][math]::Floor($loaded.Count/2)]
             }
             $script:lastWitness.voltageV=$voltage
@@ -410,6 +417,8 @@ try {
         }
         if (-not $script:resumeRunId) { throw 'No interrupted run to resume.' }
         $script:resumeSuffix='-resume-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
+        # A resumed session is running again; the earlier FAIL stays in its step history.
+        $script:record.status='RUNNING'; $script:record.error=$null; $script:record.end=$null
     } else {
         if (Test-Path $SessionPath) { throw "Refusing to overwrite session: $SessionPath" }
         $script:record=[ordered]@{ schemaVersion=1; planHash=$planHash; start=(Get-Date).ToString('o'); end=$null; status='RUNNING'; dryRun=[bool]$DryRun; selectedRuns=@($plan.runs | ForEach-Object id); customizations=@($plan.customizations); driver=$null; power=$null; profileHash=$null; supportedClockRange=$null; progress=$null; live=$null; steps=@(); revert=$null; error=$null; afterRevertHumanCompleted=$false }

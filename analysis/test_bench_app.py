@@ -228,6 +228,40 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertAlmostEqual(float(proc.stdout.strip()), expected)
 
+    def read_voltage(self, header, rows):
+        path = self.dir / 'igpu.csv'
+        with path.open('w', encoding='cp1252', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(rows)
+        helper = str(APP / 'Hwinfo-Csv.ps1').replace("'", "''")
+        data = str(path).replace("'", "''")
+        args = [PS, '-NoProfile']
+        if os.name == 'nt':
+            args += ['-ExecutionPolicy', 'Bypass']
+        return subprocess.run(args + ['-Command', f". '{helper}'; Get-HwinfoCoreVoltage '{data}'"],
+                              capture_output=True, text=True, timeout=20)
+
+    def test_hwinfo_voltage_reader_ignores_integrated_gpu_column(self):
+        # The first live run, 2026-09-23, on a Ryzen 9700X: its Radeon iGPU adds
+        # "GPU Core Voltage (VDDCR_GFX) [V]" beside the NVIDIA "GPU Core Voltage [V]". The reader
+        # demanded exactly one prefix match and failed every sample. Worse, the iGPU read 0.725 V,
+        # inside the 5060 Ti witness window, so picking it would have passed on the wrong GPU.
+        header = ['Date', 'Time', 'GPU Core Voltage (VDDCR_GFX) [V]', 'GPU Clock [MHz]',
+                  'GPU Core Voltage [V]', 'GPU Clock [MHz]']
+        rows = [['23.9.2026', '18:51:0%d' % i, '0.725', '600.0', '0.720', '1537.0'] for i in range(5)]
+        proc = self.read_voltage(header, rows)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertAlmostEqual(float(proc.stdout.strip()), 0.720)
+
+    def test_hwinfo_voltage_reader_picks_the_loaded_gpu_among_same_named_columns(self):
+        header = ['Date', 'Time', 'GPU Core Voltage [V]', 'GPU Clock [MHz]',
+                  'GPU Core Voltage [V]', 'GPU Clock [MHz]']
+        rows = [['23.9.2026', '18:51:0%d' % i, '0.900', '350.0', '0.720', '1537.0'] for i in range(5)]
+        proc = self.read_voltage(header, rows)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertAlmostEqual(float(proc.stdout.strip()), 0.720)
+
     def test_hwinfo_manual_fallback_requires_file_growth(self):
         path = self.dir / 'log.csv'
         path.write_text('Date,Voltage\n', encoding='ascii')
