@@ -47,3 +47,23 @@ CLAUDE.md records. `$args` splatting in `Run-Child.ps1` works under 5.1 (tested)
 
 **Still unverified:** everything live. A card-specific 5060 Ti catalog is needed before the first
 real run here.
+
+## First live run, 2026-09-23 — PASS after four more fixes
+
+Raymond launched it from the USB on the local 5060 Ti with `catalog/localtest-5060ti.json`, and
+Claude read the session record after each attempt. **HWiNFO 8.52-6060's log button was driven
+automatically, eight times.** That was the largest unknown. Two resumes were needed and both
+worked. Four defects surfaced, none of which the dry-run tests could reach, and each was fixed and
+re-run:
+- ⛔ a second "GPU Core Voltage" column from the CPU's integrated graphics made the reader fail on
+  every sample. **The iGPU read 0.725 V, inside the witness window.** Two tests were added; the
+  first fails on the old code;
+- ⛔ PS 5.1 lost `ExitCode` because `Handle` was read late, so a suite that completed 13/13 was
+  reported as failed. Reproduced in isolation;
+- the resume offer matched the session's `.state.json` and `.control.json` siblings;
+- a resumed session kept status FAIL while running.
+
+🔑 **Every one of them was invisible to dry runs**, because the dry path mocks exactly the parts that
+broke: the CSV reader on a real multi-GPU log, and a real process exit. **That is why the live run
+was required before any shop use.** Not yet tested live: the drift gate, Stop mid-suite, the
+manual HWiNFO fallback, and anything on a shop machine.
