@@ -9,7 +9,35 @@ if (-not (Test-Path (Join-Path $script:kit 'Collect.ps1'))) {
     if ($DryRun) { $script:kit=[IO.Path]::GetTempPath() }
     else { throw 'Bench-Window must run from a synced USB kit.' }
 }
-if (-not $CatalogPath) { $CatalogPath=Join-Path $PSScriptRoot 'catalog\sessiond-3070ti.json' }
+if (-not $CatalogPath -and $DryRun) { $CatalogPath=Join-Path $PSScriptRoot 'catalog\sessiond-3070ti.json' }
+if (-not $CatalogPath) {
+    # Pick the catalog written for THIS card: its card.name must equal nvidia-smi's GPU name.
+    # Added at review 2026-09-23: the window used to load the 3070 Ti catalog on every machine.
+    $gpuName=([string]((& nvidia-smi --query-gpu=name --format=csv,noheader) | Select-Object -First 1)).Trim()
+    $candidates=@()
+    foreach ($file in @(Get-ChildItem (Join-Path $PSScriptRoot 'catalog') -Filter '*.json' | Sort-Object Name)) {
+        try {
+            $candidate=Get-Content $file.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($candidate.card.name -eq $gpuName) { $candidates+=[pscustomobject]@{ Path=$file.FullName; Title=[string]$candidate.title } }
+        } catch { }
+    }
+    if ($candidates.Count -eq 0) {
+        [void][System.Windows.Forms.MessageBox]::Show("No run list on this USB is written for this card ($gpuName). Nothing was changed. Ask Claude for one.", 'Headroom Bench')
+        exit 2
+    }
+    if ($candidates.Count -eq 1) { $CatalogPath=$candidates[0].Path }
+    else {
+        $pick=New-Object System.Windows.Forms.Form
+        $pick.Text="Headroom Bench: choose a run list for $gpuName"; $pick.Width=640; $pick.Height=260; $pick.StartPosition='CenterScreen'
+        $box=New-Object System.Windows.Forms.ListBox; $box.Left=12; $box.Top=12; $box.Width=600; $box.Height=150
+        foreach ($c in $candidates) { [void]$box.Items.Add($c.Title) }
+        $box.SelectedIndex=0
+        $ok=New-Object System.Windows.Forms.Button; $ok.Text='Open'; $ok.Left=12; $ok.Top=172; $ok.DialogResult=[System.Windows.Forms.DialogResult]::OK
+        $pick.Controls.Add($box); $pick.Controls.Add($ok); $pick.AcceptButton=$ok
+        if ($pick.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { exit 2 }
+        $CatalogPath=$candidates[$box.SelectedIndex].Path
+    }
+}
 $script:catalog=Get-Content $CatalogPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $script:original=@{}
 $script:originalIndex=@{}

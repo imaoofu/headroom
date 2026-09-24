@@ -103,6 +103,7 @@ $files = @(
     @{ From = "tools\bench-app\Pmon-Gate.ps1"; To = "tools\bench-app\Pmon-Gate.ps1" },
     @{ From = "tools\bench-app\Test-Plan.ps1"; To = "tools\bench-app\Test-Plan.ps1" },
     @{ From = "tools\bench-app\catalog\sessiond-3070ti.json"; To = "tools\bench-app\catalog\sessiond-3070ti.json" },
+    @{ From = "tools\bench-app\catalog\localtest-5060ti.json"; To = "tools\bench-app\catalog\localtest-5060ti.json" },
     @{ From = "tools\bench-app\catalog\build_sessiond.py"; To = "tools\bench-app\catalog\build_sessiond.py" },
     @{ From = "tools\bench-app\catalog\SCHEMA.md"; To = "tools\bench-app\catalog\SCHEMA.md" },
     @{ From = "tools\bench-app\README.md"; To = "tools\bench-app\README.md" }
