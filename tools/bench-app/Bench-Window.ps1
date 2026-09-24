@@ -316,6 +316,9 @@ $timer.Add_Tick({ try {
             $all=if ($record.progress) { [int]$record.progress.total } else { 1 }
             $done=if ($record.progress) { [int]$record.progress.index-1 } else { 0 }
             $progress.Maximum=[math]::Max(1,$all); $progress.Value=[math]::Min($done,$progress.Maximum)
+            # progress.index is the step in hand, so index-1 never counts the last step: a PASS
+            # session ended at 22 of 23 (3070 Ti shakedown, 2026-09-23). Full once it has passed.
+            if ($record.status -eq 'PASS' -and $record.finalState) { $progress.Value=$progress.Maximum }
             $attemptStart=if ($record.attemptStart) { [datetime]$record.attemptStart } else { [datetime]$record.start }
             $current=@($record.steps | Where-Object { $_.verdict -eq 'RUNNING' -and [datetime]$_.start -ge $attemptStart } | Select-Object -Last 1)
             if ($current.Count -gt 0) { $script:stepBase=('Step {0} of {1}: {2}' -f ($done+1),$all,$current[0].name) }
