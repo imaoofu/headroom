@@ -569,6 +569,38 @@ the ledger that summarises it drifted. This time the runsheet even said *"predic
 registered in §4, do not change them"* while describing the opposite edit. **Whenever a runsheet
 changes a design, amend this file in the same commit.**
 
+### ⛔ AMENDMENT 2, recorded 2026-09-23: the curves as BUILT, before collection
+
+**No Session D data exists as of this amendment.** The three curves were built at the machine on
+2026-09-23 and decoded from the saved store: `data/afterburner-profiles/3070ti-profiles-20260923/`
+(the curve file's SHA-256 begins `1b08c2d0854460ff`). They differ from the runsheet in three places,
+all forced or found by the build:
+
+| | runsheet | **as built** |
+|---|---|---|
+| Edit 1, ≤0.825 V | capped at 1200 | ✅ **1200 from 725 to 825 mV**, the whole floor band (0.812–0.825 V) |
+| Edit 1, 0.831–0.869 V | "unchanged", at stock | ⛔ **a forced ramp below stock**: 1215, 1275, 1335, 1395, 1455, 1515, 1575 (stock 1530 → 1620), rejoining stock at 875 mV |
+| Edit 1, 718.75 mV | stock 1185 | ⚠️ **1200, 15 MHz above stock**, a light-load point below the floor |
+| Edit 2, 0.825 V | stock 1515 | **1500**, 15 MHz under stock |
+| Edit 2, ≥0.831 V | flat 1500 | ✅ flat 1500 |
+
+**Why the ramp:** the driver, or Afterburner, would not accept a single step from 1200 at 825 mV to
+stock at 831. Inferred from the file, not documented: **no point may sit more than ~60 MHz below its
+right-hand neighbour.** The first build put the ramp below 825 mV, inside the floor band, and was
+rebuilt so the band stays flat.
+
+**The predictions do not change, and here is why each still applies:**
+- **Edit 1's floor end is 1200 MHz**, at every code in the floor band. The runsheet's prediction,
+  **median 1485 → 1170 or 1275**, was made for exactly that floor end.
+- **Edit 2's floor end moves from ~1515 to 1500** at 825 mV, inside the restated prediction's
+  **~1485–1500 MHz achieved** band. Its dose is unchanged: the card's ~1763 MHz ceiling is cut to 1500.
+
+⚠️ **What must be said when this is reported:** Edit 1 is **not a floor-only edit.** It also lowers
+0.831–0.869 V, which is part of the region Edit 2 edits. The contrast that survives is the one the
+design needs: **Edit 1 changes the clock at the floor voltage (1485–1515 → 1200) and Edit 2 does
+not** (at most −15 MHz). The 718.75 mV point is outside the safe-by-construction envelope by 15 MHz,
+the same kind of exception as rung B's 650–690 mV points, and is recorded rather than rebuilt.
+
 ## 4c. 2060 Super — the boundary condition, made decidable or shown not to be
 
 > **Reshaping the floor region on a card whose voltage leaves the floor 6 mV at a time will produce

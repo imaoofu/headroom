@@ -1,5 +1,10 @@
 # Session D — the commands, in order
 
+⛔ **SUPERSEDED FOR USE AT THE MACHINE, 2026-09-23.** The curves are now built and decoded, and the
+as-built Edit 1 differs from §3 and §5 below (a forced ramp above 0.825 V; see `REGISTERED-PREDICTIONS.md`
+§4b, Amendment 2). **Run Session D from the Commands section of `GPU-WORKLIST-3070TI.md`.** This page is
+kept for the reasoning behind each step.
+
 **RTX 3070 Ti, the causal replication.** Written 2026-09-20 for use at the machine.
 Reasoning, predictions and what each outcome means: `SESSION-D-RUNSHEET.md`, beside this file on
 the kit. **This page is only the commands.**
