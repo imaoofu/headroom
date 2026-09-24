@@ -508,6 +508,385 @@
       ]
     },
     {
+      "id": "finefloor-pair",
+      "name": "8c: stock fine pair, ascending then descending (exploratory)",
+      "why": "Separates sweep direction from day-to-day drift, which C8 against 2026-08-27 confounds.",
+      "minutes": 12,
+      "priority": 5,
+      "preselected": true,
+      "locked": true,
+      "requires": [
+        "stock-4"
+      ],
+      "group": "sessiond-section8",
+      "finalRun": false,
+      "steps": [
+        {
+          "id": "profile",
+          "type": "apply-profile",
+          "name": "Apply profile P1",
+          "estimatedMinutes": 0.2,
+          "slot": 1
+        },
+        {
+          "id": "witness",
+          "type": "witness",
+          "name": "Verify stock under load",
+          "estimatedMinutes": 0.7,
+          "workload": "gemm",
+          "iterations": 400,
+          "coreMin": 1700,
+          "coreMax": 2115,
+          "memoryMin": 9200,
+          "memoryMax": 9550
+        },
+        {
+          "id": "log-start-finefloor-asc2",
+          "type": "hwinfo-start",
+          "name": "Start HWiNFO log",
+          "estimatedMinutes": 0.3,
+          "path": "kit:/results/hwinfo-rtx3070ti-sessiond-finefloor-asc2.csv"
+        },
+        {
+          "id": "sweep-finefloor-asc2",
+          "type": "sweep",
+          "name": "Ascending 1200-1590 MHz gemm sweep, 10 points",
+          "estimatedMinutes": 5,
+          "label": "rtx3070ti-sessiond-finefloor-asc2",
+          "workload": "gemm",
+          "iterations": 120,
+          "minMhz": 1200,
+          "maxMhz": 1590,
+          "points": 10,
+          "direction": "ascending",
+          "output": "kit:/results/finefloor-asc2",
+          "settings": "STOCK P1, SILENT BIOS, PL default, memory +0 - fine floor 1200-1590 ASCENDING, same grid as C8; REGISTERED-PREDICTIONS 8c (exploratory, no prediction), after stock-4"
+        },
+        {
+          "id": "log-stop-finefloor-asc2",
+          "type": "hwinfo-stop",
+          "name": "Stop HWiNFO log",
+          "estimatedMinutes": 0.2
+        },
+        {
+          "id": "log-start-finefloor-desc2",
+          "type": "hwinfo-start",
+          "name": "Start HWiNFO log",
+          "estimatedMinutes": 0.3,
+          "path": "kit:/results/hwinfo-rtx3070ti-sessiond-finefloor-desc2.csv"
+        },
+        {
+          "id": "sweep-finefloor-desc2",
+          "type": "sweep",
+          "name": "Descending 1200-1590 MHz gemm sweep, 10 points",
+          "estimatedMinutes": 5,
+          "label": "rtx3070ti-sessiond-finefloor-desc2",
+          "workload": "gemm",
+          "iterations": 120,
+          "minMhz": 1200,
+          "maxMhz": 1590,
+          "points": 10,
+          "direction": "descending",
+          "output": "kit:/results/finefloor-desc2",
+          "settings": "STOCK P1, SILENT BIOS, PL default, memory +0 - fine floor 1200-1590 DESCENDING, same grid as C8; REGISTERED-PREDICTIONS 8c (exploratory, no prediction), after stock-4"
+        },
+        {
+          "id": "log-stop-finefloor-desc2",
+          "type": "hwinfo-stop",
+          "name": "Stop HWiNFO log",
+          "estimatedMinutes": 0.2
+        }
+      ]
+    },
+    {
+      "id": "edit1-finefloor",
+      "name": "8b: where Edit 1 floor ends, fine sweep with voltage",
+      "why": "Measures the edited floor end directly; the suites infer it from a 105 MHz grid.",
+      "minutes": 8,
+      "priority": 6,
+      "preselected": true,
+      "locked": true,
+      "requires": [
+        "finefloor-pair"
+      ],
+      "group": "sessiond-section8",
+      "finalRun": false,
+      "steps": [
+        {
+          "id": "profile",
+          "type": "apply-profile",
+          "name": "Apply profile P2",
+          "estimatedMinutes": 0.2,
+          "slot": 2
+        },
+        {
+          "id": "witness-log-start",
+          "type": "hwinfo-start",
+          "name": "Start short witness voltage log",
+          "estimatedMinutes": 0.3,
+          "path": "kit:/results/hwinfo-rtx3070ti-sessiond-edit1-finefloor-witness.csv"
+        },
+        {
+          "id": "witness",
+          "type": "witness",
+          "name": "Locked 1395 MHz on Edit 1",
+          "estimatedMinutes": 0.7,
+          "workload": "gemm",
+          "iterations": 400,
+          "coreMin": 1370,
+          "coreMax": 1420,
+          "memoryMin": 9200,
+          "memoryMax": 9550,
+          "lockMhz": 1395,
+          "voltageMin": 0.835,
+          "voltageMax": 0.87
+        },
+        {
+          "id": "witness-log-stop",
+          "type": "hwinfo-stop",
+          "name": "Stop witness voltage log",
+          "estimatedMinutes": 0.2
+        },
+        {
+          "id": "log-start-edit1-finefloor",
+          "type": "hwinfo-start",
+          "name": "Start HWiNFO log",
+          "estimatedMinutes": 0.3,
+          "path": "kit:/results/hwinfo-rtx3070ti-sessiond-edit1-finefloor.csv"
+        },
+        {
+          "id": "sweep-edit1-finefloor",
+          "type": "sweep",
+          "name": "Descending 1050-1590 MHz gemm sweep, 13 points",
+          "estimatedMinutes": 6,
+          "label": "rtx3070ti-sessiond-edit1-finefloor",
+          "workload": "gemm",
+          "iterations": 120,
+          "minMhz": 1050,
+          "maxMhz": 1590,
+          "points": 13,
+          "direction": "descending",
+          "output": "kit:/results/edit1-finefloor",
+          "settings": "EDIT 1 P2 as built, store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0 - fine floor 1050-1590 DESCENDING, 13 points; REGISTERED-PREDICTIONS 8b"
+        },
+        {
+          "id": "log-stop-edit1-finefloor",
+          "type": "hwinfo-stop",
+          "name": "Stop HWiNFO log",
+          "estimatedMinutes": 0.2
+        }
+      ]
+    },
+    {
+      "id": "edit1-5",
+      "name": "8a: Edit 1 replicate suite (registered)",
+      "why": "n=2 on the manipulation; scored like edit1-2.",
+      "minutes": 62,
+      "priority": 7,
+      "preselected": true,
+      "locked": true,
+      "requires": [
+        "edit1-finefloor"
+      ],
+      "group": "sessiond-section8",
+      "finalRun": false,
+      "steps": [
+        {
+          "id": "profile",
+          "type": "apply-profile",
+          "name": "Apply profile P2",
+          "estimatedMinutes": 0.2,
+          "slot": 2
+        },
+        {
+          "id": "witness-log-start",
+          "type": "hwinfo-start",
+          "name": "Start short witness voltage log",
+          "estimatedMinutes": 0.3,
+          "path": "kit:/results/hwinfo-rtx3070ti-sessiond-edit1-5-witness.csv"
+        },
+        {
+          "id": "witness",
+          "type": "witness",
+          "name": "Verify profile under load",
+          "estimatedMinutes": 0.7,
+          "workload": "gemm",
+          "iterations": 400,
+          "coreMin": 1370,
+          "coreMax": 1420,
+          "memoryMin": 9200,
+          "memoryMax": 9550,
+          "lockMhz": 1395,
+          "voltageMin": 0.835,
+          "voltageMax": 0.87
+        },
+        {
+          "id": "witness-log-stop",
+          "type": "hwinfo-stop",
+          "name": "Stop witness voltage log",
+          "estimatedMinutes": 0.2
+        },
+        {
+          "id": "log-start",
+          "type": "hwinfo-start",
+          "name": "Start HWiNFO log",
+          "estimatedMinutes": 0.3,
+          "path": "kit:/results/hwinfo-rtx3070ti-sessiond-edit1-5.csv"
+        },
+        {
+          "id": "collect",
+          "type": "suite",
+          "name": "Collect 12-workload suite",
+          "estimatedMinutes": 62,
+          "label": "rtx3070ti-sessiond-edit1-5",
+          "settings": "EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); store 1b08c2d0854460ff; SILENT BIOS, PL default, memory +0 - REPLICATE of edit1-2, REGISTERED-PREDICTIONS 8a, run after stock-4 closed the registered bracket",
+          "workloads": [
+            "copy",
+            "reduce",
+            "softmax",
+            "layernorm",
+            "bgemm32",
+            "bgemm64",
+            "bgemm128",
+            "bgemm256",
+            "bgemm1024",
+            "attention",
+            "conv",
+            "gemm"
+          ],
+          "iterations": [
+            4099,
+            4291,
+            3230,
+            2462,
+            843,
+            2113,
+            3511,
+            2327,
+            616,
+            135,
+            432,
+            120
+          ],
+          "expectedMemoryClockMhz": 9501
+        },
+        {
+          "id": "log-stop",
+          "type": "hwinfo-stop",
+          "name": "Stop HWiNFO log",
+          "estimatedMinutes": 0.2
+        }
+      ]
+    },
+    {
+      "id": "stock-6",
+      "name": "8a: closing stock suite for the replicate",
+      "why": "Stock bracket after edit1-5.",
+      "minutes": 62,
+      "priority": 8,
+      "preselected": true,
+      "locked": true,
+      "requires": [
+        "edit1-5"
+      ],
+      "group": "sessiond-section8",
+      "finalRun": false,
+      "steps": [
+        {
+          "id": "profile",
+          "type": "apply-profile",
+          "name": "Apply profile P1",
+          "estimatedMinutes": 0.2,
+          "slot": 1
+        },
+        {
+          "id": "witness",
+          "type": "witness",
+          "name": "Verify profile under load",
+          "estimatedMinutes": 0.7,
+          "workload": "gemm",
+          "iterations": 400,
+          "coreMin": 1700,
+          "coreMax": 2115,
+          "memoryMin": 9200,
+          "memoryMax": 9550
+        },
+        {
+          "id": "log-start",
+          "type": "hwinfo-start",
+          "name": "Start HWiNFO log",
+          "estimatedMinutes": 0.3,
+          "path": "kit:/results/hwinfo-rtx3070ti-sessiond-stock-6.csv"
+        },
+        {
+          "id": "collect",
+          "type": "suite",
+          "name": "Collect 12-workload suite",
+          "estimatedMinutes": 62,
+          "label": "rtx3070ti-sessiond-stock-6",
+          "settings": "STOCK P1 closing bracket for the edit1-5 replicate, REGISTERED-PREDICTIONS 8a; store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0",
+          "workloads": [
+            "copy",
+            "reduce",
+            "softmax",
+            "layernorm",
+            "bgemm32",
+            "bgemm64",
+            "bgemm128",
+            "bgemm256",
+            "bgemm1024",
+            "attention",
+            "conv",
+            "gemm"
+          ],
+          "iterations": [
+            4099,
+            4291,
+            3230,
+            2462,
+            843,
+            2113,
+            3511,
+            2327,
+            616,
+            135,
+            432,
+            120
+          ],
+          "expectedMemoryClockMhz": 9501
+        },
+        {
+          "id": "log-stop",
+          "type": "hwinfo-stop",
+          "name": "Stop HWiNFO log",
+          "estimatedMinutes": 0.2
+        },
+        {
+          "id": "stock-return",
+          "type": "gate-drift",
+          "name": "Check stock return stock-4 to stock-6 (8a scoreability)",
+          "estimatedMinutes": 0.2,
+          "firstRun": "stock-4",
+          "lastRun": "stock-6",
+          "workloads": [
+            "copy",
+            "reduce",
+            "softmax",
+            "layernorm",
+            "bgemm32",
+            "bgemm64",
+            "bgemm128",
+            "bgemm256",
+            "bgemm1024",
+            "attention",
+            "conv",
+            "gemm"
+          ],
+          "maxMedianAbsPct": 1.5
+        }
+      ]
+    },
+    {
       "id": "cleanup",
       "name": "C9-C10: verify stock and bring kit back",
       "why": "Verify stock three ways before the card ships and retain the USB.",

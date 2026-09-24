@@ -205,6 +205,17 @@ Everything is already on the USB: the sweeps in `$kit\results\`, the HWiNFO logs
 the USB. **The voltage join and scoring (`analysis/score_session_d.py`) happen on the local box.**
 Nothing at the machine decides whether the prediction held.
 
+### C11–C13 · Section 8 extras, added 2026-09-23 (bench app only)
+
+`docs/REGISTERED-PREDICTIONS.md` §8 was registered before any of this data existed. The extras run
+**after `stock-4`**, in the spare part of the 8 h window, and are ticked in `sessiond-3070ti.json`:
+- **C11 (§8c):** stock fine pair, 1200–1590 MHz, ascending then descending. Exploratory.
+- **C12 (§8b):** an Edit 1 fine sweep, 1050–1590 MHz, 13 points, with voltage.
+- **C13 (§8a):** the `edit1-5` replicate suite, then `stock-6`, then a stock-4 → stock-6 drift gate.
+
+They add ~2.5 h, so the whole session is ~7 h. They are run by the app only; there are no hand
+commands for them.
+
 ---
 
 ## Session D — the order, ~5 h 40

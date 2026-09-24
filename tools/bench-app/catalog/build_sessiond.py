@@ -9,20 +9,29 @@ HASH = '1B08C2D0854460FF'
 STOCK = (1700, 2115)   # unlocked stock witness core range; see witness()
 
 
-def step(identifier, kind, name, **fields):
+def step(identifier, kind, name, minutes=None, **fields):
     estimates = {'gate-power':0.1, 'gate-quiet':0.3, 'gate-hash':0.1,
                  'gate-drift':0.2, 'apply-profile':0.2, 'witness':0.7,
                  'hwinfo-start':0.3, 'hwinfo-stop':0.2, 'suite':62,
                  'sweep':12, 'human':0.5}
     return dict(id=identifier, type=kind, name=name,
-                estimatedMinutes=estimates[kind], **fields)
+                estimatedMinutes=minutes if minutes is not None else estimates[kind], **fields)
 
 
 def run(identifier, name, why, minutes, priority, steps, locked=True):
     requirements = {'stock-1':['preflight'], 'edit1-2':['stock-1'],
                     'edit2-3':['edit1-2'], 'stock-4':['edit2-3'],
-                    'finefloor-desc':['stock-4'], 'cleanup':['preflight']}
-    group = 'sessiond-suites' if identifier in ('stock-1','edit1-2','edit2-3','stock-4') else None
+                    'finefloor-desc':['stock-4'], 'cleanup':['preflight'],
+                    # REGISTERED-PREDICTIONS section 8, added 2026-09-23 before collection. They run
+                    # after stock-4 closes the registered bracket, so 4a/4b are scored as before.
+                    'finefloor-pair':['stock-4'], 'edit1-finefloor':['finefloor-pair'],
+                    'edit1-5':['edit1-finefloor'], 'stock-6':['edit1-5']}
+    if identifier in ('stock-1','edit1-2','edit2-3','stock-4'):
+        group = 'sessiond-suites'
+    elif identifier in ('finefloor-pair','edit1-finefloor','edit1-5','stock-6'):
+        group = 'sessiond-section8'
+    else:
+        group = None
     return dict(id=identifier, name=name, why=why, minutes=minutes,
                 # C8 runs the evening before, in shakedown-3070ti.json (2026-09-23), so it is not
                 # ticked here: a second run would hit the app's refuse-to-overwrite and end the session.
@@ -82,6 +91,18 @@ stock1 = 'STOCK P1, profile store 1b08c2d0854460ff, SILENT BIOS verified at 290 
 edit1 = 'EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); store 1b08c2d0854460ff; SILENT BIOS, PL default, memory +0'
 edit2 = 'EDIT 2 NEGATIVE CONTROL P3 as built: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); store 1b08c2d0854460ff; SILENT BIOS, PL default, memory +0'
 stock4 = 'STOCK P1 reverted after both edits, witnessed by peak core, store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0'
+edit1rep = edit1 + ' - REPLICATE of edit1-2, REGISTERED-PREDICTIONS 8a, run after stock-4 closed the registered bracket'
+stock6 = 'STOCK P1 closing bracket for the edit1-5 replicate, REGISTERED-PREDICTIONS 8a; store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0'
+
+
+def fine(label, direction, lo, hi, points, settings, minutes):
+    return [step('log-start-' + label, 'hwinfo-start', 'Start HWiNFO log',
+                 path='kit:/results/hwinfo-rtx3070ti-sessiond-' + label + '.csv'),
+            step('sweep-' + label, 'sweep', '%s %d-%d MHz gemm sweep, %d points' % (direction.capitalize(), lo, hi, points),
+                 minutes=minutes, label='rtx3070ti-sessiond-' + label, workload='gemm', iterations=120,
+                 minMhz=lo, maxMhz=hi, points=points, direction=direction,
+                 output='kit:/results/' + label, settings=settings),
+            step('log-stop-' + label, 'hwinfo-stop', 'Stop HWiNFO log')]
 
 plan = dict(
     schemaVersion=1, title='RTX 3070 Ti Session D', volumeLabel='ESD-USB',
@@ -124,6 +145,26 @@ plan = dict(
                      settings='STOCK P1, SILENT BIOS, PL default, memory +0 - fine floor 1200-1590 DESCENDING, same grid as rtx3070ti-silent-gemm-fine 2026-08-27, thermal control as in 4d'),
                 step('log-stop', 'hwinfo-stop', 'Stop HWiNFO log')
             ]),
+        run('finefloor-pair', '8c: stock fine pair, ascending then descending (exploratory)',
+            'Separates sweep direction from day-to-day drift, which C8 against 2026-08-27 confounds.', 12, 5,
+            [profile(1), witness('Verify stock under load', *STOCK)]
+            + fine('finefloor-asc2', 'ascending', 1200, 1590, 10,
+                   'STOCK P1, SILENT BIOS, PL default, memory +0 - fine floor 1200-1590 ASCENDING, same grid as C8; REGISTERED-PREDICTIONS 8c (exploratory, no prediction), after stock-4', 5)
+            + fine('finefloor-desc2', 'descending', 1200, 1590, 10,
+                   'STOCK P1, SILENT BIOS, PL default, memory +0 - fine floor 1200-1590 DESCENDING, same grid as C8; REGISTERED-PREDICTIONS 8c (exploratory, no prediction), after stock-4', 5)),
+        run('edit1-finefloor', '8b: where Edit 1 floor ends, fine sweep with voltage',
+            'Measures the edited floor end directly; the suites infer it from a 105 MHz grid.', 8, 6,
+            [profile(2),
+             step('witness-log-start', 'hwinfo-start', 'Start short witness voltage log',
+                  path='kit:/results/hwinfo-rtx3070ti-sessiond-edit1-finefloor-witness.csv'),
+             witness('Locked 1395 MHz on Edit 1', 1370, 1420, lock=1395, voltage=(0.835, 0.870)),
+             step('witness-log-stop', 'hwinfo-stop', 'Stop witness voltage log')]
+            + fine('edit1-finefloor', 'descending', 1050, 1590, 13,
+                   'EDIT 1 P2 as built, store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0 - fine floor 1050-1590 DESCENDING, 13 points; REGISTERED-PREDICTIONS 8b', 6)),
+        full_suite('edit1-5', '8a: Edit 1 replicate suite (registered)', 'n=2 on the manipulation; scored like edit1-2.', 7, 2,
+                   (1370, 1420), edit1rep, lock=1395, voltage=(0.835, 0.870)),
+        full_suite('stock-6', '8a: closing stock suite for the replicate', 'Stock bracket after edit1-5.', 8, 1,
+                   STOCK, stock6),
         run('cleanup', 'C9-C10: verify stock and bring kit back',
             'Verify stock three ways before the card ships and retain the USB.', 0, 4, [
                 profile(1),
@@ -136,6 +177,10 @@ plan = dict(
 plan['runs'][4]['steps'].append(step('stock-return', 'gate-drift',
     'Check stock return across 12 workloads', firstRun='stock-1',
     lastRun='stock-4', workloads=WORKLOADS, maxMedianAbsPct=1.5))
+[stock6_run] = [r for r in plan['runs'] if r['id'] == 'stock-6']
+stock6_run['steps'].append(step('stock-return', 'gate-drift',
+    'Check stock return stock-4 to stock-6 (8a scoreability)', firstRun='stock-4',
+    lastRun='stock-6', workloads=WORKLOADS, maxMedianAbsPct=1.5))
 
 if __name__ == '__main__':
     (HERE / 'sessiond-3070ti.json').write_text(json.dumps(plan, indent=2) + '\n', encoding='utf-8')

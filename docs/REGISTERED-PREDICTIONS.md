@@ -901,6 +901,68 @@ The `gemm` voltage column moves one grid step per −150: the last 0.720 V point
 MHz achieved, and the two stock suites read identically. ⚠️ **One chip, one session, one suite per
 offset.** −300's pass is edge-limited; only −150 locates the move. **Report both verdicts, always.**
 
+## 8. 3070 Ti: a second Edit 1 suite, plus two fine-sweep checks. Registered 2026-09-23, before collection
+
+**No data for any part of this section exists as of registration.** The 3070 Ti's shakedown
+(2026-09-23 21:56) and C8 are the only data collected on this card since Amendment 2. Session D's
+four registered suites have not run. These runs go on the end of the same unattended session, on
+2026-09-24, **after `stock-4` closes the registered bracket**, so nothing here can change how
+§4a/§4b are scored. The card is sold in about two days; there will be no later chance.
+
+**Order in the session:**
+1. `stock-4`, which is the end of §4a/§4b;
+2. the stock fine pair (8c);
+3. the Edit 1 fine sweep (8b);
+4. `edit1-5`, the replicate suite (8a);
+5. `stock-6`, its closing stock suite;
+6. cleanup.
+
+Profiles, grid, iterations and labels are those of Session D. The new labels are `rtx3070ti-sessiond-edit1-5`,
+`-stock-6`, `-finefloor-asc2`, `-finefloor-desc2` and `-edit1-finefloor`.
+
+### 8a. The replicate: `edit1-5` against `stock-4` and `stock-6`
+
+> **The median suite optimum of `edit1-5` lies in 1170–1275 MHz inclusive**, the same bins as the
+> runsheet's §4a prediction, scored by the same rule as `analysis/score_session_d.py` applies to
+> `edit1-2`.
+
+**Scoreable only if:**
+- `stock-6`'s median equals `stock-4`'s;
+- no workload's median absolute throughput change from `stock-4` to `stock-6` exceeds 1.5%;
+- the Edit 1 floor check passes on `edit1-5` exactly as it does for `edit1-2`: no clock above
+  1200 MHz, within the scorer's tolerance, reads ≤0.825 V, and every target above 1200 reads
+  ≥0.831 V.
+
+If any of these fails, the replicate is **NOT SCOREABLE**, not a failure.
+
+**How to report it:**
+- ⛔ A median at or above `stock-4`'s is **no movement, and it counts against the replication**.
+- If `edit1-2` and `edit1-5` disagree, **report both**. Neither supersedes the other, and there is
+  no averaging to a verdict.
+- `edit1-5` is n=2 on one chip, one session. It is not a second chip.
+- ⚠️ **Its stock bracket is not the design's own.** `stock-4` precedes it after ~25 min of fine
+  sweeps, and `stock-6` follows it. Edit 2 is not repeated, so **§4b's control is not replicated.**
+
+### 8b. Where Edit 1's floor ends, measured directly
+
+**The prediction is read from the decoded curve** (Amendment 2):
+- a descending locked `gemm` sweep on P2, **1050–1590 MHz, 13 points**, reads ≤0.825 V at every
+  target ≤1200 MHz;
+- it reads **≥0.831 V at every target above 1215 MHz**;
+- at locked **1395 MHz** it reads **0.835–0.870 V**, as the shakedown's 0.850 did.
+
+⛔ **Floor-band voltage above 1215 MHz refutes the as-built reading of Edit 1**, and would call
+`edit1-2`'s floor check into question as well.
+
+### 8c. Stock fine pair, ascending then descending. EXPLORATORY: no prediction
+
+It uses the same grid as C8: 1200–1590 MHz, 10 points, `gemm`, 120 iterations, stock P1.
+
+C8 on 2026-09-23 (descending) read **1.1–1.3% below** the 2026-08-27 sweep (ascending) at every
+point. Direction and day are confounded in that pair. This pair puts both directions in one
+session, and it is reported as the per-point difference, **with no verdict.** ⚠️ It runs after
+~5 h of load, so it is warm from the start in both directions, unlike either earlier sweep.
+
 ---
 
 ## Safety envelope — these cards are going to be sold

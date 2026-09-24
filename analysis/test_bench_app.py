@@ -91,7 +91,7 @@ class BenchAppTests(unittest.TestCase):
         proc, record = self.engine()
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertEqual(record['status'], 'PASS')
-        self.assertEqual(len(record['steps']), 35)
+        self.assertEqual(len(record['steps']), 63)
         self.assertEqual(record['selectedRuns'], [r['id'] for r in self.catalog['runs']])
         self.assertEqual(record['revert']['coreMhz'], 1763)
         self.assertTrue(record['afterRevertHumanCompleted'])
@@ -115,6 +115,22 @@ class BenchAppTests(unittest.TestCase):
         # Wait-Human now returns a value; no other step may pick it up as stray output.
         for step in record['steps']:
             self.assertNotIn('operator', json.dumps(step['witness']) if step['key'] != 'preflight/sensors' else '')
+
+    def test_section8_runs_follow_the_registered_bracket(self):
+        # REGISTERED-PREDICTIONS section 8 (2026-09-23): the extras must run only after stock-4
+        # closes 4a/4b, so they cannot change how the registered suites are scored.
+        ids = [r['id'] for r in self.catalog['runs']]
+        extras = ['finefloor-pair', 'edit1-finefloor', 'edit1-5', 'stock-6']
+        self.assertEqual(ids[:5], ['preflight', 'stock-1', 'edit1-2', 'edit2-3', 'stock-4'])
+        self.assertEqual([i for i in ids if i in extras], extras)
+        self.assertTrue(all(ids.index(e) > ids.index('stock-4') for e in extras))
+        self.assertEqual(ids[-1], 'cleanup')
+        runs = {r['id']: r for r in self.catalog['runs']}
+        self.assertEqual(runs['finefloor-pair']['requires'], ['stock-4'])
+        gate = [s for s in runs['stock-6']['steps'] if s['type'] == 'gate-drift'][0]
+        self.assertEqual((gate['firstRun'], gate['lastRun']), ('stock-4', 'stock-6'))
+        labels = [s.get('label') for r in self.catalog['runs'] for s in r['steps'] if s.get('label')]
+        self.assertEqual(len(labels), len(set(labels)))
 
     def test_edited_preselected_run_is_flagged_and_recorded(self):
         queue = copy.deepcopy(self.catalog['runs'])
@@ -474,7 +490,7 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         # 6 of 7 since 2026-09-23: C8 runs the evening before in shakedown-3070ti.json, so the
         # Session D catalog no longer preselects it.
-        self.assertIn('CATALOG LOADED: 7 runs, 6 preselected.', proc.stdout)
+        self.assertIn('CATALOG LOADED: 11 runs, 10 preselected.', proc.stdout)
 
 
 if __name__ == '__main__':
