@@ -114,7 +114,7 @@ per run, never spanning two curves.**
 & $ab -profile1 -q; Start-Sleep 8; Show-Load
 ```
 
-**Witness:** core peaks near **~1763 MHz**, memory **9501**. Then start the HWiNFO log
+**Witness:** core peaks near **~1763 MHz**, memory **9251** (sometimes 9501). Then start the HWiNFO log
 `hwinfo-rtx3070ti-sessiond-stock-1.csv`, and:
 
 ```powershell
@@ -122,6 +122,13 @@ per run, never spanning two curves.**
 ```
 
 Stop the HWiNFO log.
+
+⛔ **Memory reads 9251, not 9501, and that is stock.** Corrected 2026-09-23: loaded memory on this
+card is **9251 MHz at 186 of 192** committed points and 9501 at 6. This line said "9501" until
+then, from reading the top of the range as typical. `-ExpectedMemoryClockMhz 9501` still passes
+either state (its tolerance is ±400). ⚠️ That tolerance would also pass a small memory offset
+(+250 reads ~9750), so **it is not what proves memory is stock. The C2 profile-hash check is**: all
+three decoded slots carry memory +0.
 
 ### C5 · Run 2 — EDIT 1, the manipulation (~62 min)
 
@@ -185,7 +192,7 @@ Still on P1. Start `hwinfo-rtx3070ti-sessiond-finefloor-desc.csv`, and:
 & $ab -profile1 -q; Start-Sleep 8; nvidia-smi --query-gpu=power.limit,power.default_limit --format=csv,noheader; Show-Load
 ```
 
-**Verify three ways:** power reads **290 / 290 W**, memory under load **9501**, core peaking near
+**Verify three ways:** power reads **290 / 290 W**, memory under load **9251** (sometimes 9501), core peaking near
 **~1763 MHz**. Then, since the PC is being sold: **uninstall MSI Afterburner and delete its
 `Profiles` folder** (both are already preserved in the repo). The kit itself installs nothing.
 

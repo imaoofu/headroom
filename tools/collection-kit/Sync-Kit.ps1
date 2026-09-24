@@ -91,7 +91,21 @@ $files = @(
     @{ From = "docs\GPU-WORKLIST-3070TI.md";                    To = "GPU-WORKLIST-3070TI.md" },
     @{ From = "docs\GPU-WORKLIST-2060S.md";                     To = "GPU-WORKLIST-2060S.md" },
     @{ From = "data\frequency-sweeps\rtx3070ti-20260825\SESSION-D-RUNSHEET.md"; To = "SESSION-D-RUNSHEET.md" },
-    @{ From = "data\frequency-sweeps\rtx2060s-20260912\SESSION-E-RUNSHEET.md";  To = "SESSION-E-RUNSHEET.md" }
+    @{ From = "data\frequency-sweeps\rtx2060s-20260912\SESSION-E-RUNSHEET.md";  To = "SESSION-E-RUNSHEET.md" },
+    @{ From = "tools\hwinfo-logging\Invoke-HwinfoLogging.ps1"; To = "tools\hwinfo-logging\Invoke-HwinfoLogging.ps1" },
+    @{ From = "tools\bench-app\RUN-BENCH.bat"; To = "RUN-BENCH.bat" },
+    @{ From = "tools\bench-app\Bench-Window.ps1"; To = "tools\bench-app\Bench-Window.ps1" },
+    @{ From = "tools\bench-app\Run-Plan.ps1"; To = "tools\bench-app\Run-Plan.ps1" },
+    @{ From = "tools\bench-app\Run-Child.ps1"; To = "tools\bench-app\Run-Child.ps1" },
+    @{ From = "tools\bench-app\New-Plan.ps1"; To = "tools\bench-app\New-Plan.ps1" },
+    @{ From = "tools\bench-app\Hwinfo-Csv.ps1"; To = "tools\bench-app\Hwinfo-Csv.ps1" },
+    @{ From = "tools\bench-app\Stock-Drift.ps1"; To = "tools\bench-app\Stock-Drift.ps1" },
+    @{ From = "tools\bench-app\Pmon-Gate.ps1"; To = "tools\bench-app\Pmon-Gate.ps1" },
+    @{ From = "tools\bench-app\Test-Plan.ps1"; To = "tools\bench-app\Test-Plan.ps1" },
+    @{ From = "tools\bench-app\catalog\sessiond-3070ti.json"; To = "tools\bench-app\catalog\sessiond-3070ti.json" },
+    @{ From = "tools\bench-app\catalog\build_sessiond.py"; To = "tools\bench-app\catalog\build_sessiond.py" },
+    @{ From = "tools\bench-app\catalog\SCHEMA.md"; To = "tools\bench-app\catalog\SCHEMA.md" },
+    @{ From = "tools\bench-app\README.md"; To = "tools\bench-app\README.md" }
 )
 
 function Say([string]$text, [string]$colour = "White") {

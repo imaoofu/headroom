@@ -1,0 +1,129 @@
+"""Generate the reviewed Session D catalog from the C0-C10 shop worklist."""
+import json
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+WORKLOADS = 'copy reduce softmax layernorm bgemm32 bgemm64 bgemm128 bgemm256 bgemm1024 attention conv gemm'.split()
+ITERATIONS = [4099, 4291, 3230, 2462, 843, 2113, 3511, 2327, 616, 135, 432, 120]
+HASH = '1B08C2D0854460FF'
+
+
+def step(identifier, kind, name, **fields):
+    estimates = {'gate-power':0.1, 'gate-quiet':0.3, 'gate-hash':0.1,
+                 'gate-drift':0.2, 'apply-profile':0.2, 'witness':0.7,
+                 'hwinfo-start':0.3, 'hwinfo-stop':0.2, 'suite':62,
+                 'sweep':12, 'human':0.5}
+    return dict(id=identifier, type=kind, name=name,
+                estimatedMinutes=estimates[kind], **fields)
+
+
+def run(identifier, name, why, minutes, priority, steps, locked=True):
+    requirements = {'stock-1':['preflight'], 'edit1-2':['stock-1'],
+                    'edit2-3':['edit1-2'], 'stock-4':['edit2-3'],
+                    'finefloor-desc':['stock-4'], 'cleanup':['preflight']}
+    group = 'sessiond-suites' if identifier in ('stock-1','edit1-2','edit2-3','stock-4') else None
+    return dict(id=identifier, name=name, why=why, minutes=minutes,
+                priority=priority, preselected=True, locked=locked,
+                requires=requirements.get(identifier, []), group=group,
+                finalRun=(identifier == 'cleanup'), steps=steps)
+
+
+def suite(label, settings):
+    return step('collect', 'suite', 'Collect 12-workload suite', label=label,
+                settings=settings, workloads=WORKLOADS, iterations=ITERATIONS,
+                expectedMemoryClockMhz=9501)
+
+
+def log(label):
+    return step('log-start', 'hwinfo-start', 'Start HWiNFO log',
+                path='kit:/results/hwinfo-' + label + '.csv')
+
+
+def witness(name, core_min, core_max, lock=0, voltage=None):
+    # Reviewed 2026-09-23: loaded memory on this card reads 9251 MHz at 186 of 192 committed
+    # points (9501 at 6), so the floor is 9200, not 9450. Stock peak core reached 1785 at a
+    # 2115 MHz target; the ceiling of 1900 leaves margin, since no profile raises the top.
+    data = dict(workload='gemm', iterations=400, coreMin=core_min, coreMax=core_max,
+                memoryMin=9200, memoryMax=9550)
+    if lock:
+        data['lockMhz'] = lock
+    if voltage:
+        data['voltageMin'], data['voltageMax'] = voltage
+    return step('witness', 'witness', name, **data)
+
+
+def profile(slot):
+    return step('profile', 'apply-profile', 'Apply profile P' + str(slot), slot=slot)
+
+
+def full_suite(identifier, title, why, priority, slot, core_range, settings, lock=0, voltage=None):
+    label = 'rtx3070ti-sessiond-' + identifier
+    # The brief requires a short voltage log for the locked P2 witness. This is an
+    # extra log, explicitly separate from the suite log, and is recorded as such.
+    steps = [profile(slot)]
+    if voltage:
+        steps += [step('witness-log-start', 'hwinfo-start', 'Start short witness voltage log',
+                       path='kit:/results/hwinfo-' + label + '-witness.csv')]
+    steps += [witness('Verify profile under load', *core_range, lock=lock, voltage=voltage)]
+    if voltage:
+        steps += [step('witness-log-stop', 'hwinfo-stop', 'Stop witness voltage log')]
+    steps += [log(label), suite(label, settings), step('log-stop', 'hwinfo-stop', 'Stop HWiNFO log')]
+    return run(identifier, title, why, 62, priority, steps)
+
+
+stock1 = 'STOCK P1, profile store 1b08c2d0854460ff, SILENT BIOS verified at 290 W, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904'
+edit1 = 'EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); store 1b08c2d0854460ff; SILENT BIOS, PL default, memory +0'
+edit2 = 'EDIT 2 NEGATIVE CONTROL P3 as built: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); store 1b08c2d0854460ff; SILENT BIOS, PL default, memory +0'
+stock4 = 'STOCK P1 reverted after both edits, witnessed by peak core, store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0'
+
+plan = dict(
+    schemaVersion=1, title='RTX 3070 Ti Session D', volumeLabel='ESD-USB',
+    # SILENT BIOS worklist spans supported bins from 405 through 2115 MHz.
+    card=dict(name='NVIDIA GeForce RTX 3070 Ti', minClockMhz=405, maxClockMhz=2115),
+    revert=dict(slot=1, witness=dict(workload='gemm', iterations=400,
+                                    coreMin=1700, coreMax=1900,
+                                    memoryMin=9200, memoryMax=9550)),
+    runs=[
+        run('preflight', 'C0-C3: preflight and profile store',
+            'Reject a wrong BIOS, busy GPU, or changed profile store before measuring.',
+            3, 0, [
+                step('power', 'gate-power', 'SILENT BIOS: 290 / 290 / 320 W', limit=290, default=290, max=320),
+                step('quiet', 'gate-quiet', 'Quiet pmon baseline and video engines', maxUtil=5),
+                step('profile-hash', 'gate-hash', 'Verify decoded Afterburner profile store',
+                     path='C:/Program Files (x86)/MSI Afterburner/Profiles/VEN_10DE*.cfg', prefix=HASH),
+                step('sensors', 'human', 'Confirm HWiNFO Sensors window',
+                     instruction='HWiNFO has launched from the kit. Open Sensors only and close any update popup; then Continue.',
+                     launchHwinfo=True)
+            ]),
+        full_suite('stock-1', 'C4: stock baseline', 'Baseline before any edits.', 0, 1, (1700, 1900), stock1),
+        full_suite('edit1-2', 'C5: edit 1 manipulation', 'Test the floor-shortening edit.', 0, 2,
+                   (1370, 1420), edit1, lock=1395, voltage=(0.835, 0.870)),
+        full_suite('edit2-3', 'C6: edit 2 negative control', 'The control is essential to the causal test.', 0, 3,
+                   (1450, 1550), edit2),
+        full_suite('stock-4', 'C7: stock drift bracket', 'Check stock returns after both edits.', 2, 1,
+                   (1700, 1900), stock4),
+        run('finefloor-desc', 'C8: descending stock fine sweep',
+            'Thermal-order control on the stock floor.', 3, 12, [
+                log('rtx3070ti-sessiond-finefloor-desc'),
+                step('fine-sweep', 'sweep', 'Descending 1200-1590 MHz gemm sweep',
+                     label='rtx3070ti-sessiond-finefloor-desc', workload='gemm', iterations=120,
+                     minMhz=1200, maxMhz=1590, points=10, direction='descending',
+                     output='kit:/results/finefloor-desc',
+                     settings='STOCK P1, SILENT BIOS, PL default, memory +0 - fine floor 1200-1590 DESCENDING, same grid as rtx3070ti-silent-gemm-fine 2026-08-27, thermal control as in 4d'),
+                step('log-stop', 'hwinfo-stop', 'Stop HWiNFO log')
+            ]),
+        run('cleanup', 'C9-C10: verify stock and bring kit back',
+            'Verify stock three ways before the card ships and retain the USB.', 0, 4, [
+                profile(1),
+                step('power', 'gate-power', 'Verify stock power limits', limit=290, default=290, max=320),
+                witness('Verify stock core and memory under load', 1700, 1900)
+            ])
+    ],
+    afterRevertHuman='Uninstall MSI Afterburner and delete its Profiles folder. Confirm the USB has results and logs before taking it home.'
+)
+plan['runs'][4]['steps'].append(step('stock-return', 'gate-drift',
+    'Check stock return across 12 workloads', firstRun='stock-1',
+    lastRun='stock-4', workloads=WORKLOADS, maxMedianAbsPct=1.5))
+
+if __name__ == '__main__':
+    (HERE / 'sessiond-3070ti.json').write_text(json.dumps(plan, indent=2) + '\n', encoding='utf-8')
