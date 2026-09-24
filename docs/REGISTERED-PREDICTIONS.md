@@ -754,6 +754,33 @@ PROXY* and *no losses at all*. **That is a counterfactual, not a result.**
 It points away from this proxy and toward the cold start, or toward some part of real agent activity
 the script does not imitate. It does not separate those two. ⚠️ One chip, one session.
 
+### ⛔ Revised BEFORE re-collection, 2026-09-24: one change, the generator trigger
+
+**No re-collection data exists as of this amendment.** Nothing above, the 2026-09-23 result
+included, is edited.
+
+**The only change:** an ACTIVE run's generator now starts when the sweep wrapper's HWiNFO log file
+appears, instead of when GPU utilisation first reaches 50%. The wrapper creates that file only
+after its preflight passes and before the sweep begins. HWiNFO's own growth check then takes several
+seconds, so the generator is running before the first measured window. SILENT runs wait for the
+same file and start nothing, so the waiting is identical in both conditions.
+
+**Unchanged:**
+- the design (two warm-ups, then S A A S × 3);
+- the grid, the uptime gate and the stock checks;
+- the generator itself;
+- the scorer, `analysis/score_activity_ab.py`, and every threshold in it.
+
+The scorer's rule that an active run is invalid if its generator started after the first measured
+window still applies, and now should never trip.
+
+⚠️ **This re-run is not blind.** The 2026-09-23 collection is known to show zero degraded points in
+every run, active and silent. That is a descriptive result without a registered verdict, and it
+could shape how this one is read. So this re-run is reported **with its own registered verdict,
+beside** the 09-23 INCOMPLETE, never merged with it. It runs on 2026-09-24 with the operator absent
+and the driving agent idle. HWiNFO was started by `tools/hwinfo-logging/Start-HwinfoSensors.ps1`,
+not by hand.
+
 ---
 
 ## 6. RTX 5060 Ti: does the load floor survive an NVML clock offset? (worklist 4c) Registered 2026-09-22 — ✅ COLLECTED, HOLDS
@@ -962,6 +989,41 @@ C8 on 2026-09-23 (descending) read **1.1–1.3% below** the 2026-08-27 sweep (as
 point. Direction and day are confounded in that pair. This pair puts both directions in one
 session, and it is reported as the per-point difference, **with no verdict.** ⚠️ It runs after
 ~5 h of load, so it is warm from the start in both directions, unlike either earlier sweep.
+
+## 9. RTX 5060 Ti: is the `reduce` residual a workload property or a run-order artifact? (worklist 4m) Registered 2026-09-24, before collection
+
+**No data for this section exists as of registration.**
+
+**Why:** the curve predictor misses all 16 `reduce` curves, every one ABOVE the prediction. Across
+twelve committed suites, stock runs put `reduce`'s optimum at 1702 or 1852 against the rule's 1545.
+But 14 of the 16 `reduce` legs ran in the same suite position, second, straight after `copy`. The
+two explanations predict different things:
+- **a workload property** gives the same offset wherever `reduce` runs;
+- **an order artifact** gives an offset that follows its position.
+
+**Design:**
+- stock Profile 3, verified by memory clock and power limit before the first sweep;
+- the suite grid, 1237–3090 MHz, 13 points, ascending;
+- the suite iteration counts from `5060ti-stock-repro-20260922`: `copy` 2660, `reduce` 2870;
+- eight sweeps in the fixed order **R C C R R C C R**. `reduce` runs **immediately after `copy`**
+  twice (sweeps 4 and 8) and **not after `copy`** twice: sweep 1 follows the stock checks and
+  sweep 5 follows `reduce`. The balanced order cancels a linear drift;
+- labels `5060ti-4m-NN-<workload>`.
+
+**Scoring:** a run's optimum is the grid target with the highest throughput per watt among rows
+whose lock held, as the suite analysis defines it.
+
+| outcome | reading |
+|---|---|
+| all four `reduce` optima **above 1545** | **workload property**: the residual belongs to `reduce` |
+| both not-after-copy runs **≤ 1545**, both after-copy runs **above** | **order artifact**: every per-workload residual in the project is suspect |
+| anything else | **inconclusive**, reported as the four optima, with nothing more claimed |
+
+⚠️ **The limits, stated now:**
+- n = 2 per position, one chip, one session;
+- "not after `copy`" mixes two histories (after the stock checks, and after `reduce`), and the
+  suites ran `reduce` 1–2 minutes after `copy` on an already-warm card;
+- `copy` is the only neighbour tested, so any other kind of order effect is not.
 
 ---
 

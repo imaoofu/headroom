@@ -14,8 +14,9 @@
         two throwaway warm-up sweeps that are excluded from scoring in advance
       - run order is balanced: S A A S, three times, so a linear time trend cancels
       - activity is the ONLY thing that differs: "A" runs start Start-ActivityLoad.ps1 once the
-        GPU is under load, "S" runs start nothing. Both conditions do the same load-wait polling,
-        so that part is symmetric.
+        sweep wrapper's HWiNFO log appears (after preflight, before the first point; REVISED
+        2026-09-24, it used to wait for GPU load), "S" runs start nothing. Both conditions do the
+        same waiting, so that part is symmetric.
 
     Same configuration throughout: stock Profile 3, gemm, 1380-1760 MHz, 13 points, ascending -
     the grid the losses were found on. 14 sweeps, about 85 minutes.
@@ -102,13 +103,18 @@ for ($b = 1; $b -le $Blocks; $b++) {
     }
 }
 
-function Wait-ForLoad([int]$timeoutSeconds) {
-    # Identical in both conditions, so the polling itself cannot differ between them.
+function Wait-ForLogStart([string]$label, [datetime]$since, [int]$timeoutSeconds) {
+    # REVISED 2026-09-24, before re-collection (REGISTERED-PREDICTIONS section 5): the first version
+    # waited for GPU utilisation >= 50%, and in 3 of 6 active runs that WAS the sweep's first measured
+    # point, so the generator started 0.1-0.2 s late. The wrapper creates its HWiNFO log only after
+    # preflight passes and before the sweep starts, so waiting for that file starts the generator
+    # ahead of every measured window. Identical in both conditions, so the waiting cannot differ.
     $until = (Get-Date).AddSeconds($timeoutSeconds)
     while ((Get-Date) -lt $until) {
-        $u = (& nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits) | Select-Object -First 1
-        $x = 0; if ([int]::TryParse($u, [ref]$x) -and $x -ge 50) { return $true }
-        Start-Sleep -Seconds 1
+        $dirs = @(Get-ChildItem "C:\headroom-bench\results" -Directory -Filter ("*_" + $label) -ErrorAction SilentlyContinue |
+            Where-Object { $_.CreationTime -ge $since })
+        foreach ($d in $dirs) { if (Test-Path (Join-Path $d.FullName ($label + "-hwinfo.csv"))) { return $true } }
+        Start-Sleep -Milliseconds 250
     }
     return $false
 }
@@ -129,6 +135,7 @@ foreach ($s in $schedule) {
 
     Say ("==== {0}  ({1}) ====" -f $label, $s.cond.ToUpper()) "Cyan"
     $out = Join-Path $expDir ($s.tag + "-wrapper.log")
+    $runStart = (Get-Date).AddSeconds(-1)
     $p = Start-Process -FilePath "powershell.exe" -PassThru -WindowStyle Hidden `
         -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $wrapper, "-JobPath", "C:\headroom-bench\job.json") `
         -RedirectStandardOutput $out -RedirectStandardError ($out + ".err")
@@ -141,7 +148,7 @@ foreach ($s in $schedule) {
     $loaded = $false
     $stop = Join-Path $expDir ($s.tag + ".stop")
     try {
-        $loaded = Wait-ForLoad 180
+        $loaded = Wait-ForLogStart $label $runStart 300
         if ($s.cond -eq "active") {
             if ($loaded) {
                 $events = Join-Path $expDir ($s.tag + "-events.csv")
@@ -150,7 +157,7 @@ foreach ($s in $schedule) {
                 $null = $gen.Handle
                 Say "  activity generator started" "Yellow"
             } else {
-                Say "  load never appeared - generator NOT started; this run will be scored as invalid" "Red"
+                Say "  HWiNFO log never appeared - generator NOT started; this run will be scored as invalid" "Red"
             }
         }
         $p.WaitForExit()
