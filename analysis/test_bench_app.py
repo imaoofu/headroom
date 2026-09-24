@@ -240,16 +240,22 @@ class BenchAppTests(unittest.TestCase):
         frozen = subprocess.run(args + ['-Command', command], capture_output=True, text=True, timeout=10)
         self.assertNotEqual(frozen.returncode, 0)
         self.assertIn('not growing', frozen.stderr + frozen.stdout)
+        # A real HWiNFO log grows continuously. A single append at a fixed delay raced PowerShell 7's
+        # slower start on Linux CI (the append landed before the first size read), so append
+        # every 100 ms for as long as the check runs.
+        done = threading.Event()
         def append():
-            time.sleep(0.7)
-            with path.open('a', encoding='ascii') as f:
-                f.write('2026-09-23,0.85\n')
+            while not done.is_set():
+                with path.open('a', encoding='ascii') as f:
+                    f.write('2026-09-23,0.85\n')
+                time.sleep(0.1)
         thread = threading.Thread(target=append)
         thread.start()
         try:
             growing_command = f". '{helper}'; Assert-HwinfoLogGrowth '{data}' -FirstDelayMs 200 -SecondDelayMs 1200"
             growing = subprocess.run(args + ['-Command', growing_command], capture_output=True, text=True, timeout=10)
         finally:
+            done.set()
             thread.join()
         self.assertEqual(growing.returncode, 0, growing.stdout + growing.stderr)
 
