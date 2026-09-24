@@ -23,7 +23,9 @@ def run(identifier, name, why, minutes, priority, steps, locked=True):
                     'finefloor-desc':['stock-4'], 'cleanup':['preflight']}
     group = 'sessiond-suites' if identifier in ('stock-1','edit1-2','edit2-3','stock-4') else None
     return dict(id=identifier, name=name, why=why, minutes=minutes,
-                priority=priority, preselected=True, locked=locked,
+                # C8 runs the evening before, in shakedown-3070ti.json (2026-09-23), so it is not
+                # ticked here: a second run would hit the app's refuse-to-overwrite and end the session.
+                priority=priority, preselected=(identifier != 'finefloor-desc'), locked=locked,
                 requires=requirements.get(identifier, []), group=group,
                 finalRun=(identifier == 'cleanup'), steps=steps)
 

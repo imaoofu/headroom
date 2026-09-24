@@ -450,7 +450,7 @@
       "why": "Thermal-order control on the stock floor.",
       "minutes": 3,
       "priority": 12,
-      "preselected": true,
+      "preselected": false,
       "locked": true,
       "requires": [
         "stock-4"

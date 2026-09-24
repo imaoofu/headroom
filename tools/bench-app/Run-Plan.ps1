@@ -431,6 +431,18 @@ try {
     Save-Record
     $script:sessionStarted=$true
     if (-not $DryRun) {
+        # Keep the PC awake for the whole session. Nothing in the kit did, and a shop PC on default
+        # power settings would sleep mid-suite in an unattended run. This is a per-process request,
+        # released when the engine exits; it changes no setting. Added 2026-09-23 before the first
+        # overnight Session D; verified with powercfg /requests.
+        try {
+            Add-Type -Namespace HeadroomBench -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);' -ErrorAction Stop
+            $keep=[HeadroomBench.Power]::SetThreadExecutionState([uint32]2147483649)
+            if ($keep -eq 0) { throw 'SetThreadExecutionState returned 0.' }
+            Write-Host 'Keeping the PC awake for this session.'
+        } catch { throw "Could not keep the PC awake; refusing an unattended session: $($_.Exception.Message)" }
+    }
+    if (-not $DryRun) {
         $gpu=@(Get-Smi 'name')
         if ($gpu[0] -ne $plan.card.name) { throw "Wrong GPU: $($gpu[0])." }
         $raw=@(& nvidia-smi --query-supported-clocks=graphics --format=csv,noheader,nounits)
@@ -501,6 +513,9 @@ try {
         if ($cleanupErrors.Count -gt 0) { $script:record.status='FAIL'; $script:record.error='Cleanup: '+($cleanupErrors -join '; '); $script:failed=$true }
         $script:record.end=(Get-Date).ToString('o')
         Save-Record
+    }
+    if (-not $DryRun) {
+        try { [void][HeadroomBench.Power]::SetThreadExecutionState([uint32]2147483648) } catch { }
     }
 }
 if ($script:failed) { exit 1 }
