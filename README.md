@@ -5,6 +5,18 @@ optimum — and explaining what sets it.**
 
 > ## ⚠️ Scope and status — read before citing anything here
 >
+> ⛔ **Corrections 2026-09-23. The block below dates from 2026-09-10, and two of its bullets are out of date:**
+> - **Four chips, not three.** An **RTX 2060 Super** (Turing) was measured 2026-09-12 and 2026-09-15
+>   (`data/frequency-sweeps/rtx2060s-*`). It is the card on which the load-floor rule cannot be
+>   applied, because its voltage leaves the floor 6 mV at a time.
+> - **"Customer machines" was a misclassification.** The 3070 Ti, 3060 and 2060 Super are PCs
+>   Raymond builds to sell and owns while they are on the bench, so tuning them is allowed (see
+>   CLAUDE.md, safety invariants). **The causal replication on the 3070 Ti is under way:** its
+>   curves are built and its shakedown passed on 2026-09-23. The four suites of Session D run
+>   2026-09-24. **Until they are scored, tuning is still one chip**, as the second bullet says.
+> - The 5060 Ti results of 2026-09-22/23 (rung B, NVML offset, offset ladder, activity A/B) and
+>   what is open next are in [ROADMAP.md](ROADMAP.md) under "Open right now — 2026-09-23".
+>
 > Updated 2026-09-10. Original data exists on three GPUs, and the central mechanism has been
 > measured on two architectures. What follows is what that does and does not license.
 >

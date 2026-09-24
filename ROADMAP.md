@@ -784,7 +784,52 @@ and say so every time.**
 
 ---
 
+## Open right now — 2026-09-23
+
+**Collected 2026-09-22/23 on the 5060 Ti, all registered in `docs/REGISTERED-PREDICTIONS.md` first:**
+- ✅ **§1 rung B of the floor ladder, HOLDS.** Median optimum 1702 as registered, 9 of 12 on it.
+  **Rung C is not built**, so the four-rung monotone test is 3 of 4 and unscored.
+- ✅ **§6 the load floor survives an NVML offset**, 2026-09-22.
+- 🟡 **§7 the offset ladder: registered verdict ⛔ INVALID, revised ✅ all hold.** The registration
+  demanded locks stock cannot reach, so it could never pass. Revised scoring is post hoc and is
+  reported beside the registered verdict, never instead of it.
+- ⛔ **§5 the activity A/B: INCOMPLETE, no registered verdict.** In 3 of 6 active runs the load
+  generator started 0.1–0.2 s after the first measured window opened. Fixing the trigger and
+  re-running is open.
+
+**The 3070 Ti causal replication (§4a/§4b) is under way. The PC is sold in about two days, so this
+is the last chance on this chip.**
+- ✅ Curves built and decoded (Amendment 2, before collection), and the profile store is hash-pinned
+  (`data/afterburner-profiles/3070ti-profiles-20260923/`).
+- ✅ **Shakedown 2026-09-23 passed, 23 of 23 steps**, on the shop PC. Edit 1 at a locked 1395 MHz
+  read 0.850 V; Edit 2 peaked at 1515 MHz. **C8, the descending fine sweep, was collected there as
+  real Session D data**; it is not scored yet.
+- ⏳ **Session D (C4–C7, four 12-workload suites, ~4.5 h) runs unattended 2026-09-24.** Nothing about
+  its outcome is known yet. Scoring is `analysis/score_session_d.py`, against §4a/§4b as registered.
+
+**New tooling: Headroom Bench** (`tools/bench-app/`). A click-to-run window on the USB kit that runs
+a checked run list, manages HWiNFO logging, reverts to stock and verifies its own end state. It had
+four live runs on 2026-09-23, all ending PASS, and ten defects were found and fixed that night.
+`tools/bench-app/README.md` lists what has and has not been tested live.
+
+**Open, in order:**
+1. **Score Session D** after it lands: join, score, write up, hash gate.
+2. 🟡 **Does HWiNFO log automation work with the screen OFF or the PC LOCKED?** Unverified. The
+   offset ladder's 48 of 48 log starts and stops ran 13:08–16:58 with a 2 h screen timeout and
+   logged input at 14:28, so at most the last ~30 min could have been screen-off, and nothing
+   records whether it was. Test it on the 5060 Ti with a short screen timeout before any run
+   depends on it. Until then an unattended run sets Screen: Never.
+3. **Build rung C** and run it, to complete §1's four-rung test.
+4. **Re-run the activity A/B** with a load trigger that starts before the first measured window.
+5. **The afterburner decoder cannot read a 3-slot store** or pair offsets with the next record's
+   base; the 3070 Ti table was decoded by hand. Teach it both.
+6. GPT jobs 12, 14 and 13 (`docs/agents/GPT-PROMPT-NEXT.md`).
+
+---
+
 ## Open right now — 2026-09-13
+
+⛔ **SUPERSEDED by the 2026-09-23 section above.** Kept as the record of what was open then.
 
 ⚠️ **This header read 2026-09-12 and the list below it is now PARTLY SUPERSEDED.** The live,
 priority-ordered list is `docs/TODO-20260918.md` (GPU work: `docs/GPU-WORKLIST-*.md`, one per card); this section is the roadmap-level view and defers
