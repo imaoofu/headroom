@@ -357,6 +357,68 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 
 ---
 
+## Job 16: Headroom Bench window fixes — estimate, status line, readings, and a verified stop
+
+**Why:** the first live run (2026-09-23, local 5060 Ti, PASS) showed four things Raymond wants
+fixed. **Fix only these.** Change nothing else unless it affects results or is a bug, and if you find
+one, report it rather than widening the job.
+
+> Fix four things in `tools/bench-app/` (mostly `Bench-Window.ps1`; the timer block is around lines
+> 270–322). Read `tools/bench-app/README.md` and the Job 15 review in
+> `docs/gpt-findings/2026-09-23-headroom-bench-job15.md` first. Four live-run bugs were fixed there,
+> so do not reintroduce them: early `$p.Handle` reads, the exact-name voltage column, the resume
+> filter, and the resume status.
+>
+> 1. **The session finish estimate never updates, and it is wrong after a resume.** It is
+>    `record.start + runMinutes`, computed once. On a resume `record.start` is the **first**
+>    attempt's start, so Raymond's screenshot showed "Session finish: 7:05 PM" beside "Estimated step
+>    finish: 7:17 PM". **Compute it every tick as now + remaining work.** Remaining work is the
+>    current step's estimate minus its elapsed time (never below zero), plus the estimates of every
+>    step not yet finished in the active plan, skipping steps a resume will skip. When the current
+>    step overruns its estimate, say so ("step running past its estimate") rather than showing a
+>    finish time in the past. **Put the calculation in a small pure function** that can be tested
+>    without a window.
+> 2. **The status line.** It shows bare "Running" and ends as "Finished: PASS". Make it a caption
+>    and a value, **`Status:` followed by the state on its right**: `Ready`, `Running`,
+>    `Pause requested`, `Paused`, `Stop requested`, `Stopping and reverting`, `PASS`, `FAIL`.
+>    Colour the value only if it costs nothing (plain `ForeColor`: green PASS, red FAIL). On FAIL,
+>    show the session's `error` text beneath it.
+> 3. **The live readings are one comma list:** `Core / memory / power / temp / util: 2572, 13801,
+>    176.86, 62, 99`. Show labelled values with units in fixed positions, e.g.
+>    `Core 2572 MHz   Memory 13801 MHz   Power 176.9 W   Temp 62 C   Util 99%   Voltage 0.720 V`.
+>    Round power to one decimal. Show voltage only while a log is running. **ASCII only in `.ps1`**:
+>    write `C`, or build the degree sign with `[char]0x00B0`, never type it. Still **one `nvidia-smi`
+>    query per second**, with no new controls that redraw heavily (rule: the window must stay light).
+> 4. **Make sure everything is stopped when a session ends, and show it verified rather than
+>    assumed.** Today the window sets `HWiNFO: stopped` as fixed text when the engine exits; nothing
+>    checks it. (It was in fact stopped after the live run: Claude checked the button state and file
+>    growth by hand.) At the end of every session, PASS, FAIL or Stop, in the engine's `finally`,
+>    after the existing cleanup:
+>    - check logging with `Invoke-HwinfoLogging.ps1 -Status`. If it is still logging, stop it and
+>      check again;
+>    - read back that clocks are reset (`Reset-Clocks` already runs; record its read-back);
+>    - confirm no process the engine started is still running (the `gpu_workload.py` witness, the
+>      `Run-Child.ps1` child and its tree). Kill any survivor and record that you had to.
+>    Write all three to a `finalState` object in the session JSON. The window shows
+>    `HWiNFO logging: stopped (verified)`, or a red line saying what is still running.
+>    **Do not close HWiNFO itself**: stop the logging only.
+>
+> **Tests** (extend `analysis/test_bench_app.py`; rule 11 applies, so they run under PS 5.1 and PS 7):
+> - the estimate function: a fresh run; mid-run; **a resumed session whose `start` is an hour old**
+>   (the screenshot's case); an overrunning step; and skipped steps;
+> - the readings formatter, including a missing field;
+> - the status text for each state;
+> - a dry run whose mocked HWiNFO reports "still logging" at the end: the engine stops it and records
+>   it in `finalState`.
+>
+> Keep every existing test passing. Every `.ps1` must parse under 5.1 and stay ASCII.
+>
+> 🛑 **Rule 4:** build and dry-run only. Do not run the engine for real, start HWiNFO, call
+> Afterburner or lock a clock. Claude will re-run the live test on the 5060 Ti. File what you could
+> **not** verify, and do not commit.
+
+---
+
 ## ⛔ Still do not ask it
 
 - **Anything settled.** `GPT-QUEUE.md` lists these.
