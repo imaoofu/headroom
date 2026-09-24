@@ -1,6 +1,7 @@
 param([switch]$DryRun,[int]$AutoCloseSeconds=0,[string]$CatalogPath='', [string]$MockPath='')
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Hwinfo-Csv.ps1')
+. (Join-Path $PSScriptRoot 'Bench-Display.ps1')
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
@@ -52,8 +53,8 @@ $script:outputPath=''
 $script:errorPath=''
 $script:lastOutput=''
 $script:resumeSession=''
-$script:runMinutes=0
 $script:activePlan=$null
+$script:lastSmiLine=''
 
 function Button($text,$x,$y,$w,$action) {
     $b=New-Object Windows.Forms.Button
@@ -66,6 +67,11 @@ function Label($text,$x,$y,$w,$h) {
     $l.Text=$text; $l.SetBounds($x,$y,$w,$h)
     $form.Controls.Add($l)
     return $l
+}
+function Set-BenchStatus([string]$state) {
+    $display=Get-BenchStatus $state
+    $statusValue.Text=$display.value
+    $statusValue.ForeColor=[Drawing.Color]::FromName($display.color)
 }
 function Write-Control($name,$value) {
     if (-not $script:session) { return }
@@ -240,7 +246,6 @@ $start=Button 'Start' 300 291 90 {
     }
     if (-not (Validate-Queue $planPath)) { return }
     $script:activePlan=$plan
-    $script:runMinutes=(@($plan.runs | Measure-Object minutes -Sum)[0].Sum)
     $script:session=$session
     $script:outputPath=$session+'.output.txt'
     $script:errorPath=$session+'.error.txt'
@@ -254,25 +259,28 @@ $start=Button 'Start' 300 291 90 {
     $script:engine=Start-Process -FilePath 'powershell.exe' -ArgumentList $args -PassThru -WindowStyle Hidden -RedirectStandardOutput $script:outputPath -RedirectStandardError $script:errorPath
     $null=$script:engine.Handle   # PS 5.1: keep ExitCode readable after exit
     $script:resumeSession=''
-    $status.Text='Running'; $start.Enabled=$false
+    Set-BenchStatus 'Running'; $start.Enabled=$false
 }
-$pause=Button 'Pause after step' 398 291 130 { Write-Control 'pause' $true; $status.Text='Pause requested' }
-$stop=Button 'Stop' 536 291 80 { Write-Control 'stop' $true; $status.Text='Stop requested' }
-$continue=Button 'Continue' 624 291 90 { Write-Control 'continue' $true; $status.Text='Continuing' }
-$status=Label 'Ready. Preselected catalog loaded.' 12 330 800 23
-$stepLabel=Label 'Step 0 of 0' 12 356 440 24
-$estimate=Label 'Finish estimate appears after Start.' 460 356 600 24
-$progress=New-Object Windows.Forms.ProgressBar; $progress.SetBounds(12,385,1078,18); $form.Controls.Add($progress)
-$telemetry=Label 'Core / memory / power / temp / util / voltage: waiting' 12 414 1070 24
-$logging=Label 'HWiNFO: stopped' 12 443 1070 24
-$finished=New-Object Windows.Forms.TextBox; $finished.Multiline=$true; $finished.ReadOnly=$true; $finished.ScrollBars='Vertical'; $finished.SetBounds(12,472,1078,85); $form.Controls.Add($finished)
+$pause=Button 'Pause after step' 398 291 130 { Write-Control 'pause' $true; Set-BenchStatus 'Pause requested' }
+$stop=Button 'Stop' 536 291 80 { Write-Control 'stop' $true; Set-BenchStatus 'Stop requested' }
+$continue=Button 'Continue' 624 291 90 { Write-Control 'continue' $true; Set-BenchStatus 'Running' }
+$statusCaption=Label 'Status:' 12 330 55 23
+$statusValue=Label 'Ready' 70 330 500 23
+$errorLabel=Label '' 12 353 1070 34
+$errorLabel.ForeColor=[Drawing.Color]::Red
+$stepLabel=Label 'Step 0 of 0' 12 392 440 24
+$estimate=Label 'Finish estimate appears after Start.' 460 392 630 24
+$progress=New-Object Windows.Forms.ProgressBar; $progress.SetBounds(12,421,1078,18); $form.Controls.Add($progress)
+$telemetry=Label (Format-BenchReadings '') 12 450 1070 24
+$logging=Label 'HWiNFO logging: not yet verified' 12 479 1070 24
+$finished=New-Object Windows.Forms.TextBox; $finished.Multiline=$true; $finished.ReadOnly=$true; $finished.ScrollBars='Vertical'; $finished.SetBounds(12,508,1078,78); $form.Controls.Add($finished)
 $output=New-Object Windows.Forms.TextBox; $output.Multiline=$true; $output.ReadOnly=$true; $output.ScrollBars='Vertical'; $output.Font=New-Object Drawing.Font('Consolas',8)
-$output.SetBounds(12,563,1078,135); $form.Controls.Add($output)
+$output.SetBounds(12,592,1078,112); $form.Controls.Add($output)
 $timer=New-Object Windows.Forms.Timer; $timer.Interval=1000
 $timer.Add_Tick({
     if ($script:engine -and -not $script:engine.HasExited -and -not $DryRun) {
         $smi=@(& nvidia-smi '--query-gpu=clocks.sm,clocks.mem,power.draw,temperature.gpu,utilization.gpu' '--format=csv,noheader,nounits' 2>$null)
-        if ($LASTEXITCODE -eq 0 -and $smi.Count -gt 0) { $telemetry.Text='Core / memory / power / temp / util: '+$smi[0] }
+        if ($LASTEXITCODE -eq 0 -and $smi.Count -gt 0) { $script:lastSmiLine=[string]$smi[0] }
     }
     if ($script:outputPath -and (Test-Path $script:outputPath)) {
         $lines=@(Get-Content $script:outputPath -Tail 100 -ErrorAction SilentlyContinue)
@@ -288,22 +296,14 @@ $timer.Add_Tick({
             $all=if ($record.progress) { [int]$record.progress.total } else { 1 }
             $done=if ($record.progress) { [int]$record.progress.index-1 } else { 0 }
             $progress.Maximum=[math]::Max(1,$all); $progress.Value=[math]::Min($done,$progress.Maximum)
-            $current=@($record.steps | Where-Object { $_.verdict -eq 'RUNNING' } | Select-Object -Last 1)
+            $attemptStart=if ($record.attemptStart) { [datetime]$record.attemptStart } else { [datetime]$record.start }
+            $current=@($record.steps | Where-Object { $_.verdict -eq 'RUNNING' -and [datetime]$_.start -ge $attemptStart } | Select-Object -Last 1)
             if ($current.Count -gt 0) { $stepLabel.Text=('Step {0} of {1}: {2}' -f ($done+1),$all,$current[0].name) }
-            if ($record.start) {
-                $sessionEnd=([datetime]$record.start).AddMinutes($script:runMinutes)
-                $stepEnd=''
-                if ($current.Count -gt 0) {
-                    $parts=$current[0].key.Split('/')
-                    $which=@($script:activePlan.runs | Where-Object { $_.id -eq $parts[0] } | Select-Object -First 1)
-                    if ($which.Count -gt 0) {
-                        $match=@($which[0].steps | Where-Object { $_.id -eq $parts[1] } | Select-Object -First 1)
-                        $mins=if ($match.Count -gt 0 -and $match[0].estimatedMinutes) { [double]$match[0].estimatedMinutes } else { [double]$which[0].minutes / [math]::Max(1,$which[0].steps.Count) }
-                        $stepEnd=([datetime]$current[0].start).AddMinutes($mins).ToString('t')
-                    }
-                }
-                $estimate.Text='Estimated step finish: '+$stepEnd+'   Session finish: '+$sessionEnd.ToString('t')
-            }
+            if ($script:activePlan -and $record.status -eq 'RUNNING') {
+                $prediction=Get-BenchEstimate $script:activePlan $record (Get-Date)
+                $stepText=if ($prediction.stepOverrun) { 'step running past its estimate' } elseif ($prediction.stepFinish) { 'Step finish: '+$prediction.stepFinish.ToString('t') } else { 'Next step pending' }
+                $estimate.Text=$stepText+'   Session finish: '+$prediction.sessionFinish.ToString('t')
+            } elseif ($record.finalState) { $estimate.Text='Measurement work complete.' }
             $finished.Text=(@($record.steps | Where-Object { $_.verdict -ne 'RUNNING' } | ForEach-Object {
                 $duration=[math]::Round((([datetime]$_.end)-([datetime]$_.start)).TotalSeconds,1)
                 '{0} {1} ({2}s) {3}' -f $_.verdict,$_.key,$duration,($_.witness | ConvertTo-Json -Compress -Depth 4)
@@ -311,13 +311,37 @@ $timer.Add_Tick({
             $active=@($record.steps | Where-Object { $_.type -eq 'hwinfo-start' -and $_.verdict -eq 'PASS' } | Select-Object -Last 1)
             $lastStop=@($record.steps | Where-Object { $_.type -eq 'hwinfo-stop' -and $_.verdict -eq 'PASS' } | Select-Object -Last 1)
             $isLogging=($active.Count -gt 0 -and ($lastStop.Count -eq 0 -or [datetime]$active[0].end -gt [datetime]$lastStop[0].end))
-            $logging.Text=if ($isLogging) { 'HWiNFO: logging to '+$active[0].witness.path+' ('+$active[0].witness.mode+')' } else { 'HWiNFO: stopped' }
-            if ($isLogging) { $voltage=Read-VoltageTail $active[0].witness.path; if ($voltage) { $telemetry.Text+='   Core voltage: '+$voltage+' V' } }
+            if ($record.finalState) {
+                $isLogging=($record.finalState.logging.status -eq 'running')
+                $logging.Text=if ($record.finalState.logging.stoppedVerified) { 'HWiNFO logging: stopped (verified)' } else { 'HWiNFO logging: '+[string]$record.finalState.logging.status+' (unverified)' }
+                $logging.ForeColor=if ($record.finalState.logging.stoppedVerified) { [Drawing.Color]::DarkGreen } else { [Drawing.Color]::Red }
+            } else { $logging.Text=if ($isLogging) { 'HWiNFO logging: '+$active[0].witness.path+' ('+$active[0].witness.mode+')' } else { 'HWiNFO logging: stopped; final check pending' } }
+            $voltage=if ($isLogging -and $active.Count -gt 0) { Read-VoltageTail $active[0].witness.path } else { '' }
+            $telemetry.Text=Format-BenchReadings $script:lastSmiLine $voltage $isLogging
             if ($record.live) {
                 $achieved=if ($record.live.achievedMhz) { [string]$record.live.achievedMhz } else { 'pending' }
                 $stepLabel.Text+=('   {0} point {1}/{2}: target {3}, achieved {4} MHz' -f $record.live.workload,$record.live.point,$record.live.of,$record.live.targetMhz,$achieved)
             }
-            if ($script:engine -and $script:engine.HasExited) { $status.Text='Finished: '+$record.status; $start.Enabled=$false; $logging.Text='HWiNFO: stopped' }
+            if ($script:engine -and $script:engine.HasExited) {
+                $start.Enabled=$false
+                $result=if ($record.status -eq 'PASS') { 'PASS' } else { 'FAIL' }
+                Set-BenchStatus $result
+                $errorLabel.Text=if ($result -eq 'FAIL') { [string]$record.error } else { '' }
+                $issues=@()
+                if (-not $record.finalState -or -not $record.finalState.logging.stoppedVerified) { $issues+='HWiNFO stop unverified: '+[string]$record.finalState.logging.status }
+                if (-not $record.finalState -or -not $record.finalState.processes.verified) { $issues+='bench processes: '+[string]$record.finalState.processes.detail }
+                if (-not $record.finalState -or -not $record.finalState.clocks.verified) { $issues+='clock reset unverified' }
+                if ($issues.Count -gt 0) {
+                    $logging.Text=$issues -join '; '
+                    $logging.ForeColor=[Drawing.Color]::Red
+                } else {
+                    $processText=if (@($record.finalState.processes.killedPids).Count -gt 0) { 'bench survivors killed: '+(@($record.finalState.processes.killedPids) -join ',') } else { 'bench processes stopped (verified)' }
+                    $logging.Text='HWiNFO logging: stopped (verified); clocks reset; '+$processText
+                    $logging.ForeColor=[Drawing.Color]::DarkGreen
+                }
+                $telemetry.Text=Format-BenchReadings $script:lastSmiLine
+            } elseif ($record.operatorState -eq 'Paused' -and $statusValue.Text -ne 'Stop requested' -and $statusValue.Text -ne 'Stopping and reverting') { Set-BenchStatus 'Paused' }
+            elseif ($record.operatorState -eq 'Stopping and reverting') { Set-BenchStatus 'Stopping and reverting' }
         } catch { }
     }
 })
@@ -325,7 +349,7 @@ $timer.Start()
 $form.Add_FormClosing({
     if ($script:engine -and -not $script:engine.HasExited) {
         Write-Control 'stop' $true
-        $status.Text='Stopping and reverting. Keep this window open.'
+        Set-BenchStatus 'Stopping and reverting'
         $_.Cancel=$true
     }
 })
@@ -344,7 +368,7 @@ if (Test-Path $resultDir) {
         Select-Object -First 1)
     if ($pending.Count -gt 0) {
         $choice=[Windows.Forms.MessageBox]::Show(('Resume interrupted session '+$pending[0].Name+'?'),'Headroom Bench',[Windows.Forms.MessageBoxButtons]::YesNo)
-        if ($choice -eq [Windows.Forms.DialogResult]::Yes) { $script:resumeSession=$pending[0].FullName; $status.Text='Resume ready. Press Start.' }
+        if ($choice -eq [Windows.Forms.DialogResult]::Yes) { $script:resumeSession=$pending[0].FullName; Set-BenchStatus 'Ready' }
     }
 }
 [void]$form.ShowDialog()

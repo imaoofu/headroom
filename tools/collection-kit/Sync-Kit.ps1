@@ -95,6 +95,7 @@ $files = @(
     @{ From = "tools\hwinfo-logging\Invoke-HwinfoLogging.ps1"; To = "tools\hwinfo-logging\Invoke-HwinfoLogging.ps1" },
     @{ From = "tools\bench-app\RUN-BENCH.bat"; To = "RUN-BENCH.bat" },
     @{ From = "tools\bench-app\Bench-Window.ps1"; To = "tools\bench-app\Bench-Window.ps1" },
+    @{ From = "tools\bench-app\Bench-Display.ps1"; To = "tools\bench-app\Bench-Display.ps1" },
     @{ From = "tools\bench-app\Run-Plan.ps1"; To = "tools\bench-app\Run-Plan.ps1" },
     @{ From = "tools\bench-app\Run-Child.ps1"; To = "tools\bench-app\Run-Child.ps1" },
     @{ From = "tools\bench-app\New-Plan.ps1"; To = "tools\bench-app\New-Plan.ps1" },

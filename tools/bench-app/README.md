@@ -8,6 +8,8 @@ The window polls at 1 Hz and keeps measurement work in `Run-Plan.ps1`. Its contr
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\bench-app\Run-Plan.ps1 -PlanPath C:\absolute\plan.json
 ```
 
+The session finish estimate uses the current time and unfinished steps, including the current step's remaining estimate. On a resume it skips completed runs and recalculates from the new attempt. An overrunning step is labelled as such. The window shows labelled GPU readings and displays `finalState` checks for HWiNFO logging, clock reset and any surviving bench processes. A red line means cleanup could not verify a stopped state; the session JSON has the details.
+
 For a dry run, supply `-DryRun -MockPath C:\absolute\mock.json -SessionPath C:\absolute\session.json`. Dry runs use mocked telemetry and never call HWiNFO, Afterburner, or a GPU-setting command. The window also accepts `-DryRun -MockPath` for a UI rehearsal.
 
 The app records `bench-plan-<stamp>.json`, `bench-session-<stamp>.json`, a state file, control file, and output text under the USB's `results` folder. A failed or interrupted session may be resumed when reopening the window or with `-Resume -SessionPath <existing session> -PlanPath <original plan>`. Completed steps in completed runs are skipped; an incomplete run starts again, with fresh log and sweep paths. Existing measurement files are never overwritten.

@@ -25,6 +25,14 @@ $script:currentSlot = 0
 $script:lastWitness = $null
 $script:sessionStarted = $false
 $script:cleaningUp = $false
+$script:startedProcesses = @()
+$script:mockLoggingRunning = $false
+
+function Set-RecordProperty([string]$name, $value) {
+    if ($script:record -is [System.Collections.IDictionary]) { $script:record[$name]=$value }
+    elseif ($script:record.PSObject.Properties.Name -contains $name) { $script:record.$name=$value }
+    else { $script:record | Add-Member -NotePropertyName $name -NotePropertyValue $value }
+}
 
 function Save-Record {
     $json = $script:record | ConvertTo-Json -Depth 30
@@ -71,12 +79,94 @@ function Get-Smi([string]$query) {
     return @(([string]$row[0]).Split(',') | ForEach-Object { $_.Trim() })
 }
 function Reset-Clocks {
-    if ($DryRun) { return }
+    if ($DryRun) { return @{ verified=$true; mocked=$true; resetCommandSucceeded=$true; readbackSmClockMhz=[double]$script:mock.witnesses.'1'.core } }
     & nvidia-smi -rgc | Out-Host
     if ($LASTEXITCODE -ne 0) { throw 'Clock reset failed.' }
     Start-Sleep -Milliseconds 700
     $clock=@(Get-Smi 'clocks.sm')
+    $readback=0.0
+    if (-not [double]::TryParse([string]$clock[0],[Globalization.NumberStyles]::Float,[Globalization.CultureInfo]::InvariantCulture,[ref]$readback) -or $readback -le 0) { throw 'Clock reset read-back failed.' }
     Write-Host "Clocks reset; read-back SM clock $($clock[0]) MHz."
+    return @{ verified=$true; mocked=$false; resetCommandSucceeded=$true; readbackSmClockMhz=$readback }
+}
+function Register-BenchProcess($process,[string]$kind) {
+    $started=Get-Date
+    try { $started=[datetime]$process.StartTime } catch { }
+    $script:startedProcesses+=@{ pid=[int]$process.Id; started=$started; kind=$kind }
+}
+function Get-BenchSurvivors {
+    $all=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+    $found=@{}
+    foreach ($root in $script:startedProcesses) {
+        $live=@($all | Where-Object { $_.ProcessId -eq $root.pid -and [math]::Abs((([datetime]$_.CreationDate)-$root.started).TotalSeconds) -lt 3 })
+        foreach ($process in $live) { $found[[string]$process.ProcessId]=$process }
+        $children=@($all | Where-Object {
+            $_.ParentProcessId -eq $root.pid -and ([datetime]$_.CreationDate) -ge $root.started.AddSeconds(-1) -and
+            ([string]$_.CommandLine).IndexOf($script:kit,[StringComparison]::OrdinalIgnoreCase) -ge 0
+        })
+        foreach ($process in $children) { $found[[string]$process.ProcessId]=$process }
+    }
+    # A live child can have its own children; include that tree before deciding it is clear.
+    $frontier=@($found.Values)
+    while ($frontier.Count -gt 0) {
+        $next=@()
+        foreach ($parent in $frontier) {
+            foreach ($child in @($all | Where-Object { $_.ParentProcessId -eq $parent.ProcessId })) {
+                $id=[string]$child.ProcessId
+                if (-not $found.ContainsKey($id)) { $found[$id]=$child; $next+=$child }
+            }
+        }
+        $frontier=$next
+    }
+    return @($found.Values)
+}
+function Confirm-BenchProcesses {
+    if ($DryRun) { return @{ verified=$true; mocked=$true; killedPids=@(); runningPids=@(); detail='none' } }
+    $before=@(Get-BenchSurvivors)
+    $killed=@()
+    foreach ($process in $before) {
+        & taskkill.exe /PID ([string]$process.ProcessId) /T /F | Out-Host
+        $killed+=[int]$process.ProcessId
+    }
+    if ($killed.Count -gt 0) { Start-Sleep -Seconds 1 }
+    $after=@(Get-BenchSurvivors)
+    $running=@($after | ForEach-Object { [int]$_.ProcessId })
+    $detail=if ($running.Count -gt 0) { 'still running: '+($running -join ',') } elseif ($killed.Count -gt 0) { 'killed survivors: '+($killed -join ',') } else { 'none' }
+    return @{ verified=($running.Count -eq 0); mocked=$false; killedPids=$killed; runningPids=$running; detail=$detail }
+}
+function Get-BenchLogStatus {
+    if ($DryRun) { if ($script:mockLoggingRunning) { return 'running' }; return 'stopped' }
+    # *>&1, not 2>&1: the helper prints with Write-Host, which PS 5.1 sends to the information stream.
+    # With 2>&1 nothing was captured, so every real session would have ended "unknown" and FAIL
+    # (found at review 2026-09-23 by running this exact call; the dry-run tests mock it).
+    $output=@(& (Join-Path $script:kit 'tools\hwinfo-logging\Invoke-HwinfoLogging.ps1') -Status *>&1)
+    $code=$LASTEXITCODE
+    foreach ($line in $output) { Write-Host $line }
+    # No HWiNFO process means nothing can be logging; check the process, not printed text.
+    if ($code -eq 3 -and -not (Get-Process HWiNFO64 -ErrorAction SilentlyContinue)) { return 'stopped' }
+    if ($code -ne 0) { return 'unknown' }
+    $joined=$output -join "`n"
+    if ($joined -match 'Logging is RUNNING[.]') { return 'running' }
+    if ($joined -match 'Logging is stopped[.]') { return 'stopped' }
+    return 'unknown'
+}
+function Confirm-BenchLogStopped {
+    $first=Get-BenchLogStatus
+    $stopAttempted=$false
+    $stopError=''
+    if ($first -eq 'running') {
+        $stopAttempted=$true
+        if ($DryRun) {
+            if (-not $script:mock.finalLoggingStopFails) { $script:mockLoggingRunning=$false }
+        } else {
+            $output=@(& (Join-Path $script:kit 'tools\hwinfo-logging\Invoke-HwinfoLogging.ps1') -Stop *>&1)
+            $code=$LASTEXITCODE
+            foreach ($line in $output) { Write-Host $line }
+            if ($code -ne 0) { $stopError="HWiNFO stop exited $code." }
+        }
+    }
+    $last=Get-BenchLogStatus
+    return @{ status=$last; stoppedVerified=($last -eq 'stopped'); stopAttempted=$stopAttempted; stopError=$stopError; mocked=[bool]$DryRun }
 }
 function Read-Voltage([string]$path) {
     if ($DryRun) { return [double]$script:mock.voltage }
@@ -93,6 +183,7 @@ function Check-Control([bool]$betweenSteps) {
     if ($control.stop) { throw 'Operator requested Stop.' }
     if ($betweenSteps -and $control.pause) {
         Write-Host 'Paused after this step. Press Continue in the window.'
+        Set-RecordProperty 'operatorState' 'Paused'; Save-Record
         while ($true) {
             Start-Sleep -Milliseconds 500
             if ($ParentPid -gt 0 -and -not (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue)) { throw 'Window closed.' }
@@ -102,6 +193,7 @@ function Check-Control([bool]$betweenSteps) {
         }
         $control.pause = $false; $control.continue = $false
         [IO.File]::WriteAllText($script:controlPath, ($control | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
+        Set-RecordProperty 'operatorState' 'Running'; Save-Record
     }
 }
 function Wait-Human([string]$instruction) {
@@ -140,6 +232,7 @@ function Run-Child($job) {
     # PS 5.1: read Handle at once, or ExitCode comes back empty once a redirected process exits
     # (reproduced 2026-09-23; the first live suite completed and was then reported as failed).
     $null=$p.Handle
+    Register-BenchProcess $p 'Run-Child'
     $previousLength=0
     $pointIndex=0
     $pointCount=if ($job.type -eq 'sweep') { [int]$job.points } else { 13 }
@@ -216,6 +309,7 @@ function Run-Witness($step) {
             $args = @($workload,'--workload',$step.workload,'--iterations',[string]$step.iterations,'--json')
             $p = Start-Process -FilePath $python -ArgumentList $args -PassThru -WindowStyle Hidden
             $null = $p.Handle   # PS 5.1: read at once so ExitCode survives the exit
+            Register-BenchProcess $p 'gpu_workload witness'
             try {
                 while (-not $p.HasExited) {
                     Check-Control $false
@@ -259,7 +353,7 @@ function Run-Witness($step) {
         }
         return @{ coreMhz=$peak; memoryMhz=$memory; voltageV=$voltage; samples=$samples.Count }
     } finally {
-        if ($locked) { Reset-Clocks }
+        if ($locked) { [void](Reset-Clocks) }
     }
 }
 function Check-StockDrift($step) {
@@ -399,6 +493,7 @@ try {
     }
     if ($MockPath) { $script:mock=Get-Content $MockPath -Raw | ConvertFrom-Json }
     elseif ($DryRun) { throw '-DryRun requires -MockPath for deterministic checks.' }
+    if ($DryRun) { $script:mockLoggingRunning=[bool]$script:mock.finalLoggingStillRunning }
     $plan=Get-Content $PlanPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $planHash=Sha256 $PlanPath
     if (-not $SessionPath) { $SessionPath=Join-Path $script:kit ('results\bench-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json') }
@@ -423,9 +518,14 @@ try {
         $script:resumeSuffix='-resume-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
         # A resumed session is running again; the earlier FAIL stays in its step history.
         $script:record.status='RUNNING'; $script:record.error=$null; $script:record.end=$null
+        Set-RecordProperty 'attemptStart' (Get-Date).ToString('o')
+        Set-RecordProperty 'resumeRunId' $script:resumeRunId
+        Set-RecordProperty 'operatorState' 'Running'
+        Set-RecordProperty 'finalState' $null
     } else {
         if (Test-Path $SessionPath) { throw "Refusing to overwrite session: $SessionPath" }
-        $script:record=[ordered]@{ schemaVersion=1; planHash=$planHash; start=(Get-Date).ToString('o'); end=$null; status='RUNNING'; dryRun=[bool]$DryRun; selectedRuns=@($plan.runs | ForEach-Object id); customizations=@($plan.customizations); driver=$null; power=$null; profileHash=$null; supportedClockRange=$null; progress=$null; live=$null; steps=@(); revert=$null; error=$null; afterRevertHumanCompleted=$false }
+        $started=(Get-Date).ToString('o')
+        $script:record=[ordered]@{ schemaVersion=1; planHash=$planHash; start=$started; attemptStart=$started; resumeRunId=''; end=$null; status='RUNNING'; operatorState='Running'; finalState=$null; dryRun=[bool]$DryRun; selectedRuns=@($plan.runs | ForEach-Object id); customizations=@($plan.customizations); driver=$null; power=$null; profileHash=$null; supportedClockRange=$null; progress=$null; live=$null; steps=@(); revert=$null; error=$null; afterRevertHumanCompleted=$false }
     }
     if (-not (Test-Path (Split-Path $SessionPath -Parent))) { New-Item -ItemType Directory -Path (Split-Path $SessionPath -Parent) -Force | Out-Null }
     Save-Record
@@ -491,6 +591,8 @@ try {
 } finally {
     if ($script:record -and $script:sessionStarted) {
         $script:cleaningUp=$true
+        try { Set-RecordProperty 'operatorState' 'Stopping and reverting'; Save-Record }
+        catch { Write-Host "Could not publish cleanup state: $($_.Exception.Message)" }
         # A resumed record is a PSCustomObject from JSON, which cannot gain a property by
         # assignment; a new one is an ordered dictionary. Handle both, and never let this block cleanup.
         try {
@@ -501,7 +603,8 @@ try {
             }
         } catch { Write-Host "Could not add cleanupWarnings: $($_.Exception.Message)" }
         $cleanupErrors=@()
-        try { Reset-Clocks } catch { $cleanupErrors+=$_.Exception.Message }
+        $final=@{ logging=@{ status='unknown'; stoppedVerified=$false; stopAttempted=$false }; clocks=@{ verified=$false; error='reset not completed' }; processes=@{ verified=$false; detail='not checked' } }
+        try { $final.clocks=Reset-Clocks } catch { $final.clocks=@{ verified=$false; error=$_.Exception.Message }; $cleanupErrors+=$_.Exception.Message }
         try { Stop-Log } catch { $cleanupErrors+=$_.Exception.Message }
         try {
             if ($plan.revert) {
@@ -510,6 +613,15 @@ try {
                 $script:record.revert=Run-Witness $plan.revert.witness
             }
         } catch { $cleanupErrors+=$_.Exception.Message }
+        try {
+            $final.logging=Confirm-BenchLogStopped
+            if (-not $final.logging.stoppedVerified) { $cleanupErrors+='HWiNFO logging was not verified stopped: '+$final.logging.status }
+        } catch { $final.logging=@{ status='unknown'; stoppedVerified=$false; error=$_.Exception.Message }; $cleanupErrors+=$_.Exception.Message }
+        try {
+            $final.processes=Confirm-BenchProcesses
+            if (-not $final.processes.verified) { $cleanupErrors+='Bench processes remain: '+$final.processes.detail }
+        } catch { $final.processes=@{ verified=$false; detail=$_.Exception.Message }; $cleanupErrors+=$_.Exception.Message }
+        Set-RecordProperty 'finalState' $final
         if ($cleanupErrors.Count -gt 0) { $script:record.status='FAIL'; $script:record.error='Cleanup: '+($cleanupErrors -join '; '); $script:failed=$true }
         $script:record.end=(Get-Date).ToString('o')
         Save-Record

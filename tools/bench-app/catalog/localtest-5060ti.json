@@ -50,7 +50,7 @@
       "finalRun": false,
       "steps": [
         { "id": "profile", "type": "apply-profile", "name": "Apply profile P3 (stock)", "estimatedMinutes": 0.2, "slot": 3 },
-        { "id": "witness-log-start", "type": "hwinfo-start", "name": "Start short witness voltage log", "estimatedMinutes": 0.3, "path": "kit:/results/hwinfo-benchtest-5060ti-20260923-witness.csv" },
+        { "id": "witness-log-start", "type": "hwinfo-start", "name": "Start short witness voltage log", "estimatedMinutes": 0.3, "path": "kit:/results/hwinfo-benchtest-5060ti-20260923b-witness.csv" },
         { "id": "witness", "type": "witness", "name": "Locked 1545 MHz reads the 0.720 V floor", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1520, "coreMax": 1560, "memoryMin": 13700, "memoryMax": 14101, "lockMhz": 1545, "voltageMin": 0.715, "voltageMax": 0.725 },
         { "id": "witness-log-stop", "type": "hwinfo-stop", "name": "Stop witness voltage log", "estimatedMinutes": 0.2 }
       ]
@@ -68,8 +68,8 @@
       "finalRun": false,
       "steps": [
         { "id": "witness", "type": "witness", "name": "Stock under load, unlocked", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 2300, "coreMax": 2750, "memoryMin": 13700, "memoryMax": 14101 },
-        { "id": "log-start", "type": "hwinfo-start", "name": "Start HWiNFO log", "estimatedMinutes": 0.3, "path": "kit:/results/hwinfo-benchtest-5060ti-20260923-suite.csv" },
-        { "id": "collect", "type": "suite", "name": "Collect gemm, 13 points", "estimatedMinutes": 7, "label": "benchtest-5060ti-20260923-suite", "settings": "HEADROOM BENCH LIVE TEST, not measurement-grade. Stock P3, PL 180 W, memory +0, driver 616.92.", "workloads": ["gemm"], "iterations": [120], "expectedMemoryClockMhz": 13801 },
+        { "id": "log-start", "type": "hwinfo-start", "name": "Start HWiNFO log", "estimatedMinutes": 0.3, "path": "kit:/results/hwinfo-benchtest-5060ti-20260923b-suite.csv" },
+        { "id": "collect", "type": "suite", "name": "Collect gemm, 13 points", "estimatedMinutes": 7, "label": "benchtest-5060ti-20260923b-suite", "settings": "HEADROOM BENCH LIVE TEST, not measurement-grade. Stock P3, PL 180 W, memory +0, driver 616.92.", "workloads": ["gemm"], "iterations": [120], "expectedMemoryClockMhz": 13801 },
         { "id": "log-stop", "type": "hwinfo-stop", "name": "Stop HWiNFO log", "estimatedMinutes": 0.2 }
       ]
     },
@@ -85,8 +85,8 @@
       "group": "livetest",
       "finalRun": false,
       "steps": [
-        { "id": "log-start", "type": "hwinfo-start", "name": "Start HWiNFO log", "estimatedMinutes": 0.3, "path": "kit:/results/hwinfo-benchtest-5060ti-20260923-sweep.csv" },
-        { "id": "sweep", "type": "sweep", "name": "gemm 1400-1700 MHz, 4 points, descending", "estimatedMinutes": 3, "label": "benchtest-5060ti-20260923-sweep", "workload": "gemm", "iterations": 120, "minMhz": 1400, "maxMhz": 1700, "points": 4, "direction": "descending", "output": "kit:/results/benchtest-5060ti-20260923-sweep", "settings": "HEADROOM BENCH LIVE TEST, not measurement-grade. Stock P3." },
+        { "id": "log-start", "type": "hwinfo-start", "name": "Start HWiNFO log", "estimatedMinutes": 0.3, "path": "kit:/results/hwinfo-benchtest-5060ti-20260923b-sweep.csv" },
+        { "id": "sweep", "type": "sweep", "name": "gemm 1400-1700 MHz, 4 points, descending", "estimatedMinutes": 3, "label": "benchtest-5060ti-20260923b-sweep", "workload": "gemm", "iterations": 120, "minMhz": 1400, "maxMhz": 1700, "points": 4, "direction": "descending", "output": "kit:/results/benchtest-5060ti-20260923b-sweep", "settings": "HEADROOM BENCH LIVE TEST, not measurement-grade. Stock P3." },
         { "id": "log-stop", "type": "hwinfo-stop", "name": "Stop HWiNFO log", "estimatedMinutes": 0.2 }
       ]
     },

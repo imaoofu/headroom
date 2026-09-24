@@ -50,6 +50,26 @@ class BenchAppTests(unittest.TestCase):
         cmd += ['-File', str(APP / script), *map(str, args)]
         return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=40)
 
+    def ps_command(self, command):
+        cmd = [PS, '-NoProfile']
+        if os.name == 'nt':
+            cmd += ['-ExecutionPolicy', 'Bypass']
+        return subprocess.run(cmd + ['-Command', command], cwd=ROOT,
+                              capture_output=True, text=True, timeout=40)
+
+    def display(self, expression, plan=None, record=None):
+        helper = str(APP / 'Bench-Display.ps1').replace("'", "''")
+        prefix = f". '{helper}'; "
+        if plan is not None:
+            path = str(self.write('display-plan.json', plan)).replace("'", "''")
+            prefix += f"$plan=Get-Content '{path}' -Raw | ConvertFrom-Json; "
+        if record is not None:
+            path = str(self.write('display-record.json', record)).replace("'", "''")
+            prefix += f"$record=Get-Content '{path}' -Raw | ConvertFrom-Json; "
+        proc = self.ps_command(prefix + expression + ' | ConvertTo-Json -Depth 12 -Compress')
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        return json.loads(proc.stdout)
+
     def engine(self, plan=None, session=None, resume=False):
         plan = plan or self.catalog
         session = session or self.dir / 'session.json'
@@ -75,6 +95,10 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(record['selectedRuns'], [r['id'] for r in self.catalog['runs']])
         self.assertEqual(record['revert']['coreMhz'], 1763)
         self.assertTrue(record['afterRevertHumanCompleted'])
+        self.assertTrue(record['finalState']['logging']['stoppedVerified'])
+        self.assertTrue(record['finalState']['clocks']['verified'])
+        self.assertEqual(record['finalState']['clocks']['readbackSmClockMhz'], 1763)
+        self.assertTrue(record['finalState']['processes']['verified'])
 
     def test_edited_preselected_run_is_flagged_and_recorded(self):
         queue = copy.deepcopy(self.catalog['runs'])
@@ -110,6 +134,75 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(len(record['steps']), 1)
         self.assertEqual(record['steps'][0]['verdict'], 'FAIL')
         self.assertEqual(record['revert']['coreMhz'], 1763)
+        self.assertTrue(record['finalState']['logging']['stoppedVerified'])
+
+    def test_final_check_stops_mocked_running_hwinfo_log(self):
+        self.mock['finalLoggingStillRunning'] = True
+        proc, record = self.engine()
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(record['status'], 'PASS')
+        self.assertEqual(record['finalState']['logging']['status'], 'stopped')
+        self.assertTrue(record['finalState']['logging']['stopAttempted'])
+        self.assertTrue(record['finalState']['logging']['stoppedVerified'])
+
+    def test_final_check_fails_if_mocked_log_cannot_stop(self):
+        self.mock['finalLoggingStillRunning'] = True
+        self.mock['finalLoggingStopFails'] = True
+        proc, record = self.engine()
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertEqual(record['status'], 'FAIL')
+        self.assertEqual(record['finalState']['logging']['status'], 'running')
+        self.assertFalse(record['finalState']['logging']['stoppedVerified'])
+
+    def test_estimate_fresh_mid_resume_overrun_and_skipped_steps(self):
+        plan = {'runs': [
+            {'id': 'a', 'minutes': 2, 'steps': [{'id': 'one', 'estimatedMinutes': 2}]},
+            {'id': 'b', 'minutes': 7, 'steps': [
+                {'id': 'one', 'estimatedMinutes': 3}, {'id': 'two', 'estimatedMinutes': 4}]},
+        ]}
+        now = '2026-09-23T19:00:00'
+        old = '2026-09-23T18:00:00'
+        passed_a = {'key': 'a/one', 'verdict': 'PASS', 'start': '2026-09-23T18:40:00'}
+        passed_b = {'key': 'b/one', 'verdict': 'PASS', 'start': '2026-09-23T18:45:00'}
+        running = {'key': 'b/one', 'verdict': 'RUNNING', 'start': '2026-09-23T18:59:00'}
+        cases = [
+            ({'start': now, 'attemptStart': now, 'resumeRunId': '', 'steps': []}, 9, False),
+            ({'start': '2026-09-23T18:40:00', 'attemptStart': '2026-09-23T18:40:00', 'resumeRunId': '',
+              'steps': [passed_a, running]}, 6, False),
+            ({'start': old, 'attemptStart': '2026-09-23T18:59:00', 'resumeRunId': 'b',
+              'steps': [passed_a, passed_b,
+                        {'key': 'b/one', 'verdict': 'RUNNING', 'start': '2026-09-23T18:30:00'},
+                        running]}, 6, False),
+            ({'start': old, 'attemptStart': '2026-09-23T18:45:00', 'resumeRunId': 'b',
+              'steps': [passed_a, {**running, 'start': '2026-09-23T18:50:00'}]}, 4, True),
+            ({'start': now, 'attemptStart': now, 'resumeRunId': '',
+              'steps': [passed_a, passed_b]}, 4, False),
+        ]
+        for record, expected, overrun in cases:
+            with self.subTest(record=record):
+                value = self.display(f"Get-BenchEstimate $plan $record ([datetime]'{now}')",
+                                     plan=plan, record=record)
+                self.assertAlmostEqual(value['remainingMinutes'], expected)
+                self.assertEqual(value['stepOverrun'], overrun)
+                self.assertEqual(value['stepFinish'] is None, overrun or not any(
+                    step['verdict'] == 'RUNNING' for step in record['steps']))
+
+    def test_reading_formatter_labels_units_and_missing_fields(self):
+        full = self.display("Format-BenchReadings '2572, 13801, 176.86, 62, 99' '0.720' $true")
+        self.assertEqual(full, 'Core 2572 MHz   Memory 13801 MHz   Power 176.9 W   Temp 62 C   Util 99%   Voltage 0.720 V')
+        missing = self.display("Format-BenchReadings '2572,,bad,62' '0.720' $false")
+        self.assertEqual(missing, 'Core 2572 MHz   Memory -- MHz   Power -- W   Temp 62 C   Util --%')
+        self.assertNotIn('Voltage', missing)
+
+    def test_status_caption_value_and_color_for_each_state(self):
+        names = ['Ready', 'Running', 'Pause requested', 'Paused', 'Stop requested',
+                 'Stopping and reverting', 'PASS', 'FAIL']
+        expression = "@('Ready','Running','Pause requested','Paused','Stop requested','Stopping and reverting','PASS','FAIL') | ForEach-Object { Get-BenchStatus $_ }"
+        values = self.display(expression)
+        self.assertEqual([item['value'] for item in values], names)
+        self.assertTrue(all(item['caption'] == 'Status:' for item in values))
+        self.assertEqual(values[-2]['color'], 'Green')
+        self.assertEqual(values[-1]['color'], 'Red')
 
     def test_stock_drift_gate_fails_and_reverts(self):
         self.mock['driftPct'] = 1.6
@@ -349,7 +442,7 @@ class BenchAppTests(unittest.TestCase):
                 '-KitPath', str(kit), '-WhatIfOnly']
         proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=20)
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        for file in ['RUN-BENCH.bat', 'Run-Plan.ps1', 'Bench-Window.ps1',
+        for file in ['RUN-BENCH.bat', 'Run-Plan.ps1', 'Bench-Window.ps1', 'Bench-Display.ps1',
                      'Run-Child.ps1', 'Test-Plan.ps1', 'New-Plan.ps1',
                      'Hwinfo-Csv.ps1', 'Stock-Drift.ps1', 'Pmon-Gate.ps1', 'sessiond-3070ti.json',
                      'Invoke-HwinfoLogging.ps1']:
