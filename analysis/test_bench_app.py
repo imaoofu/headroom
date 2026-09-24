@@ -29,7 +29,7 @@ class BenchAppTests(unittest.TestCase):
         self.catalog = json.loads(CATALOG.read_text(encoding='utf-8'))
         self.mock = {
             'telemetry': [290, 290, 320, '610.88'],
-            'quietUtil': 0, 'profileHash': '1B08C2D0854460FF0123',
+            'quietUtil': 0, 'profileHash': 'CCE75E81FE3223800123',
             'witnesses': {
                 '1': {'core': 1763, 'memory': 9501},
                 '2': {'core': 1395, 'memory': 9501},

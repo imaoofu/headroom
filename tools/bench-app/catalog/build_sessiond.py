@@ -5,7 +5,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 WORKLOADS = 'copy reduce softmax layernorm bgemm32 bgemm64 bgemm128 bgemm256 bgemm1024 attention conv gemm'.split()
 ITERATIONS = [4099, 4291, 3230, 2462, 843, 2113, 3511, 2327, 616, 135, 432, 120]
-HASH = '1B08C2D0854460FF'
+# The store's whole-file hash. It was 1B08C2D0854460FF when the curves were decoded (2026-09-23).
+# By 2026-09-24 Afterburner had added [Defaults] and [Settings] sections of its own, and Session D's
+# first launch stopped at this gate. Profile1-3 were checked key for key against the snapshot and are
+# identical (data/afterburner-profiles/3070ti-profiles-20260924-afterburner-rewrite/README.md).
+HASH = 'CCE75E81FE322380'
 STOCK = (1700, 2115)   # unlocked stock witness core range; see witness()
 
 
@@ -87,12 +91,12 @@ def full_suite(identifier, title, why, priority, slot, core_range, settings, loc
     return run(identifier, title, why, 62, priority, steps)
 
 
-stock1 = 'STOCK P1, profile store 1b08c2d0854460ff, SILENT BIOS verified at 290 W, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904'
-edit1 = 'EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); store 1b08c2d0854460ff; SILENT BIOS, PL default, memory +0'
-edit2 = 'EDIT 2 NEGATIVE CONTROL P3 as built: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); store 1b08c2d0854460ff; SILENT BIOS, PL default, memory +0'
-stock4 = 'STOCK P1 reverted after both edits, witnessed by peak core, store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0'
+stock1 = 'STOCK P1, profile store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff), SILENT BIOS verified at 290 W, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904'
+edit1 = 'EDIT 1 P2 as built: 725-825 mV capped at 1200 MHz, forced ramp +60 MHz per point 831-869 mV, stock from 875 mV, 718.75 mV at 1200 (+15 over stock); store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff); SILENT BIOS, PL default, memory +0'
+edit2 = 'EDIT 2 NEGATIVE CONTROL P3 as built: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff); SILENT BIOS, PL default, memory +0'
+stock4 = 'STOCK P1 reverted after both edits, witnessed by peak core, store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0'
 edit1rep = edit1 + ' - REPLICATE of edit1-2, REGISTERED-PREDICTIONS 8a, run after stock-4 closed the registered bracket'
-stock6 = 'STOCK P1 closing bracket for the edit1-5 replicate, REGISTERED-PREDICTIONS 8a; store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0'
+stock6 = 'STOCK P1 closing bracket for the edit1-5 replicate, REGISTERED-PREDICTIONS 8a; store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0'
 
 
 def fine(label, direction, lo, hi, points, settings, minutes):
@@ -160,7 +164,7 @@ plan = dict(
              witness('Locked 1395 MHz on Edit 1', 1370, 1420, lock=1395, voltage=(0.835, 0.870)),
              step('witness-log-stop', 'hwinfo-stop', 'Stop witness voltage log')]
             + fine('edit1-finefloor', 'descending', 1050, 1590, 13,
-                   'EDIT 1 P2 as built, store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0 - fine floor 1050-1590 DESCENDING, 13 points; REGISTERED-PREDICTIONS 8b', 6)),
+                   'EDIT 1 P2 as built, store cce75e81fe322380 (curves identical to decoded 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0 - fine floor 1050-1590 DESCENDING, 13 points; REGISTERED-PREDICTIONS 8b', 6)),
         full_suite('edit1-5', '8a: Edit 1 replicate suite (registered)', 'n=2 on the manipulation; scored like edit1-2.', 7, 2,
                    (1370, 1420), edit1rep, lock=1395, voltage=(0.835, 0.870)),
         full_suite('stock-6', '8a: closing stock suite for the replicate', 'Stock bracket after edit1-5.', 8, 1,

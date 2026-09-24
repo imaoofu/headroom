@@ -16,7 +16,7 @@ The app records `bench-plan-<stamp>.json`, `bench-session-<stamp>.json`, a state
 
 ## Session D mapping to C0-C10
 
-- C0 power/quiet gates, C1 kit resolution, C2 exact `1B08C2D0854460FF` profile hash, and C3 launching HWiNFO plus a Sensors-window confirmation are one preflight run.
+- C0 power/quiet gates, C1 kit resolution, C2 exact profile hash (`CCE75E81FE322380` since 2026-09-24, when Afterburner rewrote the store without changing its curves; `1B08C2D0854460FF` before), and C3 launching HWiNFO plus a Sensors-window confirmation are one preflight run.
 - C4-C7 are the four 12-workload suites, with the worklist's labels, settings strings, iteration list, memory-clock witness and separate voltage logs. After C7, a 1.5% stock-return gate uses the same per-workload median absolute matched-target throughput change as `score_session_d.py`.
 - C5 adds a **separate short HWiNFO log for the locked 1395 MHz voltage witness**. The original worklist asks the person to read voltage in the Sensors window before the suite log starts; an independent short log allows an auditable automated check without spanning profiles.
 - C8 uses explicit `gemm` 120 iterations, equal to `gpu_workload.py`'s default, and the worklist's 1200-1590 MHz descending ten-point grid.

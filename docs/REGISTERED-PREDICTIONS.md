@@ -601,6 +601,15 @@ design needs: **Edit 1 changes the clock at the floor voltage (1485–1515 → 1
 not** (at most −15 MHz). The 718.75 mV point is outside the safe-by-construction envelope by 15 MHz,
 the same kind of exception as rung B's 650–690 mV points, and is recorded rather than rebuilt.
 
+### Provenance note, 2026-09-24, still before any Session D data
+
+Session D's first launch stopped at its store-hash gate. Afterburner had added `[Defaults]` and
+`[Settings]` sections to the 3070 Ti's profile store. **`Profile1`–`Profile3` are identical, key for
+key, to the store decoded in Amendment 2**, so the curves above are the curves that will run. The
+gate now expects the new whole-file hash `cce75e81fe322380`.
+`data/afterburner-profiles/3070ti-profiles-20260924-afterburner-rewrite/README.md`. **Nothing in the
+design or the predictions changes.**
+
 ## 4c. 2060 Super — the boundary condition, made decidable or shown not to be
 
 > **Reshaping the floor region on a card whose voltage leaves the floor 6 mV at a time will produce
