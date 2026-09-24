@@ -821,12 +821,13 @@ four live runs on 2026-09-23, all ending PASS, and ten defects were found and fi
    depends on it. Until then an unattended run sets Screen: Never.
 3. **Build rung C** and run it, to complete §1's four-rung test.
 4. **Re-run the activity A/B** with a load trigger that starts before the first measured window.
-5. **The afterburner decoder cannot read a 3-slot store** or pair offsets with the next record's
-   base; the 3070 Ti table was decoded by hand. Teach it both.
+5. ✅ ~~**The afterburner decoder cannot read a 3-slot store** or pair offsets with the next record's
+   base~~ **Done 2026-09-24**: `--lenient --pairing next`, drafted by the local model (L1),
+   reviewed and tested. The default reading is unchanged.
 6. GPT jobs 12, 14 and 13 (`docs/agents/GPT-PROMPT-NEXT.md`).
-7. **Review the local model's first queue** (L1 decoder, L2 fine-pair comparison, L3 numbers
-   inventory), run 2026-09-24 on the idle 5060 Ti. The list is `docs/agents/LOCAL-MODEL-TODO.md`;
-   the reviews go in `docs/local-model-findings/`.
+7. ✅ **The local model's first queue, reviewed 2026-09-24** (`docs/local-model-findings/2026-09-24-queue-L1-L3.md`).
+   Next from it: `audit_claims.numbersIn` counts clock times, section references and range hyphens
+   as numbers (~11 of 40 in the three sections checked), which inflates every `--coverage` list.
 
 ---
 

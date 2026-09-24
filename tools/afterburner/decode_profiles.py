@@ -4,6 +4,8 @@ Usage:
     python tools/afterburner/decode_profiles.py SNAPSHOT_DIR_OR_VEN_CFG
     python tools/afterburner/decode_profiles.py SNAPSHOT_DIR --verify-rung B
     python tools/afterburner/decode_profiles.py SNAPSHOT_DIR --json
+    python tools/afterburner/decode_profiles.py SNAPSHOT_DIR --lenient
+    python tools/afterburner/decode_profiles.py SNAPSHOT_DIR --pairing next
 
 The raw triple is (offset MHz, voltage mV, base MHz). At a change in stored
 offset, base + offset can mispair: rung B stores (+176, 845 mV, 2362 MHz),
@@ -11,6 +13,17 @@ while the editor shows 2362 MHz. Adjacent records on both sides of every
 offset change are marked uncertain. ``raw_sum_mhz`` preserves the arithmetic;
 ``applied_mhz`` is None at flagged points. This is a file decoder, not a GPU
 control or a rail-voltage measurement.
+
+Two store shapes the committed 5060 Ti files do not have:
+
+* ``--lenient`` reads a store that has fewer than five profile slots (the
+  RTX 3070 Ti has three, plus an empty ``Startup``) and whose VFCurve tail is
+  not zero-filled. Only the tail check is skipped; the tail values are not
+  decoded.
+* ``--pairing next`` reports the next-record pairing, ``base[i] + offset[i+1]``.
+  The stored offset lags by one record on both cards, but this is supported
+  by two committed files and one editor tooltip rather than by documentation.
+  The naive ``base + offset`` reading remains the default.
 """
 
 import argparse
@@ -71,7 +84,7 @@ class Profile:
         return tuple(point for point in self.points if point.raw_sum_mhz <= SUPPORTED_CLOCK_MHZ)
 
 
-def decode_hex(hex_text):
+def decode_hex(hex_text, *, allow_tail=False):
     try:
         blob = bytes.fromhex(hex_text)
     except ValueError as exc:
@@ -84,12 +97,13 @@ def decode_hex(hex_text):
     triples = list(struct.iter_unpack("<fff", blob[8:end]))
     if len(triples) != RECORD_COUNT:
         raise ValueError("VFCurve did not yield 127 float32 triples")
-    # Every one of the 20 committed profile blobs checked on 2026-09-22
-    # repeats the final real offset as the first float of the next slot.
-    # Only the bytes AFTER that float are zero-filled. Reject other tails.
-    trailing_offset = struct.unpack_from("<f", blob, end)[0]
-    if trailing_offset != triples[-1][0] or any(blob[end + 4:]):
-        raise ValueError("VFCurve tail is not final offset repeated, then zero-filled")
+    if not allow_tail:
+        # Every one of the 20 committed profile blobs checked on 2026-09-22
+        # repeats the final real offset as the first float of the next slot.
+        # Only the bytes AFTER that float are zero-filled. Reject other tails.
+        trailing_offset = struct.unpack_from("<f", blob, end)[0]
+        if trailing_offset != triples[-1][0] or any(blob[end + 4:]):
+            raise ValueError("VFCurve tail is not final offset repeated, then zero-filled")
     voltages = [voltage for _, voltage, _ in triples]
     if (not all(math.isfinite(value) for triple in triples for value in triple)
             or not all(left < right for left, right in zip(voltages, voltages[1:]))):
@@ -107,7 +121,7 @@ def decode_hex(hex_text):
     return tuple(points)
 
 
-def load_profiles(path):
+def load_profiles(path, *, allow_partial=False, allow_tail=False):
     """Read the NVIDIA VEN cfg from a snapshot directory or an explicit file."""
     path = Path(path)
     if path.is_dir():
@@ -120,23 +134,44 @@ def load_profiles(path):
     parser = configparser.ConfigParser(interpolation=None, strict=True)
     parser.optionxform = str
     parser.read_string(path.read_text(encoding="utf-8-sig"))
-    missing = set(PROFILES) - set(parser.sections())
-    if missing:
-        raise ValueError(f"{path}: missing profiles: {', '.join(sorted(missing))}")
+    if not allow_partial:
+        missing = set(PROFILES) - set(parser.sections())
+        if missing:
+            raise ValueError(f"{path}: missing profiles: {', '.join(sorted(missing))}")
     profiles = {}
     for name in PROFILES:
+        if name not in parser.sections():
+            if not allow_partial:
+                raise ValueError(f"{path}: missing profile {name}")
+            continue
         section = parser[name]
+        # In lenient mode a slot with no VFCurve is not a profile; skip it rather than decode an
+        # empty hex string. The default still decodes it and fails, as before (review 2026-09-24:
+        # the model's draft skipped it in both modes, changing the default it was told to keep).
+        if allow_partial and not section.get("VFCurve", "").strip():
+            continue
         try:
             profiles[name] = Profile(
                 name=name,
                 power_limit_pct=section["PowerLimit"],
                 core_clk_boost_khz=section["CoreClkBoost"],
                 mem_clk_boost_khz=section["MemClkBoost"],
-                points=decode_hex(section["VFCurve"]),
+                points=decode_hex(section["VFCurve"], allow_tail=allow_tail),
             )
         except KeyError as exc:
             raise ValueError(f"{path}: {name} missing {exc.args[0]}") from exc
+    if not profiles:
+        raise ValueError(f"{path}: no profile with a VFCurve")
     return path, profiles
+
+
+def next_record_pairing(points):
+    """The editor's next-record reading: base[i] + offset[i+1]; last is None."""
+    paired = tuple(
+        points[index].base_mhz + points[index + 1].offset_mhz
+        for index in range(len(points) - 1)
+    )
+    return paired + (None,)
 
 
 @dataclass(frozen=True)
@@ -232,11 +267,19 @@ def main():
     parser.add_argument("--verify-rung", nargs="?", const="B", choices=("B", "C"),
                         help="run the five registered floor-ladder pre-run checks (default B)")
     parser.add_argument("--json", action="store_true", help="emit all raw points and safety flags")
+    parser.add_argument("--lenient", action="store_true",
+                        help="read stores with fewer than five profiles and a nonzero tail")
+    parser.add_argument("--pairing", choices=("stored", "next"), default="stored",
+                        help="stored: base+offset (default); next: base[i]+offset[i+1]")
     args = parser.parse_args()
     if args.json and args.verify_rung:
         parser.error("choose --json or --verify-rung")
+    if args.verify_rung and args.lenient:
+        parser.error("--verify-rung is 5060 Ti only; it cannot be combined with --lenient")
     try:
-        source, profiles = load_profiles(args.source)
+        source, profiles = load_profiles(args.source,
+                                         allow_partial=args.lenient,
+                                         allow_tail=args.lenient)
         if args.verify_rung:
             checks = verify_rung(args.source, profiles, args.verify_rung)
             for check in checks:
@@ -246,9 +289,21 @@ def main():
             output = {name: {"power_limit_pct": profile.power_limit_pct,
                              "core_clk_boost_khz": profile.core_clk_boost_khz,
                              "mem_clk_boost_khz": profile.mem_clk_boost_khz,
-                             "points": [asdict(point) for point in profile.points]}
+                             "points": [asdict(point) for point in profile.points],
+                             "next_pair_mhz": [value for value in next_record_pairing(profile.points)]}
                       for name, profile in profiles.items()}
             print(json.dumps({"source": str(source), "profiles": output}, indent=2))
+            return
+        if args.pairing == "next":
+            for name, profile in profiles.items():
+                paired = next_record_pairing(profile.points)
+                lines = [f"  {point.voltage_mv:g} mV: {clock:g} MHz (next-record pairing)"
+                         for point, clock in zip(profile.points, paired)
+                         if clock is not None and clock <= SUPPORTED_CLOCK_MHZ]
+                print(f"{name}: next-record pairing, {len(lines)} points <=3090 MHz; "
+                      "NOT the committed default reading")
+                for line in lines:
+                    print(line)
             return
         for name, profile in profiles.items():
             uncertain = [point for point in profile.points if point.offset_boundary]

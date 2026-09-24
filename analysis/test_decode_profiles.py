@@ -10,10 +10,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools" / "afterburner"))
-from decode_profiles import decode_hex, load_profiles, verify_rung  # noqa: E402
+from decode_profiles import decode_hex, load_profiles, next_record_pairing, verify_rung  # noqa: E402
 
 REFERENCE = ROOT / "data/afterburner-profiles/5060ti-profiles-20260908b-p4-plateau-3030.json"
 RUNG_B = ROOT / "data/afterburner-profiles/5060ti-profiles-20260922-rungB"
+RTX3070TI = ROOT / "data/afterburner-profiles/3070ti-profiles-20260923"
+# mV -> (P1 stock, P2 Edit 1, P3 Edit 2): the hand-decoded table in that snapshot's README,
+# which next-record pairing reproduces exactly (checked 2026-09-23, before the lenient mode existed).
+RTX3070TI_TABLE = {
+    718.75: (1185, 1200, 1185), 812.5: (1485, 1200, 1485), 825.0: (1515, 1200, 1500),
+    831.25: (1530, 1215, 1500), 868.75: (1620, 1575, 1500), 875.0: (1635, 1635, 1500),
+    1200.0: (1995, 1995, 1500),
+}
 
 
 def check(description, condition):
@@ -108,6 +116,23 @@ def main():
     check("JSON output keeps raw 2538 while withholding applied clock at 845 mV",
           cli_845["raw_sum_mhz"] == 2538 and cli_845["applied_mhz"] is None and
           cli_845["offset_boundary"])
+
+
+    # The 3070 Ti store: three slots and a nonzero tail. Lenient mode and next-record pairing
+    # were drafted by the local model (L1, 2026-09-24) and reviewed; these pin them.
+    rejects("default load still refuses the 3-slot 3070 Ti store", lambda: load_profiles(RTX3070TI))
+    rejects("lenient slots without allow_tail still refuse the nonzero tail",
+            lambda: load_profiles(RTX3070TI, allow_partial=True))
+    _, ti = load_profiles(RTX3070TI, allow_partial=True, allow_tail=True)
+    check("lenient load returns exactly the three filled slots", list(ti) == ["Profile1", "Profile2", "Profile3"])
+    for slot, name in enumerate(ti):
+        paired = next_record_pairing(ti[name].points)
+        by_mv = {point.voltage_mv: paired[i] for i, point in enumerate(ti[name].points)}
+        check(f"3070 Ti {name}: next-record pairing reproduces the hand-decoded table, last is None",
+              all(by_mv[mv] == row[slot] for mv, row in RTX3070TI_TABLE.items()) and paired[-1] is None)
+    rung_pairs = next_record_pairing(profiles["Profile1"].points)
+    check("next-record pairing reads rung B's 845 mV as 2362, the editor's value",
+          rung_pairs[rung.at(845).index] == 2362)
 
 
 if __name__ == "__main__":

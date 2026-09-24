@@ -44,7 +44,10 @@ The runner:
 
 The whole queue should take well under an hour of the 8. It needs no input.
 
-## The queue, 2026-09-24
+## The queue, 2026-09-24 — ✅ RUN AND REVIEWED the same day
+
+Result: 5 of 9 attempts passed; L1 and L2 installed after review, L3 kept as a record. See
+`docs/local-model-findings/2026-09-24-queue-L1-L3.md`.
 
 | id | job | why now | exact check |
 |---|---|---|---|

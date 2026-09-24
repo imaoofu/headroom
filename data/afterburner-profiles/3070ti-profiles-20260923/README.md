@@ -29,10 +29,14 @@ is the same unexplained field the 5060 Ti's tuned profiles carry (CLAUDE.md).
 it is a clean flat cap and a ramp of exactly +60 MHz per point, **and it matches the curve editor's
 own tooltip for 831 mV: 1215 MHz, offset −410** (Raymond's screenshot). That is the same one-record
 lag the 5060 Ti's rung B showed at 845 mV, seen here across a whole edited region on a second card.
-⚠️ **Two files, one tooltip.** Treat it as well supported, not as a format rule. The committed
-decoder (`tools/afterburner/decode_profiles.py`) still pairs the naive way, and it **refuses this
-file** outright: it requires five slots and a zero-filled tail, and this store has three slots and
+⚠️ **Two files, one tooltip.** Treat it as well supported, not as a format rule. By default, the committed
+decoder (`tools/afterburner/decode_profiles.py`) still pairs the naive way and **refuses this
+file**: it requires five slots and a zero-filled tail, and this store has three slots and
 extra nonzero data from float 406 of the tail onward (values 1785 and 83 repeating).
+✅ **Since 2026-09-24 it reads the file on request:** `--lenient --pairing next` reproduces the table
+below at every listed voltage, pinned by `analysis/test_decode_profiles.py`. The tail values are
+still not decoded. This was drafted by the local model and reviewed
+(`docs/local-model-findings/2026-09-24-queue-L1-L3.md`).
 
 | mV | P1 stock | **P2 Edit 1** | **P3 Edit 2** |
 |---|---|---|---|

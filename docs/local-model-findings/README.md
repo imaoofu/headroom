@@ -18,7 +18,7 @@ checks, which is never everything. The record says what the review added.
 
 | Date | Job | Result | Review |
 |---|---|---|---|
-| 2026-09-24 | L1–L3 (queue `queue-20260924.json`) | *pending: runs while the 3070 Ti runs Session D* | *pending* |
+| 2026-09-24 | [L1 decoder, L2 fine-pair comparison, L3 numbers inventory](2026-09-24-queue-L1-L3.md) | 5 of 9 attempts passed acceptance; every failure was reply shape (a one-sentence stop, prose around code, one misquote), none a wrong answer | ✅ L1 and L2 accepted, each after one fix the checks could not see (a changed default; an unrequired key column), with tests added. L3's facts accepted, its classification not; it shows §5.4.2 has nothing to pin and that ~11 of 40 extracted "numbers" are extractor artifacts |
 | 2026-09-23 | [Queue smoke test: one L3 attempt](2026-09-23-queue-smoke-test.md) | Pipeline ✅ end to end; the answer ❌ failed acceptance, 34 of 40 rows clean, all six failures in §5.7's table | Found `SERVER_COMMAND` missing `--port 8099` (fixed). The failures are mostly a spec gap (the table was never mentioned), amended the same night |
 
 ## Saving a result
