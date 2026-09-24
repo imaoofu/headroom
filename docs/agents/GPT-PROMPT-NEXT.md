@@ -262,8 +262,27 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 >      Steps that must stay in order (for example a stock suite before its edits) are locked together.
 >    - **Custom sweep:** workload, min/max MHz, point count, ascending/descending, iterations,
 >      profile slot. It is added to the same queue and checked by the same validator.
->    - **Start / Pause after this step / Stop**, the current step's live output, the time
->      remaining, and, for steps that need hands, the instruction with a **Continue** button.
+>    - **Start / Pause after this step / Stop**, and, for steps that need hands, the instruction
+>      with a **Continue** button.
+>    - 🆕 **Ready to go when Claude has already chosen.** A catalog can mark runs `preselected`, with
+>      their order and parameters set. The window then **opens with that queue already built**, so
+>      the only click needed is **Start**. Raymond can still untick, reorder or edit anything. Every
+>      difference from the catalog's version is **highlighted in the list** and written to the
+>      session record, so a changed run can never pass as the requested one.
+>    - 🆕 **A live view while it runs**, so Raymond can see what is happening:
+>      - the current step's name, **step N of M**, and an overall progress bar;
+>      - inside a sweep, **point i of 13**, its target and achieved MHz;
+>      - the estimated finish time for the step and for the session;
+>      - **live readings once a second**: core clock, memory clock, power, temperature and
+>        utilisation (from `nvidia-smi`), plus the latest core voltage, read from the tail of the
+>        running HWiNFO CSV (shared read, never locking it);
+>      - whether HWiNFO is logging, and to which file;
+>      - a list of finished steps with their verdict (✓ / ✗), duration and the witness readings;
+>      - the scrolling output of the current step.
+>    - ⛔ **The window must be light.** On 2026-09-23 a desktop app drawing 26% SM while rendering
+>      tripped a sweep's 10% preflight guard. So: update at most **once a second**, no animations,
+>      no redrawn charts, and **no GPU-accelerated controls**. Its own `nvidia-smi` polling must be
+>      one query per second, not one per field.
 > 2. **The engine, `Run-Plan.ps1`, Windows PowerShell 5.1**, which does all the work and runs
 >    headless with `-DryRun` and `-Resume`. Step types, each with a pass/fail verdict:
 >    - `gate-power`: power.limit/default/max must equal given values (the SILENT-BIOS check);
@@ -282,7 +301,8 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 >    - `human`: an instruction plus **Continue**, only for what needs hands (the BIOS switch, building
 >      a curve, closing apps, and the HWiNFO fallback).
 > 3. **The catalog, `catalog/*.json`**: named runs made of steps, written by Claude and carried on the
->    kit. Ship **`catalog/sessiond-3070ti.json`**, equal step for step to the worklist's C0–C10, with
+>    kit, with a `preselected` flag and a fixed order where Claude has already chosen. Ship
+>    **`catalog/sessiond-3070ti.json`**, fully preselected, equal step for step to the worklist's C0–C10, with
 >    the same thresholds, labels, iteration counts and the profile hash `1B08C2D0854460FF`. Say where
 >    yours differs, and why. **Include `catalog/SCHEMA.md`** so Claude can write new catalogs without
 >    reading the code.
@@ -320,6 +340,8 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 > **Tests** (`analysis/test_bench_app.py`, under PS 5.1 and PS 7 as CI does, rule 11): run the engine
 > in `-DryRun` with **mocked** `nvidia-smi`, Afterburner and HWiNFO, covering at least:
 > - a full passing catalog;
+> - a **preselected** catalog that runs start to finish with no interaction after Start;
+> - an edited preselected run whose change is flagged and recorded in the session JSON;
 > - a failed gate that stops the session and still runs the revert;
 > - a witness reading **stock clocks after a profile was applied** (the silent driver-reset case);
 > - a failed `hwinfo-start` that falls back to the human step and waits for file growth;
