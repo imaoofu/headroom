@@ -419,6 +419,94 @@ one, report it rather than widening the job.
 
 ---
 
+## Job 17: "Local Model Console", a local web page to prompt the local model and watch its runs
+
+**Why:** Raymond wants to see what the local model (Qwen3.8 27B on llama.cpp, `tools/local-model/`)
+is thinking and doing, and to prompt it, with Claude able to see the same. llama-server's built-in
+page at `http://localhost:8099` already chats and shows reasoning. **What it cannot show:**
+- an **agent run**: Claude Code driven by the local model, recorded as a `stream-json` transcript;
+- the **queue results** of `run_queue.py`;
+- whether a **sweep is running** on the same card.
+
+It also keeps chats in browser storage, where Claude cannot read them.
+
+> Build `tools/local-model/console/`: `server.py` (Python **standard library only**) and one
+> `index.html` (inline JS and CSS, **no external requests at all**), plus a README. Read
+> `tools/local-model/README.md` first; its hazard section is the reason for several rules below.
+>
+> **Serve on `127.0.0.1:8098` only.** llama-server is `:8099`; take its URL from `ask_local.BACKENDS`,
+> never a new constant. Four parts:
+>
+> 1. **Status bar**, polled every 2 s:
+>    - llama-server health (`/health`);
+>    - VRAM used/total and GPU utilisation from one `nvidia-smi --query-gpu` call;
+>    - a **red banner** when a measurement is running. Reuse `run_queue.measurement_running()`; do
+>      not copy its marker list.
+>
+>    While that banner shows, and whenever the tab is hidden (`document.visibilityState`), **stop
+>    every other poll**.
+>
+>    ⚠️ This is measured, not theoretical: on 2026-09-24 the Claude desktop app's redraws reached
+>    **21% SM** and a sweep's preflight refused to start. The page must be close to silent when
+>    nobody is looking.
+> 2. **Chat.** A prompt box, an optional system prompt, and temperature. Send to llama-server
+>    `/v1/chat/completions` with `stream: true`, rendering `reasoning_content` live in a collapsible
+>    "Reasoning" block and `content` below it. At the end, show token counts and tok/s from the final
+>    chunk's `timings`.
+>
+>    **Append every exchange** to `tools/local-model/runs/console/chat-YYYYMMDD.jsonl`:
+>    - ISO time, system prompt, prompt;
+>    - reasoning, answer;
+>    - timings, and any error.
+>
+>    `runs/` is already gitignored. This file is how Claude reads what was said, so write it even
+>    when the request fails.
+> 3. **Agent-run viewer.** List `*.jsonl` under two roots: `tools/local-model/runs/` and
+>    `C:\Users\Raymond\Documents\local-agent-sandbox` (both configurable in the README). Render the
+>    chosen Claude Code `--output-format stream-json --verbose` transcript, **tailing it live** by byte
+>    offset:
+>    - `system/init`: model, tool count, cwd;
+>    - assistant `thinking`, `text` and `tool_use` blocks, showing the tool name and its input;
+>    - `tool_result`, truncated with an expand;
+>    - `system/api_retry`, counted and not listed one by one;
+>    - the final `result`: subtype, `is_error`, turns, duration, and the result text, **errors in red**.
+>
+>    A malformed line is shown as malformed, never dropped silently.
+> 4. **Queue viewer.** List `tools/local-model/runs/*/summary.json` (written by `run_queue.py`) as a
+>    table: job, attempt, verdict, seconds. Link to each answer and acceptance report.
+>
+> **Server start/stop buttons:**
+> - start runs `ask_local.SERVER_COMMAND`, and **refuses while `measurement_running()` is true**;
+> - stop only kills a server **this console started** (track its PID);
+> - never touch Afterburner, clocks, power limits or HWiNFO.
+>
+> **Security, because it is a local server:**
+> - bind only `127.0.0.1`;
+> - serve files read-only from the allow-listed roots above, with **path traversal refused** (resolve,
+>   then check the prefix);
+> - **no endpoint that runs an arbitrary command or writes outside `runs/console/`.**
+>
+> **Tests:** `tools/local-model/test_console.py`, stdlib `unittest`. **`run_tests.py` counts
+> `[PASS]` lines, so report each passing test the way `analysis/test_bench_app.py` does** (a
+> `TextTestResult` that prints `[PASS] <id>`), or the runner flags the suite as asserting nothing.
+> Cover:
+> - **the real transcript fixture** `tools/local-model/console/fixtures/claude-code-local-L1-apierror.jsonl`,
+>   from a failed trial on 2026-09-24. The parser must report **10 `api_retry` events, 0 tool calls,
+>   and a final result with `is_error: true`** whose text contains *"System message must be at the
+>   beginning"*;
+> - a synthetic transcript with thinking, `tool_use`, `tool_result` and a success result;
+> - a fake SSE stream with `reasoning_content` and `content` deltas and final `timings`, parsed
+>   without a network;
+> - path traversal refused;
+> - start refused while a (monkeypatched) measurement is running;
+> - the chat log line written even when the request fails.
+>
+> 🛑 **Do not start llama-server or load the model in tests or during development; it runs on the card
+> the project measures.** Mock every call to it. Do not run sweeps, do not touch `data/`, do not
+> commit. File what you could **not** verify. Claude will run it live, with Raymond, and review it.
+
+---
+
 ## ⛔ Still do not ask it
 
 - **Anything settled.** `GPT-QUEUE.md` lists these.
