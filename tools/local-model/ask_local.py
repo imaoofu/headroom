@@ -85,8 +85,11 @@ SERVER_COMMAND = (
     r"C:\Users\Raymond\llamacpp\llama-server.exe "
     r"-m C:\Users\Raymond\models\Qwen3.8-27B-UD-IQ4_XS.gguf "
     r"-c 65536 -ngl 99 --flash-attn on -ctk q4_0 -ctv q4_0 -np 1 --no-mmap "
-    r"--spec-type draft-mtp --spec-draft-n-max 1"
+    r"--spec-type draft-mtp --spec-draft-n-max 1 --port 8099"
 )
+# --port 8099 was missing until 2026-09-23: llama-server defaults to 8080 and BACKENDS above
+# expects 8099, so this command, run as written, served where this script never looks. Found
+# while writing run_queue.py, which starts the server from this string. No LLAMA_ARG_PORT is set.
 # -np 1 is not a tidiness flag. llama-server defaults to four slots and allocates compute
 # buffers per slot; at 64K that pushed the total past 16 GB, the driver spilled to system
 # memory WITHOUT failing, and decode fell to 14.6 tok/s while prefill fell 6x. nvidia-smi

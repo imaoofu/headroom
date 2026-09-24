@@ -1,0 +1,30 @@
+{
+  "written": "2026-09-23 by Claude, for the 5060 Ti's idle day while the 3070 Ti runs Session D. See docs/agents/LOCAL-MODEL-TODO.md.",
+  "jobs": [
+    {
+      "id": "L1-decoder-3slot",
+      "spec": "tools/local-model/specs/decoder-3slot-next-pairing.md",
+      "context": ["tools/afterburner/decode_profiles.py", "analysis/test_decode_profiles.py"],
+      "accept": "tools/local-model/specs/accept_decoder_3slot.py",
+      "extension": ".py",
+      "num_predict": 12000,
+      "attempts": 3
+    },
+    {
+      "id": "L2-compare-fine-pair",
+      "spec": "tools/local-model/specs/compare-fine-pair.md",
+      "accept": "tools/local-model/specs/accept_compare_fine_pair.py",
+      "extension": ".py",
+      "num_predict": 8000,
+      "attempts": 3
+    },
+    {
+      "id": "L3-numbers-inventory",
+      "spec": "tools/local-model/specs/numbers-inventory-unaudited.md",
+      "accept": "tools/local-model/specs/accept_numbers_inventory.py",
+      "extension": ".md",
+      "num_predict": 8000,
+      "attempts": 3
+    }
+  ]
+}

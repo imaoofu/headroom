@@ -1,0 +1,13 @@
+{
+  "written": "Smoke test 2026-09-23 night: one attempt of the shortest job, to prove server start, port, ask_local and acceptance end to end.",
+  "jobs": [
+    {
+      "id": "L3-numbers-inventory",
+      "spec": "tools/local-model/specs/numbers-inventory-unaudited.md",
+      "accept": "tools/local-model/specs/accept_numbers_inventory.py",
+      "extension": ".md",
+      "num_predict": 8000,
+      "attempts": 1
+    }
+  ]
+}

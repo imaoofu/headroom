@@ -824,6 +824,9 @@ four live runs on 2026-09-23, all ending PASS, and ten defects were found and fi
 5. **The afterburner decoder cannot read a 3-slot store** or pair offsets with the next record's
    base; the 3070 Ti table was decoded by hand. Teach it both.
 6. GPT jobs 12, 14 and 13 (`docs/agents/GPT-PROMPT-NEXT.md`).
+7. **Review the local model's first queue** (L1 decoder, L2 fine-pair comparison, L3 numbers
+   inventory), run 2026-09-24 on the idle 5060 Ti. The list is `docs/agents/LOCAL-MODEL-TODO.md`;
+   the reviews go in `docs/local-model-findings/`.
 
 ---
 

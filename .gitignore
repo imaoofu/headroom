@@ -63,3 +63,7 @@ docs/papers/*.pdf
 # 🔑 .claude/ stays TRACKED and is the authority; these are local scratch.
 .agents/
 .codex/
+
+# Raw local-model queue outputs (tools/local-model/run_queue.py). Reviewed results are recorded
+# in docs/local-model-findings/; only what review accepts is committed.
+tools/local-model/runs/
