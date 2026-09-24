@@ -114,7 +114,10 @@ per run, never spanning two curves.**
 & $ab -profile1 -q; Start-Sleep 8; Show-Load
 ```
 
-**Witness:** core peaks near **~1763 MHz**, memory **9251** (sometimes 9501). Then start the HWiNFO log
+**Witness:** core peaks near **~1763 MHz**, memory **9251** (sometimes 9501). ⚠️ **The 2026-09-23
+shakedown's stock witnesses peaked 1770 / 1785 / 1800 / 1890 MHz** (maximum sample, unlocked), with
+1935 read back after a clock reset, so a cool card boosts well past 1763. The bench app's stock
+ceiling is therefore 2115, not 1900; the 1700 floor is what separates stock from Edit 2. Then start the HWiNFO log
 `hwinfo-rtx3070ti-sessiond-stock-1.csv`, and:
 
 ```powershell

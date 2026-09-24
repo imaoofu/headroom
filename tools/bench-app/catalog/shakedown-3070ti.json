@@ -9,7 +9,7 @@
   },
   "revert": {
     "slot": 1,
-    "witness": { "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 1900, "memoryMin": 9200, "memoryMax": 9550 }
+    "witness": { "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 2115, "memoryMin": 9200, "memoryMax": 9550 }
   },
   "runs": [
     {
@@ -22,7 +22,7 @@
         { "id": "profile", "type": "apply-profile", "name": "Apply profile P1 (stock)", "estimatedMinutes": 0.2, "slot": 1 },
         { "id": "power", "type": "gate-power", "name": "SILENT BIOS: 290 / 290 / 320 W", "estimatedMinutes": 0.1, "limit": 290, "default": 290, "max": 320 },
         { "id": "quiet", "type": "gate-quiet", "name": "Quiet pmon baseline and video engines", "estimatedMinutes": 0.3, "maxUtil": 5 },
-        { "id": "witness", "type": "witness", "name": "Stock under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 1900, "memoryMin": 9200, "memoryMax": 9550 },
+        { "id": "witness", "type": "witness", "name": "Stock under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 2115, "memoryMin": 9200, "memoryMax": 9550 },
         { "id": "sensors", "type": "human", "name": "Confirm HWiNFO Sensors window", "estimatedMinutes": 0.5, "instruction": "HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup. The run continues by itself once the Sensors window is detected; Continue also works.", "launchHwinfo": true }
       ]
     },
@@ -55,7 +55,7 @@
       "minutes": 9, "priority": 3, "preselected": true, "locked": true, "requires": ["edit2-check"], "group": "shakedown", "finalRun": false,
       "steps": [
         { "id": "profile", "type": "apply-profile", "name": "Apply profile P1 (stock)", "estimatedMinutes": 0.2, "slot": 1 },
-        { "id": "witness", "type": "witness", "name": "Stock under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 1900, "memoryMin": 9200, "memoryMax": 9550 },
+        { "id": "witness", "type": "witness", "name": "Stock under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 2115, "memoryMin": 9200, "memoryMax": 9550 },
         { "id": "log-start", "type": "hwinfo-start", "name": "Start HWiNFO log", "estimatedMinutes": 0.3, "path": "kit:/results/hwinfo-rtx3070ti-shakedown-20260923-suite.csv" },
         { "id": "collect", "type": "suite", "name": "Collect gemm, 13 points", "estimatedMinutes": 9, "label": "rtx3070ti-shakedown-20260923-suite", "settings": "SHAKEDOWN of the bench app before the overnight Session D, not Session D data. STOCK P1, store 1b08c2d0854460ff, SILENT BIOS, PL default, memory +0", "workloads": ["gemm"], "iterations": [120], "expectedMemoryClockMhz": 9501 },
         { "id": "log-stop", "type": "hwinfo-stop", "name": "Stop HWiNFO log", "estimatedMinutes": 0.2 }
@@ -80,7 +80,7 @@
       "steps": [
         { "id": "profile", "type": "apply-profile", "name": "Apply profile P1", "estimatedMinutes": 0.2, "slot": 1 },
         { "id": "power", "type": "gate-power", "name": "Verify stock power limits", "estimatedMinutes": 0.1, "limit": 290, "default": 290, "max": 320 },
-        { "id": "witness", "type": "witness", "name": "Verify stock core and memory under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 1900, "memoryMin": 9200, "memoryMax": 9550 }
+        { "id": "witness", "type": "witness", "name": "Verify stock core and memory under load", "estimatedMinutes": 0.7, "workload": "gemm", "iterations": 400, "coreMin": 1700, "coreMax": 2115, "memoryMin": 9200, "memoryMax": 9550 }
       ]
     }
   ]

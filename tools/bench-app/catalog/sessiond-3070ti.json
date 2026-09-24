@@ -13,7 +13,7 @@
       "workload": "gemm",
       "iterations": 400,
       "coreMin": 1700,
-      "coreMax": 1900,
+      "coreMax": 2115,
       "memoryMin": 9200,
       "memoryMax": 9550
     }
@@ -70,7 +70,7 @@
           "workload": "gemm",
           "iterations": 400,
           "coreMin": 1700,
-          "coreMax": 1900,
+          "coreMax": 2115,
           "memoryMin": 9200,
           "memoryMax": 9550
         },
@@ -113,7 +113,7 @@
           "workload": "gemm",
           "iterations": 400,
           "coreMin": 1700,
-          "coreMax": 1900,
+          "coreMax": 2115,
           "memoryMin": 9200,
           "memoryMax": 9550
         },
@@ -384,7 +384,7 @@
           "workload": "gemm",
           "iterations": 400,
           "coreMin": 1700,
-          "coreMax": 1900,
+          "coreMax": 2115,
           "memoryMin": 9200,
           "memoryMax": 9550
         },
@@ -545,7 +545,7 @@
           "workload": "gemm",
           "iterations": 400,
           "coreMin": 1700,
-          "coreMax": 1900,
+          "coreMax": 2115,
           "memoryMin": 9200,
           "memoryMax": 9550
         }

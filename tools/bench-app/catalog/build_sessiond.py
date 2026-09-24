@@ -6,6 +6,7 @@ HERE = Path(__file__).resolve().parent
 WORKLOADS = 'copy reduce softmax layernorm bgemm32 bgemm64 bgemm128 bgemm256 bgemm1024 attention conv gemm'.split()
 ITERATIONS = [4099, 4291, 3230, 2462, 843, 2113, 3511, 2327, 616, 135, 432, 120]
 HASH = '1B08C2D0854460FF'
+STOCK = (1700, 2115)   # unlocked stock witness core range; see witness()
 
 
 def step(identifier, kind, name, **fields):
@@ -44,7 +45,11 @@ def log(label):
 def witness(name, core_min, core_max, lock=0, voltage=None):
     # Reviewed 2026-09-23: loaded memory on this card reads 9251 MHz at 186 of 192 committed
     # points (9501 at 6), so the floor is 9200, not 9450. Stock peak core reached 1785 at a
-    # 2115 MHz target; the ceiling of 1900 leaves margin, since no profile raises the top.
+    # 2115 MHz target. STOCK ceiling raised 1900 -> 2115 on 2026-09-23: the witness keeps the
+    # MAXIMUM sample, and the shakedown's revert witness read 1890 with a 1935 clock read-back
+    # just after, so a cool-card boost sample could fail an unattended session. No slot in the
+    # hash-verified store raises the top; the floor (1700, against Edit 2's ~1515) and the
+    # memory ceiling (9550) carry the discrimination.
     data = dict(workload='gemm', iterations=400, coreMin=core_min, coreMax=core_max,
                 memoryMin=9200, memoryMax=9550)
     if lock:
@@ -83,7 +88,7 @@ plan = dict(
     # SILENT BIOS worklist spans supported bins from 405 through 2115 MHz.
     card=dict(name='NVIDIA GeForce RTX 3070 Ti', minClockMhz=405, maxClockMhz=2115),
     revert=dict(slot=1, witness=dict(workload='gemm', iterations=400,
-                                    coreMin=1700, coreMax=1900,
+                                    coreMin=STOCK[0], coreMax=STOCK[1],
                                     memoryMin=9200, memoryMax=9550)),
     runs=[
         run('preflight', 'C0-C3: preflight and profile store',
@@ -97,18 +102,18 @@ plan = dict(
                 step('profile', 'apply-profile', 'Apply profile P1 (stock)', slot=1),
                 step('power', 'gate-power', 'SILENT BIOS: 290 / 290 / 320 W', limit=290, default=290, max=320),
                 step('quiet', 'gate-quiet', 'Quiet pmon baseline and video engines', maxUtil=5),
-                witness('Stock under load', 1700, 1900),
+                witness('Stock under load', *STOCK),
                 step('sensors', 'human', 'Confirm HWiNFO Sensors window',
                      instruction='HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup. The run continues by itself once the Sensors window is detected; Continue also works.',
                      launchHwinfo=True)
             ]),
-        full_suite('stock-1', 'C4: stock baseline', 'Baseline before any edits.', 0, 1, (1700, 1900), stock1),
+        full_suite('stock-1', 'C4: stock baseline', 'Baseline before any edits.', 0, 1, STOCK, stock1),
         full_suite('edit1-2', 'C5: edit 1 manipulation', 'Test the floor-shortening edit.', 0, 2,
                    (1370, 1420), edit1, lock=1395, voltage=(0.835, 0.870)),
         full_suite('edit2-3', 'C6: edit 2 negative control', 'The control is essential to the causal test.', 0, 3,
                    (1450, 1550), edit2),
         full_suite('stock-4', 'C7: stock drift bracket', 'Check stock returns after both edits.', 2, 1,
-                   (1700, 1900), stock4),
+                   STOCK, stock4),
         run('finefloor-desc', 'C8: descending stock fine sweep',
             'Thermal-order control on the stock floor.', 3, 12, [
                 log('rtx3070ti-sessiond-finefloor-desc'),
@@ -123,7 +128,7 @@ plan = dict(
             'Verify stock three ways before the card ships and retain the USB.', 0, 4, [
                 profile(1),
                 step('power', 'gate-power', 'Verify stock power limits', limit=290, default=290, max=320),
-                witness('Verify stock core and memory under load', 1700, 1900)
+                witness('Verify stock core and memory under load', *STOCK)
             ])
     ],
     afterRevertHuman='Uninstall MSI Afterburner and delete its Profiles folder. Confirm the USB has results and logs before taking it home.'
