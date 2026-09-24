@@ -213,7 +213,7 @@ no Mendes paper at all**, although SBAC-PAD 2020 now bounds the causal claim.
 
 ---
 
-## Job 15, larger: "Headroom Bench", a clickable .exe for shop machines. BUILD ONLY, never run on a GPU
+## Job 15, larger: "Headroom Bench", a double-click app for shop machines. BUILD ONLY, never run on a GPU
 
 **Why:** at a shop machine Raymond copies ~20 commands into an elevated PowerShell one at a time
 (`docs/GPU-WORKLIST-3070TI.md`, Commands C0–C10), starts and stops every HWiNFO log by hand, and
@@ -221,7 +221,7 @@ reads each check by eye. **No agent can help there:** neither Claude nor GPT is 
 machines. Only Raymond, the USB kit and whatever runs from it.
 
 > Build **Headroom Bench**, an app Raymond runs from the USB kit on a shop machine. He double-clicks
-> `HeadroomBench.exe`, approves **one** UAC prompt, **picks runs from a list**, optionally
+> `RUN-BENCH.bat`, approves **one** UAC prompt, **picks runs from a list**, optionally
 > **customises** them, and presses **Start**. The app then does everything a person does today:
 > the gates, profile switches, HWiNFO logs, checks and sweeps, stopping only for what needs hands.
 > Put it in `tools/bench-app/`. **You write and test the code in this repository. You never run it
@@ -251,13 +251,12 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 >   free version limits to 12 hours. HWiNFO's own CSV stays the voltage source.
 >
 > **What to build:**
-> 1. **`HeadroomBench.exe`, a small C# WinForms front end**, compiled with the C# compiler that ships
->    in .NET Framework 4 on every Windows 10/11 machine
->    (`%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`). That compiler is **C# 5**: no `$""`
->    interpolation, no `?.`, no expression-bodied members. An embedded manifest with
->    `requireAdministrator` gives the single UAC prompt. A `build.ps1` compiles it, and **the source
->    is committed; the .exe is not.** **The exe holds no measurement logic:** it shows the list,
->    collects choices, launches the engine and streams its output. The window shows:
+> 1. **`RUN-BENCH.bat` plus a WinForms window written in PowerShell 5.1** (`Bench-Window.ps1`;
+>    WinForms ships with Windows, so nothing is compiled or installed). The `.bat` **re-launches
+>    itself elevated** (one UAC prompt) and opens the window. **An .exe is not wanted:** it adds a
+>    compile step, SmartScreen warnings on every new PC, and antivirus suspicion of an unsigned
+>    program that drives another program's window. **The window holds no measurement logic:** it
+>    shows the list, collects choices, launches the engine and streams its output. It shows:
 >    - **Requested runs:** the entries from a catalog file Claude writes (below), each with a short
 >      "why", a time estimate, a priority and a checkbox. Raymond ticks some and drags to reorder.
 >      Steps that must stay in order (for example a stock suite before its edits) are locked together.
@@ -290,14 +289,14 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 > 4. **Fail closed.** The first failed gate or witness **stops the session**. In a `finally`,
 >    **always** reset clocks (`nvidia-smi -rgc`) and stop any running HWiNFO log. Then, if the catalog
 >    declares a revert profile, apply it and run its witness. Closing the window, Stop, and a crash of
->    the exe must all unwind through that path.
+>    the window must all unwind through that path.
 > 5. **Resume, and never overwrite:** a state file records each finished step, and reopening the app
 >    offers to continue. It refuses to overwrite any result or log.
 > 6. **A session record:** one JSON per session, written as it goes. It holds every step's start and
 >    end time, verdict and witness readings; the driver, power limits and profile hash; **which runs
 >    Raymond selected and every customisation he made**; and whether each HWiNFO log was automatic or
 >    by hand. That record is the provenance.
-> 7. **A validator, `Test-Plan.ps1`**, used by both the exe and the tests. It rejects:
+> 7. **A validator, `Test-Plan.ps1`**, used by both the window and the tests. It rejects:
 >    - unknown step types and missing fields;
 >    - relative paths;
 >    - a suite with no `hwinfo-start` before it, and two runs sharing one log;
@@ -314,11 +313,9 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 >   - never `return` inside `try` at script scope;
 >   - read `$p.Handle` before `$p.ExitCode`;
 >   - PS 7's `ConvertFrom-Json` unrolls a top-level array.
-> - ⚠️ **An unsigned exe may trigger SmartScreen** on each new PC ("More info → Run anyway"), and some
->   antivirus products dislike an unsigned exe that drives another program's window. Say so in the
->   README. **Keep a `RUN-BENCH.bat` fallback** that starts the same engine and GUI without the exe.
-> - Add every new file to `tools/collection-kit/Sync-Kit.ps1` (rule 12). The exe is built, then
->   synced; say how.
+> - The engine must also run **without the window** (`Run-Plan.ps1` from an elevated prompt), so a
+>   broken GUI never blocks a session.
+> - Add every new file to `tools/collection-kit/Sync-Kit.ps1` (rule 12).
 >
 > **Tests** (`analysis/test_bench_app.py`, under PS 5.1 and PS 7 as CI does, rule 11): run the engine
 > in `-DryRun` with **mocked** `nvidia-smi`, Afterburner and HWiNFO, covering at least:
@@ -330,8 +327,8 @@ machines. Only Raymond, the USB kit and whatever runs from it.
 > - a refused overwrite;
 > - the validator rejecting each malformed plan and each out-of-range custom sweep.
 >
-> Also: `build.ps1` must compile the exe cleanly on this machine, and the exe must launch and show
-> the catalog in `-DryRun`.
+> Also: the window must open and show the catalog in `-DryRun`, and every `.ps1` must parse cleanly
+> under PowerShell 5.1.
 >
 > 🛑 **Rule 4 is absolute.** Do not run the engine for real, start HWiNFO, call Afterburner or lock a
 > clock. Build and dry-run only. File what you could **not** verify, and do not commit.
