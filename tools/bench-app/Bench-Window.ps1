@@ -258,7 +258,7 @@ $start=Button 'Start' 300 291 90 {
     if ($DryRun) { $args+=@('-DryRun','-MockPath',$MockPath) }
     $script:engine=Start-Process -FilePath 'powershell.exe' -ArgumentList $args -PassThru -WindowStyle Hidden -RedirectStandardOutput $script:outputPath -RedirectStandardError $script:errorPath
     $null=$script:engine.Handle   # PS 5.1: keep ExitCode readable after exit
-    $script:resumeSession=''
+    $script:resumeSession=''; $script:stepBase=''
     Set-BenchStatus 'Running'; $start.Enabled=$false
 }
 $pause=Button 'Pause after step' 398 291 130 { Write-Control 'pause' $true; Set-BenchStatus 'Pause requested' }
@@ -268,8 +268,10 @@ $statusCaption=Label 'Status:' 12 330 55 23
 $statusValue=Label 'Ready' 70 330 500 23
 $errorLabel=Label '' 12 353 1070 34
 $errorLabel.ForeColor=[Drawing.Color]::Red
-$stepLabel=Label 'Step 0 of 0' 12 392 440 24
-$estimate=Label 'Finish estimate appears after Start.' 460 392 630 24
+$stepLabel=Label 'Step 0 of 0' 12 392 740 24
+$stepLabel.AutoEllipsis=$true   # one line: a wrapped second line is clipped by the label height
+$estimate=Label 'Finish estimate appears after Start.' 760 392 330 24
+$estimate.TextAlign=[Drawing.ContentAlignment]::TopRight
 $progress=New-Object Windows.Forms.ProgressBar; $progress.SetBounds(12,421,1078,18); $form.Controls.Add($progress)
 $telemetry=Label (Format-BenchReadings '') 12 450 1070 24
 $logging=Label 'HWiNFO logging: not yet verified' 12 479 1070 24
@@ -298,7 +300,8 @@ $timer.Add_Tick({
             $progress.Maximum=[math]::Max(1,$all); $progress.Value=[math]::Min($done,$progress.Maximum)
             $attemptStart=if ($record.attemptStart) { [datetime]$record.attemptStart } else { [datetime]$record.start }
             $current=@($record.steps | Where-Object { $_.verdict -eq 'RUNNING' -and [datetime]$_.start -ge $attemptStart } | Select-Object -Last 1)
-            if ($current.Count -gt 0) { $stepLabel.Text=('Step {0} of {1}: {2}' -f ($done+1),$all,$current[0].name) }
+            if ($current.Count -gt 0) { $script:stepBase=('Step {0} of {1}: {2}' -f ($done+1),$all,$current[0].name) }
+            if ($script:stepBase) { $stepLabel.Text=$script:stepBase }
             if ($script:activePlan -and $record.status -eq 'RUNNING') {
                 $prediction=Get-BenchEstimate $script:activePlan $record (Get-Date)
                 $stepText=if ($prediction.stepOverrun) { 'step running past its estimate' } elseif ($prediction.stepFinish) { 'Step finish: '+$prediction.stepFinish.ToString('t') } else { 'Next step pending' }
@@ -319,8 +322,8 @@ $timer.Add_Tick({
             $voltage=if ($isLogging -and $active.Count -gt 0) { Read-VoltageTail $active[0].witness.path } else { '' }
             $telemetry.Text=Format-BenchReadings $script:lastSmiLine $voltage $isLogging
             if ($record.live) {
-                $achieved=if ($record.live.achievedMhz) { [string]$record.live.achievedMhz } else { 'pending' }
-                $stepLabel.Text+=('   {0} point {1}/{2}: target {3}, achieved {4} MHz' -f $record.live.workload,$record.live.point,$record.live.of,$record.live.targetMhz,$achieved)
+                $achieved=if ($record.live.achievedMhz) { [string]$record.live.achievedMhz+' MHz' } else { 'pending' }
+                $stepLabel.Text+=('   {0} point {1}/{2}: target {3} MHz, achieved {4}' -f $record.live.workload,$record.live.point,$record.live.of,$record.live.targetMhz,$achieved)
             }
             if ($script:engine -and $script:engine.HasExited) {
                 $start.Enabled=$false
