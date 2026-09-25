@@ -66,13 +66,26 @@ USAGE
 """
 
 import argparse
+from datetime import datetime, timezone
 import json
+import math
 import re
 import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
+
+try:
+    from streaming import iter_sse_events
+except ModuleNotFoundError:  # importlib-based checks load this file without its directory on sys.path
+    import importlib.util
+    _stream_spec = importlib.util.spec_from_file_location(
+        "local_model_streaming", Path(__file__).resolve().parent / "streaming.py")
+    _stream_module = importlib.util.module_from_spec(_stream_spec)
+    _stream_spec.loader.exec_module(_stream_module)
+    iter_sse_events = _stream_module.iter_sse_events
 
 BACKENDS = {"llamacpp": "http://localhost:8099", "ollama": "http://localhost:11434"}
 
@@ -85,8 +98,13 @@ SERVER_COMMAND = (
     r"C:\Users\Raymond\llamacpp\llama-server.exe "
     r"-m C:\Users\Raymond\models\Qwen3.8-27B-UD-IQ4_XS.gguf "
     r"-c 65536 -ngl 99 --flash-attn on -ctk q4_0 -ctv q4_0 -np 1 --no-mmap "
-    r"--spec-type draft-mtp --spec-draft-n-max 1 --port 8099"
+    r"--spec-type draft-mtp --spec-draft-n-max 1 --port 8099 "
+    r"--jinja --chat-template-file C:\Users\Raymond\Documents\headroom\tools\local-model\qwen-chat-template-claude-code.jinja"
 )
+# The chat template is the model's own with ONE branch changed (2026-09-24): a system message after
+# the first turn raised "System message must be at the beginning" and failed every Claude Code
+# request with HTTP 500. It now renders as a system block. Reproduced on the original (500) and fixed
+# on this one (200); ordinary requests render as before. docs/local-model-findings/2026-09-24-claude-code-harness-L1.md
 # --port 8099 was missing until 2026-09-23: llama-server defaults to 8080 and BACKENDS above
 # expects 8099, so this command, run as written, served where this script never looks. Found
 # while writing run_queue.py, which starts the server from this string. No LLAMA_ARG_PORT is set.
@@ -150,6 +168,31 @@ CHARS_PER_TOKEN = 3.2
 # spec-suite run recorded before the llama.cpp switch. A bare GGUF under llama.cpp would
 # otherwise sample at the server's defaults and quietly stop being the same experiment.
 SAMPLING = {"temperature": 0.7, "top_k": 20, "top_p": 0.8}
+HERE = Path(__file__).resolve().parent
+REQUEST_CONTEXT = None
+
+
+def jsonSafe(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: jsonSafe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [jsonSafe(item) for item in value]
+    return value
+
+
+def appendConsoleEvent(event):
+    """Append one visible request event; closing each write makes chunks promptly readable."""
+    folder = HERE / "runs" / "console"
+    folder.mkdir(parents=True, exist_ok=True)
+    day = datetime.now(timezone.utc).strftime("%Y%m%d")
+    with (folder / f"requests-{day}.jsonl").open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(jsonSafe(event), ensure_ascii=False, allow_nan=False) + "\n")
+
+
+def isoNow():
+    return datetime.now(timezone.utc).isoformat()
 
 
 def readModelContext(model):
@@ -271,7 +314,8 @@ def rate(count, durationNs):
     return count / (durationNs / 1e9) if durationNs else float("nan")
 
 
-def ask(model, system, user, think, numPredict, timeout, sampling, seed):
+def ask(model, system, user, think, numPredict, timeout, sampling, seed,
+        *, stream=False, onEvent=None):
     """Send the task and return a backend-independent result dict.
 
     The two backends disagree on every field that matters - content, stop reason, token counts,
@@ -282,12 +326,14 @@ def ask(model, system, user, think, numPredict, timeout, sampling, seed):
     if BACKEND == "llamacpp":
         endpoint = "/v1/chat/completions"
         payload = {"model": model, "messages": messages, "max_tokens": numPredict,
-                   "stream": False, "seed": seed,
+                   "stream": bool(stream), "seed": seed,
                    # Qwen3.8 reasons by default. llama.cpp puts that in reasoning_content rather
                    # than in content so it cannot corrupt the file, but it is still charged
                    # against max_tokens, so it stays off unless asked for.
                    "chat_template_kwargs": {"enable_thinking": bool(think)},
                    **sampling}
+        if stream:
+            payload["stream_options"] = {"include_usage": True}
     else:
         endpoint = "/api/chat"
         payload = {"model": model, "messages": messages, "stream": False, "think": think,
@@ -297,6 +343,40 @@ def ask(model, system, user, think, numPredict, timeout, sampling, seed):
     request = urllib.request.Request(f"{HOST}{endpoint}", data=json.dumps(payload).encode(),
                                      headers={"Content-Type": "application/json"})
     started = time.time()
+    if BACKEND == "llamacpp" and stream:
+        reasoningParts, answerParts, toolCalls = [], [], []
+        stopReason, usage, timings, done = None, {}, {}, False
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                for event in iter_sse_events(response):
+                    kind = event["type"]
+                    if kind == "reasoning":
+                        reasoningParts.append(event["text"])
+                    elif kind == "answer":
+                        answerParts.append(event["text"])
+                    elif kind == "tool_calls":
+                        toolCalls.extend(event["value"])
+                    elif kind == "finish":
+                        stopReason = event["reason"]
+                    elif kind == "stats":
+                        usage.update(event["usage"])
+                        timings.update(event["timings"])
+                    elif kind == "done":
+                        done = True
+                    if onEvent and kind in ("reasoning", "answer"):
+                        onEvent(event)
+        except (OSError, ValueError, RuntimeError) as error:
+            raise SystemExit(f"Request to {HOST}{endpoint} failed: {error}") from error
+        if not done or stopReason is None:
+            raise SystemExit(f"Request to {HOST}{endpoint} ended before a final finish reason.")
+        return {
+            "content": "".join(answerParts), "reasoning": "".join(reasoningParts),
+            "stopReason": stopReason, "toolCalls": toolCalls or None,
+            "promptTokens": usage.get("prompt_tokens"),
+            "outputTokens": usage.get("completion_tokens"),
+            "promptRate": timings.get("prompt_per_second", float("nan")),
+            "outputRate": timings.get("predicted_per_second", float("nan")),
+        }, time.time() - started
     try:
         response = json.load(urllib.request.urlopen(request, timeout=timeout))
     except urllib.error.URLError as error:
@@ -368,6 +448,10 @@ def main():
     parser.add_argument("--append",
                         help="On success, also append the reply to this file. Refused if the "
                              "run had problems.")
+    parser.add_argument("--request-id", help="Shared request id for a queue acceptance event.")
+    parser.add_argument("--queue-name", help="Queue name for the console request log.")
+    parser.add_argument("--job", help="Queue job id for the console request log.")
+    parser.add_argument("--attempt", type=int, help="Queue attempt for the console request log.")
     args = parser.parse_args()
 
     global BACKEND, HOST
@@ -377,6 +461,22 @@ def main():
     model = MODELS.get(args.model, args.model)
     system = args.system or DEFAULT_SYSTEM
     user = buildUserMessage(args.spec, args.context)
+
+    global REQUEST_CONTEXT
+    requestId = args.request_id or uuid.uuid4().hex
+    plannedOutput = Path(args.out) if args.out else Path(args.spec).with_suffix(".out.py")
+    REQUEST_CONTEXT = {"request_id": requestId, "output_path": str(plannedOutput.resolve()),
+                       "timings": {}, "done_reason": None, "error": None,
+                       "output_written": False}
+    appendConsoleEvent({"type": "request_start", "time": isoNow(), "request_id": requestId,
+                        "spec_path": str(Path(args.spec).resolve()),
+                        "context_paths": [str(Path(path).resolve()) for path in args.context],
+                        "queue_name": args.queue_name, "job": args.job, "attempt": args.attempt,
+                        "backend": BACKEND, "host": HOST,
+                        "sampling": {"temperature": args.temperature, "top_k": args.top_k,
+                                     "top_p": args.top_p, "seed": args.seed,
+                                     "num_predict": args.num_predict, "think": args.think},
+                        "system": system, "user": user})
 
     contextLimit = readModelContext(model)
     estimated = int((len(system) + len(user)) / CHARS_PER_TOKEN)
@@ -402,8 +502,23 @@ def main():
     sampling = {"temperature": args.temperature, "top_k": args.top_k, "top_p": args.top_p}
     print(f"sampling         temp {args.temperature} top_k {args.top_k} top_p {args.top_p} "
           f"seed {args.seed}")
+    def recordChunk(event):
+        appendConsoleEvent({"type": event["type"], "time": isoNow(),
+                            "request_id": requestId, "text": event["text"]})
+
     result, wall = ask(model, system, user, args.think, args.num_predict, args.timeout,
-                       sampling, args.seed)
+                       sampling, args.seed, stream=(BACKEND == "llamacpp"),
+                       onEvent=recordChunk)
+    if BACKEND != "llamacpp":
+        for kind, text in (("reasoning", result["reasoning"]), ("answer", result["content"])):
+            if text:
+                recordChunk({"type": kind, "text": text})
+    REQUEST_CONTEXT["timings"] = {"wall_seconds": wall,
+                                   "prompt_tokens": result["promptTokens"],
+                                   "output_tokens": result["outputTokens"],
+                                   "prompt_tok_s": result["promptRate"],
+                                   "output_tok_s": result["outputRate"]}
+    REQUEST_CONTEXT["done_reason"] = result["stopReason"]
     reply = result["content"]
 
     print(f"\nwall             {wall:.1f}s")
@@ -438,9 +553,11 @@ def main():
 
     outPath = Path(args.out) if args.out else Path(args.spec).with_suffix(".out.py")
     outPath.write_text(reply if args.raw else stripFences(reply), encoding="utf-8")
+    REQUEST_CONTEXT["output_written"] = True
     print(f"written          {outPath}")
 
     if problems:
+        REQUEST_CONTEXT["error"] = "; ".join(problems)
         print("\nPROBLEMS:")
         for problem in problems:
             print(f"  - {problem}")
@@ -459,5 +576,19 @@ def main():
     return 0
 
 
+def runLoggedMain():
+    global REQUEST_CONTEXT
+    try:
+        return main()
+    except BaseException as error:
+        if REQUEST_CONTEXT and not REQUEST_CONTEXT.get("error"):
+            REQUEST_CONTEXT["error"] = str(error)
+        raise
+    finally:
+        if REQUEST_CONTEXT:
+            appendConsoleEvent({"type": "request_end", "time": isoNow(), **REQUEST_CONTEXT})
+            REQUEST_CONTEXT = None
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(runLoggedMain())

@@ -534,6 +534,72 @@ It also keeps chats in browser storage, where Claude cannot read them.
 
 ---
 
+## Job 18: make the Local Model Console a live conversation view, like ChatGPT or Claude
+
+**Why:** Job 17 works (live-tested 2026-09-24; Claude fixed three defects: Windows path separators,
+10,047 progress rows listed one by one, and auto-selecting the newest run). Raymond's verdict: it
+reads like **a transcript after the fact**. He wants to watch the model **as it works**:
+- the prompt going in;
+- its thinking streaming in word by word;
+- each tool call appearing as it happens, then its result;
+- the answer typing out.
+
+The same goes for prompts Claude sends it. Read Job 17's review first:
+`docs/gpt-findings/2026-09-24-local-model-console-job17.md`.
+
+> Rework the **Agent runs** and **Claude requests** tabs of `tools/local-model/console/` (keep the
+> Chat tab working, restyled to match):
+>
+> 1. **One conversation layout for both tabs:**
+>    - a **prompt bubble** at the top, collapsed to its first lines if long (specs run to pages);
+>    - then each assistant turn as a card with a **Thinking** block that is **open and streaming while
+>      it is being written**, then collapses to "Thought for N s" when done, as Claude and ChatGPT do;
+>    - **tool calls** as compact cards (`Bash · python -c "..."`, `Read · decode_profiles.py`), with
+>      the arguments filling in live and the result attached underneath, collapsed, with an expand;
+>    - the answer text streaming;
+>    - the final result: turns, duration, and errors in red;
+>    - for Claude requests, the acceptance verdict as a badge when it arrives.
+> 2. **Stream at token level.** From now on Claude launches agent runs with
+>    `--include-partial-messages`, so transcripts carry `stream_event` lines (`content_block_start`,
+>    `content_block_delta` with `thinking_delta` / `text_delta` / `input_json_delta`,
+>    `content_block_stop`, `message_stop`) **as well as** the whole `assistant` messages. Apply the
+>    deltas live. When the whole message arrives, reconcile it with what was streamed, so nothing is
+>    shown twice and nothing is lost. **Transcripts without partials** (all the existing ones) must
+>    still render, turn by turn.
+>
+>    Claude requests already stream `reasoning` / `answer` chunks in `requests-*.jsonl`.
+> 3. **Assemble on the server, render on the page.** Put the delta-to-turns assembly in Python, as a
+>    pure function that is testable, returning normalized incremental events (`turn_start`,
+>    `thinking_delta`, `text_delta`, `tool_start`, `tool_input_delta`, `tool_result`, `turn_end`,
+>    `result`) with a byte offset. The page only applies them.
+> 4. **Rendering must be incremental.** Append to the existing node; never rebuild the list. Today
+>    `pollRequests` rebuilds every card on each change.
+>    - **Auto-scroll** while at the bottom, and show a "Jump to live" button when the reader has
+>      scrolled up.
+>    - Poll every **500 ms only while something is running and the tab is visible**; otherwise every
+>      5 s, and nothing while hidden or while the measurement banner shows.
+>    - Keep the page cheap to draw. It sits on the card the project measures, and a redrawing app
+>      window read **21% SM** on 2026-09-24.
+> 5. **Keep everything Job 17 got right:** loopback only, confined file reads, no external assets, the
+>    measurement banner and its refusals, start/stop of owned servers only, the logs Claude reads,
+>    and Claude's three fixes. Each of those has a test in `tools/local-model/test_console.py`, and
+>    all must still pass.
+>
+> **Tests** (`test_console.py`, with `[PASS]` reporting as now):
+> - **A real partial-messages fixture**, `tools/local-model/console/fixtures/claude-code-local-partial.jsonl`,
+>   recorded by Claude from the local model. If it is not in the repo when you start, build against
+>   the event shapes above and **say so in your record**. The assembly must yield the same thinking,
+>   text and tool calls as the file's whole `assistant` messages.
+> - A tool call whose `input_json_delta` arrives in pieces.
+> - A transcript cut mid-block (a live tail), then resumed from the returned offset without
+>   duplication.
+> - The existing non-partial fixture still assembles, turn by turn.
+>
+> 🛑 Same rules as Job 17: do not start llama-server or load the model; mock it. No sweeps, no
+> `data/`, no commit. Claude runs it live with Raymond and reviews it.
+
+---
+
 ## ⛔ Still do not ask it
 
 - **Anything settled.** `GPT-QUEUE.md` lists these.

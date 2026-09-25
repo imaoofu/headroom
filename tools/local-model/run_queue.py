@@ -21,6 +21,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+import uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -67,25 +68,42 @@ def start_server(log_path, wait_seconds):
     raise RuntimeError(f"llama-server not healthy after {wait_seconds} s; see {log_path}")
 
 
-def run_job(job, attempt, out_dir, log):
+def run_job(job, attempt, out_dir, log, queue_name=None):
     out = out_dir / f"{job['id']}-attempt{attempt}{job['extension']}"
+    request_id = uuid.uuid4().hex
     command = [sys.executable, str(HERE / "ask_local.py"), str(ROOT / job["spec"]),
-               "--out", str(out), "--num-predict", str(job["num_predict"]), "--seed", str(attempt)]
+               "--out", str(out), "--num-predict", str(job["num_predict"]), "--seed", str(attempt),
+               "--request-id", request_id, "--queue-name", queue_name or out_dir.name,
+               "--job", job["id"], "--attempt", str(attempt)]
     for context in job.get("context", []):
         command += ["--context", str(ROOT / context)]
     started = time.time()
-    ask = subprocess.run(command, capture_output=True, text=True, timeout=job.get("timeout", 3600), cwd=ROOT)
+    try:
+        ask = subprocess.run(command, capture_output=True, text=True,
+                             timeout=job.get("timeout", 3600), cwd=ROOT)
+    except subprocess.TimeoutExpired as error:
+        ask = subprocess.CompletedProcess(command, 124,
+                error.stdout.decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout or "",
+                "ask_local timed out before a reply could finish")
     log.write(f"\n== {job['id']} attempt {attempt}: ask_local exit {ask.returncode}\n{ask.stdout}\n{ask.stderr}\n")
     result = {"job": job["id"], "attempt": attempt, "output": str(out.relative_to(ROOT)),
               "ask_exit": ask.returncode, "seconds": round(time.time() - started, 1),
               "accept_exit": None, "accept_report": None}
     if ask.returncode == 0 and out.is_file() and job.get("accept"):
-        check = subprocess.run([sys.executable, str(ROOT / job["accept"]), str(out)],
-                               capture_output=True, text=True, timeout=600, cwd=ROOT)
+        try:
+            check = subprocess.run([sys.executable, str(ROOT / job["accept"]), str(out)],
+                                   capture_output=True, text=True, timeout=600, cwd=ROOT)
+        except subprocess.TimeoutExpired:
+            check = subprocess.CompletedProcess(job["accept"], 124, "",
+                                                 "Acceptance check timed out after 600 seconds")
         report = out.with_suffix(out.suffix + ".accept.txt")
         report.write_text(check.stdout + check.stderr, encoding="utf-8")
         result["accept_exit"] = check.returncode
         result["accept_report"] = str(report.relative_to(ROOT))
+    ask_local.appendConsoleEvent({"type": "accepted", "time": ask_local.isoNow(),
+                                  "request_id": request_id, "queue_name": queue_name or out_dir.name,
+                                  "job": job["id"], "attempt": attempt, "verdict": verdict(result),
+                                  "accept_report": result["accept_report"]})
     return result
 
 
@@ -138,7 +156,7 @@ def main():
             for job in queue["jobs"]:
                 for attempt in range(1, job["attempts"] + 1):
                     print(f"{job['id']} attempt {attempt} of {job['attempts']}...", flush=True)
-                    result = run_job(job, attempt, out_dir, log)
+                    result = run_job(job, attempt, out_dir, log, args.queue.stem)
                     results.append(result)
                     log.flush()
                     print(f"  {verdict(result)} in {result['seconds']} s")
