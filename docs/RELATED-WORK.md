@@ -299,8 +299,14 @@ static power P_G0 takes a big portion...; (2) The scaling intervals of f^Gc and 
 then simulates a widened interval reaching **36.4%**, with the optimum *"close to the allowed lowest
 setting"* in both cases.
 
-🔑 **Cite them FOR the argument, never claim it.** Their 4.3% → 36.4% is structurally this
-project's 1.00% → 44.40%. ⚠️ **System-scope energy** at the wall against a 37 W idle floor (24 W
+🔑 **Cite them FOR the argument, never claim it.** ~~Their 4.3% → 36.4% is structurally this
+project's 1.00% → 44.40%.~~ ⛔ **Struck 2026-09-25.** The artifact's commit `8a0a2e0` re-run with
+`analysis/wang_tpds_figure4.py` puts their released-parameter narrow optima near the TOP of the
+window (3 of 20 at the lowest setting, within one step of the raw CSV argmin for all 20, mean
+4.35%). Figure 4's low optima and the 36.4% both depend on dividing static power by 4.75, applied
+twice in the wide case. Widening alone gives 7.17%. Cite them for the narrow real interval and the
+widened simulation only (`docs/gpt-findings/2026-09-25-wang-tpds-optimum-discrepancy.md`).
+⚠️ **System-scope energy** at the wall against a 37 W idle floor (24 W
 CPU, 13 W GPU), and the wide case is a **simulation with static power shrunk** — not comparable to
 board-power figures, and not a measurement. That last point is the opening: they could only simulate
 the wide window; this project measures it.

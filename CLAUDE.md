@@ -208,8 +208,25 @@ on the released GTX 1080 Ti CSV puts **18 of 30 at the HIGHEST** sampled core cl
 lowest. **Do not present the raw-grid computation as a reproduction of their model-derived figure.**
 Candidate explanations, none checked: their paper reports **20** benchmarks against the CSV's **30**
 applications, theirs is a **fitted** optimum rather than a grid argmax, and their energy is
-system-scope against a 37 W idle floor. 🛑 **Someone needs to read §5.1.1/§5.2 and Figure 4 against
-these counts before the paper leans further on the authors-against-their-own-artifact strategy.**
+system-scope against a 37 W idle floor. ~~🛑 **Someone needs to read §5.1.1/§5.2 and Figure 4 against
+these counts before the paper leans further on the authors-against-their-own-artifact strategy.**~~
+
+✅ **RESOLVED 2026-09-25, and the discrepancy is in THEIR FIGURE, not their data** (GPT Job 21
+recovered the key; the static-power finding was added in review:
+`docs/gpt-findings/2026-09-25-wang-tpds-optimum-discrepancy.md`). The artifact's commit `8a0a2e0`
+(2021-04-26) keeps `apps.pkl` and `plot.ipynb`, and Figure 4 plots the **first 20** of the 30
+names. Their raw grid gives **3 low / 3 interior / 14 high**. The notebook's `solve_dvfs` divides
+`P0` by 4.75 and `γ` by 4.65 **in place, on every call**, so the wide bars carry the division twice.
+Re-run with `python analysis/wang_tpds_figure4.py <clone>`:
+- **On the fitted parameters as released, the narrow model gives 4.35%** (the paper says 4.3%)
+  **with only 3 of 20 optima at the lowest setting**. It lands within one 100 MHz step of the raw
+  CSV argmin for **all 20**.
+- **The "close to the allowed lowest setting" optima (17 of 20) exist only after the static-power
+  division.** The plotted narrow mean is 7.25%, not 4.3%.
+- **Widening the interval alone gives 4.35% → 7.17%.** The rest of the rise to 36.4% comes from
+  shrinking static power twice.
+⚠️ Which condition reproduces 4.3% is shown; how the authors got it is not, since their meter
+readings were never released.
 
 ⚠️ **Two smaller corrections from the same audit.** The two tables are **one lineage, not two
 independent ones** — `GPU-DVFS-Job-Schedule` republishes `NV-DVFS-Benchmark`'s GTX 1080 Ti file
@@ -233,9 +250,13 @@ quotation verified against the PDF**: they publish the interval `f^Gc ∈ [0.89,
 intervals of f^Gc and f^Gm are narrow"*, and simulate a widened interval that reaches **36.4%**,
 noting the optimum sits *"close to the allowed lowest setting"* in both cases.
 
-✅ **This is the stronger position, and it is how the paper now states it.** Their 4.3% → 36.4% is
-structurally this project's 1.00% → 44.40%. **Cite them against their own artifact rather than
-claiming the observation** - prior art that corroborates cannot be lost to a paper turning up.
+✅ **This is the stronger position, and it is how the paper now states it.** ~~Their 4.3% → 36.4% is
+structurally this project's 1.00% → 44.40%.~~ ⛔ **Struck 2026-09-25: it is not.** Most of their
+rise comes from shrinking static power, not from widening the interval, and their narrow optima sit
+near the TOP of the window on the released parameters (see RESOLVED above). The analogy was drawn
+from the paper's prose without re-running the model behind its figure. **Cite them for the narrow
+real interval and the widened simulation, not as evidence that the released grid hides a
+lower-frequency optimum.** Prior art that corroborates still cannot be lost to a paper turning up.
 ⚠️ Their energy is SYSTEM-SCOPE at the wall against a 37 W idle floor, and their wide case is a
 SIMULATION with static power shrunk. **Never equate their 4.3% with this project's 1.00%.**
 🔑 What this project contributes is that wide sweep MEASURED on consumer silicon, where they

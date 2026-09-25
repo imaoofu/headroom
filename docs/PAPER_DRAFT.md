@@ -538,19 +538,44 @@ name the window as the cause of their small measured saving:
 
 And they run the widened-window counterfactual, reporting that with `f^Gc ∈ [0.5, ...]` the average
 energy conservation "finally achieves an average value of **36.4%**", noting that in both cases "the
-optimal core voltage/frequency is relatively low, **close to the allowed lowest setting**" — a
-boundary optimum, which is what a window too narrow to contain the answer looks like from inside.
+optimal core voltage/frequency is relatively low, **close to the allowed lowest setting**".
 
-**Their 4.3% → 36.4% is structurally the same argument as this work's 1.00% → 44.40%.** ⚠️ It is
-not the same measurement: theirs is **system energy at the wall** against a 37 W idle floor (24 W
-CPU, 13 W GPU), and their wide case is a **simulation with static power artificially shrunk**, not a
-measurement. Do not equate the two figures.
+⛔ **Corrected 2026-09-25: Figure 4 of [22] is not evidence that the answer lies below their
+window.** A draft of this section read their low optima as *"what a window too narrow to contain
+the answer looks like from inside"*, and called their 4.3% → 36.4% *"structurally the same argument
+as this work's 1.00% → 44.40%"*. Both readings were taken from the paper's prose; neither survived
+re-running the model behind its figure. The artifact's publication-era commit (`8a0a2e0`,
+2021-04-26) keeps the fitted parameters and the plotting code. Its solver divides the fitted static
+power `P_G0` by 4.75 and `γ` by 4.65 on every call, and the plotted wide case runs on parameters the
+narrow case has already divided once. Re-run from that commit with `analysis/wang_tpds_figure4.py`,
+over the 20 applications Figure 4 plots:
 
-✅ **This strengthens the section rather than weakening it, and it is the form to state.** The
-criticism is not this work's to claim — it is corroboration from the people who produced the data,
-and their own conclusion is that the honest version of the experiment requires a wider sweep than
-their platform allowed. **What this work contributes is that sweep, measured on real consumer
-silicon across four chips and three architectures, where [22] could only simulate it.**
+| model condition | mean saving | narrow optima at the lowest core setting |
+|---|---|---|
+| narrow, fitted parameters as released | 4.35% | 3 of 20 |
+| narrow, static terms divided once (Figure 4's bars) | 7.25% | 17 of 20 |
+| wide, fitted parameters as released | 7.17% | — |
+| wide, static terms divided twice (Figure 4's bars) | 36.48% | — |
+
+**The condition that reproduces their stated 4.3% puts the narrow optima near the top of the
+window**, 14 of 20 at 1886 MHz or above. It lands within one 100 MHz grid step of the raw argmin of
+`time × power` in their released CSV for all 20 applications, and that raw argmin sits at the
+highest sampled clock for 14 of them. The optima *"close to the allowed lowest setting"* appear only
+after the static-power reduction, which §5.2 of [22] describes for its simulations. **Widening the
+interval alone takes the modelled saving from 4.35% to 7.17%; the rest of the rise to 36.4% comes
+from shrinking the static power terms.** ⚠️ This shows which parameter condition reproduces 4.3%,
+not how the authors obtained it: their meter readings were never released. Their energy is also
+**system energy at the wall** against a 37 W idle floor (24 W CPU, 13 W GPU), so none of these
+figures compares directly with this work's board-power numbers.
+
+✅ **What survives is the part this section needs.** The 0.89 lower bound is theirs, and they name
+the narrow interval as one of two causes of their small saving. The released grid does not contain
+the optimum at either end: on the GTX 1080 Ti most applications' best sampled point is its
+**highest** clock. That is a statement about the window's width, and it does not locate an optimum
+in either direction. **[22] is cited for the narrow real interval and for a widened simulated
+scenario, not as validation that the released grid hides a lower-frequency optimum.** What this
+work adds is a sweep wide enough to contain the optimum, measured on consumer silicon across four
+chips and three architectures.
 
 Both halves are checkable: the ranges via `analysis/compare_consumer.py`, which now prints each
 sweep against both reference boost and declared default, and the GTX 980 counter-example by opening

@@ -624,6 +624,8 @@ The same goes for prompts Claude sends it. Read Job 17's review first:
 
 ## Job 19: adversarial audit of Session D (3070 Ti). **Send first: Session D2 runs 2026-09-25.**
 
+✅ **DONE 2026-09-25, reviewed and accepted** (`docs/gpt-findings/2026-09-25-sessiond-3070ti-adversarial-audit.md`). **Do not send.**
+
 **Why:** Session D is the project's second causal test. It came back mixed: the manipulation passed
 twice, and the negative control failed. Every outside audit so far has found something real, and
 this one should land before the 8d repeat is scored, not after.
@@ -661,6 +663,8 @@ this one should land before the 8d repeat is scored, not after.
 
 ## Job 20: index the §2 sources that are read but unindexed
 
+✅ **DONE 2026-09-25, reviewed and accepted** (`docs/gpt-findings/2026-09-25-section2-source-index.md`). **Do not send.**
+
 **Why:** `docs/drafts/section2-related-work-proposal.md` (Job 13) marks five sentences **[X]**:
 CLAUDE.md records the source as read, but `docs/RELATED-WORK.md` does not index it. The proposal
 cannot go into the paper until they are indexed or dropped.
@@ -687,6 +691,8 @@ cannot go into the paper until they are indexed or dropped.
 ---
 
 ## Job 21: Wang et al. (TPDS) against their own released data — an open discrepancy
+
+✅ **DONE 2026-09-25, reviewed and accepted, and review went one step further**: on the released parameters their narrow optima sit near the TOP of the window; Figure 4's low optima come from a static-power division (`analysis/wang_tpds_figure4.py`). §2.7 corrected. **Do not send.**
 
 **Why:** CLAUDE.md has flagged this since 2026-09-19. §2.7 leans on Wang, Mei, Liu, Leung, Li & Chu
 (arXiv:2104.00486) reporting that their optimum sits *"close to the allowed lowest setting"*. But a

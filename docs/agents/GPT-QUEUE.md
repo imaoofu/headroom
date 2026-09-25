@@ -123,6 +123,8 @@ allowed lowest setting"*. Their 20 benchmarks vs the CSV's 30 applications, a fi
 grid argmax, and system-scope energy are all candidates. **Someone must read Figure 4** before the
 paper leans further on citing them against their own artifact.
 
+✅ **CLOSED 2026-09-25 (Job 21 plus review).** Figure 4 plots the first 20 names; on the released fitted parameters the narrow optima sit near the top of the window, matching the raw grid. The low optima and most of the 36.4% come from a static-power division in the plotting code. §2.7 now cites them for the narrow interval only.
+
 **The original brief, kept for the record:**
 
 ⛔ **The first brief simplified it, and GPT answered the simplified version.** It reported the claim
