@@ -61,3 +61,38 @@ single-shot version.
   A job must fit its reading into that budget, so the next specs should point it at the few lines
   it needs rather than whole data files.
 - **It still never runs beside a sweep on this card.**
+
+## Run 4, with a context rule: ✅ 15 of 15 again, and out of context again
+
+The sandbox CLAUDE.md gained one rule after run 3: never Read a `.cfg` store whole, inspect it with
+short `python -c` commands instead. Same model, template, task, tools and hidden check.
+
+| | run 3 | run 4 (context rule) |
+|---|---|---|
+| hidden check | **15 / 15** | **15 / 15** |
+| sandbox tests (`test_decode_profiles.py`) | pass | pass |
+| turns / assistant messages | 13 / 29 | 35 / 74 |
+| tool calls | 4 Read, 3 Bash, 5 Edit | 4 Read, **15 Bash**, 10 Edit, 5 task-list |
+| wall time | 16.9 min | 17.8 min |
+| how it ended | out of context, 73,370 tokens | out of context, **65,612** tokens |
+
+- **The rule was obeyed, and it moved the cost rather than removing it.** Run 4 inspected the
+  stores through short Python commands, as told. It then spent the saved context **verifying**:
+  15 Bash commands, most of them checks of its own finished code. It ran out during that pass,
+  76 tokens over the limit.
+- **The code was already complete when it stopped**, as in run 3. The result is kept beside the
+  sandbox as `L1-run4-decoder-result.py`.
+- **3 commands were refused by the permission list** (`Bash(python:*)`). Two began with `echo`.
+  The third was a `python -c` whose file path contains `&`, which the harness probably read as a
+  command separator. That is an inference; the transcript records only the refusal. The model
+  carried on after each.
+
+⚠️ **n = 2 agent runs, 2 of 2 passing the hidden check, 2 of 2 ending out of context.** The pass
+rate is two successes, not a rate. The failure mode is now consistent.
+
+**What to change for the next agent job, before running it:**
+- **Budget the verification, not only the reading.** Tell it how many checks to run and to print
+  only the verdict lines, since each command's output stays in context.
+- **Or give it more room.** A smaller quant would leave VRAM for a longer context, or the job can be
+  split into sessions that each start fresh. Neither has been tried.
+- **Allow `echo`**, and avoid `&` in file paths the model has to type, or point it at a copy.

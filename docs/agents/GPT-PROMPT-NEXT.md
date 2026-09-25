@@ -587,9 +587,13 @@ The same goes for prompts Claude sends it. Read Job 17's review first:
 >
 > **Tests** (`test_console.py`, with `[PASS]` reporting as now):
 > - **A real partial-messages fixture**, `tools/local-model/console/fixtures/claude-code-local-partial.jsonl`,
->   recorded by Claude from the local model. If it is not in the repo when you start, build against
->   the event shapes above and **say so in your record**. The assembly must yield the same thinking,
->   text and tool calls as the file's whole `assistant` messages.
+>   recorded by Claude from the local model on 2026-09-24. ✅ **It is in the repo.** It is a small
+>   real job (make `mean([])` raise `ValueError`): 5 turns, 60 s, ending in success. It holds
+>   **5 thinking blocks (295 `thinking_delta`), 1 text block (35 `text_delta`), 4 tool calls
+>   (132 `input_json_delta`)**, 5 `signature_delta`, 10 whole `assistant` messages and 4 tool
+>   results. It also carries **295 `system`/`thinking_tokens` lines**, the flood Job 17 had to
+>   fold into a counter. Today's parser reads 502 of its lines as `other`. The assembly must yield
+>   the same thinking, text and tool calls as the file's whole `assistant` messages.
 > - A tool call whose `input_json_delta` arrives in pieces.
 > - A transcript cut mid-block (a live tail), then resumed from the returned offset without
 >   duplication.
