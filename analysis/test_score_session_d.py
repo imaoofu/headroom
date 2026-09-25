@@ -5,7 +5,8 @@ import json
 import tempfile
 from pathlib import Path
 
-from score_session_d import REGISTRATION, collapse_control, score, score_replicate
+from score_session_d import (REGISTRATION, collapse_control, score, score_control_replicate,
+                              score_replicate)
 
 
 def check(condition, message):
@@ -159,6 +160,7 @@ def main():
         check(False, "missing voltage extract is rejected")
 
     replicate_checks()
+    control_replicate_checks()
 
 
 def replicate_fixture(root, edit_peak=1170, stock6_peak=1485, stock6_factor=1.0,
@@ -247,6 +249,101 @@ def replicate_checks():
         again = score_replicate(root)
     check(both["joint"] == "CAUSAL_CLAIM_REPLICATES_ON_SECOND_CHIP" and again["8a"] == "PASS",
           "4a/4b and 8a score correctly from one directory holding all six runs")
+
+
+def control_fixture(root, control_peak=1485, stock9_peak=1485, stock7_peak=1485, stock9_factor=1.0,
+                    control_floor_end=None, achieved_offset=0.4, control_peak_by_workload=None):
+    """stock-7, edit2-8 and stock-9 for REGISTERED-PREDICTIONS 8d, written before any Session D2
+    data existed (2026-09-25). Edit 2's six high targets clip to ~1500 MHz and read on the floor."""
+    cfg = REGISTRATION
+    for run in ("stock-7", "edit2-8", "stock-9"):
+        for workload in cfg.workloads:
+            stem = f"synthetic_rtx3070ti-sessiond-{run}-{workload}_sweep"
+            csv_path = root / f"{stem}.csv"
+            csv_path.with_suffix(".json").write_text(json.dumps({
+                "session_label": f"rtx3070ti-sessiond-{run}-{workload}",
+                "gpu_name": "NVIDIA GeForce RTX 3070 Ti", "driver_version": "synthetic-driver",
+                "power_limit_default_w": "290.00", "power_limit_enforced_w": "290.00",
+                "power_limit_w": "320.00"}), encoding="utf-8")
+            if run == "edit2-8":
+                peak = (control_peak_by_workload or {}).get(workload, control_peak)
+            else:
+                peak = stock9_peak if run == "stock-9" else stock7_peak
+            factor = stock9_factor if run == "stock-9" else 1.0
+            if run == "edit2-8":
+                floor_end = cfg.clipped_targets[-1] if control_floor_end is None else control_floor_end
+            else:
+                floor_end = 1485
+            with csv_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=(
+                    "target_frequency_mhz", "achieved_frequency_avg", "bench_throughput",
+                    "power_avg_w", "bench_ok", "lock_miss_direction", "power_window_applied"))
+                writer.writeheader()
+                for target in cfg.targets:
+                    achieved = 1500 if run == "edit2-8" and target in cfg.clipped_targets else target
+                    best = (target in cfg.clipped_targets) if peak == "clipped" else (target == peak)
+                    writer.writerow({"target_frequency_mhz": target,
+                                     "achieved_frequency_avg": achieved - achieved_offset,
+                                     "bench_throughput": (2.0 if best else 1.0) * 100 * factor,
+                                     "power_avg_w": 100, "bench_ok": "True",
+                                     "lock_miss_direction": "none", "power_window_applied": "True"})
+            with csv_path.with_name(stem + "_voltage.csv").open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=("target", "achieved", "voltage", "sampleCount"))
+                writer.writeheader()
+                for target in cfg.targets:
+                    achieved = 1500 if run == "edit2-8" and target in cfg.clipped_targets else target
+                    writer.writerow({"target": target, "achieved": achieved - achieved_offset,
+                                     "voltage": 0.812 if target <= floor_end else 0.831,
+                                     "sampleCount": 25})
+
+
+def evaluate_control(**kwargs):
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        control_fixture(root, **kwargs)
+        return score_control_replicate(root)
+
+
+def control_replicate_checks():
+    """REGISTERED-PREDICTIONS 8d, every outcome it names."""
+    held = evaluate_control()
+    check(held["8d"] == "PASS" and held["medians"]["edit2-8"] == 1485,
+          "8d: a control median of 1485 passes")
+    # All six clipped rows best: the bin is their MEDIAN, so one high row alone would not win it.
+    clipped = evaluate_control(control_peak="clipped")
+    check(clipped["8d"] == "PASS" and clipped["medians"]["edit2-8"] == 1500
+          and all(b["count"] == 6 for b in clipped["clipped_bins"].values()),
+          "8d: the six clipped targets are one ~1500 MHz bin, which is inside 1485-1500")
+    split = evaluate_control(control_peak_by_workload={name: (1380 if i < 6 else 1485)
+                                                       for i, name in enumerate(REGISTRATION.workloads)})
+    check(split["medians"]["edit2-8"] == 1432.5 and split["8d"] == "FAIL",
+          "8d: a 4b-style six-six split at 1432.5 fails again")
+    moved = evaluate_control(control_peak=1170)
+    check(moved["8d"] == "FAIL", "8d: a control that moves down fails")
+    wrong_base = evaluate_control(stock7_peak=1380, stock9_peak=1380)
+    check(wrong_base["8d"] == "NOT_SCOREABLE" and "not the registered" in wrong_base["not_scoreable_reasons"][0],
+          "8d: a stock-7 median other than 1485 makes it NOT SCOREABLE")
+    unreturned = evaluate_control(stock9_peak=1380)
+    check(unreturned["8d"] == "NOT_SCOREABLE", "8d: stock-9 unlike stock-7 makes it NOT SCOREABLE")
+    drifted = evaluate_control(stock9_factor=1.02)
+    check(drifted["8d"] == "NOT_SCOREABLE", "8d: a 2% stock return makes it NOT SCOREABLE")
+    no_clip = evaluate_control(control_floor_end=1485)
+    check(no_clip["8d"] == "NOT_SCOREABLE" and not no_clip["control_floor_ok"],
+          "8d: an Edit 2 that did not hold its clipped targets on the floor is NOT SCOREABLE")
+    # Sessions D and D2 will share one data directory: each mode must read only its own runs.
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        fixture(root)
+        replicate_fixture(root)
+        for path in root.glob("synthetic_rtx3070ti-sessiond-stock-4-*"):
+            path.unlink()
+        replicate_fixture(root)
+        control_fixture(root)
+        four = score(root)
+        eight_a = score_replicate(root)
+        eight_d = score_control_replicate(root)
+    check(four["joint"] == "CAUSAL_CLAIM_REPLICATES_ON_SECOND_CHIP" and eight_a["8a"] == "PASS"
+          and eight_d["8d"] == "PASS", "4a/4b, 8a and 8d score from one directory holding all nine runs")
 
 
 if __name__ == "__main__":
