@@ -1238,6 +1238,30 @@ Otherwise NOT SCOREABLE, which is not a failure.
 **What it cannot settle:** the manipulation. The 5060 Ti's manipulation (`abba-20260908`) was found
 in a run registered for a different prediction; rung B (§1) is its registered test.
 
+### ⛔ Amendment, 2026-09-25, before collection: the slot witness is replaced
+
+The peak-clock witness above came from the 09-09 locked sweeps and **does not separate the slots
+unlocked**. It was measured before any suite ran:
+- P5's unlocked `gemm` median was 2872 MHz (max 2925) and P2's 2835 (max 2887);
+- the ranges overlap, and P5 never reached the registered 2935;
+- a first P5 probe recorded no loaded samples at all.
+
+The run would have stopped at its first check.
+
+**The replacement is `gemm` power at a locked 2475 MHz**, where the decoded curves put P2 near
+928 mV and P5 near 862 mV. It was measured A–B–A–B the same morning:
+
+| probe | slot | median power | range |
+|---|---|---|---|
+| a | P5 | 151.8 W | 146.9–154.3 |
+| b | P2 | 176.1 W | 170.8–178.8 |
+| c | P5 | 152.9 W | 148.6–156.3 |
+| d | P2 | 177.4 W | 171.3–180.7 |
+
+**The witness requires P5 ≤ 163 W and P2 ≥ 165 W** (median of loaded samples after the first six).
+These are thresholds between two measured clusters 14 W apart, set from these four probes and
+recorded here with them. **Nothing else in §10 changes.** No suite had run.
+
 ## Safety envelope — these cards are going to be sold
 
 **The hardware risk of a floor manipulation is low and should be stated plainly rather than
