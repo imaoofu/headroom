@@ -1,0 +1,3036 @@
+VALID PLAN
+Keeping the PC awake for this session.
+STEP 1/25 preflight/profile-hash Verify Afterburner P1-P3 are the decoded curves
+PASS preflight/profile-hash
+STEP 2/25 preflight/profile Apply profile P1 (stock)
+PASS preflight/profile
+STEP 3/25 preflight/power SILENT BIOS: 290 / 290 / 320 W
+PASS preflight/power
+STEP 4/25 preflight/quiet Quiet pmon baseline and video engines
+PASS preflight/quiet
+STEP 5/25 preflight/witness Stock under load
+PASS preflight/witness
+STEP 6/25 preflight/sensors Confirm HWiNFO Sensors window
+ACTION NEEDED: HWiNFO has launched from the kit (if it was not already running). Open Sensors only and close any update popup. The run continues by itself once the Sensors window is detected; Continue also works.
+Detected automatically; continuing without Continue.
+PASS preflight/sensors
+STEP 7/25 stock-7/profile Apply profile P1
+PASS stock-7/profile
+STEP 8/25 stock-7/witness Verify profile under load
+PASS stock-7/witness
+STEP 9/25 stock-7/log-start Start HWiNFO log
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : F:\headroom-kit\results\hwinfo-rtx3070ti-sessiond-stock-7.csv
+  size       : 19258 then 31579 bytes
+
+Logging is running and the file is growing.
+PASS stock-7/log-start
+STEP 10/25 stock-7/collect Collect 12-workload suite
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+
+  Measuring the memory clock UNDER LOAD...
+  (clocks.max.memory reads the same on a stock and an overclocked card)
+
+  MEASURED MEMORY CLOCK UNDER LOAD: 9501 MHz
+  [ok] matches the expected 9501 MHz
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+
+  [ok] compute capability: sm_86
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 3070 Ti
+  [ok] VRAM free: 7.4 GB
+
+  [ok] GPU is idle (3% used)
+
+Recording machine details...
+
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 12: copy
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload copy --json --iterations 4099   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 3.4% - clear to start.
+
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 131.81 W [17 in-window of 24], 52.1 C, util 97.4%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 131.38 W [17 in-window of 24], 54.2 C, util 97.9%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 127.78 W [18 in-window of 24], 55.7 C, util 92.9%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 136.31 W [17 in-window of 25], 57.7 C, util 100%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  136.3 W [17 in-window of 25], 54.9 C, util 98.1%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 134.63 W [17 in-window of 25], 53.4 C, util 94.8%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),  136.2 W [17 in-window of 24], 55.9 C, util 94.9%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 142.41 W [17 in-window of 25], 58.2 C, util 97.8%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 156.58 W [17 in-window of 25], 56.7 C, util 100%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 164.78 W [17 in-window of 25], 55.5 C, util 96.1%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 186.18 W [17 in-window of 25], 57.4 C, util 94.8%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved   1950 MHz (UNDERSHOT -75), 193.89 W [17 in-window of 24], 57.8 C, util 98.9%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1937.5 MHz (UNDERSHOT -192.5),  184.5 W [18 in-window of 24], 56.9 C, util 90.2%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-083403_rtx3070ti-sessiond-stock-7-copy_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-083403_rtx3070ti-sessiond-stock-7-copy_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 12: reduce
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload reduce --json --iterations 4291   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 136.83 W [17 in-window of 24], 52.2 C, util 98.5%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 135.65 W [17 in-window of 25], 54.5 C, util 95.1%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 135.12 W [17 in-window of 24], 56.6 C, util 95.5%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 140.39 W [17 in-window of 24], 56.2 C, util 96.4%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 143.06 W [17 in-window of 24], 56.8 C, util 100%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 143.64 W [17 in-window of 24], 55.3 C, util 99.9%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 143.11 W [17 in-window of 24], 56.3 C, util 100%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 148.36 W [17 in-window of 25], 58.4 C, util  95%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 157.25 W [17 in-window of 24], 56.4 C, util 97.6%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 165.47 W [17 in-window of 25], 55.5 C, util 96.2%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 187.36 W [17 in-window of 24],  57 C, util 97.3%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1939.4 MHz (UNDERSHOT -85.6), 194.63 W [17 in-window of 24], 57.4 C, util 94.9%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1941.2 MHz (UNDERSHOT -188.8), 201.54 W [17 in-window of 24], 57.4 C, util 97.5%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-083847_rtx3070ti-sessiond-stock-7-reduce_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-083847_rtx3070ti-sessiond-stock-7-reduce_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 3 of 12: softmax
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload softmax --json --iterations 3230   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.8% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 129.06 W [22 in-window of 29], 53.5 C, util 99.3%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 136.79 W [21 in-window of 28], 56.5 C, util 99.7%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 137.15 W [20 in-window of 28], 55.5 C, util  96%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 144.02 W [19 in-window of 27], 56.8 C, util 100%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 144.46 W [18 in-window of 26], 55.3 C, util 97.2%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 149.71 W [18 in-window of 26], 55.6 C, util 100%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 149.51 W [18 in-window of 25], 57.9 C, util 96.6%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 159.32 W [17 in-window of 25], 56.6 C, util 95.2%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 169.34 W [17 in-window of 25],  56 C, util 98.5%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 190.94 W [17 in-window of 25], 57.9 C, util 94.2%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 225.21 W [16 in-window of 24], 59.8 C, util 100%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1935.9 MHz (UNDERSHOT -89.1), 231.26 W [16 in-window of 24], 60.4 C, util 95.9%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1936.9 MHz (UNDERSHOT -193.1),  231.6 W [16 in-window of 24], 59.9 C, util 94.9%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-084329_rtx3070ti-sessiond-stock-7-softmax_sweep.csv
+
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-084329_rtx3070ti-sessiond-stock-7-softmax_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 4 of 12: layernorm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload layernorm --json --iterations 2462   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 147.79 W [20 in-window of 28], 54.2 C, util 99.2%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 151.57 W [19 in-window of 26], 57.3 C, util 96.1%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  155.1 W [18 in-window of 26], 55.7 C, util 98.3%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 157.51 W [18 in-window of 25], 55.4 C, util 97.6%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 157.59 W [17 in-window of 25], 57.9 C, util 96.1%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 157.92 W [17 in-window of 25], 56.2 C, util 97.2%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 164.51 W [17 in-window of 24], 55.6 C, util 99.9%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 176.15 W [17 in-window of 24], 59.1 C, util 97.5%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 188.13 W [17 in-window of 24], 58.4 C, util 96.3%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held),  207.3 W [17 in-window of 24], 58.6 C, util 95.1%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 239.57 W [16 in-window of 24], 60.9 C, util 95.1%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1935.9 MHz (UNDERSHOT -89.1), 246.45 W [16 in-window of 24], 61.4 C, util 97.1%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved   1935 MHz (UNDERSHOT -195), 252.05 W [17 in-window of 24], 61.3 C, util 94.2%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-084822_rtx3070ti-sessiond-stock-7-layernorm_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-084822_rtx3070ti-sessiond-stock-7-layernorm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 5 of 12: bgemm32
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm32 --json --iterations 843   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 101.54 W [36 in-window of 44], 53.1 C, util 98.5%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 108.28 W [32 in-window of 40], 56.8 C, util  98%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 113.33 W [29 in-window of 36], 54.7 C, util 96.3%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 117.37 W [26 in-window of 34],  55 C, util 98.2%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  122.5 W [24 in-window of 32], 57.6 C, util 98.7%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 129.77 W [22 in-window of 30], 55.5 C, util 97.4%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 130.67 W [20 in-window of 28], 55.2 C, util  98%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 149.26 W [19 in-window of 27], 58.8 C, util 98.9%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 164.96 W [18 in-window of 25], 58.2 C, util 97.7%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 188.66 W [17 in-window of 24],  59 C, util 96.5%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 231.32 W [16 in-window of 23], 61.9 C, util 95.9%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved   1935 MHz (UNDERSHOT -90), 246.45 W [16 in-window of 23], 62.7 C, util 96.6%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved   1935 MHz (UNDERSHOT -195), 251.16 W [16 in-window of 23], 63.3 C, util 100%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-085309_rtx3070ti-sessiond-stock-7-bgemm32_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-085309_rtx3070ti-sessiond-stock-7-bgemm32_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 6 of 12: bgemm64
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm64 --json --iterations 2113   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held),    124 W [36 in-window of 43], 54.8 C, util  98%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 130.44 W [31 in-window of 39],  58 C, util 95.4%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 140.79 W [28 in-window of 36], 56.2 C, util 97.7%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 144.82 W [26 in-window of 33], 56.3 C, util 98.7%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 152.93 W [24 in-window of 32], 56.4 C, util 96.9%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 158.53 W [22 in-window of 30], 57.5 C, util 96.6%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 167.12 W [20 in-window of 28],  57 C, util 96.8%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 187.13 W [19 in-window of 27], 58.5 C, util 96.9%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 210.96 W [17 in-window of 25],  60 C, util 97.3%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held),  253.9 W [16 in-window of 24], 62.8 C, util 100%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1855.3 MHz (UNDERSHOT -64.7),  270.4 W [16 in-window of 24], 63.9 C, util 96.1%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1855.3 MHz (UNDERSHOT -169.7), 268.52 W [16 in-window of 24], 64.1 C, util 94.1%
+
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1853.4 MHz (UNDERSHOT -276.6), 266.38 W [16 in-window of 24], 64.2 C, util 94.9%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-085830_rtx3070ti-sessiond-stock-7-bgemm64_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-085830_rtx3070ti-sessiond-stock-7-bgemm64_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 7 of 12: bgemm128
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm128 --json --iterations 3511   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 153.47 W [27 in-window of 35], 56.3 C, util 97.7%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 165.25 W [24 in-window of 32], 56.8 C, util 97.8%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  175.7 W [22 in-window of 29], 57.7 C, util 97.5%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 189.46 W [20 in-window of 27], 57.9 C, util 96.8%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  194.9 W [18 in-window of 26], 58.6 C, util 97.6%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 208.99 W [17 in-window of 25], 58.4 C, util 91.9%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 217.12 W [16 in-window of 24], 59.2 C, util 96.3%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 232.17 W [17 in-window of 25], 59.9 C, util 95.2%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held),  248.4 W [17 in-window of 25], 61.2 C, util 96.9%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1762.1 MHz (UNDERSHOT -52.9), 261.72 W [17 in-window of 25], 62.2 C, util 94.6%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1760.3 MHz (UNDERSHOT -159.7), 276.37 W [17 in-window of 24], 63.6 C, util 100%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1762.1 MHz (UNDERSHOT -262.9), 271.09 W [17 in-window of 25], 63.4 C, util 95.5%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1771.8 MHz (UNDERSHOT -358.2), 269.75 W [17 in-window of 24], 63.6 C, util 94.6%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-090352_rtx3070ti-sessiond-stock-7-bgemm128_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-090352_rtx3070ti-sessiond-stock-7-bgemm128_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 8 of 12: bgemm256
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm256 --json --iterations 2327   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 143.44 W [35 in-window of 42], 56.7 C, util 97.3%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 155.16 W [31 in-window of 38],  57 C, util 98.3%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 164.76 W [28 in-window of 35], 57.7 C, util 94.5%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  178.6 W [25 in-window of 33],  58 C, util 100%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 186.55 W [23 in-window of 31], 58.5 C, util 100%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 193.62 W [22 in-window of 29], 58.4 C, util 97.6%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 202.91 W [20 in-window of 28],  59 C, util 96.2%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 233.85 W [18 in-window of 26], 60.4 C, util 95.2%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1708.2 MHz (held), 270.02 W [17 in-window of 25], 63.9 C, util 99.2%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1708.2 MHz (UNDERSHOT -106.8), 265.86 W [17 in-window of 25], 63.6 C, util 96.5%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1704.7 MHz (UNDERSHOT -215.3), 264.18 W [17 in-window of 25], 64.1 C, util 96.4%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1702.1 MHz (UNDERSHOT -322.9), 274.11 W [17 in-window of 25], 65.1 C, util 99.2%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1707.4 MHz (UNDERSHOT -422.6), 271.88 W [17 in-window of 25], 65.1 C, util 95.8%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-090851_rtx3070ti-sessiond-stock-7-bgemm256_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-090851_rtx3070ti-sessiond-stock-7-bgemm256_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 9 of 12: bgemm1024
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm1024 --json --iterations 616   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 131.24 W [35 in-window of 43], 56.2 C, util 97.3%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 139.24 W [31 in-window of 39], 56.4 C, util 97.8%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 148.58 W [28 in-window of 36], 57.2 C, util  96%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  158.7 W [26 in-window of 33], 57.1 C, util  97%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 168.22 W [24 in-window of 31], 58.2 C, util 98.5%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 172.11 W [22 in-window of 29], 57.9 C, util  97%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 181.88 W [20 in-window of 28], 58.8 C, util 99.4%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 212.09 W [19 in-window of 26], 59.8 C, util 92.1%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 248.49 W [17 in-window of 25], 63.1 C, util 99.1%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1753.2 MHz (UNDERSHOT -61.8),  267.7 W [17 in-window of 25], 64.6 C, util 98.2%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1765.6 MHz (UNDERSHOT -154.4), 263.92 W [17 in-window of 25], 64.3 C, util 96.7%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1761.2 MHz (UNDERSHOT -263.8), 274.33 W [17 in-window of 25], 65.2 C, util 97.5%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1749.7 MHz (UNDERSHOT -380.3), 268.63 W [17 in-window of 25],  65 C, util 97.3%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-091412_rtx3070ti-sessiond-stock-7-bgemm1024_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-091412_rtx3070ti-sessiond-stock-7-bgemm1024_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 10 of 12: attention
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload attention --json --iterations 135   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 113.58 W [38 in-window of 46], 54.4 C, util 99.4%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 120.96 W [33 in-window of 42], 57.8 C, util 98.7%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 125.35 W [30 in-window of 39], 55.2 C, util  99%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 131.69 W [27 in-window of 36], 55.6 C, util 99.8%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 136.79 W [25 in-window of 34], 58.6 C, util 96.1%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 139.46 W [24 in-window of 32], 56.5 C, util 98.8%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),  146.7 W [22 in-window of 30], 56.2 C, util 98.7%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 158.79 W [21 in-window of 29], 57.9 C, util 95.4%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 185.17 W [20 in-window of 27],  59 C, util 95.8%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 211.82 W [18 in-window of 26], 60.5 C, util 97.4%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 268.55 W [18 in-window of 25], 64.7 C, util 100%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1922.5 MHz (UNDERSHOT -102.5), 271.05 W [18 in-window of 25], 65.3 C, util 100%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1920.9 MHz (UNDERSHOT -209.1), 268.04 W [17 in-window of 25], 65.3 C, util 97.4%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-091934_rtx3070ti-sessiond-stock-7-attention_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-091934_rtx3070ti-sessiond-stock-7-attention_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 11 of 12: conv
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload conv --json --iterations 432   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 2.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  137.7 W [31 in-window of 39], 55.9 C, util 98.7%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 144.77 W [28 in-window of 36], 56.3 C, util 98.9%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 153.34 W [26 in-window of 34], 57.3 C, util 97.1%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 161.75 W [24 in-window of 32], 56.8 C, util 98.4%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 166.86 W [23 in-window of 30], 57.3 C, util  96%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 170.73 W [21 in-window of 29], 57.3 C, util 95.4%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),  183.7 W [20 in-window of 28], 58.4 C, util 98.2%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 201.55 W [19 in-window of 26], 59.1 C, util 95.4%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 235.26 W [18 in-window of 26], 61.3 C, util 97.9%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1800 MHz (held), 266.04 W [17 in-window of 25], 63.8 C, util 99.1%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1803.5 MHz (UNDERSHOT -116.5),    266 W [17 in-window of 25], 63.8 C, util 97.4%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1811.5 MHz (UNDERSHOT -213.5), 271.15 W [17 in-window of 25], 64.1 C, util  96%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1807.1 MHz (UNDERSHOT -322.9), 272.64 W [17 in-window of 25], 64.6 C, util 95.4%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-092511_rtx3070ti-sessiond-stock-7-conv_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-083357_rtx3070ti-sessiond-stock-7\20260925-092511_rtx3070ti-sessiond-stock-7-conv_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 12 of 12: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json --iterations 120   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 opening bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 128.11 W [31 in-window of 39], 55.9 C, util 98.3%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 137.92 W [27 in-window of 36], 57.9 C, util 100%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  146.1 W [24 in-window of 33], 56.5 C, util 97.8%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 155.05 W [22 in-window of 31], 57.5 C, util 99.6%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 160.93 W [21 in-window of 29], 57.8 C, util 98.8%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 164.79 W [19 in-window of 27], 57.8 C, util 94.8%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 183.37 W [18 in-window of 26], 58.7 C, util 100%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 207.33 W [17 in-window of 24],  60 C, util 100%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 241.07 W [15 in-window of 23], 62.3 C, util 100%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1766 MHz (UNDERSHOT -49), 259.28 W [15 in-window of 23], 63.3 C, util 93.3%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1767 MHz (UNDERSHOT -153), 263.03 W [15 in-window of 23], 63.2 C, util 94.9%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved   1777 MHz (UNDERSHOT -248), 267.79 W [15 in-window of 23], 63.7 C, util 92.2%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved   1777 MHz (UNDERSHOT -353), 275.99 W [15 in-window of 22], 64.8 C, util 100%
+
+[SWEEP] Resetting GPU clocks...
+
+PASS stock-7/collect
+STEP 11/25 stock-7/log-stop Stop HWiNFO log
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 11741773 then 11741773 bytes
+  rows       : 7436
+
+Logging stopped.
+PASS stock-7/log-stop
+STEP 12/25 edit2-8/profile Apply profile P3
+PASS edit2-8/profile
+STEP 13/25 edit2-8/witness Verify profile under load
+PASS edit2-8/witness
+STEP 14/25 edit2-8/log-start Start HWiNFO log
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : F:\headroom-kit\results\hwinfo-rtx3070ti-sessiond-edit2-8.csv
+  size       : 17673 then 29994 bytes
+
+Logging is running and the file is growing.
+PASS edit2-8/log-start
+STEP 15/25 edit2-8/collect Collect 12-workload suite
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+
+  Measuring the memory clock UNDER LOAD...
+  (clocks.max.memory reads the same on a stock and an overclocked card)
+
+  MEASURED MEMORY CLOCK UNDER LOAD: 9251 MHz
+  [ok] matches the expected 9501 MHz
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+
+  [ok] compute capability: sm_86
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 3070 Ti
+  [ok] VRAM free: 7.4 GB
+
+  [ok] GPU is idle (0% used)
+
+Recording machine details...
+
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 12: copy
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload copy --json --iterations 4099   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 125.51 W [18 in-window of 24], 52.1 C, util 90.3%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 130.92 W [17 in-window of 24], 54.6 C, util 96.9%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 130.21 W [17 in-window of 24], 56.4 C, util 95.6%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 136.69 W [17 in-window of 25], 55.5 C, util 100%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  135.9 W [17 in-window of 24], 56.3 C, util 100%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 135.41 W [17 in-window of 24],  58 C, util 94.8%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 135.48 W [17 in-window of 24], 55.5 C, util 95.1%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1515 MHz (UNDERSHOT -90), 134.71 W [17 in-window of 24], 53.4 C, util 97.6%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1515 MHz (UNDERSHOT -195), 133.63 W [17 in-window of 24], 53.6 C, util 97.2%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1515 MHz (UNDERSHOT -300), 137.74 W [17 in-window of 24],  56 C, util 97.4%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1515 MHz (UNDERSHOT -405), 140.75 W [17 in-window of 25], 58.2 C, util 100%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved   1515 MHz (UNDERSHOT -510),  140.3 W [17 in-window of 24], 55.6 C, util 100%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved   1515 MHz (UNDERSHOT -615), 136.84 W [17 in-window of 25], 53.2 C, util 95.5%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-093700_rtx3070ti-sessiond-edit2-8-copy_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-093700_rtx3070ti-sessiond-edit2-8-copy_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 12: reduce
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload reduce --json --iterations 4291   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 132.92 W [17 in-window of 25], 53.1 C, util 97.8%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 139.86 W [17 in-window of 24], 55.9 C, util 100%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  140.6 W [17 in-window of 24], 57.6 C, util 99.9%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 140.66 W [17 in-window of 24], 55.5 C, util 99.1%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 139.28 W [17 in-window of 24], 53.2 C, util 94.6%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 138.75 W [17 in-window of 24], 53.7 C, util 95.8%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 138.13 W [17 in-window of 24], 55.9 C, util 97.2%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1515 MHz (UNDERSHOT -90), 140.28 W [17 in-window of 24], 57.9 C, util 94.9%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1515 MHz (UNDERSHOT -195), 147.14 W [17 in-window of 24], 55.8 C, util 100%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1485 MHz (UNDERSHOT -330), 144.56 W [17 in-window of 24], 53.7 C, util 100%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1485 MHz (UNDERSHOT -435), 142.45 W [17 in-window of 24], 53.2 C, util 98.4%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1508.8 MHz (UNDERSHOT -516.2), 141.71 W [17 in-window of 24], 55.8 C, util 94.9%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved   1515 MHz (UNDERSHOT -615), 140.58 W [17 in-window of 24], 57.7 C, util 96.9%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-094142_rtx3070ti-sessiond-edit2-8-reduce_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-094142_rtx3070ti-sessiond-edit2-8-reduce_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 3 of 12: softmax
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload softmax --json --iterations 3230   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held),  130.4 W [22 in-window of 29], 54.5 C, util 96.5%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 136.75 W [21 in-window of 28], 54.6 C, util 98.5%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 138.79 W [19 in-window of 27], 57.1 C, util 95.3%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 144.62 W [19 in-window of 26], 55.7 C, util 100%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  144.6 W [18 in-window of 26], 54.8 C, util 94.9%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 146.21 W [18 in-window of 25], 57.7 C, util 98.2%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 151.18 W [17 in-window of 25], 55.8 C, util 97.3%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1509.7 MHz (UNDERSHOT -95.3), 152.06 W [17 in-window of 25], 54.5 C, util 100%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1509.7 MHz (UNDERSHOT -200.3),  149.2 W [17 in-window of 25], 55.1 C, util 96.5%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1513.3 MHz (UNDERSHOT -301.7), 148.69 W [18 in-window of 25], 57.9 C, util 97.4%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1512.4 MHz (UNDERSHOT -407.6), 147.74 W [17 in-window of 25], 55.7 C, util 97.9%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1509.7 MHz (UNDERSHOT -515.3), 146.51 W [17 in-window of 25], 54.4 C, util 97.4%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1508.3 MHz (UNDERSHOT -621.7), 145.44 W [18 in-window of 25], 54.7 C, util 94.4%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-094622_rtx3070ti-sessiond-edit2-8-softmax_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-094622_rtx3070ti-sessiond-edit2-8-softmax_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 4 of 12: layernorm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload layernorm --json --iterations 2462   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0% - clear to start.
+
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 146.37 W [20 in-window of 28], 57.2 C, util 97.8%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 149.49 W [19 in-window of 26], 55.6 C, util 95.7%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 156.07 W [18 in-window of 26], 55.4 C, util 100%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  157.3 W [18 in-window of 25], 58.1 C, util 97.1%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 158.07 W [17 in-window of 25], 56.4 C, util 95.7%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 161.01 W [17 in-window of 25], 54.9 C, util 94.2%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 165.62 W [17 in-window of 24], 56.1 C, util 100%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1514.1 MHz (UNDERSHOT -90.9), 165.78 W [17 in-window of 24], 58.8 C, util 95.7%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1513.2 MHz (UNDERSHOT -196.8), 164.36 W [17 in-window of 24], 56.6 C, util 95.8%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1510.6 MHz (UNDERSHOT -304.4), 161.73 W [17 in-window of 24], 55.2 C, util 97.4%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1511.5 MHz (UNDERSHOT -408.5), 159.21 W [17 in-window of 24], 55.6 C, util 94.2%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved   1515 MHz (UNDERSHOT -510), 168.87 W [17 in-window of 24], 58.8 C, util 100%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1514.1 MHz (UNDERSHOT -615.9), 169.29 W [16 in-window of 24], 56.9 C, util 100%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-095115_rtx3070ti-sessiond-edit2-8-layernorm_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-095115_rtx3070ti-sessiond-edit2-8-layernorm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 5 of 12: bgemm32
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm32 --json --iterations 843   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 101.27 W [36 in-window of 43], 53.5 C, util 98.5%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 107.93 W [32 in-window of 39],  57 C, util 97.8%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 112.51 W [29 in-window of 36], 54.7 C, util 95.5%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 117.95 W [26 in-window of 34],  55 C, util 98.3%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 122.94 W [24 in-window of 32], 57.5 C, util 98.1%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 126.74 W [22 in-window of 30], 55.4 C, util  94%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 129.53 W [20 in-window of 28], 55.4 C, util 99.6%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1514.2 MHz (UNDERSHOT -90.8), 134.77 W [20 in-window of 28],  58 C, util 97.6%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1512.8 MHz (UNDERSHOT -197.2), 132.49 W [20 in-window of 28], 55.7 C, util  98%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1506.8 MHz (UNDERSHOT -308.2),  133.8 W [20 in-window of 28], 55.3 C, util  99%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1513.5 MHz (UNDERSHOT -406.5), 132.67 W [20 in-window of 28], 57.8 C, util 98.2%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1512.8 MHz (UNDERSHOT -512.2), 133.71 W [20 in-window of 28], 55.6 C, util 97.3%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1506.8 MHz (UNDERSHOT -623.2), 129.36 W [20 in-window of 28], 55.2 C, util 95.4%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-095602_rtx3070ti-sessiond-edit2-8-bgemm32_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-095602_rtx3070ti-sessiond-edit2-8-bgemm32_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 6 of 12: bgemm64
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm64 --json --iterations 2113   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 124.46 W [35 in-window of 43], 57.2 C, util 98.3%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 132.25 W [31 in-window of 39], 55.6 C, util 97.9%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 137.37 W [28 in-window of 36], 56.1 C, util 98.9%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 143.47 W [26 in-window of 33], 56.1 C, util 96.6%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 151.72 W [23 in-window of 31], 57.1 C, util 97.6%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 159.86 W [22 in-window of 29], 56.9 C, util 96.4%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 168.91 W [20 in-window of 28], 57.3 C, util  97%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1512 MHz (UNDERSHOT -93), 165.77 W [20 in-window of 28],  57 C, util 97.2%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1512.8 MHz (UNDERSHOT -197.2), 170.48 W [20 in-window of 27], 57.4 C, util 96.2%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1512.8 MHz (UNDERSHOT -302.2), 168.28 W [20 in-window of 27],  57 C, util 97.7%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1512.8 MHz (UNDERSHOT -407.2), 171.74 W [20 in-window of 27], 57.4 C, util 99.2%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1512.8 MHz (UNDERSHOT -512.2), 167.93 W [20 in-window of 28],  57 C, util 96.6%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved   1512 MHz (UNDERSHOT -618), 170.22 W [20 in-window of 27], 57.2 C, util 96.2%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-100135_rtx3070ti-sessiond-edit2-8-bgemm64_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-100135_rtx3070ti-sessiond-edit2-8-bgemm64_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 7 of 12: bgemm128
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm128 --json --iterations 3511   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 2.8% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 155.04 W [27 in-window of 35], 56.7 C, util 98.7%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 165.23 W [24 in-window of 32], 56.7 C, util  98%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 177.31 W [22 in-window of 29], 57.9 C, util 96.4%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 190.93 W [20 in-window of 28],  58 C, util 98.8%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 196.28 W [18 in-window of 26], 58.4 C, util  98%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 210.98 W [17 in-window of 24], 58.7 C, util 95.2%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 218.66 W [16 in-window of 24], 59.4 C, util 98.4%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1514.1 MHz (UNDERSHOT -90.9), 215.24 W [17 in-window of 25], 58.9 C, util 95.5%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1513.2 MHz (UNDERSHOT -196.8), 212.07 W [17 in-window of 25], 58.9 C, util 95.9%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1513.2 MHz (UNDERSHOT -301.8), 212.65 W [17 in-window of 25], 58.6 C, util 96.1%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1513.2 MHz (UNDERSHOT -406.8), 216.28 W [17 in-window of 25], 58.8 C, util 94.7%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1514.1 MHz (UNDERSHOT -510.9), 218.88 W [17 in-window of 25],  59 C, util 100%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1513.2 MHz (UNDERSHOT -616.8), 215.16 W [17 in-window of 25], 59.3 C, util 94.8%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-100705_rtx3070ti-sessiond-edit2-8-bgemm128_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-100705_rtx3070ti-sessiond-edit2-8-bgemm128_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 8 of 12: bgemm256
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm256 --json --iterations 2327   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 145.48 W [35 in-window of 42], 56.5 C, util 96.8%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 156.26 W [31 in-window of 38],  57 C, util 97.5%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 167.76 W [28 in-window of 35],  58 C, util 97.6%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 176.52 W [25 in-window of 33],  58 C, util 98.4%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 184.79 W [23 in-window of 31], 57.8 C, util  97%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 191.84 W [22 in-window of 29], 58.5 C, util 96.5%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 206.92 W [20 in-window of 27], 59.4 C, util 100%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1513.4 MHz (UNDERSHOT -91.6), 206.53 W [19 in-window of 27], 59.3 C, util 95.7%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1513.4 MHz (UNDERSHOT -196.6), 208.67 W [19 in-window of 27], 59.1 C, util 96.8%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1513.4 MHz (UNDERSHOT -301.6), 208.96 W [19 in-window of 27], 59.4 C, util 97.9%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1513.4 MHz (UNDERSHOT -406.6), 204.28 W [19 in-window of 27], 59.5 C, util 98.3%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1514.2 MHz (UNDERSHOT -510.8), 211.77 W [19 in-window of 27], 59.8 C, util 100%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1513.4 MHz (UNDERSHOT -616.6), 204.57 W [19 in-window of 27], 59.4 C, util 97.9%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-101204_rtx3070ti-sessiond-edit2-8-bgemm256_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-101204_rtx3070ti-sessiond-edit2-8-bgemm256_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 9 of 12: bgemm1024
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm1024 --json --iterations 616   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 1.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 133.94 W [35 in-window of 43], 56.1 C, util 96.9%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 140.16 W [31 in-window of 39], 56.9 C, util 97.3%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 151.27 W [28 in-window of 36], 57.6 C, util 97.5%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 159.73 W [26 in-window of 33], 57.3 C, util 98.4%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 169.92 W [24 in-window of 31], 58.3 C, util 98.1%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 177.02 W [22 in-window of 29],  58 C, util 93.8%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 182.56 W [20 in-window of 28], 58.6 C, util 97.7%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1514.2 MHz (UNDERSHOT -90.8), 191.11 W [20 in-window of 27], 58.9 C, util 98.4%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1513.5 MHz (UNDERSHOT -196.5), 187.13 W [20 in-window of 28], 58.9 C, util 95.8%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1513.5 MHz (UNDERSHOT -301.5), 189.15 W [20 in-window of 28],  59 C, util 100%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1513.5 MHz (UNDERSHOT -406.5), 188.55 W [20 in-window of 27],  59 C, util  98%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1514.2 MHz (UNDERSHOT -510.8), 193.37 W [20 in-window of 27], 58.8 C, util 98.1%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1513.5 MHz (UNDERSHOT -616.5), 188.06 W [20 in-window of 28], 58.7 C, util 98.1%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-101730_rtx3070ti-sessiond-edit2-8-bgemm1024_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-101730_rtx3070ti-sessiond-edit2-8-bgemm1024_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 10 of 12: attention
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload attention --json --iterations 135   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 3% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 114.07 W [37 in-window of 46], 54.1 C, util 100%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 121.68 W [33 in-window of 42], 57.6 C, util 99.2%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 125.56 W [30 in-window of 38], 55.2 C, util 97.6%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 131.76 W [27 in-window of 36], 55.6 C, util 97.4%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 136.94 W [25 in-window of 34], 58.7 C, util 97.4%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 143.78 W [23 in-window of 32], 56.7 C, util 98.3%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 145.19 W [22 in-window of 30], 55.9 C, util 100%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1513.6 MHz (UNDERSHOT -91.4), 147.36 W [22 in-window of 30], 57.4 C, util 100%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1513.6 MHz (UNDERSHOT -196.4), 149.69 W [21 in-window of 30], 56.2 C, util 99.5%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1514.3 MHz (UNDERSHOT -300.7), 149.98 W [21 in-window of 30], 56.5 C, util 99.4%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1515 MHz (UNDERSHOT -405), 151.65 W [21 in-window of 30], 56.2 C, util 97.2%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1514.3 MHz (UNDERSHOT -510.7), 149.26 W [21 in-window of 30],  57 C, util 99.7%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1513.6 MHz (UNDERSHOT -616.4), 145.97 W [22 in-window of 30], 56.1 C, util 96.7%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-102301_rtx3070ti-sessiond-edit2-8-attention_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-102301_rtx3070ti-sessiond-edit2-8-attention_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 11 of 12: conv
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload conv --json --iterations 432   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 137.52 W [31 in-window of 39], 56.3 C, util  98%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 146.66 W [28 in-window of 36], 56.2 C, util 95.5%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 154.45 W [26 in-window of 34], 57.3 C, util 98.9%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 161.29 W [24 in-window of 32], 56.8 C, util 98.4%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 168.71 W [22 in-window of 30], 57.6 C, util 98.4%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 170.87 W [21 in-window of 29], 57.4 C, util 95.1%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 182.69 W [20 in-window of 28], 58.4 C, util 98.2%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1512.8 MHz (UNDERSHOT -92.2), 181.36 W [20 in-window of 27], 57.7 C, util  95%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1513.5 MHz (UNDERSHOT -196.5), 186.39 W [20 in-window of 27], 58.4 C, util 98.4%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1513.5 MHz (UNDERSHOT -301.5), 182.69 W [20 in-window of 27],  58 C, util 93.2%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1514.2 MHz (UNDERSHOT -405.8), 188.51 W [20 in-window of 27], 58.2 C, util 97.3%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1514.2 MHz (UNDERSHOT -510.8), 186.51 W [20 in-window of 27], 58.2 C, util 98.5%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1513.5 MHz (UNDERSHOT -616.5), 180.85 W [20 in-window of 28], 57.8 C, util 94.8%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1515 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 6 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-102849_rtx3070ti-sessiond-edit2-8-conv_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-093653_rtx3070ti-sessiond-edit2-8\20260925-102849_rtx3070ti-sessiond-edit2-8-conv_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 12 of 12: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json --iterations 120   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: EDIT 2 NEGATIVE CONTROL P3 as built, unchanged from Session D: stock through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock); REPEAT of edit2-3, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 130.17 W [30 in-window of 39], 55.9 C, util 97.9%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 137.31 W [27 in-window of 35], 58.3 C, util 97.3%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 147.16 W [24 in-window of 33], 56.8 C, util 97.9%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 148.34 W [23 in-window of 30],  57 C, util 93.5%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 159.74 W [21 in-window of 29], 57.5 C, util 98.7%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 167.32 W [19 in-window of 27], 57.6 C, util 92.3%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 181.68 W [18 in-window of 25], 58.4 C, util 98.2%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved 1514.2 MHz (UNDERSHOT -90.8), 184.53 W [18 in-window of 25], 58.5 C, util 99.8%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1513.3 MHz (UNDERSHOT -196.7), 181.83 W [18 in-window of 25], 58.2 C, util 95.9%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1514.2 MHz (UNDERSHOT -300.8), 187.93 W [18 in-window of 25], 58.5 C, util 98.6%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1514.1 MHz (UNDERSHOT -405.9), 186.12 W [17 in-window of 25], 58.8 C, util 98.6%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1513.2 MHz (UNDERSHOT -511.8),  183.2 W [17 in-window of 25], 58.6 C, util 98.8%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1512.5 MHz (UNDERSHOT -617.5), 181.59 W [18 in-window of 25], 58.4 C, util 95.4%
+
+[SWEEP] Resetting GPU clocks...
+
+PASS edit2-8/collect
+STEP 16/25 edit2-8/log-stop Stop HWiNFO log
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 11900294 then 11900294 bytes
+  rows       : 7538
+
+Logging stopped.
+PASS edit2-8/log-stop
+STEP 17/25 stock-9/profile Apply profile P1
+PASS stock-9/profile
+STEP 18/25 stock-9/witness Verify profile under load
+PASS stock-9/witness
+STEP 19/25 stock-9/log-start Start HWiNFO log
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : F:\headroom-kit\results\hwinfo-rtx3070ti-sessiond-stock-9.csv
+  size       : 19247 then 31606 bytes
+
+Logging is running and the file is growing.
+PASS stock-9/log-start
+STEP 20/25 stock-9/collect Collect 12-workload suite
+
+=======================================================
+  Headroom collection kit
+=======================================================
+
+Checking this machine...
+  [ok] running as Administrator
+  [ok] nvidia-smi found
+
+  [ok] video engines idle (encoder 0%, decoder 0%)
+  [ok] kit files present
+
+  Measuring the memory clock UNDER LOAD...
+  (clocks.max.memory reads the same on a stock and an overclocked card)
+
+  MEASURED MEMORY CLOCK UNDER LOAD: 9251 MHz
+  [ok] matches the expected 9501 MHz
+  [ok] kit path is usable
+  ... testing the GPU (first run can take a minute)
+
+  [ok] compute capability: sm_86
+  [ok] GPU ran the benchmark kernels: NVIDIA GeForce RTX 3070 Ti
+  [ok] VRAM free: 7.4 GB
+
+  [ok] GPU is idle (2% used)
+
+Recording machine details...
+
+  [ok] saved machine-info.txt
+
+-------------------------------------------------------
+  Sweep 1 of 12: copy
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload copy --json --iterations 4099   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 2.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 134.15 W [17 in-window of 25], 53.1 C, util 100%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 133.81 W [17 in-window of 24], 55.3 C, util 99.2%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held),  133.9 W [17 in-window of 24], 57.2 C, util 94.4%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 132.61 W [17 in-window of 24], 55.2 C, util  98%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 135.36 W [17 in-window of 24], 54.1 C, util 97.3%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 138.06 W [17 in-window of 24], 56.8 C, util 100%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 137.87 W [17 in-window of 24], 56.5 C, util 97.9%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 144.43 W [17 in-window of 24], 57.1 C, util 94.8%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 151.48 W [17 in-window of 24], 56.4 C, util 95.4%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 165.62 W [17 in-window of 24], 56.8 C, util 94.7%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 186.26 W [17 in-window of 24], 58.2 C, util 96.3%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved   1945 MHz (UNDERSHOT -80), 193.11 W [18 in-window of 24], 57.9 C, util 94.4%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1947.4 MHz (UNDERSHOT -182.6), 198.87 W [17 in-window of 24], 58.3 C, util 100%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-104044_rtx3070ti-sessiond-stock-9-copy_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-104044_rtx3070ti-sessiond-stock-9-copy_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 2 of 12: reduce
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload reduce --json --iterations 4291   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 132.25 W [17 in-window of 25], 52.2 C, util 95.7%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 134.17 W [17 in-window of 24], 54.9 C, util 95.1%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 142.09 W [17 in-window of 24], 57.1 C, util 100%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 140.46 W [17 in-window of 24], 55.3 C, util 96.6%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 139.62 W [17 in-window of 24], 54.3 C, util 95.5%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 138.76 W [17 in-window of 24], 56.6 C, util 96.5%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 145.26 W [17 in-window of 24], 55.6 C, util 100%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 149.77 W [17 in-window of 24], 56.1 C, util 100%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 160.71 W [17 in-window of 24], 59.1 C, util 98.1%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 171.09 W [17 in-window of 24], 57.9 C, util  95%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 191.06 W [17 in-window of 24], 58.3 C, util 95.8%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1948.2 MHz (UNDERSHOT -76.8), 199.03 W [17 in-window of 24], 58.5 C, util 99.5%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1948.2 MHz (UNDERSHOT -181.8),  197.8 W [17 in-window of 24], 58.2 C, util 97.2%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-104525_rtx3070ti-sessiond-stock-9-reduce_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-104525_rtx3070ti-sessiond-stock-9-reduce_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 3 of 12: softmax
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload softmax --json --iterations 3230   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 131.22 W [22 in-window of 29],  54 C, util 96.9%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 135.24 W [20 in-window of 28], 56.8 C, util 99.2%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 141.17 W [20 in-window of 27], 55.7 C, util 96.9%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 141.41 W [19 in-window of 26], 55.1 C, util 96.1%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 144.24 W [18 in-window of 26], 57.9 C, util  96%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 149.55 W [18 in-window of 26],  56 C, util 100%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 149.01 W [18 in-window of 25], 54.3 C, util 95.4%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 157.62 W [17 in-window of 25],  56 C, util 98.4%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 174.58 W [17 in-window of 24], 58.9 C, util 97.1%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 196.29 W [17 in-window of 24], 59.4 C, util 100%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 223.97 W [17 in-window of 24], 60.7 C, util 96.3%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1943.4 MHz (UNDERSHOT -81.6), 232.28 W [16 in-window of 24], 61.1 C, util  95%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1939.7 MHz (UNDERSHOT -190.3), 230.98 W [16 in-window of 24], 60.8 C, util 94.5%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-105005_rtx3070ti-sessiond-stock-9-softmax_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-105005_rtx3070ti-sessiond-stock-9-softmax_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 4 of 12: layernorm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload layernorm --json --iterations 2462   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 142.51 W [20 in-window of 27], 54.4 C, util  95%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 151.45 W [19 in-window of 27], 57.5 C, util 95.8%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 145.43 W [19 in-window of 26], 55.6 C, util 90.8%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 159.62 W [18 in-window of 25], 55.7 C, util 100%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 160.01 W [17 in-window of 25], 58.2 C, util 98.5%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 159.49 W [17 in-window of 25], 56.5 C, util 96.1%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 161.47 W [17 in-window of 24], 55.4 C, util 96.6%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 170.16 W [17 in-window of 24], 56.8 C, util 97.9%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 188.23 W [16 in-window of 24], 57.7 C, util 97.4%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 211.01 W [16 in-window of 24], 58.9 C, util 100%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 244.22 W [16 in-window of 24], 61.4 C, util 98.6%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1939.7 MHz (UNDERSHOT -85.3), 252.61 W [16 in-window of 24], 62.3 C, util 95.4%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1937.8 MHz (UNDERSHOT -192.2), 248.42 W [16 in-window of 24], 62.1 C, util 96.2%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1950 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-105456_rtx3070ti-sessiond-stock-9-layernorm_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-105456_rtx3070ti-sessiond-stock-9-layernorm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 5 of 12: bgemm32
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm32 --json --iterations 843   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 101.69 W [36 in-window of 43], 53.5 C, util 98.2%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 107.73 W [32 in-window of 39],  57 C, util 97.6%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 113.25 W [29 in-window of 36], 54.7 C, util 95.2%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  117.2 W [26 in-window of 34], 55.1 C, util 96.6%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 121.95 W [24 in-window of 31], 57.7 C, util  98%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 127.74 W [22 in-window of 30], 55.9 C, util 97.4%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 127.83 W [20 in-window of 28], 55.1 C, util 92.9%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 146.54 W [19 in-window of 27], 59.1 C, util 99.1%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held),  163.6 W [18 in-window of 25], 58.2 C, util 93.7%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held),  195.6 W [17 in-window of 24], 59.8 C, util 97.8%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1920 MHz (held), 237.09 W [16 in-window of 24], 62.7 C, util 95.5%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1935.9 MHz (UNDERSHOT -89.1), 248.36 W [16 in-window of 23], 63.6 C, util 99.4%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1935.9 MHz (UNDERSHOT -194.1), 244.84 W [16 in-window of 23], 63.4 C, util 97.8%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-105942_rtx3070ti-sessiond-stock-9-bgemm32_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-105942_rtx3070ti-sessiond-stock-9-bgemm32_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 6 of 12: bgemm64
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm64 --json --iterations 2113   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 123.28 W [35 in-window of 43], 54.9 C, util 97.8%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 132.25 W [31 in-window of 39], 58.5 C, util 98.3%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 137.61 W [28 in-window of 36], 56.6 C, util 98.8%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 142.93 W [26 in-window of 33], 55.5 C, util 95.2%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 149.59 W [24 in-window of 31], 56.7 C, util 98.1%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 158.17 W [22 in-window of 30], 56.9 C, util 98.5%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),  167.3 W [20 in-window of 28], 57.4 C, util  96%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 185.39 W [19 in-window of 26], 58.4 C, util 96.7%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 217.08 W [18 in-window of 25], 60.6 C, util 96.1%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 252.84 W [16 in-window of 24], 63.2 C, util 97.8%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1853.4 MHz (UNDERSHOT -66.6), 265.23 W [16 in-window of 24], 64.4 C, util 96.6%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1849.7 MHz (UNDERSHOT -175.3), 261.55 W [16 in-window of 24], 64.4 C, util 96.1%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1851.6 MHz (UNDERSHOT -278.4), 261.29 W [16 in-window of 24], 64.7 C, util 93.8%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-110503_rtx3070ti-sessiond-stock-9-bgemm64_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-110503_rtx3070ti-sessiond-stock-9-bgemm64_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 7 of 12: bgemm128
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm128 --json --iterations 3511   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 158.14 W [27 in-window of 35], 56.8 C, util 98.7%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 169.63 W [24 in-window of 32], 57.3 C, util 100%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 174.43 W [22 in-window of 29], 57.6 C, util 97.4%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 187.93 W [20 in-window of 27], 58.1 C, util 95.8%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  203.2 W [18 in-window of 26], 58.8 C, util 100%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 210.37 W [17 in-window of 25], 58.9 C, util 96.3%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 213.86 W [16 in-window of 24], 58.9 C, util 94.9%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 226.28 W [17 in-window of 25], 60.2 C, util 95.6%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 254.79 W [17 in-window of 24], 61.7 C, util 94.1%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1761.2 MHz (UNDERSHOT -53.8), 273.41 W [17 in-window of 24], 63.9 C, util 100%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1755 MHz (UNDERSHOT -165), 275.01 W [17 in-window of 24], 64.1 C, util 97.7%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1757.6 MHz (UNDERSHOT -267.4), 271.61 W [17 in-window of 24], 63.8 C, util 96.8%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1755.9 MHz (UNDERSHOT -374.1), 269.11 W [17 in-window of 24], 63.9 C, util 95.1%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-111024_rtx3070ti-sessiond-stock-9-bgemm128_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-111024_rtx3070ti-sessiond-stock-9-bgemm128_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 8 of 12: bgemm256
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm256 --json --iterations 2327   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 142.75 W [35 in-window of 42], 56.5 C, util 96.3%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 153.94 W [31 in-window of 38], 57.1 C, util 97.1%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 163.61 W [28 in-window of 36], 57.4 C, util 93.7%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 175.24 W [25 in-window of 33],  58 C, util 100%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 185.66 W [23 in-window of 31], 58.4 C, util 100%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 188.92 W [21 in-window of 29], 58.7 C, util 98.2%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 203.29 W [20 in-window of 28], 59.2 C, util 96.2%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 228.17 W [18 in-window of 26],  61 C, util 97.1%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved 1707.4 MHz (held), 272.27 W [17 in-window of 25], 64.3 C, util 100%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1715.3 MHz (UNDERSHOT -99.7), 267.16 W [17 in-window of 25], 64.3 C, util 95.4%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1690.6 MHz (UNDERSHOT -229.4), 265.55 W [17 in-window of 25], 64.4 C, util 97.6%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1702.9 MHz (UNDERSHOT -322.1), 271.58 W [17 in-window of 25], 64.8 C, util 95.2%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1705.6 MHz (UNDERSHOT -424.4), 272.74 W [17 in-window of 25], 65.8 C, util 96.9%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-111521_rtx3070ti-sessiond-stock-9-bgemm256_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-111521_rtx3070ti-sessiond-stock-9-bgemm256_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 9 of 12: bgemm1024
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload bgemm1024 --json --iterations 616   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.4% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 129.61 W [35 in-window of 43], 55.7 C, util 95.3%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 138.46 W [31 in-window of 39], 57.7 C, util 97.5%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 151.74 W [28 in-window of 36], 57.3 C, util 98.4%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 159.57 W [26 in-window of 33], 57.8 C, util 96.8%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 168.96 W [23 in-window of 31],  58 C, util 98.5%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 179.07 W [22 in-window of 29], 58.5 C, util 99.8%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 182.92 W [20 in-window of 28], 58.6 C, util 99.2%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 213.98 W [19 in-window of 26], 60.6 C, util 96.8%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 244.95 W [18 in-window of 25], 63.3 C, util 98.2%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1750.6 MHz (UNDERSHOT -64.4), 264.12 W [17 in-window of 25], 65.1 C, util 97.4%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1762.1 MHz (UNDERSHOT -157.9), 270.71 W [17 in-window of 25], 65.2 C, util 94.4%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1760.3 MHz (UNDERSHOT -264.7), 269.36 W [17 in-window of 25], 65.5 C, util  96%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1756.8 MHz (UNDERSHOT -373.2), 268.19 W [17 in-window of 25], 65.5 C, util 95.4%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-112042_rtx3070ti-sessiond-stock-9-bgemm1024_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-112042_rtx3070ti-sessiond-stock-9-bgemm1024_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 10 of 12: attention
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload attention --json --iterations 135   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 114.38 W [38 in-window of 46], 54.6 C, util  99%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 121.78 W [33 in-window of 42], 57.8 C, util 97.8%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 126.04 W [30 in-window of 38], 55.8 C, util 99.7%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 132.32 W [27 in-window of 36], 55.8 C, util 99.2%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held),  137.8 W [25 in-window of 34],  58 C, util 96.9%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held),  143.7 W [23 in-window of 32], 56.6 C, util 99.2%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held),    145 W [22 in-window of 30], 56.1 C, util 99.5%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 163.37 W [21 in-window of 28], 58.3 C, util 96.8%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 186.49 W [19 in-window of 27], 59.4 C, util 97.8%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1815 MHz (held), 215.16 W [18 in-window of 26], 60.8 C, util 95.3%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1919.2 MHz (held), 266.86 W [18 in-window of 25], 65.1 C, util 97.9%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved   1920 MHz (UNDERSHOT -105), 266.29 W [17 in-window of 25], 65.6 C, util 97.4%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved   1920 MHz (UNDERSHOT -210), 268.93 W [17 in-window of 25], 65.6 C, util 91.8%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-112605_rtx3070ti-sessiond-stock-9-attention_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-112605_rtx3070ti-sessiond-stock-9-attention_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 11 of 12: conv
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload conv --json --iterations 432   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 2% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 136.53 W [31 in-window of 39], 56.2 C, util  97%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 143.39 W [28 in-window of 36], 56.4 C, util 94.6%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 153.46 W [26 in-window of 34], 57.6 C, util 98.3%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held), 162.37 W [24 in-window of 32], 57.2 C, util 97.4%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 169.26 W [22 in-window of 30], 57.7 C, util 98.5%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 169.63 W [21 in-window of 29], 57.4 C, util 96.4%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 182.69 W [20 in-window of 28],  58 C, util 98.2%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 201.38 W [19 in-window of 26], 59.1 C, util 95.1%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 235.08 W [18 in-window of 26], 61.7 C, util 97.9%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved 1797.4 MHz (held), 263.05 W [17 in-window of 25], 64.2 C, util  96%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved 1812.4 MHz (UNDERSHOT -107.6), 261.36 W [17 in-window of 25], 63.8 C, util 90.2%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved 1797.4 MHz (UNDERSHOT -227.6), 272.68 W [17 in-window of 25], 65.4 C, util 95.1%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved 1799.1 MHz (UNDERSHOT -330.9), 270.72 W [17 in-window of 25], 65.2 C, util 99.6%
+
+[SWEEP] Resetting GPU clocks...
+
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-113141_rtx3070ti-sessiond-stock-9-conv_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-113141_rtx3070ti-sessiond-stock-9-conv_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+-------------------------------------------------------
+  Sweep 12 of 12: gemm
+  Takes about 6-12 minutes. Leave the machine alone.
+  Do NOT click inside this window - it pauses the run.
+-------------------------------------------------------
+
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 3070 Ti (driver 617.14)
+[SWEEP] Max clock:  2115 MHz | power limit 290.00 W enforced (290.00 W default, 320.00 W max)
+[SWEEP] Supported:  116 discrete graphics clocks, 405-2130 MHz
+[SWEEP] Sweep floor: 852 MHz (40% of max) - lower clocks exist but are not swept
+[SWEEP] Testing:    13 frequencies -> 855, 960, 1065, 1170, 1275, 1380, 1485, 1605, 1710, 1815, 1920, 2025, 2130 MHz
+[SWEEP] Workload:   F:\HEADRO~1\python\python.exe F:\HEADRO~1\tools\FREQUE~1\GPU_WO~1.PY --workload gemm --json --iterations 120   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+
+[SWEEP] Checking the GPU is quiet before starting...
+
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 7648 MB - clear to start.
+[SWEEP] Baseline utilisation 0.6% - clear to start.
+[SWEEP] --> locking 855 MHz
+
+[SWEEP]       855 MHz -> achieved    855 MHz (held), 129.79 W [30 in-window of 39], 56.1 C, util  99%
+[SWEEP] --> locking 960 MHz
+
+[SWEEP]       960 MHz -> achieved    960 MHz (held), 136.56 W [27 in-window of 36], 57.3 C, util 96.9%
+[SWEEP] --> locking 1065 MHz
+
+[SWEEP]      1065 MHz -> achieved   1065 MHz (held), 149.44 W [24 in-window of 33], 56.8 C, util 98.2%
+[SWEEP] --> locking 1170 MHz
+
+[SWEEP]      1170 MHz -> achieved   1170 MHz (held),  157.1 W [22 in-window of 30],  58 C, util 100%
+[SWEEP] --> locking 1275 MHz
+
+[SWEEP]      1275 MHz -> achieved   1275 MHz (held), 164.01 W [20 in-window of 29], 57.6 C, util 99.5%
+[SWEEP] --> locking 1380 MHz
+
+[SWEEP]      1380 MHz -> achieved   1380 MHz (held), 170.34 W [19 in-window of 27], 58.3 C, util 97.6%
+[SWEEP] --> locking 1485 MHz
+
+[SWEEP]      1485 MHz -> achieved   1485 MHz (held), 177.52 W [18 in-window of 26], 58.2 C, util 95.9%
+[SWEEP] --> locking 1605 MHz
+
+[SWEEP]      1605 MHz -> achieved   1605 MHz (held), 207.35 W [17 in-window of 24], 59.8 C, util 93.9%
+[SWEEP] --> locking 1710 MHz
+
+[SWEEP]      1710 MHz -> achieved   1710 MHz (held), 244.24 W [16 in-window of 23], 63.1 C, util 100%
+[SWEEP] --> locking 1815 MHz
+
+[SWEEP]      1815 MHz -> achieved   1765 MHz (UNDERSHOT -50), 273.43 W [15 in-window of 22], 64.7 C, util 99.1%
+[SWEEP] --> locking 1920 MHz
+
+[SWEEP]      1920 MHz -> achieved   1768 MHz (UNDERSHOT -152), 273.78 W [15 in-window of 23], 65.2 C, util 97.7%
+[SWEEP] --> locking 2025 MHz
+
+[SWEEP]      2025 MHz -> achieved   1763 MHz (UNDERSHOT -262), 271.56 W [15 in-window of 23], 65.4 C, util 99.7%
+[SWEEP] --> locking 2130 MHz
+
+[SWEEP]      2130 MHz -> achieved   1778 MHz (UNDERSHOT -352), 271.62 W [15 in-window of 23], 65.4 C, util 97.4%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 1935 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-113658_rtx3070ti-sessiond-stock-9-gemm_sweep.csv
+[SWEEP] JSON: F:\headroom-kit\results\20260925-104037_rtx3070ti-sessiond-stock-9\20260925-113658_rtx3070ti-sessiond-stock-9-gemm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+=======================================================
+  Checking what was collected
+=======================================================
+  [ok] 20260925-104044_rtx3070ti-sessiond-stock-9-copy_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] 20260925-104525_rtx3070ti-sessiond-stock-9-reduce_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] 20260925-105005_rtx3070ti-sessiond-stock-9-softmax_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] 20260925-105456_rtx3070ti-sessiond-stock-9-layernorm_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] 20260925-105942_rtx3070ti-sessiond-stock-9-bgemm32_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] 20260925-110503_rtx3070ti-sessiond-stock-9-bgemm64_sweep.csv: 13 points, 13 with performance data, 10 locks held
+  [ok] 20260925-111024_rtx3070ti-sessiond-stock-9-bgemm128_sweep.csv: 13 points, 13 with performance data, 9 locks held
+  [ok] 20260925-111521_rtx3070ti-sessiond-stock-9-bgemm256_sweep.csv: 13 points, 13 with performance data, 9 locks held
+  [ok] 20260925-112042_rtx3070ti-sessiond-stock-9-bgemm1024_sweep.csv: 13 points, 13 with performance data, 9 locks held
+  [ok] 20260925-112605_rtx3070ti-sessiond-stock-9-attention_sweep.csv: 13 points, 13 with performance data, 11 locks held
+  [ok] 20260925-113141_rtx3070ti-sessiond-stock-9-conv_sweep.csv: 13 points, 13 with performance data, 10 locks held
+  [ok] 20260925-113658_rtx3070ti-sessiond-stock-9-gemm_sweep.csv: 13 points, 13 with performance data, 9 locks held
+  [ok] peak SM clock, 20260925-104044_rtx3070ti-sessiond-stock-9-copy_sweep: 1,947 MHz (provenance evidence)
+  [ok] peak SM clock, 20260925-104525_rtx3070ti-sessiond-stock-9-reduce_sweep: 1,948 MHz (provenance evidence)
+  [ok] peak SM clock, 20260925-105005_rtx3070ti-sessiond-stock-9-softmax_sweep: 1,943 MHz (provenance evidence)
+  [ok] peak SM clock, 20260925-105456_rtx3070ti-sessiond-stock-9-layernorm_sweep: 1,940 MHz (provenance evidence)
+  [ok] peak SM clock, 20260925-105942_rtx3070ti-sessiond-stock-9-bgemm32_sweep: 1,936 MHz (provenance evidence)
+  [ok] peak SM clock, 20260925-110503_rtx3070ti-sessiond-stock-9-bgemm64_sweep: 1,853 MHz (provenance evidence)
+  [ok] peak SM clock, 20260925-111024_rtx3070ti-sessiond-stock-9-bgemm128_sweep: 1,761 MHz (provenance evidence)
+
+PASS stock-9/collect
+STEP 21/25 stock-9/log-stop Stop HWiNFO log
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 11719692 then 11719692 bytes
+  rows       : 7414
+
+Logging stopped.
+PASS stock-9/log-stop
+STEP 22/25 stock-9/stock-return Check stock return stock-7 to stock-9 (8d scoreability)
+PASS stock-9/stock-return
+STEP 23/25 cleanup/profile Apply profile P1
+PASS cleanup/profile
+STEP 24/25 cleanup/power Verify stock power limits
+PASS cleanup/power
+STEP 25/25 cleanup/witness Verify stock core and memory under load
+PASS cleanup/witness
+All done.
+Clocks reset; read-back SM clock 1935 MHz.
+Log button reads 'Log Start'.
+Logging is stopped.
+Log button reads 'Log Start'.
+Logging is stopped.

@@ -1,0 +1,434 @@
+{
+    "schemaVersion":  1,
+    "planHash":  "004B1F8A1D7D71D1D1918DA423168E41E7544DADB0BEDF6789EEF8075C9C0CEA",
+    "start":  "2026-09-25T08:22:04.0878501-07:00",
+    "attemptStart":  "2026-09-25T08:22:04.0878501-07:00",
+    "resumeRunId":  "",
+    "end":  "2026-09-25T11:43:28.7922964-07:00",
+    "status":  "PASS",
+    "operatorState":  "Stopping and reverting",
+    "finalState":  {
+                       "processes":  {
+                                         "mocked":  false,
+                                         "verified":  true,
+                                         "detail":  "none",
+                                         "killedPids":  [
+
+                                                        ],
+                                         "runningPids":  [
+
+                                                         ]
+                                     },
+                       "logging":  {
+                                       "mocked":  false,
+                                       "status":  "stopped",
+                                       "stopError":  "",
+                                       "stoppedVerified":  true,
+                                       "stopAttempted":  false
+                                   },
+                       "clocks":  {
+                                      "mocked":  false,
+                                      "verified":  true,
+                                      "readbackSmClockMhz":  1935,
+                                      "resetCommandSucceeded":  true
+                                  }
+                   },
+    "dryRun":  false,
+    "selectedRuns":  [
+                         "preflight",
+                         "stock-7",
+                         "edit2-8",
+                         "stock-9",
+                         "cleanup"
+                     ],
+    "customizations":  [
+
+                       ],
+    "driver":  "617.14",
+    "power":  [
+                  "290.00",
+                  "290.00",
+                  "320.00"
+              ],
+    "profileHash":  "A1159941DA541EB9E72E24A1524E33F0BD1D6D85E2B9C056BA6539A569E6F721",
+    "supportedClockRange":  [
+                                405,
+                                2130
+                            ],
+    "progress":  {
+                     "total":  25,
+                     "index":  25
+                 },
+    "live":  null,
+    "steps":  [
+                  {
+                      "key":  "preflight/profile-hash",
+                      "name":  "Verify Afterburner P1-P3 are the decoded curves",
+                      "type":  "gate-hash",
+                      "start":  "2026-09-25T08:22:04.4143428-07:00",
+                      "end":  "2026-09-25T08:22:04.5045297-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "sha256":  "A1159941DA541EB9E72E24A1524E33F0BD1D6D85E2B9C056BA6539A569E6F721"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "preflight/profile",
+                      "name":  "Apply profile P1 (stock)",
+                      "type":  "apply-profile",
+                      "start":  "2026-09-25T08:22:04.5495440-07:00",
+                      "end":  "2026-09-25T08:22:12.6344762-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "appliedSlot":  1,
+                                      "verifiedBy":  "following witness"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "preflight/power",
+                      "name":  "SILENT BIOS: 290 / 290 / 320 W",
+                      "type":  "gate-power",
+                      "start":  "2026-09-25T08:22:12.6726747-07:00",
+                      "end":  "2026-09-25T08:22:12.7544723-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "power":  [
+                                                    "290.00",
+                                                    "290.00",
+                                                    "320.00"
+                                                ],
+                                      "driver":  "617.14"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "preflight/quiet",
+                      "name":  "Quiet pmon baseline and video engines",
+                      "type":  "gate-quiet",
+                      "start":  "2026-09-25T08:22:12.7887879-07:00",
+                      "end":  "2026-09-25T08:22:16.9491057-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "maxEncoder":  0,
+                                      "samples":  5,
+                                      "maxSm":  0,
+                                      "maxDecoder":  0
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "preflight/witness",
+                      "name":  "Stock under load",
+                      "type":  "witness",
+                      "start":  "2026-09-25T08:22:16.9854397-07:00",
+                      "end":  "2026-09-25T08:32:46.0609516-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "samples":  601,
+                                      "memoryMhz":  9501,
+                                      "coreMhz":  1920,
+                                      "voltageV":  null
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "preflight/sensors",
+                      "name":  "Confirm HWiNFO Sensors window",
+                      "type":  "human",
+                      "start":  "2026-09-25T08:32:46.0976742-07:00",
+                      "end":  "2026-09-25T08:32:46.8000163-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "acknowledged":  true,
+                                      "confirmedBy":  "auto"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-7/profile",
+                      "name":  "Apply profile P1",
+                      "type":  "apply-profile",
+                      "start":  "2026-09-25T08:32:46.8373708-07:00",
+                      "end":  "2026-09-25T08:32:54.9088239-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "appliedSlot":  1,
+                                      "verifiedBy":  "following witness"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-7/witness",
+                      "name":  "Verify profile under load",
+                      "type":  "witness",
+                      "start":  "2026-09-25T08:32:54.9423521-07:00",
+                      "end":  "2026-09-25T08:33:25.8410637-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "samples":  29,
+                                      "memoryMhz":  9251,
+                                      "coreMhz":  1800,
+                                      "voltageV":  null
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-7/log-start",
+                      "name":  "Start HWiNFO log",
+                      "type":  "hwinfo-start",
+                      "start":  "2026-09-25T08:33:25.8865768-07:00",
+                      "end":  "2026-09-25T08:33:34.1250491-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "path":  "F:\\headroom-kit\\results\\hwinfo-rtx3070ti-sessiond-stock-7.csv",
+                                      "mode":  "automatic"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-7/collect",
+                      "name":  "Collect 12-workload suite",
+                      "type":  "suite",
+                      "start":  "2026-09-25T08:33:34.1711170-07:00",
+                      "end":  "2026-09-25T09:35:30.4507640-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "csvCount":  12,
+                                      "directory":  "F:\\headroom-kit\\results\\20260925-083357_rtx3070ti-sessiond-stock-7"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-7/log-stop",
+                      "name":  "Stop HWiNFO log",
+                      "type":  "hwinfo-stop",
+                      "start":  "2026-09-25T09:35:30.5003690-07:00",
+                      "end":  "2026-09-25T09:35:39.6619793-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "path":  "F:\\headroom-kit\\results\\hwinfo-rtx3070ti-sessiond-stock-7.csv",
+                                      "mode":  "automatic"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "edit2-8/profile",
+                      "name":  "Apply profile P3",
+                      "type":  "apply-profile",
+                      "start":  "2026-09-25T09:35:39.7028773-07:00",
+                      "end":  "2026-09-25T09:35:47.7912502-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "appliedSlot":  3,
+                                      "verifiedBy":  "following witness"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "edit2-8/witness",
+                      "name":  "Verify profile under load",
+                      "type":  "witness",
+                      "start":  "2026-09-25T09:35:47.8408948-07:00",
+                      "end":  "2026-09-25T09:36:22.9837949-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "samples":  33,
+                                      "memoryMhz":  9251,
+                                      "coreMhz":  1530,
+                                      "voltageV":  null
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "edit2-8/log-start",
+                      "name":  "Start HWiNFO log",
+                      "type":  "hwinfo-start",
+                      "start":  "2026-09-25T09:36:23.0330176-07:00",
+                      "end":  "2026-09-25T09:36:31.2423150-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "path":  "F:\\headroom-kit\\results\\hwinfo-rtx3070ti-sessiond-edit2-8.csv",
+                                      "mode":  "automatic"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "edit2-8/collect",
+                      "name":  "Collect 12-workload suite",
+                      "type":  "suite",
+                      "start":  "2026-09-25T09:36:31.2885492-07:00",
+                      "end":  "2026-09-25T10:39:18.5752970-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "csvCount":  12,
+                                      "directory":  "F:\\headroom-kit\\results\\20260925-093653_rtx3070ti-sessiond-edit2-8"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "edit2-8/log-stop",
+                      "name":  "Stop HWiNFO log",
+                      "type":  "hwinfo-stop",
+                      "start":  "2026-09-25T10:39:18.6196004-07:00",
+                      "end":  "2026-09-25T10:39:27.8114849-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "path":  "F:\\headroom-kit\\results\\hwinfo-rtx3070ti-sessiond-edit2-8.csv",
+                                      "mode":  "automatic"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-9/profile",
+                      "name":  "Apply profile P1",
+                      "type":  "apply-profile",
+                      "start":  "2026-09-25T10:39:27.8579495-07:00",
+                      "end":  "2026-09-25T10:39:35.9410724-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "appliedSlot":  1,
+                                      "verifiedBy":  "following witness"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-9/witness",
+                      "name":  "Verify profile under load",
+                      "type":  "witness",
+                      "start":  "2026-09-25T10:39:35.9860645-07:00",
+                      "end":  "2026-09-25T10:40:06.7454056-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "samples":  29,
+                                      "memoryMhz":  9251,
+                                      "coreMhz":  1785,
+                                      "voltageV":  null
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-9/log-start",
+                      "name":  "Start HWiNFO log",
+                      "type":  "hwinfo-start",
+                      "start":  "2026-09-25T10:40:06.7949384-07:00",
+                      "end":  "2026-09-25T10:40:15.0027714-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "path":  "F:\\headroom-kit\\results\\hwinfo-rtx3070ti-sessiond-stock-9.csv",
+                                      "mode":  "automatic"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-9/collect",
+                      "name":  "Collect 12-workload suite",
+                      "type":  "suite",
+                      "start":  "2026-09-25T10:40:15.0508530-07:00",
+                      "end":  "2026-09-25T11:41:59.4225966-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "csvCount":  12,
+                                      "directory":  "F:\\headroom-kit\\results\\20260925-104037_rtx3070ti-sessiond-stock-9"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-9/log-stop",
+                      "name":  "Stop HWiNFO log",
+                      "type":  "hwinfo-stop",
+                      "start":  "2026-09-25T11:41:59.4721079-07:00",
+                      "end":  "2026-09-25T11:42:08.6768253-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "path":  "F:\\headroom-kit\\results\\hwinfo-rtx3070ti-sessiond-stock-9.csv",
+                                      "mode":  "automatic"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "stock-9/stock-return",
+                      "name":  "Check stock return stock-7 to stock-9 (8d scoreability)",
+                      "type":  "gate-drift",
+                      "start":  "2026-09-25T11:42:08.7242704-07:00",
+                      "end":  "2026-09-25T11:42:08.8761047-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "worstMedianAbsPct":  0.56280315723580276,
+                                      "exceeded":  false,
+                                      "perWorkload":  {
+                                                          "bgemm256":  0.48668107276064188,
+                                                          "bgemm128":  0.534070933200903,
+                                                          "layernorm":  0.538966077664127,
+                                                          "bgemm32":  0.50228466102977265,
+                                                          "bgemm1024":  0.50924423306153432,
+                                                          "attention":  0.46670242405986162,
+                                                          "copy":  0.52832516495888715,
+                                                          "bgemm64":  0.52629865690299038,
+                                                          "gemm":  0.5315533987524157,
+                                                          "reduce":  0.56280315723580276,
+                                                          "softmax":  0.55633642743382339,
+                                                          "conv":  0.54428878199053177
+                                                      }
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "cleanup/profile",
+                      "name":  "Apply profile P1",
+                      "type":  "apply-profile",
+                      "start":  "2026-09-25T11:42:08.9201296-07:00",
+                      "end":  "2026-09-25T11:42:17.0007142-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "appliedSlot":  1,
+                                      "verifiedBy":  "following witness"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "cleanup/power",
+                      "name":  "Verify stock power limits",
+                      "type":  "gate-power",
+                      "start":  "2026-09-25T11:42:17.0510384-07:00",
+                      "end":  "2026-09-25T11:42:17.1830856-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "power":  [
+                                                    "290.00",
+                                                    "290.00",
+                                                    "320.00"
+                                                ],
+                                      "driver":  "617.14"
+                                  },
+                      "error":  null
+                  },
+                  {
+                      "key":  "cleanup/witness",
+                      "name":  "Verify stock core and memory under load",
+                      "type":  "witness",
+                      "start":  "2026-09-25T11:42:17.2559351-07:00",
+                      "end":  "2026-09-25T11:42:48.1088463-07:00",
+                      "verdict":  "PASS",
+                      "witness":  {
+                                      "samples":  29,
+                                      "memoryMhz":  9251,
+                                      "coreMhz":  1785,
+                                      "voltageV":  null
+                                  },
+                      "error":  null
+                  }
+              ],
+    "revert":  {
+                   "samples":  30,
+                   "memoryMhz":  9251,
+                   "coreMhz":  1830,
+                   "voltageV":  null
+               },
+    "error":  null,
+    "afterRevertHumanCompleted":  false,
+    "cleanupWarnings":  [
+
+                        ]
+}

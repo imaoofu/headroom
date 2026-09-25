@@ -1090,7 +1090,7 @@ the other. **n = 2 on one chip, one session. The control (4b), which failed, is 
 So C8's 1.1–1.3% gap to the 2026-08-27 ascending sweep was **between days, not between
 directions**. That matches the ~1.47% cross-session drift CLAUDE.md records on the 5060 Ti.
 
-## 8d. 3070 Ti: the negative control, repeated. Registered 2026-09-25 00:40, before collection — AFTER 4b failed
+## 8d. 3070 Ti: the negative control, repeated. Registered 2026-09-25 00:40, before collection — AFTER 4b failed — COLLECTED 2026-09-25: ⛔ NOT SCOREABLE (grid moved); descriptively the control held
 
 **Written after 4b's result was known, and it says so.** That is why it cannot change 4b. **4b
 stays FAIL whatever this shows.** It asks one thing: does the control's move repeat?
@@ -1132,6 +1132,26 @@ Otherwise the result is **NOT SCOREABLE**, not a failure.
 - Report it beside 4b, with no averaging. n = 2 control suites on one chip, on two days.
 - `stock-7` against Session D's stock suites is descriptive only: a different day, with the
   ~1.5% cross-session drift this project measures.
+
+### ⛔ Result, collected 2026-09-25 — NOT SCOREABLE: the grid was not Session D's
+
+Session D2 ran 08:22–11:43 untouched and ended PASS. **The pre-committed scorer refused it:** the
+top six targets were **1605–2130 MHz**, not Session D's 1590–2115. The seven lower targets match
+exactly. The card's supported-clock table had 116 entries on Friday against 115 on Thursday; its
+cause is unknown, and the same card swept 852–2130 on 2026-09-04. §8d registered Session D's grid,
+so **8d is NOT SCOREABLE, not a failure, and 4b stays FAIL.** The scorer was not changed after the
+data was seen.
+
+**Descriptive only**, with the registered rules and the collected grid (the six clipped targets as
+one bin):
+- stock-7, edit2-8 and stock-9 medians are all **1485 MHz**;
+- the worst workload's stock return is 0.563%;
+- the control floor check passes on all 12.
+
+Had the grid matched, this would read as a pass. **On this chip the control moved once (1432.5,
+Session D) and held once (1485, Session D2), on consecutive days. That is a description of two
+runs, not a verdict.** Lesson: a registration on this card must name the target list, because the
+tool derives it from a table that changes. `data/frequency-sweeps/rtx3070ti-sessiond2-20260925/`.
 
 ## 9. RTX 5060 Ti: is the `reduce` residual a workload property or a run-order artifact? (worklist 4m) Registered 2026-09-24, before collection — ✅ COLLECTED THE SAME DAY: WORKLOAD PROPERTY
 

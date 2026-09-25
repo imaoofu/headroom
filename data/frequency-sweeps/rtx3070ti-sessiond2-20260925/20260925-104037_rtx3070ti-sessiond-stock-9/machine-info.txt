@@ -1,0 +1,52 @@
+label            : rtx3070ti-sessiond-stock-9
+collected_at     : 2026-09-25T10:40:37.5717738-07:00
+collected_by     : kit v2
+applied_settings : STOCK P1, Session D2 closing bracket, REGISTERED-PREDICTIONS 8d; P1-P3 section hash a1159941da541eb9 (the curves decoded from store 1b08c2d0854460ff), SILENT BIOS, PL default, memory +0, IR off, baseline under 5 pct, iterations matched to rtx3070ti-suite-20260904
+                       ASSERTED BY THE OPERATOR, NOT VERIFIED.
+                       Nothing in nvidia-smi reports whether an Afterburner or
+                       vendor profile is applied, so this kit cannot check it.
+                       See measured_peak_sm_clock_mhz at the end of this file -
+                       that IS measured, and is the field to trust.
+
+measured_memory_clock_under_load_mhz : 9251
+                       VERIFIED against an expected 9501 MHz
+                       +/- 400; the run would have refused on a mismatch.
+
+--- GPU (nvidia-smi) ---
+name, driver_version, vbios_version, memory.total [MiB], power.limit [W], power.max_limit [W], pcie.link.gen.max, pcie.link.width.max
+NVIDIA GeForce RTX 3070 Ti, 617.14, 94.04.5a.00.91, 8192 MiB, 290.00 W, 320.00 W, 4, 16
+
+--- CPU / RAM / OS ---
+cpu              : AMD Ryzen 5 5600X 6-Core Processor
+cpu_cores        : 6 cores / 12 threads
+ram_gb           : 15.9
+os               : Microsoft Windows 11 Pro 10.0.26200
+
+--- NOTE ---
+The tuning_state_claimed line above is what the operator was SUPPOSED to do, not
+something this kit confirmed. If a profile was applied and nobody noticed, that
+line is wrong and nothing in it would reveal the mistake.
+The measured peak clock appended below is the actual evidence. On a known GPU
+model, stock and tuned sustained clocks differ far more than run-to-run noise -
+measured on an RTX 5060 Ti: 2588 MHz stock against ~2950 MHz tuned, a 360 MHz
+gap. Classify the run from that number, not from the claim.
+
+--- MEASURED (this is evidence, unlike tuning_state_claimed) ---
+peak_sm_clock_mhz[20260925-104044_rtx3070ti-sessiond-stock-9-copy_sweep] : 1,947
+peak_sm_clock_mhz[20260925-104525_rtx3070ti-sessiond-stock-9-reduce_sweep] : 1,948
+peak_sm_clock_mhz[20260925-105005_rtx3070ti-sessiond-stock-9-softmax_sweep] : 1,943
+peak_sm_clock_mhz[20260925-105456_rtx3070ti-sessiond-stock-9-layernorm_sweep] : 1,940
+peak_sm_clock_mhz[20260925-105942_rtx3070ti-sessiond-stock-9-bgemm32_sweep] : 1,936
+peak_sm_clock_mhz[20260925-110503_rtx3070ti-sessiond-stock-9-bgemm64_sweep] : 1,853
+peak_sm_clock_mhz[20260925-111024_rtx3070ti-sessiond-stock-9-bgemm128_sweep] : 1,761
+peak_sm_clock_mhz[20260925-111521_rtx3070ti-sessiond-stock-9-bgemm256_sweep] : 1,715
+peak_sm_clock_mhz[20260925-112042_rtx3070ti-sessiond-stock-9-bgemm1024_sweep] : 1,762
+peak_sm_clock_mhz[20260925-112605_rtx3070ti-sessiond-stock-9-attention_sweep] : 1,920
+peak_sm_clock_mhz[20260925-113141_rtx3070ti-sessiond-stock-9-conv_sweep] : 1,812
+peak_sm_clock_mhz[20260925-113658_rtx3070ti-sessiond-stock-9-gemm_sweep] : 1,778
+  Highest sustained SM clock reached in each sweep. Compare EACH against the same
+  workload's known stock figure for this GPU model - never against the other
+  workload's. Materially above stock means a profile was applied and this is NOT a
+  stock baseline, whatever tuning_state_claimed says.
+  RTX 5060 Ti reference, measured: gemm 2588 stock / ~2950 tuned;
+  membw 2753 stock. Other models need their own reference before comparing.
