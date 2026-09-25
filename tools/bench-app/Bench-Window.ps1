@@ -275,7 +275,7 @@ $start=Button 'Start' 300 291 90 {
     Set-BenchStatus 'Running'; $start.Enabled=$false
 }
 $pause=Button 'Pause after step' 398 291 130 { Write-Control 'pause' $true; Set-BenchStatus 'Pause requested' }
-$stop=Button 'Stop' 536 291 80 { Write-Control 'stop' $true; Set-BenchStatus 'Stop requested' }
+$stop=Button 'Stop' 536 291 80 { $script:stopAsked=$true; Write-Control 'stop' $true; Set-BenchStatus 'Stop requested' }
 $continue=Button 'Continue' 624 291 90 { Write-Control 'continue' $true; Set-BenchStatus 'Running' }
 $statusCaption=Label 'Status:' 12 330 55 23
 $statusValue=Label 'Ready' 70 330 500 23
@@ -369,12 +369,17 @@ $timer.Add_Tick({ try {
                 $telemetry.Text=Format-BenchReadings $script:lastSmiLine
             } elseif ($record.operatorState -eq 'Paused' -and $statusValue.Text -ne 'Stop requested' -and $statusValue.Text -ne 'Stopping and reverting') { Set-BenchStatus 'Paused' }
             elseif ($record.operatorState -eq 'Stopping and reverting') { Set-BenchStatus 'Stopping and reverting' }
+            # A resumed session inherits 'Stopping and reverting' from the attempt that failed. The
+            # window could read it before the engine reset it to Running, and nothing set it back:
+            # Session D's resume showed it for hours while collecting normally (2026-09-24).
+            elseif ($record.operatorState -eq 'Running' -and -not $script:stopAsked -and $statusValue.Text -eq 'Stopping and reverting') { Set-BenchStatus 'Running' }
         } catch { }
     }
 } catch { Write-WindowError $_ } })
 $timer.Start()
 $form.Add_FormClosing({
     if ($script:engine -and -not $script:engine.HasExited) {
+        $script:stopAsked=$true
         Write-Control 'stop' $true
         Set-BenchStatus 'Stopping and reverting'
         $_.Cancel=$true
