@@ -17,6 +17,7 @@ sys.path.insert(0, str(HERE / "console"))
 import ask_local
 import server as console
 import run_queue
+from assembly import assemble_agent_lines, assemble_request_lines
 from streaming import iter_sse_events
 
 
@@ -72,6 +73,169 @@ class PassingResult(unittest.TextTestResult):
 
 
 class ConsoleTests(unittest.TestCase):
+    def test_partial_messages_reconcile_without_duplicates(self):
+        def line(item):
+            return json.dumps(item, ensure_ascii=False)
+        items = [
+            {"type": "user", "message": {"content": [{"type": "text", "text": "Inspect file"}]}},
+            {"type": "stream_event", "event": {"type": "message_start", "message": {"role": "assistant", "id": "m1"}}},
+            {"type": "stream_event", "event": {"type": "content_block_start", "index": 0,
+                "content_block": {"type": "thinking", "thinking": ""}}, "timestamp": "2026-09-24T10:00:00Z"},
+            {"type": "stream_event", "event": {"type": "content_block_delta", "index": 0,
+                "delta": {"type": "thinking_delta", "thinking": "Need "}}, "timestamp": "2026-09-24T10:00:01Z"},
+            {"type": "stream_event", "event": {"type": "content_block_delta", "index": 0,
+                "delta": {"type": "thinking_delta", "thinking": "file"}}},
+            {"type": "stream_event", "event": {"type": "content_block_stop", "index": 0},
+                "timestamp": "2026-09-24T10:00:03Z"},
+            {"type": "stream_event", "event": {"type": "content_block_start", "index": 1,
+                "content_block": {"type": "tool_use", "id": "tool1", "name": "Read", "input": {}}}},
+            {"type": "stream_event", "event": {"type": "content_block_delta", "index": 1,
+                "delta": {"type": "input_json_delta", "partial_json": '{"file_pa'}}},
+            {"type": "stream_event", "event": {"type": "content_block_delta", "index": 1,
+                "delta": {"type": "input_json_delta", "partial_json": 'th":"a.py"}'}}},
+            {"type": "stream_event", "event": {"type": "content_block_stop", "index": 1}},
+            {"type": "stream_event", "event": {"type": "content_block_start", "index": 2,
+                "content_block": {"type": "text", "text": ""}}},
+            {"type": "stream_event", "event": {"type": "content_block_delta", "index": 2,
+                "delta": {"type": "text_delta", "text": "Found "}}},
+            {"type": "stream_event", "event": {"type": "message_stop"}},
+            {"type": "assistant", "message": {"id": "m1", "content": [
+                {"type": "thinking", "thinking": "Need file"},
+                {"type": "tool_use", "id": "tool1", "name": "Read", "input": {"file_path": "a.py"}},
+                {"type": "text", "text": "Found code"}]}},
+            {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "tool1",
+                "content": "print(1)"}]}},
+            {"type": "result", "subtype": "success", "is_error": False,
+                "num_turns": 1, "duration_ms": 4000, "result": "Found code"},
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "partial.jsonl"
+            path.write_text("\n".join(map(line, items[:8])) + "\n", encoding="utf-8")
+            first_lines, offset, _ = console.read_jsonl_lines(path, 0)
+            first, state = assemble_agent_lines(first_lines)
+            self.assertEqual("".join(e["text"] for e in first if e["type"] == "thinking_delta"), "Need file")
+            self.assertEqual(first[-1]["text"], '{"file_pa')
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write("\n".join(map(line, items[8:])) + "\n")
+            second_lines, final_offset, _ = console.read_jsonl_lines(path, offset)
+            second, _ = assemble_agent_lines(second_lines, state)
+            self.assertEqual(final_offset, path.stat().st_size)
+        all_events = first + second
+        self.assertEqual(sum(e["type"] == "turn_start" for e in all_events), 1)
+        self.assertEqual(sum(e["type"] == "tool_start" for e in all_events), 1)
+        self.assertEqual("".join(e["text"] for e in all_events if e["type"] == "thinking_delta"), "Need file")
+        self.assertEqual("".join(e["text"] for e in all_events if e["type"] == "text_delta"), "Found code")
+        self.assertEqual(json.loads("".join(e["text"] for e in all_events if e["type"] == "tool_input_delta")),
+                         {"file_path": "a.py"})
+        self.assertEqual(next(e for e in all_events if e["type"] == "thinking_end")["seconds"], 2.0)
+        self.assertEqual(next(e for e in all_events if e["type"] == "tool_result")["tool_id"], "tool1")
+        self.assertEqual(all_events[-1]["type"], "result")
+
+    def test_nonpartial_fixture_assembles_turns(self):
+        path = HERE / "console" / "fixtures" / "claude-code-local-L1-apierror.jsonl"
+        lines, offset, more = console.read_jsonl_lines(path, 0)
+        self.assertFalse(more)
+        self.assertEqual(offset, path.stat().st_size)
+        events, _ = assemble_agent_lines(lines)
+        self.assertEqual(sum(e["type"] == "retry_count" and e["count"] == 10 for e in events), 1)
+        self.assertEqual(sum(e["type"] == "tool_start" for e in events), 0)
+        self.assertTrue(next(e for e in events if e["type"] == "result")["is_error"])
+
+    def test_real_partial_fixture_matches_whole_messages(self):
+        path = HERE / "console" / "fixtures" / "claude-code-local-partial.jsonl"
+        lines, offset, more = console.read_jsonl_lines(path, 0)
+        self.assertFalse(more)
+        self.assertEqual(offset, path.stat().st_size)
+        events, _ = assemble_agent_lines(lines)
+        originals = [json.loads(line)["message"] for _, line in lines
+                     if json.loads(line).get("type") == "assistant"]
+        message_ids = list(dict.fromkeys(message["id"] for message in originals))
+        turn_ids = [event["turn_id"] for event in events if event["type"] == "turn_start"]
+        self.assertEqual(len(message_ids), len(turn_ids))
+        for message_id, turn_id in zip(message_ids, turn_ids):
+            blocks = [block for message in originals if message["id"] == message_id
+                      for block in message["content"]]
+            for kind, field, event_type in (("thinking", "thinking", "thinking_delta"),
+                                            ("text", "text", "text_delta")):
+                expected = "".join(block.get(field, "") for block in blocks if block["type"] == kind)
+                actual = ""
+                for event in events:
+                    if event["type"] == event_type and event["turn_id"] == turn_id:
+                        actual = event["text"] if event.get("replace") else actual + event["text"]
+                self.assertEqual(actual, expected, f"{message_id}: {kind}")
+            tools = [block for block in blocks if block["type"] == "tool_use"]
+            started = [event for event in events if event["type"] == "tool_start" and event["turn_id"] == turn_id]
+            self.assertEqual(len(started), len(tools))
+            for tool in tools:
+                start = next(event for event in started if event["tool_id"] == tool["id"])
+                value = ""
+                for event in events:
+                    if event["type"] == "tool_input_delta" and event["turn_id"] == turn_id and event["block"] == start["block"]:
+                        value = event["text"] if event.get("replace") else value + event["text"]
+                self.assertEqual(json.loads(value), tool["input"])
+        self.assertEqual(sum(event["type"] == "turn_end" for event in events), 5)
+        self.assertEqual(next(event for event in events if event["type"] == "result")["turns"], 5)
+
+    def test_request_events_stream_in_order(self):
+        lines = [(8, json.dumps({"type": "request_start", "request_id": "r", "user": "prompt",
+                                 "time": "2026-09-24T10:00:00Z"})),
+                 (17, json.dumps({"type": "reasoning", "request_id": "r", "text": "think"})),
+                 (26, json.dumps({"type": "answer", "request_id": "r", "text": "answer",
+                                  "time": "2026-09-24T10:00:03Z"})),
+                 (35, json.dumps({"type": "request_end", "request_id": "r", "timings": {"wall_seconds": 3}})),
+                 (44, json.dumps({"type": "accepted", "request_id": "r", "verdict": "PASSED ACCEPTANCE"}))]
+        events, _ = assemble_request_lines(lines)
+        self.assertEqual([e["type"] for e in events], ["prompt", "turn_start", "thinking_delta",
+                                                        "thinking_end", "text_delta", "turn_end", "result", "acceptance"])
+        self.assertEqual(events[-1]["offset"], 44)
+        self.assertEqual(next(e for e in events if e["type"] == "thinking_end")["seconds"], 3.0)
+
+    def test_live_cursor_resumes_mid_line_and_mid_block(self):
+        first = {"type": "stream_event", "event": {"type": "content_block_start", "index": 0,
+                 "content_block": {"type": "thinking", "thinking": ""}}}
+        second = {"type": "stream_event", "event": {"type": "content_block_delta", "index": 0,
+                  "delta": {"type": "thinking_delta", "thinking": "live"}}}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); path = root / "run.jsonl"
+            line1 = json.dumps(first) + "\n"; line2 = json.dumps(second) + "\n"
+            path.write_bytes((line1 + line2[:15]).encode("utf-8"))
+            state = console.ConsoleState(root, root); cursor = "a" * 32
+            one = state.agent_events(path, 0, cursor, "Actual prompt")
+            self.assertEqual([e["type"] for e in one["events"]], ["prompt", "turn_start"])
+            self.assertEqual(one["offset"], len(line1.encode()))
+            self.assertTrue(one["more"])
+            with path.open("ab") as handle:
+                handle.write(line2[15:].encode("utf-8"))
+            two = state.agent_events(path, one["offset"], cursor)
+            self.assertEqual([e["type"] for e in two["events"]], ["thinking_delta"])
+            self.assertEqual(two["events"][0]["text"], "live")
+            self.assertEqual(two["offset"], path.stat().st_size)
+            with self.assertRaisesRegex(ValueError, "offset disagree"):
+                state.agent_events(path, one["offset"], cursor)
+
+    def test_request_cursor_keeps_thought_timing_across_polls(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); path = root / "requests-20260925.jsonl"
+            first = [{"type": "request_start", "request_id": "r", "user": "prompt",
+                      "time": "2026-09-24T10:00:00Z"},
+                     {"type": "reasoning", "request_id": "r", "text": "working"}]
+            path.write_bytes(("\n".join(json.dumps(row) for row in first) + "\n").encode())
+            state = console.ConsoleState(root, root); cursor = "b" * 32
+            one = state.request_events(path, 0, cursor)
+            self.assertEqual([event["type"] for event in one["events"]],
+                             ["prompt", "turn_start", "thinking_delta"])
+            later = [{"type": "answer", "request_id": "r", "text": "done",
+                      "time": "2026-09-24T10:00:07Z"},
+                     {"type": "request_end", "request_id": "r", "time": "2026-09-24T10:00:08Z",
+                      "timings": {"wall_seconds": 8}}]
+            with path.open("ab") as handle:
+                handle.write(("\n".join(json.dumps(row) for row in later) + "\n").encode())
+            two = state.request_events(path, one["offset"], cursor)
+            self.assertEqual([event["type"] for event in two["events"]],
+                             ["thinking_end", "text_delta", "turn_end", "result"])
+            self.assertEqual(two["events"][0]["seconds"], 7.0)
+            self.assertEqual(two["events"][-1]["duration_ms"], 8000)
+
     def test_real_fixture(self):
         path = HERE / "console" / "fixtures" / "claude-code-local-L1-apierror.jsonl"
         parsed = []

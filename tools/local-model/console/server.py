@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import threading
@@ -18,6 +19,7 @@ sys.path.insert(0, str(HERE.parent))
 import ask_local
 import run_queue
 from streaming import iter_sse_events
+from assembly import assemble_agent_lines, assemble_request_lines, initial_agent_state
 
 DEFAULT_RUNS = HERE.parent / "runs"
 DEFAULT_SANDBOX = Path(r"C:\Users\Raymond\Documents\local-agent-sandbox")
@@ -120,6 +122,42 @@ def tail_jsonl(path, offset, limit=1024 * 1024, parser=None):
             "more": size > offset + len(complete)}
 
 
+def read_jsonl_lines(path, offset, limit=1024 * 1024):
+    """Read complete UTF-8 JSONL lines and their ending byte offsets."""
+    size = path.stat().st_size
+    if offset < 0 or offset > size:
+        raise ValueError("Offset is outside the file")
+    with path.open("rb") as handle:
+        handle.seek(offset)
+        data = handle.read(limit)
+        # A large assistant message can exceed one chunk. Do not strand it forever.
+        while data and b"\n" not in data and len(data) < 32 * 1024 * 1024:
+            more = handle.read(min(limit, 32 * 1024 * 1024 - len(data)))
+            if not more:
+                break
+            data += more
+    if data and b"\n" not in data and len(data) >= 32 * 1024 * 1024:
+        raise ValueError("A JSONL line exceeds the 32 MiB viewer limit")
+    last = data.rfind(b"\n")
+    if last < 0:
+        return [], offset, size > offset
+    lines = []
+    end = offset
+    for raw in data[:last + 1].splitlines(keepends=True):
+        end += len(raw)
+        lines.append((end, raw.rstrip(b"\r\n").decode("utf-8", errors="replace")))
+    return lines, end, size > end
+
+
+def request_files(runs_root):
+    directory = runs_root / "console"
+    if not directory.exists():
+        return []
+    return [{"path": path.relative_to(runs_root).as_posix(), "bytes": path.stat().st_size,
+             "mtime": path.stat().st_mtime}
+            for path in sorted(directory.glob("requests-*.jsonl")) if path.is_file()]
+
+
 def parse_jsonl_line(line):
     try:
         return json.loads(line)
@@ -165,6 +203,57 @@ class ConsoleState:
         self.started = None
         self.log_handle = None
         self.lock = threading.Lock()
+        self.cursor_lock = threading.Lock()
+        self.agent_cursors = {}
+        self.request_cursors = {}
+
+    def agent_events(self, path, offset, cursor, prompt=None):
+        if not re.fullmatch(r"[a-f0-9]{32}", cursor):
+            raise ValueError("Invalid viewer cursor")
+        key = (cursor, str(path.resolve()))
+        with self.cursor_lock:
+            current = self.agent_cursors.get(key)
+            if offset == 0 or current is None:
+                if offset != 0:
+                    raise ValueError("Viewer cursor expired; restart at offset 0")
+                current = {"offset": 0, "assembly": initial_agent_state()}
+            elif offset != current["offset"]:
+                raise ValueError("Viewer cursor and byte offset disagree")
+            lines, new_offset, more = read_jsonl_lines(path, offset)
+            events, assembled = assemble_agent_lines(lines, current["assembly"])
+            if offset == 0 and prompt:
+                events.insert(0, {"type": "prompt", "offset": 0, "text": prompt})
+            self.agent_cursors[key] = {"offset": new_offset, "assembly": assembled}
+            if len(self.agent_cursors) > 32:
+                for oldest in self.agent_cursors:
+                    if oldest != key:
+                        del self.agent_cursors[oldest]
+                        break
+            return {"offset": new_offset, "events": events, "more": more,
+                    "result_seen": assembled["result_seen"], "mtime": path.stat().st_mtime}
+
+    def request_events(self, path, offset, cursor):
+        if not re.fullmatch(r"[a-f0-9]{32}", cursor):
+            raise ValueError("Invalid viewer cursor")
+        key = (cursor, str(path.resolve()))
+        with self.cursor_lock:
+            current = self.request_cursors.get(key)
+            if offset == 0 or current is None:
+                if offset != 0:
+                    raise ValueError("Viewer cursor expired; restart at offset 0")
+                current = {"offset": 0, "assembly": None}
+            elif offset != current["offset"]:
+                raise ValueError("Viewer cursor and byte offset disagree")
+            lines, new_offset, more = read_jsonl_lines(path, offset)
+            events, assembled = assemble_request_lines(lines, current["assembly"])
+            self.request_cursors[key] = {"offset": new_offset, "assembly": assembled}
+            if len(self.request_cursors) > 32:
+                for oldest in self.request_cursors:
+                    if oldest != key:
+                        del self.request_cursors[oldest]
+                        break
+            return {"offset": new_offset, "events": events, "more": more,
+                    "mtime": path.stat().st_mtime}
 
     def start_model(self):
         if run_queue.measurement_running():
@@ -274,6 +363,7 @@ def handler_factory(state):
             data = json.dumps(value, ensure_ascii=False).encode("utf-8")
             self.send_response(code)
             self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
@@ -289,6 +379,8 @@ def handler_factory(state):
                     data = (HERE / "index.html").read_bytes()
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'")
+                    self.send_header("X-Content-Type-Options", "nosniff")
                     self.send_header("Content-Length", str(len(data)))
                     self.end_headers()
                     self.wfile.write(data)
@@ -297,6 +389,34 @@ def handler_factory(state):
                     return self.send_json(status(state))
                 if path == "/api/transcripts":
                     return self.send_json(list_transcripts(state.roots))
+                if path == "/api/request-files":
+                    return self.send_json(request_files(state.roots["runs"]))
+                if path == "/api/request-events":
+                    query = self.query()
+                    rel = query.get("path", [""])[0]
+                    if not re.fullmatch(r"console/requests-[0-9]{8}\.jsonl", rel):
+                        raise ValueError("Invalid request log path")
+                    offset = int(query.get("offset", ["0"])[0])
+                    cursor = query.get("cursor", [""])[0]
+                    file = allowed_file(state.roots, "runs", rel)
+                    return self.send_json(state.request_events(file, offset, cursor))
+                if path == "/api/agent-events":
+                    query = self.query()
+                    root_name = query.get("root", [""])[0]
+                    relative = query.get("path", [""])[0]
+                    file = allowed_file(state.roots, root_name, relative)
+                    offset = int(query.get("offset", ["0"])[0])
+                    cursor = query.get("cursor", [""])[0]
+                    prompt = None
+                    if offset == 0:
+                        try:
+                            sidecar = allowed_file(state.roots, root_name, relative + ".prompt.txt")
+                            if sidecar.stat().st_size > 1024 * 1024:
+                                raise ValueError("Prompt sidecar exceeds 1 MiB")
+                            prompt = sidecar.read_text(encoding="utf-8-sig")
+                        except FileNotFoundError:
+                            pass
+                    return self.send_json(state.agent_events(file, offset, cursor, prompt))
                 if path == "/api/queues":
                     return self.send_json(queue_rows(state.roots["runs"]))
                 if path == "/api/tail":
@@ -314,6 +434,7 @@ def handler_factory(state):
                     data = file.read_bytes()
                     self.send_response(200)
                     self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("X-Content-Type-Options", "nosniff")
                     self.send_header("Content-Length", str(len(data)))
                     self.send_header("Content-Disposition", "inline")
                     self.end_headers()
