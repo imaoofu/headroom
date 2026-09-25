@@ -71,6 +71,69 @@ bandwidth is also published (CLAUDE.md, the XBAR prior-art section). What is new
 per-window medians of a clock HWiNFO reports; a window can straddle a step, as 1672 MHz on P5 r2
 (1567) suggests.
 
+## Is 1627 in the historical data too? (GPT Job 12, done by Claude 2026-09-24)
+
+**Yes, but only on curves that keep the stock slope below the floor, and never on the flattened
+full tune.** That split is what the crossbar-step reading above implies: the flattened curve pins
+the crossbar, so it has no step at 1627 to stall on. ⚠️ The reading was formed from 09-22 and 09-24
+data before this check, so the history is an **out-of-sample consistency check, not a registered
+test.**
+
+**Method.** `python analysis/membw_chord_history.py`. It uses the 09-22 README's chord residual,
+linear in achieved clock, at every interior point. It reproduces that README's 48-cell table
+exactly before being applied to anything else. Only committed CSVs are read. **23** 5060 Ti `membw`
+sweeps have an interior point within 15 MHz of 1627 achieved. Excluding the six 09-22 runs (the
+original observation) and the four 4n runs above (a 7.5 MHz grid, where the point is 1612 and the
+chord is a different quantity) leaves **13 historical sweeps, all on the same 10-point grid with
+target 1635**:
+
+| group | sweeps | below its chord at 1627 | residuals |
+|---|---:|---:|---|
+| **flattened full tune** (08-19 `oc`, 08-20 `oc-volt`, 08-22 `tuned-clean`) | 3 | **0** | +0.24, +0.81, +0.10 |
+| **stock slope below the floor**: stock, memory-only, repair, split | 10 | **8** | see below |
+| *for comparison: 09-22 silent, the original observation* | 6 | 5 | |
+
+The ten, in date order:
+
+| sweep | residual at 1627 | lowest in its sweep? | crossbar vs neighbours |
+|---|---|---|---|
+| 08-20 `stock-volt` | +0.45% | | −11.0 MHz |
+| 08-20 `memonly-anomaly` | +0.18% | | no extract |
+| 08-21 `splitcurve` | −1.21% | no (another point −8.31, a contaminated-era run) | −18.5 MHz |
+| 08-22 `splitcurve-r2` | −0.64% | no (another point −5.08) | no extract |
+| 08-23 `curverebuilt-fine` | −0.16% | | no extract |
+| 08-23 `memonly-clean` | −0.59% | **yes** | no extract |
+| 08-24 `splitcurve-clean` | −1.00% | **yes** | no extract |
+| 08-24 `splitcurve-clean-r2` | −1.07% | no (another point −6.91) | no extract |
+| 08-24 `splitcurve-clean-r3` | −1.02% | no (another point −1.73) | no extract |
+| 08-24 `repair-clean-r2` | −1.15% | **yes** | no extract |
+
+**The two that do not fit** are both from 2026-08-20: `stock-volt` (+0.45%) and `memonly-anomaly`
+(+0.18%).
+- `stock-volt`'s crossbar sits −11.0 MHz from its neighbours' midpoint. That is the same offset as
+  09-22 stock r2, the one 09-22 run that was not below its chord (+0.11%).
+- `memonly-anomaly` has no crossbar extract, so it cannot be checked the same way.
+
+**Across all nine sweeps with a crossbar extract, historical and 09-22 together,** the residual
+follows the crossbar offset:
+- **below the chord in all 5** where the crossbar sits −18.5 MHz from its neighbours' midpoint;
+- **above it in all 3** at −11.0 or +0.0 MHz;
+- **−0.12%** in the ninth, at −8.0 MHz.
+
+🔑 **This also names three of the seven "worst single-point departures" CLAUDE.md has called
+unidentified since 2026-08-24.** Its list is −0.36, −0.59, −1.00, −1.15, −2.17, −5.93, −6.91%.
+**−0.59, −1.00 and −1.15 are this point**, at 1627 MHz, in `memonly-clean`, `splitcurve-clean` and
+`repair-clean-r2`, and they match to two decimals. **−6.91** is `splitcurve-clean-r2`'s point
+elsewhere, not 1627. ⚠️ The other three values do not reproduce exactly under the chord rule, so
+that list may have used a different trend in part; nothing is claimed about them.
+
+⚠️ **Limits.**
+- One chip, and at most three sweeps per configuration.
+- Three of the ten have a much worse point elsewhere (−5.08 to −8.31%), so their 1627 value sits
+  inside larger noise. Two of those three are pre-guard runs from 08-21 and 08-22.
+- The crossbar is **observed, not controlled** (above).
+- A 15 MHz window and a 78 MHz grid cannot give the feature's shape; 4n's fine grid does.
+
 ## Files
 
 `*_sweep.csv`, `*_sweep.json`, `*_sweep_voltage.csv` (with `crossbar`) for the four sweeps;

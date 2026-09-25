@@ -176,6 +176,11 @@ it is **wrong at offset boundaries**: see the rung B snapshot README.
 
 ## Job 12, analysis only: is the `membw` 1627 MHz stall in the historical data too?
 
+✅ **DONE BY CLAUDE, 2026-09-24**, while GPT was at its usage limit. **Do not send.** Answer: yes, 8 of
+10 historical sweeps on curves with the stock slope below the floor, 0 of 3 on the flattened full
+tune. The record is in `data/frequency-sweeps/5060ti-membw-stall-20260924/README.md`, from
+`analysis/membw_chord_history.py`. **Next on this list: Job 13.**
+
 > On 2026-09-22, 5 of 6 silent `membw` runs sat below their own chord at **1627 MHz** achieved, while
 > the rest of each curve sat above it. That is a **stall in the rise, not a fall**:
 > `data/frequency-sweeps/5060ti-membw-silent-20260922/README.md`. **Using only committed CSVs**, check

@@ -1405,6 +1405,15 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   -5.93%, -6.91%**. All seven had encoder and decoder verified at 0%. **The variation survives the encoder guard, so
   it is something else, and its cause is unidentified.**
 
+  🟡 **PARTLY IDENTIFIED 2026-09-24.** **-0.59, -1.00 and -1.15 are one point**: the chord residual
+  at **1627 MHz**, matched to two decimals. That point sits below its chord in 8 of 10 historical
+  sweeps whose curves keep the stock slope below the floor, and in **0 of 3** on the flattened full
+  tune. That fits worklist 4n's reading, a crossbar step, and it is an association, not a
+  demonstrated cause. The large ones were largely activity (`5060ti-membw-silent-20260922`). The
+  other values do not reproduce exactly under the chord rule. See
+  `data/frequency-sweeps/5060ti-membw-stall-20260924/README.md` and
+  `analysis/membw_chord_history.py`.
+
   ⚠️ **AN EARLIER VERSION OF THIS ENTRY SAID "TWO OF FIVE RUNS CARRY A 6-7% DIP".** That was a 3%
   threshold laid across a continuous distribution of five samples; the sixth sweep landed at
   -2.17%, between the two groups it had invented. **Report the spread, not a count** - and be
