@@ -193,6 +193,10 @@ tune. The record is in `data/frequency-sweeps/5060ti-membw-stall-20260924/README
 
 ## Job 13: draft replacement text for the paper's §2 — as a proposal file
 
+✅ **DONE BY CLAUDE, 2026-09-24**, while GPT was at its usage limit. **Do not send.** The proposal is
+`docs/drafts/section2-related-work-proposal.md`. It found 12 problems in the current §§2.1–2.5
+and the retracted contribution sentence still in the introduction. **Next on this list: Job 14.**
+
 **Why:** CLAUDE.md says §§2.1–2.5 need rewriting against `docs/RELATED-WORK.md`, and **the paper cites
 no Mendes paper at all**, although SBAC-PAD 2020 now bounds the causal claim.
 
