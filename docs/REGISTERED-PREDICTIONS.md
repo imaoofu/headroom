@@ -1186,6 +1186,58 @@ same session were 1545, 1545, 1702 and 1545. The offset follows the workload, no
 
 ---
 
+## 10. RTX 5060 Ti: the negative control, repeated in one session. Registered 2026-09-25, before collection
+
+**Why now.** On the 3070 Ti the above-floor control moved the optimum (§4b FAIL,
+2026-09-24). The 5060 Ti's control, `repair-suite-p2-20260909`, has run **once**:
+- it held its median (1537 MHz);
+- 4 of 12 workloads moved against the stock bracket;
+- it had no same-session bracket of its own configuration.
+
+The paper's causal claim now rests on this card, so the control is repeated before anything is
+built on it. ⚠️ **It is not the original registration.** That was a single P2 suite, scored against
+the P5 legs and the stock suite of earlier sessions.
+
+**Design.** One session, operator absent, driven from the agent's elevated shell through
+`tools/hwinfo-logging/Invoke-LoggedSweep.ps1`, as the 2026-09-22 to 09-24 queues were.
+- **P5 → P2 → P5**, three twelve-workload suites.
+- P5 (split) and P2 (repair) are **identical below 800 mV** and differ by up to 570 MHz above it,
+  with the same memory (+2500) and power limit (200 W). Stock is not in the bracket, so the
+  comparison changes one thing: the curve above the floor.
+- Store verified before collection: all five slots are identical, section for section, to
+  `data/afterburner-profiles/5060ti-profiles-20260922-rungB/`. `[Profile2]`, `[Profile3]` and
+  `[Profile5]` hash to `86F30A00…`.
+- The original control's work exactly: grid 1236–3090 MHz, 13 points, ascending, with its
+  iteration counts, which are taken from its sweep JSONs.
+- Each slot is verified under load before its suite: memory 16301 MHz and power limit 200 W for
+  both. P2 and P5 are told apart by the unlocked `gemm` peak clock. The 09-09 control put P2's top
+  achieved clock ~84 MHz below P5's (2888 against 2972), so the witness requires **P5 ≥ 2935 MHz**
+  and **P2 ≤ 2925 MHz**. Otherwise the run stops.
+
+> **The median suite optimum of the P2 suite equals the median of each P5 suite**, on the target
+> grid, per workload by `analyze_sweep.efficiencyPeak`. It is the same rule and the same statistic
+> as §4b and §8d.
+
+**Scoreable only if:**
+- the two P5 suites have the **same median**;
+- no workload's median absolute matched-target throughput change between them exceeds **1.5%**;
+- every slot witness passed.
+
+Otherwise NOT SCOREABLE, which is not a failure.
+
+**Reporting, fixed now:**
+- **The per-workload count of P2 optima that differ from both P5 optima is reported beside the
+  verdict, always.** A zero median shift is never written as "nothing moved" (CLAUDE.md).
+- **PASS:** "the 5060 Ti's control held its median again in a same-session bracket, with *k* of 12
+  workloads moving."
+- **FAIL:** "the 5060 Ti's control moved in a same-session bracket. With the 3070 Ti's §4b, an
+  above-floor edit moved the optimum on both chips, and the floor-region attribution is not
+  established on either."
+- n = 1 chip; the twelve workloads are repeated outcomes on it.
+
+**What it cannot settle:** the manipulation. The 5060 Ti's manipulation (`abba-20260908`) was found
+in a run registered for a different prediction; rung B (§1) is its registered test.
+
 ## Safety envelope — these cards are going to be sold
 
 **The hardware risk of a floor manipulation is low and should be stated plainly rather than
