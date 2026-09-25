@@ -11,9 +11,16 @@ Imported to `data/frequency-sweeps/rtx3070ti-sessiond-20260924/`. Scored as regi
 - **8b ⛔ FAIL** (Edit 1's floor reaches 1230 MHz);
 - 8c reported.
 
-**Nothing more to run on this card.** Before it ships Saturday: **uninstall MSI Afterburner and
-delete its Profiles folder.** The session's own cleanup already verified stock power, core and
-memory.
+~~Nothing more to run on this card.~~ 🆕 **One more session, added 2026-09-25 00:40: Session D2, the
+control repeated (REGISTERED-PREDICTIONS §8d).** It is on the USB.
+
+1. ⛔ **Do NOT uninstall Afterburner yet.** D2 applies P1 and P3 through it and checks the store's
+   hash.
+2. Confirm the BIOS switch is still on **SILENT**. Open HWiNFO **Sensors-only**.
+3. Plug in the USB and run **RUN-BENCH.bat**. It opens *"RTX 3070 Ti Session D2 (8d control
+   repeat)"* by itself, with no picker and no resume question. Press **Start**.
+4. About **3 h 15**, unattended. It ends with its own stock check.
+5. **Then**, before it ships Saturday: uninstall MSI Afterburner and delete its Profiles folder.
 
 | document | what it is |
 |---|---|
