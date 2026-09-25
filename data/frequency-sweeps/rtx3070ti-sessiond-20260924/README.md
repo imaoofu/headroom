@@ -1,7 +1,10 @@
 # RTX 3070 Ti — Session D, the registered causal test on a second chip, 2026-09-24
 
-Six twelve-workload suites and four fine sweeps, collected unattended by Headroom Bench
-(`tools/bench-app/`) from the plan `bench/bench-plan-20260924-160923.json`. Its SHA-256 is
+Six twelve-workload suites and three fine sweeps, collected unattended by Headroom Bench
+(`tools/bench-app/`) from the plan `bench/bench-plan-20260924-160923.json`, plus **C8**
+(`fine/finefloor-desc`), the 2026-09-23 shakedown's descending sweep from its own session and
+plan. So the 76 sweeps are **75 from Session D and one from the day before**. ⛔ *This sentence
+said all four fine sweeps came from the Session D plan until 2026-09-25 (GPT Job 19).* Its SHA-256 is
 `5DBBECDD…` and equals the `planHash` in `bench/bench-session-20260924-160923.json`. The
 predictions are `docs/REGISTERED-PREDICTIONS.md` §4a, §4b and §8, all registered before
 collection.

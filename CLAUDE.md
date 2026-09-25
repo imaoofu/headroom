@@ -650,8 +650,10 @@ the measured consequence is not.**
 engineering work on the RTX 5090 via the LACT project"* as independent documentation. Verified via
 `gh api` on 2026-09-18: **LACT #1147 (2026-08-10), NVIDIA/open-gpu-kernel-modules #1266
 (2026-07-28), and the `loong0x00.com` Blackwell XBAR article are all by the same author,
-`Loong0x00`, on the same RTX 5090.** 🔑 **Three citations, one researcher, one chip — that is a
-single source, and this file was reading it as three.** An NVIDIA engineer reportedly did not
+`Loong0x00`, on the RTX 5090.** 🔑 **Three citations, one researcher — that is a single source, and
+this file was reading it as three.** ⛔ *This said "on the same RTX 5090" and "one chip" until
+2026-09-25: shared authorship shows one research line, not that one physical card was used
+throughout (GPT Job 20, `docs/gpt-findings/2026-09-25-section2-source-index.md`).* An NVIDIA engineer reportedly did not
 reproduce the anomaly on a different 5090 and a 5070 Ti.
 
 ⚠️ **#1266 is the closer pre-emption and it is a causal intervention, not an observation.** Capping
@@ -659,8 +661,8 @@ XBAR at 1,493 MHz drops FurMark from 256 to 173 FPS — **−32.4% at a HIGHER c
 DRAM clock**. ✅ **What separates it from this project's result:** its trigger is a memory-clock
 maximum rather than a flattened core curve, and its outcome is FPS rather than measured GB/s.
 
-⛔ **MITIGATIONS ARE ALSO PUBLISHED.** overclockers.ru (2026-08-18) warns that Afterburner
-undervolting imposes an otherwise invisible XBAR ceiling and proposes changing the xbar ratio in
+⛔ **MITIGATIONS ARE ALSO PUBLISHED.** An overclockers.ru **forum post** (2026-08-18; this said
+"overclockers.ru" as if an article until 2026-09-25) warns that Afterburner undervolting imposes an otherwise invisible XBAR ceiling and proposes changing the xbar ratio in
 mVolt+ or setting a voltage ceiling instead. **Never write "no workaround has been published."**
 
 ⛔ **METHOD NUMBER CORRECTED 2026-09-22.** This paragraph used to say a 2022 Reddit

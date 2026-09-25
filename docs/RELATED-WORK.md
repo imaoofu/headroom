@@ -199,8 +199,13 @@ the bandwidth chain is not).
 
 | source | what it establishes |
 |---|---|
-| **loong0x00**, *XBAR in NVIDIA Blackwell GPUs: A Physical Clock Domain Ignored by Public Tooling*, 2026-08-13. [link](https://loong0x00.com/notes/blackwell-xbar-physical-clock-domain/) — **read in full** | GB202. XBARCLK's own PMU object, clock source, 127-point V/F table and control path; 0.8999:1 GPC-to-XBAR topology constraint. ⛔ **Cited as the source that establishes the domain, which this work therefore does not claim.** No bandwidth figures, no swept ratio |
-| **LACT issue #1147**, 2026-08-10. [github.com/ilya-zlobintsev/LACT/issues/1147](https://github.com/ilya-zlobintsev/LACT/issues/1147) — **verified by API 2026-09-12** | RTX 5090. *"Runtime XBAR clock and per-domain MSVDD control on NVIDIA Blackwell."* +60 to +450 MHz XBAR offsets for up to +10.6% FPS. ⚠️ A throughput-limit figure appears in the thread with no benchmark trace and is deliberately not cited |
+| **Loong0x00**, *XBAR in NVIDIA Blackwell GPUs: A Physical Clock Domain Ignored by Public Tooling*, 2026-08-13. [Article](https://loong0x00.com/notes/blackwell-xbar-physical-clock-domain/) — **GPT-read, pending Claude review (2026-09-25)** | GB202: XBARCLK's own PMU object, clock source, 127-point V/F table and control path; a reported 0.8999:1 GPC-to-XBAR constraint. Establishes prior work on the domain and control path. Does not independently establish this project's GB/s plateau or its cause. |
+| **Loong0x00**, [LACT issue #1147](https://github.com/ilya-zlobintsev/LACT/issues/1147), opened 2026-08-10 — **GPT-read, pending Claude review (2026-09-25)** | RTX 5090: author reports +60 to +450 MHz XBAR offsets and up to +10.6% FPS. Does not supply a trace sufficient to verify the throughput-limit figure or show this project's bandwidth result. |
+| **EleCtricStream**, [Hardwareluxx post #184](https://www.hardwareluxx.de/community/threads/nvidia-rtx4000-undervolting-sammler.1325830/post-29706606), 2023-01-25 — **GPT-read 2026-09-25; primary spot-checked by Claude the same day** | RTX 4090: author reports an NVIDIA Inspector XBAR reading about 150 MHz lower with undervolting than at stock. The author explicitly says performance was not tested; the post does not establish an FPS or GB/s effect, or isolation of the voltage change. |
+| **Loong0x00**, [NVIDIA/open-gpu-kernel-modules issue #1266](https://github.com/NVIDIA/open-gpu-kernel-modules/issues/1266), opened 2026-07-28 — **GPT-read 2026-09-25; primary spot-checked by Claude the same day** | RTX 5090: author reports 256 to 173 average FurMark FPS when XBAR is capped at 1493 MHz, with loaded core clock higher and memory clock unchanged. This is author-reported throughput under an XBAR cap; it does not measure GB/s or test a flattened core V/F curve. |
+| **tolikmixx**, [overclockers.ru forum post](https://forums.overclockers.ru/viewtopic.php?f=3&start=12980&t=642582), 2026-08-18 13:47 (edited 13:56) — **GPT-read, pending Claude review (2026-09-25)** | Warns that Afterburner undervolting can meet an unseen XBAR-frequency ceiling when raising XBAR; suggests mVolt+ XBAR ratio or setting the upper voltage limit there. Advice in a forum reply, not a controlled measurement of a ceiling, mitigation, FPS, or GB/s. |
+| **Same displayed author handle**, [LACT #1147](https://github.com/ilya-zlobintsev/LACT/issues/1147), [NVIDIA #1266](https://github.com/NVIDIA/open-gpu-kernel-modules/issues/1266), and [loong0x00.com](https://loong0x00.com/notes/blackwell-xbar-physical-clock-domain/) — **GPT-read 2026-09-25; primary spot-checked by Claude the same day** | `gh api` returns `Loong0x00` as author of both GitHub issues; the site identifies itself as `Loong0x00` and links that GitHub profile. These are one displayed-author research line, not three independent authors. This does not prove that the same physical RTX 5090 was used throughout or independently validate the results. |
+| **log1i_yk**, [GIGAZINE news report](https://gigazine.net/gsc_news/en/20260608-rtx-5090-external-clock/), 2026-06-08 — **GPT-read, pending Claude review (2026-09-25); primary not read** | Reports PickleRick's RTX 5090 external-reference-clock work and says vBIOS swaps only partly adjust XBAR. Its linked [XtremeSystems primary](https://xtremesystems.us/post/external-clock-generation-on-rtx-50-series) returned a page shell without article text on 2026-09-25. This entry establishes only what the news article reports, not PickleRick's underlying measurements or an independent GB/s result. |
 | **WO2013137862A1**, *Dynamically controlling interconnect frequency in a processor* | Prior art that a slow interconnect stalls a faster core. **CPU/uncore, closed-loop controller, no voltage-pinning, no GPU crossbar.** Cited to pre-empt the objection, not as a source |
 | Intel uncore frequency scaling (UFS) literature | The long-established CPU analogue. Not GPU, not voltage-driven in the same sense |
 
@@ -319,19 +324,19 @@ not write it. 🔑 Their Figure 4a also reports **unexplained repeatable power d
 modified voltage table, attributed to regulator efficiency — worth reading against this project's
 still-unexplained ~71 MHz curve-fixed `gemm` ceiling deficit.
 
-### ⚠️ The XBAR domain was public EARLIER than §4 of this file records
+### ⚠️ Earlier public XBAR-clock observations
 
-§4 dates the XBAR prior art to LACT #1147 (2026-08-10). **A GIGAZINE news report dated 2026-06-08**
-— `gigazine.net/gsc_news/en/20260608-rtx-5090-external-clock/` — describes RTX 5090 vBIOS work in
-which *"the crossbar clock, which affects the connection speed inside the GPU, can only be partially
-adjusted by swapping the vBIOS"*, treats it as a binning indicator (~2700 MHz a good bin), and
-reports a modified card reaching ~2920 MHz. **Two months earlier than the date currently recorded.**
+⛔ **CHRONOLOGY SENTENCE RETRACTED, 2026-09-25.** It read: *"§4 dates the XBAR prior art to LACT
+#1147 (2026-08-10)."* The old §4 omitted the earlier [Hardwareluxx post #184](https://www.hardwareluxx.de/community/threads/nvidia-rtx4000-undervolting-sammler.1325830/post-29706606),
+so the note treated the LACT entry as the index's first XBAR source. §4 now includes that 2023
+RTX 4090 clock observation. The post does not establish the full physical-domain control path.
 
-⚠️ **READ AS A NEWS REPORT ONLY.** The primary source is work by "PickleRick" on the XtremeSystems
-forum, which was **not reached** — that forum thread is the highest-priority follow-up, because the
-GIGAZINE summary contains no bandwidth measurement, no crossbar/core ratio, and no coupling to
-voltage. **The causal chain is untouched; only the date on the domain fact moves.** A third
-independent source (`kovasky.me`, Blackwell XBAR via direct ioctl) also exists, snippet only.
+The [2026-06-08 GIGAZINE report](https://gigazine.net/gsc_news/en/20260608-rtx-5090-external-clock/)
+describes PickleRick's RTX 5090 external-clock work and says vBIOS swapping only partly adjusts
+XBAR. It reports a modified card reaching about 2920 MHz, but gives no bandwidth measurement,
+crossbar/core ratio, or voltage-coupling test. The linked [XtremeSystems primary](https://xtremesystems.us/post/external-clock-generation-on-rtx-50-series)
+rendered without article text on 2026-09-25; keep this as a news report, not a checked primary
+result. A separate `kovasky.me` lead about Blackwell XBAR direct ioctl remains snippet-only.
 
 ### ⚠️ mVolt+ — an undocumented voltage WRITE path now exists publicly on RTX 50-series
 

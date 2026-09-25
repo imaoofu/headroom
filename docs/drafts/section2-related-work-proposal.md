@@ -15,7 +15,10 @@
 |---|---|
 | **[A]** | abstract or HTML only; the full text was not read |
 | **[N]** | a news report of a primary source that was not reached |
-| **[X]** | read and recorded in CLAUDE.md (2026-09-18), but **not yet in `RELATED-WORK.md`'s index**. Index it before this text goes in, or drop the sentence |
+
+The former **[X]** source-index gaps in §2.5.1 were checked and indexed by GPT on 2026-09-25.
+Claude reviewed the same day: #1266, Hardwareluxx #184 and the one-author finding were spot-checked
+against their primary sources; the overclockers.ru post and the Loong0x00 article remain GPT-read only. See `docs/gpt-findings/2026-09-25-section2-source-index.md`.
 
 **Proposed new reference numbers** (the paper's list stops at [22]):
 
@@ -47,7 +50,7 @@ the source on 2026-09-24.
 | 8 | §2.2 | Says voltage is *"neither readable nor writable through any documented interface"*. **It is readable**: HWiNFO's core-voltage readings carry §5.5 and §5.7.3. It is not *writable* | ⛔ contradicts the paper |
 | 9 | §2.2 | The GPU-Z "ASIC quality" sentence has **no source** in the index or the reference list | 🟡 unsourced |
 | 10 | §2.1 | The compute/memory distinction cites [4], a placeholder (*"multiple; consolidate to one citation"*). It also points to §3.2 when the distinction is in **§3.3**, and §3.3.2 shows "memory-bound" is **frequency-dependent** on this card | 🟡 placeholder and wrong pointer |
-| 11 | §2.5.1 | Treats the loong0x00 article and LACT #1147 as two sources, *"found independently"*. CLAUDE.md, verified via `gh api` on 2026-09-18: **same author (`Loong0x00`), same RTX 5090.** It also omits the earlier and closer prior art CLAUDE.md records (Hardwareluxx 2023, NVIDIA/open-gpu-kernel-modules #1266, overclockers.ru) **[X]**, and GIGAZINE's 2026-06-08 date **[N]** | ⛔ overcounts one source |
+| 11 | §2.5.1 | Treats the loong0x00 article and LACT #1147 as two sources, *"found independently"*. GPT checked both GitHub issues with `gh api` on 2026-09-25: they have the same displayed author (`Loong0x00`) as the website. The physical card's identity across reports is unverified. Hardwareluxx 2023, NVIDIA/open-gpu-kernel-modules #1266, and an overclockers.ru forum post are now indexed in `RELATED-WORK.md` §4, **GPT-read, pending Claude review**. GIGAZINE 2026-06-08 remains a news report **[N]** because its linked primary article text could not be reached | ⛔ overcounts one author |
 | 12 | §2.5 | Omits Guerreiro et al. [24]: **the observed V/F behaviour depends on how the frequency is changed** (NVML lock against clock offset). That is a methodology result, and §3.2 and 4c depend on it | 🟡 missing |
 | 13 | §2.1 | HotPower's *"average 19.28% energy reduction for under 4% performance"* was **re-checked against the abstract today and is correct as written.** 18.91% for 3.45% is a single setting in the body. The index quotes the second, so a reader may think they conflict; they do not | ✅ no change |
 
@@ -231,17 +234,19 @@ curve. Much about that domain is already public, and this work claims none of it
 - **The domain.** loong0x00's analysis of GB202 (RTX 5090), published 2026-08-13 [11], documents
   XBARCLK's own PMU object, clock source, 127-point V/F table and control path, and a 0.8999:1
   GPC-to-XBAR constraint. A news report dated 2026-06-08 describes RTX 5090 vBIOS work in which the
-  crossbar clock "can only be partially adjusted by swapping the vBIOS" **[N]**.
+  crossbar clock can only be partly adjusted through vBIOS swaps **[N]** (GIGAZINE's report;
+  PickleRick's linked article text could not be reached).
 - **Raising it.** LACT issue #1147 [12] applies +60 to +450 MHz XBAR offsets on an RTX 5090 for up
   to +10.6% FPS. ⚠️ **[11], [12] and a related NVIDIA kernel-module issue are by one author on one
-  card**, so they are a single source, not independent corroboration **[X]**.
+  RTX 5090 platform**, so they form one author-reported research line, not independent corroboration.
 - **Capping it.** That kernel-module issue (NVIDIA/open-gpu-kernel-modules #1266) caps XBAR at
   1493 MHz and reports FurMark falling from 256 to 173 FPS, at a higher core clock and unchanged
-  DRAM clock **[X]**.
+  DRAM clock. The issue reports an FPS result, not bandwidth in GB/s.
 - **Undervolting lowers it.** A Hardwareluxx forum post of 2023-01-25 reads the crossbar clock
-  about 150 MHz lower under undervolt on an RTX 4090, with no performance measured **[X]**.
-- **Mitigating it.** An overclockers.ru article (2026-08-18) warns that Afterburner undervolting
-  imposes an invisible XBAR ceiling, and proposes workarounds **[X]**.
+  about 150 MHz lower under undervolt on an RTX 4090; its author says performance was not tested.
+- **Mitigating it.** An overclockers.ru forum post (2026-08-18) warns that Afterburner undervolting
+  can create an unseen XBAR ceiling when raising XBAR, and suggests mVolt+ settings as workarounds.
+  It provides no controlled test of those mitigations.
 - **The general idea.** A 2013 patent [13] decouples an interconnect clock from a core clock so a
   slow interconnect stalls a faster core. It is a CPU/uncore closed-loop controller, cited so a
   reviewer need not raise it.
@@ -284,17 +289,17 @@ read".**
 | 2.4 "…approximately 42% energy savings… useful independent corroboration…" | 2.4, rewritten | incommensurable comparison removed (finding 6). ⚠️ **The 42% and 180–2842 MHz figures are not repeated**, because the index records [3] only as "read" with no figures checked. Re-verify before restoring them |
 | 2.5 Yang et al. | 2.5 ¶1, kept | — |
 | — | 2.5 ¶2 (Guerreiro [24]) | methodology result the paper relies on (finding 12) |
-| 2.5.1 "Searched 2026-09-06…" through "not documented by the vendor" | 2.5.1, restructured | one-author overcount corrected; earlier and closer prior art added with **[X]**/**[N]** (finding 11); today's §5.7.3 wording kept |
+| 2.5.1 "Searched 2026-09-06…" through "not documented by the vendor" | 2.5.1, restructured | one-author overcount corrected; earlier and closer prior art indexed 2026-09-25, pending Claude review; GIGAZINE remains **[N]** (finding 11); today's §5.7.3 wording kept |
 | 2.5.1 "The narrower claim is the defensible one…" and "One thread remains unresolved…" | dropped | process history, which belongs in the search logs rather than in the paper |
 
 ---
 
 ## Before this goes into the paper
 
-1. **Index the [X] sources in `RELATED-WORK.md`**, or drop their sentences. They are Hardwareluxx
-   #184 (2023-01-25), NVIDIA/open-gpu-kernel-modules #1266, overclockers.ru (2026-08-18), and the
-   one-author finding about [11]/[12]. CLAUDE.md records them as read, with the source record in
-   `docs/gpt-findings/2026-09-18-xbar-prior-art.md`.
+1. **Done by GPT on 2026-09-25, pending Claude review:** Hardwareluxx #184,
+   NVIDIA/open-gpu-kernel-modules #1266, the overclockers.ru forum post, and the same-author
+   evidence for [11]/[12] are indexed in `RELATED-WORK.md` §4. The GIGAZINE-linked primary page
+   rendered without article text, so its claim stays explicitly **[N]**.
 2. **Re-open [3]** (Maliakel et al.) for its figures if §2.4 should carry numbers.
 3. ⛔ **Checked: the INTRODUCTION carries the retracted contribution sentence verbatim**
    (`PAPER_DRAFT.md` lines 57–62): *"we reshape the vendor's voltage-frequency curve region by
