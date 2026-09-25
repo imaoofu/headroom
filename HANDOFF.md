@@ -215,9 +215,12 @@ prediction registered in the run's metadata *before* the measurement:
 | full tune | 5060 Ti | 0.720 V | 2002 | 2002 |
 | **stock** | **RTX 3060** | **0.756 V** | **1260** | **1260** |
 
-Tested by **manipulation** (move the floor region, optimum moves +465 MHz in 12 of 12 workloads),
-by **negative control** (move the curve above the floor by 570 MHz, optimum moves by nothing), and
-**across architectures**. ⛔ **The floor voltage is per card and does NOT transfer** — borrowing
+Tested by **manipulation** (move the floor region: the **median** optimum moves +465 MHz, all 12
+workloads move up, by +79 to +540), by **negative control** (move the curve above the floor by
+570 MHz: the median moves by nothing, but 4 of 12 workloads move), and **across architectures**.
+⚠️ Causal n = 1 chip, and the manipulation's result was not the registered prediction; see
+CLAUDE.md's contribution section. ⛔ This said *"+465 MHz in 12 of 12 workloads"* and *"optimum
+moves by nothing"* until 2026-09-24. The retraction of 2026-09-19 had not reached this file. ⛔ **The floor voltage is per card and does NOT transfer** — borrowing
 0.720 V for the 3060 costs a 270 MHz error.
 
 - **The 44.4% V100 headroom gap** and **the null** — per-workload prediction ties a fixed 952 MHz.

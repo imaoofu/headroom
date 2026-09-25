@@ -48,18 +48,40 @@ mean efficiency gain where the best fixed frequency reaches 4.9%. The fitting ea
 since straight-line interpolation between four probes beats every fitted variant, and the fitted
 model only appears to win by violating the floor it was given.
 
-The central result concerns *where* the optimum sits, and it is a **causal test of a published
-relationship rather than a new one**. That the optimum coincides with the highest frequency the
+The central result concerns *where* the optimum sits, and it tests a **published relationship
+rather than a new one**. That the optimum coincides with the highest frequency the
 voltage-frequency curve reaches at its flat low-voltage region — the **ridge point** — was reported
-by Schoonhoven et al. (arXiv:2211.07260) on an A100 and an RTX A4000. Every prior treatment we
-found *observes* that correspondence on the vendor's shipped curve. This work intervenes on it:
+by Schoonhoven et al. (arXiv:2211.07260) on an A100 and an RTX A4000. That changing the
+voltage-frequency relationship moves the optimum is also published: Mendes, Tomás and Roma
+(SBAC-PAD 2020) moved an EDP optimum on an AMD Vega 10 by writing voltage directly. On NVIDIA,
+where voltage cannot be written through any documented interface, this work edits a region of the
+vendor's curve instead, and adds a negative control:
 
-> **On four consumer GPUs across three architectures, we reshape the vendor's voltage-frequency
-> curve region by region and show that the energy-efficiency optimum is set causally by the top of
-> its low-voltage floor — moving +465 MHz in 12 of 12 workloads when that region is changed, and
-> not at all when the curve above it is changed by more — with every prediction registered before
-> collection; and we identify a card on which the rule cannot be applied at all, because its
-> voltage leaves the floor six millivolts at a time.**
+> **On four consumer GPUs across three architectures we locate the V/F curve's low-voltage region
+> and the energy-efficiency optimum, and on one of them we change the curve and re-locate the
+> optimum: switching between two profiles whose decoded curves differ by +465 MHz below 840 mV
+> moved the median twelve-workload optimum by +465 MHz, with all twelve workloads moving upward; a
+> separate, larger edit ABOVE the floor moved the median by nothing. We identify a card on which
+> the rule cannot be applied at all, because its voltage leaves the floor six millivolts at a
+> time.**
+
+⚠️ **How far that sentence reaches:**
+- **The causal evidence is one chip and one profile contrast.** The twelve workloads are repeated
+  outcomes on it, and their shifts range from +79 to +540 MHz.
+- **The control is partly leaky.** It left the median unmoved but moved 4 of 12 workloads against
+  the same-session stock bracket.
+- **The two profiles also differ by −98 MHz at 875 and 925 mV**, a sixth of the control's dose.
+- **The manipulation's result was found in a run registered for a different prediction, which
+  failed.** The control and the cross-architecture tests were registered in advance.
+- **On a fine grid, the top of the floor bounds the optimum from above rather than marking its
+  peak.**
+
+⛔ **This paragraph carried the version retracted on 2026-09-19 until 2026-09-24**: *"we reshape
+the vendor's voltage-frequency curve region by region… moving +465 MHz in 12 of 12 workloads…
+with every prediction registered before collection"*, introduced by *"Every prior treatment we
+found observes that correspondence… This work intervenes on it."* The retraction reached
+CLAUDE.md and §5.5, not the abstract. The last sentence was also false once Mendes et al. was
+read on 2026-09-22.
 
 ⛔ The floor *voltage* does not transfer — 0.631 V, 0.720 V, 0.756 V and 0.812 V across the four
 cards. That per-chip voltage variation is itself established (Leng et al., MICRO-48 2015, across
@@ -90,10 +112,13 @@ the mid-band.
 here separates a property of a model from a property of an individual die; every *tuning* result
 comes from a single card. ⚠️ This abstract said "three chips" in one paragraph and four in another
 until 2026-09-13. Nothing here outperforms vendor boost algorithms, and no claim is made to having
-discovered guardband, inter-chip voltage variation, the ridge-point relationship, or the existence
-of a below-default consumer optimum — **all four are established literature, and §2 says by whom.**
-What is contributed is an open, current-generation, reproducible dataset over the range that
-existing releases omit, and a causal test of a relationship the prior work only observes.
+discovered guardband, inter-chip voltage variation, the ridge-point relationship, the existence
+of a below-default consumer optimum, or that changing the voltage-frequency relationship moves the
+optimum — **all five are established literature, and §2 says by whom.** What is contributed is an
+open, current-generation, reproducible dataset over the range that existing releases omit, and a
+region-targeted test of the ridge-point relationship on NVIDIA hardware, with a negative control.
+⛔ This sentence ended *"a causal test of a relationship the prior work only observes"* until
+2026-09-24.
 
 ---
 
@@ -252,10 +277,21 @@ that reports "no floor here". *That second point is our inference from the form 
 limitation either paper states.*
 
 **Positioning.** The mechanism, and its location on datacenter and workstation parts, is
-established. §5.5 tests it causally on consumer silicon rather than locating it: it reshapes the
-vendor's V/F curve by hand, region by region, and shows the efficiency optimum move with the floor
-region it changes and not move when the curve above that region is changed by more, with predictions
-registered before collection.
+established. So is its constant-voltage region on consumer NVIDIA parts: Guerreiro et al.
+(HPCA 2018) measured it on a GTX Titan X and a Titan Xp with MSI Afterburner. And moving the
+optimum by changing the voltage–frequency relationship is published too: Mendes et al.
+(SBAC-PAD 2020) moved an EDP optimum on an AMD Vega 10 by writing voltage directly. §5.5 is
+narrower than any of these:
+- on an NVIDIA card whose voltage cannot be written, it edits a region of the vendor's curve;
+- it predicts the new optimum from a floor voltage measured on other data;
+- it adds a negative control, a larger edit above the floor.
+
+⚠️ **The manipulation's result came from a run registered for a different prediction, which
+failed; the control and the cross-architecture tests were registered in advance.** The two profiles
+differ in two regions, not one (§5.5). ⛔ This paragraph said §5.5 changes the curve *"region by
+region… with predictions registered before collection"* until 2026-09-24. Both clauses were
+retracted in the project notes on 2026-09-19, and the Mendes result was read on 2026-09-22.
+`docs/drafts/section2-related-work-proposal.md` proposes the full rewrite of §§2.1–2.5.
 
 ### 2.2 Voltage guardbands and manufacturing variation
 
@@ -3523,8 +3559,16 @@ are listed because the alternative is that a reader finds them:
 6. **That per-card floor voltage was a new observation.** Per-chip Vmin variation was measured
    across five physical GTX 780s in 2015 [8] and six Radeon boards in 2025 [14]. What survives is
    its quantified consequence for prediction, not the fact itself.
-7. **That the crossbar's clock domain was this work's discovery.** It was documented independently
-   on Blackwell weeks earlier [11], [12]. The causal chain remains; the domain does not.
+7. **That the crossbar's clock domain was this work's discovery.** It was documented on Blackwell
+   weeks earlier, by one author on one card [11], [12]. The measured association remains, as an
+   association (§5.7.3); the domain does not. ⛔ This item said *"The causal chain remains"* until
+   2026-09-24.
+8. **That changing the voltage–frequency relationship and re-locating the optimum had not been
+   done.** Mendes, Tomás and Roma (SBAC-PAD 2020) did it on an AMD Vega 10 with voltage written
+   directly, and the optimum moved from 1270 to 1530, 1440 and 1530 MHz for three of four CNN
+   models. It was missed because a lead on that paper was closed after reading the same group's
+   2022 paper instead. What survives is narrower: a region-targeted edit of a vendor curve whose
+   voltage cannot be written, a negative control, and an optimum predicted from the floor voltage.
 
 ⚠️ **The common cause is worth more than the individual retractions: every check this project ran
 was internal.** Registered predictions, a negative control, replication across chips and hundreds

@@ -304,8 +304,10 @@ read".**
    intervenes on it"* is also false in its broad form, because Mendes et al. [25] intervene. This is
    the same propagation failure as §2.1.1 (finding 1), in the paper's most-read paragraph. §5.5
    itself is already corrected (line 2189: *"saying '+465 MHz in 12 of 12' would overstate
-   this"*). ⚠️ Line 66 says Trakosa et al. used *"six Radeon boards"*; the index and §2.2 say three
-   models. Check the paper before either is repeated.
+   this"*). ✅ **Fixed in the paper the same day**, together with §2.1.1's positioning paragraph
+   and the conclusion's refuted-claims list. The abstract's *"six Radeon boards"* was checked
+   against the NAVIgator PDF: *"we test two boards from each model"*, three models, so six boards
+   is right, and "three models" in §2.2 above is right too.
 4. **Add [23]–[28] to the reference list** with their read status, in the format of [18]–[22].
 5. The claims auditor pins no §2.1–2.5 sentence (they are unaudited prose), so none of this changes
    the claim count. Run `python analysis/verify_citations.py --check` after the reference list
