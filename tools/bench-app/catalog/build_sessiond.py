@@ -112,6 +112,9 @@ def fine(label, direction, lo, hi, points, settings, minutes):
 
 plan = dict(
     schemaVersion=1, title='RTX 3070 Ti Session D', volumeLabel='ESD-USB',
+    # Collected and scored 2026-09-24. Retired so the window opens Session D2 on this card without
+    # a picker whose first entry is this finished session.
+    retired=True,
     # SILENT BIOS worklist spans supported bins from 405 through 2115 MHz.
     card=dict(name='NVIDIA GeForce RTX 3070 Ti', minClockMhz=405, maxClockMhz=2115),
     revert=dict(slot=1, witness=dict(workload='gemm', iterations=400,

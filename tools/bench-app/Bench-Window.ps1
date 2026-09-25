@@ -19,7 +19,8 @@ if (-not $CatalogPath) {
     foreach ($file in @(Get-ChildItem (Join-Path $PSScriptRoot 'catalog') -Filter '*.json' | Sort-Object Name)) {
         try {
             $candidate=Get-Content $file.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
-            if ($candidate.card.name -eq $gpuName) { $candidates+=[pscustomobject]@{ Path=$file.FullName; Title=[string]$candidate.title } }
+            # A retired catalog (a session already collected) is never offered again (2026-09-25).
+            if ($candidate.card.name -eq $gpuName -and -not $candidate.retired) { $candidates+=[pscustomobject]@{ Path=$file.FullName; Title=[string]$candidate.title } }
         } catch { }
     }
     if ($candidates.Count -eq 0) {
@@ -397,7 +398,10 @@ function Test-ResumableHere($file) {
         $stamp=[regex]::Match($file.Name,'bench-session-(.*)[.]json').Groups[1].Value
         $planPath=Join-Path $file.DirectoryName ('bench-plan-'+$stamp+'.json')
         if (-not (Test-Path $planPath)) { return $false }
-        return ((Get-Content $planPath -Raw | ConvertFrom-Json).card.name -eq $script:catalog.card.name)
+        # Same card AND the same run list. By card alone, Session D2 (2026-09-25) would have been
+        # offered Session D's failed 08:19 attempt, and a Yes would have rerun the old plan.
+        $sessionPlan=Get-Content $planPath -Raw | ConvertFrom-Json
+        return ($sessionPlan.card.name -eq $script:catalog.card.name -and $sessionPlan.title -eq $script:catalog.title)
     } catch { return $false }
 }
 $resultDir=Join-Path $script:kit 'results'

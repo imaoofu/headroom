@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / 'tools' / 'bench-app'
 CATALOG = APP / 'catalog' / 'sessiond-3070ti.json'
 SESSIONE = APP / 'catalog' / 'sessione-2060s.json'
+SESSIOND2 = APP / 'catalog' / 'sessiond2-3070ti.json'
 PS = (shutil.which(os.environ['HEADROOM_TEST_PS']) if os.environ.get('HEADROOM_TEST_PS')
       else (shutil.which('powershell.exe') or shutil.which('pwsh')))
 
@@ -167,6 +168,51 @@ class BenchAppTests(unittest.TestCase):
         self.assertGreater(int(new.stdout.split('attempts=')[1].split()[0]), 1)
         reader.wait()
         self.assertEqual(target.read_text(encoding='utf-8'), '{"new":2}')
+
+    # ---- Session D2, RTX 3070 Ti, REGISTERED-PREDICTIONS 8d (2026-09-25) --------------------
+
+    def test_sessiond2_is_current_and_runs_through_unattended(self):
+        spec = importlib.util.spec_from_file_location('build_sessiond2', APP / 'catalog' / 'build_sessiond2.py')
+        builder = importlib.util.module_from_spec(spec)
+        sys.path.insert(0, str(APP / 'catalog'))
+        try:
+            spec.loader.exec_module(builder)
+        finally:
+            sys.path.remove(str(APP / 'catalog'))
+        plan = json.loads(SESSIOND2.read_text(encoding='utf-8'))
+        self.assertEqual(json.loads(json.dumps(builder.plan)), plan, 'rerun build_sessiond2.py')
+        self.assertEqual([r['id'] for r in plan['runs']], ['preflight', 'stock-7', 'edit2-8', 'stock-9', 'cleanup'])
+        runs = {r['id']: r for r in plan['runs']}
+        # The same preflight as Session D, so the same store hash, BIOS gate and stock witness.
+        self.assertEqual(runs['preflight']['steps'], self.catalog['runs'][0]['steps'])
+        self.assertEqual([s['slot'] for s in runs['edit2-8']['steps'] if s['type'] == 'apply-profile'], [3])
+        for identifier in ('stock-7', 'edit2-8', 'stock-9'):
+            collect = [s for s in runs[identifier]['steps'] if s['type'] == 'suite'][0]
+            self.assertEqual(collect['label'], 'rtx3070ti-sessiond-' + identifier)
+            self.assertEqual(collect['iterations'], self.catalog['runs'][1]['steps'][3]['iterations'])
+        gate = [s for s in runs['stock-9']['steps'] if s['type'] == 'gate-drift'][0]
+        self.assertEqual((gate['firstRun'], gate['lastRun'], gate['blocking']), ('stock-7', 'stock-9', False))
+        self.assertIsNone(plan.get('afterRevertHuman'))
+        self.assertTrue(all(r['preselected'] for r in plan['runs']))
+        # Unattended: with the Sensors window already open, nothing waits for a person.
+        self.mock['sensorsReady'] = True
+        proc, record = self.engine(plan)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(record['status'], 'PASS')
+        sensors = [s for s in record['steps'] if s['key'] == 'preflight/sensors'][0]
+        self.assertEqual(sensors['witness']['confirmedBy'], 'auto')
+
+    def test_one_active_catalog_per_card(self):
+        # The window opens the only active run list for its card with no picker. Two active lists
+        # for one card would open a picker whose first entry may be the wrong session.
+        active = {}
+        for path in sorted((APP / 'catalog').glob('*.json')):
+            plan = json.loads(path.read_text(encoding='utf-8'))
+            if not plan.get('retired'):
+                active.setdefault(plan['card']['name'], []).append(path.name)
+        self.assertEqual(active['NVIDIA GeForce RTX 3070 Ti'], ['sessiond2-3070ti.json'])
+        self.assertEqual(active['NVIDIA GeForce RTX 2060 SUPER'], ['sessione-2060s.json'])
+        self.assertTrue(all(len(names) == 1 for names in active.values()), active)
 
     # ---- Session E, RTX 2060 Super (2026-09-24) -------------------------------------------
     # Its edit only moves curve points below 0.669 V, so an unlocked witness cannot see it; the
@@ -635,7 +681,7 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         for file in ['RUN-BENCH.bat', 'Run-Plan.ps1', 'Bench-Window.ps1', 'Bench-Display.ps1',
                      'Run-Child.ps1', 'Test-Plan.ps1', 'New-Plan.ps1',
-                     'Hwinfo-Csv.ps1', 'Stock-Drift.ps1', 'Pmon-Gate.ps1', 'sessiond-3070ti.json', 'sessione-2060s.json',
+                     'Hwinfo-Csv.ps1', 'Stock-Drift.ps1', 'Pmon-Gate.ps1', 'sessiond-3070ti.json', 'sessione-2060s.json', 'sessiond2-3070ti.json',
                      'Invoke-HwinfoLogging.ps1', 'Write-Atomic.ps1', 'Profile-Hash.ps1']:
             self.assertIn(file, proc.stdout)
 
