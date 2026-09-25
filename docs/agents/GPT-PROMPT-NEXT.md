@@ -622,6 +622,96 @@ The same goes for prompts Claude sends it. Read Job 17's review first:
 
 ---
 
+## Job 19: adversarial audit of Session D (3070 Ti). **Send first: Session D2 runs 2026-09-25.**
+
+**Why:** Session D is the project's second causal test. It came back mixed: the manipulation passed
+twice, and the negative control failed. Every outside audit so far has found something real, and
+this one should land before the 8d repeat is scored, not after.
+
+> **Audit `data/frequency-sweeps/rtx3070ti-sessiond-20260924/` against
+> `docs/REGISTERED-PREDICTIONS.md` §4a, §4b (with both amendments) and §8.** The scorer
+> `analysis/score_session_d.py` was committed before the data. **Recompute the verdicts with your
+> own code from the sweep CSVs and `_voltage.csv` extracts, not by calling the scorer**, and report
+> every place the two disagree. Registered: 4a PASS (1222.5 MHz), 4b FAIL (1432.5 MHz), 8a PASS
+> (1170), 8b FAIL (Edit 1's floor reaches 1230 MHz at 0.819 V).
+>
+> 1. **Is the 4b failure real, or a property of the median?** The control's twelve optima split
+>    6/6 between 1380 and 1485. Identical stock suites disagree on 3–4 of 12 per-workload argmaxes.
+>    Measure how often a stock suite's median would leave 1485–1500 if its per-workload optima moved
+>    by the stock-to-stock noise seen here. Report that, **and do not propose re-scoring 4b**: it is
+>    registered.
+> 2. **Which workloads moved under the control, and why?** Compare per-workload efficiency curves,
+>    not just argmaxes, for `edit2-3` against `stock-1` and `stock-4`. Did efficiency at 1380 rise,
+>    or did it fall at 1485? Use temperatures, power and achieved clocks. Edit 2 lowered the 825 mV
+>    point by 15 MHz, inside the floor band (Amendment 2 and
+>    `data/afterburner-profiles/3070ti-profiles-20260923/`). Does the voltage extract show the
+>    control's 1485 MHz point at a different voltage from stock's?
+> 3. **Does 8b undermine 4a?** Edit 1's floor ends between 1230 and 1275 MHz, not at the 1200 the
+>    as-built reading assumed. 4a's registered bins are 1170/1275. State whether the passing 4a
+>    verdict depends on the wrong floor end in any way.
+> 4. **The 8d repeat (Session D2):** stock-7 → edit2-8 → stock-9, one day after Session D. What can
+>    it settle and what can it not? Is its stock-7 = 1485 eligibility rule sound? **Do not propose
+>    changing it**; it is registered in `01623d3`.
+> 5. **Anything else wrong** with the import, the joins or the README.
+>
+> Write `docs/gpt-findings/2026-09-25-sessiond-3070ti-adversarial-audit.md`. No edits to `data/`,
+> the paper or the registration.
+
+---
+
+## Job 20: index the §2 sources that are read but unindexed
+
+**Why:** `docs/drafts/section2-related-work-proposal.md` (Job 13) marks five sentences **[X]**:
+CLAUDE.md records the source as read, but `docs/RELATED-WORK.md` does not index it. The proposal
+cannot go into the paper until they are indexed or dropped.
+
+> For each source, **open the primary source**, and record the URL, date, author, what it
+> establishes, and what it does not. Quote at most one short sentence. Add an entry to
+> `docs/RELATED-WORK.md` §4 (the crossbar domain) marked **"GPT-read, pending Claude review"**:
+> 1. Hardwareluxx post #184, **2023-01-25**, user EleCtricStream, RTX 4090: the crossbar clock
+>    reads ~150 MHz lower under undervolt. The link is in
+>    `docs/gpt-findings/2026-09-18-xbar-prior-art.md`.
+> 2. `NVIDIA/open-gpu-kernel-modules` issue **#1266**: XBAR capped at 1493 MHz, FurMark 256 → 173
+>    FPS.
+> 3. overclockers.ru, 2026-08-18: Afterburner undervolting imposes an XBAR ceiling; workarounds.
+> 4. The **single-author finding**: confirm with `gh api` that LACT #1147, #1266 and the
+>    loong0x00.com article are all by `Loong0x00`, and record the evidence.
+> 5. GIGAZINE, 2026-06-08 (`gigazine.net/gsc_news/en/20260608-rtx-5090-external-clock/`). **Try to
+>    reach the primary source it reports**, PickleRick on the XtremeSystems forum. It was never
+>    reached. If you cannot reach it, say so and leave it marked as a news report.
+>
+> Then update the **[X]** markers in the Job 13 proposal to what you verified. Remove any sentence
+> whose source you could not confirm. Record the search in
+> `docs/gpt-findings/2026-09-25-section2-source-index.md`. Do not edit the paper.
+
+---
+
+## Job 21: Wang et al. (TPDS) against their own released data — an open discrepancy
+
+**Why:** CLAUDE.md has flagged this since 2026-09-19. §2.7 leans on Wang, Mei, Liu, Leung, Li & Chu
+(arXiv:2104.00486) reporting that their optimum sits *"close to the allowed lowest setting"*. But a
+raw-grid energy argmax on their released GTX 1080 Ti CSV puts **18 of 30** applications at the
+**highest** sampled core clock, **8** at the lowest and **4** in between. Candidate explanations
+exist, and **none has been checked**:
+- their paper reports **20** benchmarks, and the CSV has **30** applications;
+- theirs is a **fitted** optimum, and ours is a grid argmax;
+- their energy is **system-scope** against a 37 W idle floor.
+
+> Read §5.1.1, §5.2 and Figure 4 of arXiv:2104.00486 in full.
+> 1. Which 20 benchmarks do they report? Map them onto the CSV's 30 applications.
+> 2. Is *"close to the allowed lowest setting"* said of the **measured** case, the **simulated**
+>    wide-interval case, or both? Quote it with its page.
+> 3. **Recompute** the argmax counts for their 20 alone: raw grid, board-scope and, if their paper
+>    gives enough to reproduce it, system-scope with the 37 W floor. The CSVs come from
+>    `HKBU-HPML/GPU-DVFS-Job-Schedule` (branch **`master`**). ⛔ **Download to a folder outside the
+>    repository. Never write under `data/`.**
+> 4. **Does the discrepancy survive?** Is the paper's own strategy, citing them against their own
+>    artifact, still sound? Propose exact wording for §2.7 and CLAUDE.md, as a proposal.
+>
+> Write `docs/gpt-findings/2026-09-25-wang-tpds-optimum-discrepancy.md`. No edits to the paper.
+
+---
+
 ## ⛔ Still do not ask it
 
 - **Anything settled.** `GPT-QUEUE.md` lists these.
