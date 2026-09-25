@@ -5,7 +5,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from score_session_d import REGISTRATION, collapse_control, score
+from score_session_d import REGISTRATION, collapse_control, score, score_replicate
 
 
 def check(condition, message):
@@ -157,6 +157,96 @@ def main():
         check("missing companion file" in str(exc), "missing voltage extract is rejected")
     else:
         check(False, "missing voltage extract is rejected")
+
+    replicate_checks()
+
+
+def replicate_fixture(root, edit_peak=1170, stock6_peak=1485, stock6_factor=1.0,
+                      edit_floor_end=1170, edit_peak_by_workload=None, achieved_offset=0.4):
+    """stock-4, edit1-5 and stock-6 for REGISTERED-PREDICTIONS 8a, written before any 8a data
+    existed (2026-09-24). Achieved clocks sit 0.4 MHz off target, as real ones do."""
+    cfg = REGISTRATION
+    for run in ("stock-4", "edit1-5", "stock-6"):
+        for workload in cfg.workloads:
+            stem = f"synthetic_rtx3070ti-sessiond-{run}-{workload}_sweep"
+            csv_path = root / f"{stem}.csv"
+            csv_path.with_suffix(".json").write_text(json.dumps({
+                "session_label": f"rtx3070ti-sessiond-{run}-{workload}",
+                "gpu_name": "NVIDIA GeForce RTX 3070 Ti", "driver_version": "synthetic-driver",
+                "power_limit_default_w": "290.00", "power_limit_enforced_w": "290.00",
+                "power_limit_w": "320.00"}), encoding="utf-8")
+            if run == "edit1-5":
+                peak = (edit_peak_by_workload or {}).get(workload, edit_peak)
+            else:
+                peak = stock6_peak if run == "stock-6" else 1485
+            factor = stock6_factor if run == "stock-6" else 1.0
+            floor_end = edit_floor_end if run == "edit1-5" else 1485
+            with csv_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=(
+                    "target_frequency_mhz", "achieved_frequency_avg", "bench_throughput",
+                    "power_avg_w", "bench_ok", "lock_miss_direction", "power_window_applied"))
+                writer.writeheader()
+                for target in cfg.targets:
+                    writer.writerow({"target_frequency_mhz": target,
+                                     "achieved_frequency_avg": target - achieved_offset,
+                                     "bench_throughput": (2.0 if target == peak else 1.0) * 100 * factor,
+                                     "power_avg_w": 100, "bench_ok": "True",
+                                     "lock_miss_direction": "none", "power_window_applied": "True"})
+            with csv_path.with_name(stem + "_voltage.csv").open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=("target", "achieved", "voltage", "sampleCount"))
+                writer.writeheader()
+                for target in cfg.targets:
+                    writer.writerow({"target": target, "achieved": target - achieved_offset,
+                                     "voltage": 0.812 if target <= floor_end else 0.831,
+                                     "sampleCount": 25})
+
+
+def evaluate_replicate(**kwargs):
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        replicate_fixture(root, **kwargs)
+        return score_replicate(root)
+
+
+def replicate_checks():
+    """REGISTERED-PREDICTIONS 8a, every outcome it names."""
+    passed = evaluate_replicate()
+    check(passed["8a"] == "PASS" and passed["medians"]["edit1-5"] == 1170,
+          "8a: an edit1-5 median of 1170 passes")
+    split = evaluate_replicate(edit_peak_by_workload={name: (1170 if i < 6 else 1275)
+                                                      for i, name in enumerate(REGISTRATION.workloads)})
+    check(split["medians"]["edit1-5"] == 1222.5 and split["8a"] == "PASS",
+          "8a: an even 1170/1275 split (median 1222.5) is inside the registered range")
+    unmoved = evaluate_replicate(edit_peak=1485)
+    check(unmoved["8a"] == "FAIL_NO_MOVEMENT",
+          "8a: a median at stock-4's is no movement and counts against the replication")
+    elsewhere = evaluate_replicate(edit_peak=1380)
+    check(elsewhere["8a"] == "FAIL_OTHER_DOWNWARD_BIN",
+          "8a: a downward move outside 1170-1275 is not a pass")
+    moved_stock = evaluate_replicate(stock6_peak=1380)
+    check(moved_stock["8a"] == "NOT_SCOREABLE"
+          and "stock-6 median" in moved_stock["not_scoreable_reasons"][0],
+          "8a: a stock-6 median unlike stock-4's makes it NOT SCOREABLE, not a failure")
+    drifted = evaluate_replicate(stock6_factor=1.02)
+    check(drifted["8a"] == "NOT_SCOREABLE" and "above 1.5%" in drifted["not_scoreable_reasons"][0],
+          "8a: a 2% stock-4 to stock-6 change makes it NOT SCOREABLE")
+    kept = evaluate_replicate(stock6_factor=1.01)
+    check(kept["8a"] == "PASS", "8a: a 1% stock change is within the 1.5% limit")
+    no_edit = evaluate_replicate(edit_floor_end=1485)
+    check(no_edit["8a"] == "NOT_SCOREABLE" and not no_edit["edit1_floor_ok"],
+          "8a: an unedited floor on edit1-5 makes it NOT SCOREABLE")
+    # After import all six runs share one directory: each mode must read only its own runs.
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        fixture(root)
+        stock4 = sorted(root.glob("*sessiond-stock-4-*"))
+        for path in stock4:
+            path.unlink()
+        replicate_fixture(root)
+        both = score(root)
+        again = score_replicate(root)
+    check(both["joint"] == "CAUSAL_CLAIM_REPLICATES_ON_SECOND_CHIP" and again["8a"] == "PASS",
+          "4a/4b and 8a score correctly from one directory holding all six runs")
 
 
 if __name__ == "__main__":

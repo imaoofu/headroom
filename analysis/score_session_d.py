@@ -59,6 +59,9 @@ class SessionDRegistration:
 
 REGISTRATION = SessionDRegistration()
 RUNS = REGISTRATION.runs
+# REGISTERED-PREDICTIONS 8a (2026-09-23, before collection): edit1-5 against stock-4 and stock-6.
+# Written 2026-09-24, while stock-4 was collecting and before any 8a data existed.
+REPLICATE_RUNS = ("stock-4", "edit1-5", "stock-6")
 
 
 def median(values):
@@ -159,11 +162,11 @@ def read_run_file(csv_path, run, workload):
             "driver": metadata.get("driver_version", "")}
 
 
-def find_files(directory):
-    grouped = {run: {} for run in RUNS}
+def find_files(directory, runs=RUNS):
+    grouped = {run: {} for run in runs}
     for path in directory.rglob("*_sweep.csv"):
         name = path.stem
-        for run in RUNS:
+        for run in runs:
             prefix = f"rtx3070ti-sessiond-{run}-"
             if prefix in name:
                 workload = name.split(prefix, 1)[1].removesuffix("_sweep")
@@ -173,7 +176,7 @@ def find_files(directory):
                     raise ValueError(f"duplicate {run}/{workload} sweeps")
                 grouped[run][workload] = path
                 break
-    for run in RUNS:
+    for run in runs:
         missing = set(REGISTRATION.workloads) - set(grouped[run])
         if missing:
             raise ValueError(f"{run}: missing workload sweeps: {', '.join(sorted(missing))}")
@@ -194,6 +197,22 @@ def floor_summary(workloads):
         "first_above_mhz": min((point[1] for point in above), default=None),
         "by_target": {target: voltage for target, _, voltage in points},
     }
+
+
+def edit1_floor_verified(suites):
+    """The Edit 1 floor check, one rule for edit1-2 (4a) and edit1-5 (8a says "exactly as it does
+    for edit1-2"): the cap point reads on the floor, every target above the cap reads above it,
+    and no clock above the cap, within tolerance, reads on the floor."""
+    cfg = REGISTRATION
+    return all(
+        suite["volts"][cfg.edit1_optima_mhz[0]]["voltage"] <= cfg.floor_max_v
+        and all(suite["volts"][target]["voltage"] >= cfg.first_above_floor_v
+                for target in cfg.targets if target > cfg.edit1_curve_cap_mhz)
+        and max((suite["volts"][target]["mhz"] for target in cfg.targets
+                 if suite["volts"][target]["voltage"] <= cfg.floor_max_v),
+                default=float("inf")) <= cfg.edit1_curve_cap_mhz + cfg.clip_tolerance_mhz
+        for suite in suites.values()
+    )
 
 
 def stock_return(first, last):
@@ -240,15 +259,7 @@ def score(directory):
 
     stock1_floor_ok = stock_floor("stock-1")
     stock4_floor_ok = stock_floor("stock-4")
-    edit1_floor_ok = all(
-        suite["volts"][cfg.edit1_optima_mhz[0]]["voltage"] <= cfg.floor_max_v
-        and all(suite["volts"][target]["voltage"] >= cfg.first_above_floor_v
-                for target in cfg.targets if target > cfg.edit1_curve_cap_mhz)
-        and max((suite["volts"][target]["mhz"] for target in cfg.targets
-                 if suite["volts"][target]["voltage"] <= cfg.floor_max_v),
-                default=float("inf")) <= cfg.edit1_curve_cap_mhz + cfg.clip_tolerance_mhz
-        for suite in runs["edit1-2"].values()
-    )
+    edit1_floor_ok = edit1_floor_verified(runs["edit1-2"])
     control_floor_ok = all(
         suite["volts"][cfg.stock_optimum_mhz]["voltage"] <= cfg.floor_max_v
         and all(suite["volts"][target]["voltage"] <= cfg.floor_max_v
@@ -306,6 +317,71 @@ def score(directory):
     }
 
 
+def score_replicate(directory):
+    """REGISTERED-PREDICTIONS 8a. Scoreable only if stock-6's median equals stock-4's, no workload's
+    median absolute throughput change from stock-4 to stock-6 exceeds 1.5%, and the Edit 1 floor
+    check passes on edit1-5. Otherwise NOT_SCOREABLE, which is not a failure. A median at or above
+    stock-4's is no movement and counts against the replication."""
+    cfg = REGISTRATION
+    paths = find_files(directory, REPLICATE_RUNS)
+    runs = {run: {name: read_run_file(paths[run][name], run, name)
+                  for name in cfg.workloads} for run in REPLICATE_RUNS}
+    drivers = {item["driver"] for suite in runs.values() for item in suite.values()}
+    if len(drivers) != 1 or not next(iter(drivers)):
+        raise ValueError(f"driver version is missing or changed during 8a: {drivers}")
+    optima = {run: {name: runs[run][name]["grid"] for name in cfg.workloads}
+              for run in REPLICATE_RUNS}
+    medians = {run: median(optima[run].values()) for run in REPLICATE_RUNS}
+    drift = stock_return(runs["stock-4"], runs["stock-6"])
+    reasons = []
+    if medians["stock-6"] != medians["stock-4"]:
+        reasons.append(f"stock-6 median {medians['stock-6']:g} differs from stock-4's "
+                       f"{medians['stock-4']:g}")
+    over = sorted(name for name, value in drift.items() if value > cfg.stock_return_tolerance_pct)
+    if over:
+        reasons.append("stock-4 to stock-6 change above "
+                       f"{cfg.stock_return_tolerance_pct:.1f}%: {', '.join(over)}")
+    floor_ok = edit1_floor_verified(runs["edit1-5"])
+    if not floor_ok:
+        reasons.append("the Edit 1 floor check fails on edit1-5")
+    if reasons:
+        verdict = "NOT_SCOREABLE"
+    elif min(cfg.edit1_optima_mhz) <= medians["edit1-5"] <= max(cfg.edit1_optima_mhz):
+        verdict = "PASS"
+    elif medians["edit1-5"] >= medians["stock-4"]:
+        verdict = "FAIL_NO_MOVEMENT"
+    else:
+        verdict = "FAIL_OTHER_DOWNWARD_BIN"
+    return {
+        "driver": next(iter(drivers)),
+        "optima": optima,
+        "medians": medians,
+        "drift_per_workload_pct": drift,
+        "edit1_floor_ok": floor_ok,
+        "not_scoreable_reasons": reasons,
+        "8a": verdict,
+    }
+
+
+def report_replicate(result):
+    cfg = REGISTRATION
+    print(f"Session D 8a replicate scorer | RTX 3070 Ti | driver {result['driver']}")
+    for run in REPLICATE_RUNS:
+        print(f"{run}: median optimum {result['medians'][run]:g} MHz (target grid)")
+        print("  " + ", ".join(f"{name}={result['optima'][run][name]:g}"
+                            for name in cfg.workloads))
+    print("Stock return stock-4 -> stock-6: worst workload median absolute matched-target "
+          f"throughput change {max(result['drift_per_workload_pct'].values()):.3f}% "
+          f"(limit {cfg.stock_return_tolerance_pct:.1f}%).")
+    print(f"Edit 1 floor check on edit1-5: {'yes' if result['edit1_floor_ok'] else 'NO'}")
+    for reason in result["not_scoreable_reasons"]:
+        print(f"Not scoreable: {reason}")
+    print(f"8a replicate (median in {min(cfg.edit1_optima_mhz)}-{max(cfg.edit1_optima_mhz)} MHz): "
+          f"{result['8a']}")
+    print("Report this beside edit1-2's 4a result; neither supersedes the other, and there is no "
+          "averaging. n=2 on one chip. Edit 2 is not repeated, so 4b's control is not replicated.")
+
+
 def report(result):
     cfg = REGISTRATION
     print(f"Session D scorer | RTX 3070 Ti | driver {result['driver']}")
@@ -340,9 +416,19 @@ def report(result):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("directory", type=Path, help="Directory holding all four Session D runs")
+    parser.add_argument("--replicate", action="store_true",
+                        help="score REGISTERED-PREDICTIONS 8a from stock-4, edit1-5 and stock-6")
     args = parser.parse_args(argv)
     if not args.directory.is_dir():
         parser.error(f"not a directory: {args.directory}")
+    if args.replicate:
+        try:
+            result = score_replicate(args.directory)
+        except (ValueError, TypeError, OSError, csv.Error, json.JSONDecodeError) as exc:
+            print(f"8a cannot be scored: {exc}", file=sys.stderr)
+            return 2
+        report_replicate(result)
+        return 0 if result["8a"] != "NOT_SCOREABLE" else 2
     try:
         result = score(args.directory)
     except (ValueError, TypeError, OSError, csv.Error, json.JSONDecodeError) as exc:
