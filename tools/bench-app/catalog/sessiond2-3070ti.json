@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "title": "RTX 3070 Ti Session D2 (8d control repeat)",
   "volumeLabel": "ESD-USB",
+  "retired": true,
   "card": {
     "name": "NVIDIA GeForce RTX 3070 Ti",
     "minClockMhz": 405,

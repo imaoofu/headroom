@@ -104,6 +104,7 @@ $files = @(
     @{ From = "tools\bench-app\Pmon-Gate.ps1"; To = "tools\bench-app\Pmon-Gate.ps1" },
     @{ From = "tools\bench-app\Profile-Hash.ps1"; To = "tools\bench-app\Profile-Hash.ps1" },
     @{ From = "tools\bench-app\Write-Atomic.ps1"; To = "tools\bench-app\Write-Atomic.ps1" },
+    @{ From = "tools\bench-app\Card-Checks.ps1"; To = "tools\bench-app\Card-Checks.ps1" },
     @{ From = "tools\bench-app\Test-Plan.ps1"; To = "tools\bench-app\Test-Plan.ps1" },
     @{ From = "tools\bench-app\catalog\sessiond-3070ti.json"; To = "tools\bench-app\catalog\sessiond-3070ti.json" },
     @{ From = "tools\bench-app\catalog\localtest-5060ti.json"; To = "tools\bench-app\catalog\localtest-5060ti.json" },

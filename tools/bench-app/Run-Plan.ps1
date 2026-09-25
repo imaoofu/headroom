@@ -13,6 +13,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Pmon-Gate.ps1')
 . (Join-Path $PSScriptRoot 'Profile-Hash.ps1')
 . (Join-Path $PSScriptRoot 'Write-Atomic.ps1')
+. (Join-Path $PSScriptRoot 'Card-Checks.ps1')
 $script:kit = $null
 $script:record = $null
 $script:activeLog = ''
@@ -598,6 +599,8 @@ try {
         if ($clocks.Count -eq 0) { throw 'No supported graphics clocks reported.' }
         $min=($clocks | Measure-Object -Minimum).Minimum
         $max=($clocks | Measure-Object -Maximum).Maximum
+        $topProblem=Get-SuiteTopProblem $max $plan.card
+        if ($topProblem) { throw $topProblem }
         if ($plan.card.minClockMhz -lt $min -or $plan.card.maxClockMhz -gt $max) { throw "Catalog clock range [$($plan.card.minClockMhz),$($plan.card.maxClockMhz)] outside card [$min,$max]." }
         $script:record.supportedClockRange=@($min,$max)
         $script:cardVerified=$true

@@ -15,6 +15,7 @@ function Validate-Plan($plan) {
     Require ($plan.schemaVersion -eq 1) 'schemaVersion must be 1.'
     Require ($plan.volumeLabel -match '^[A-Za-z0-9 _-]{1,32}$' -and $plan.card.name) 'Plan needs a USB volume label and GPU name.'
     Require ($plan.card.minClockMhz -gt 0 -and $plan.card.maxClockMhz -gt $plan.card.minClockMhz) 'Invalid card clock range.'
+    if ($null -ne $plan.card.suiteTopClockMhz) { Require ([int]$plan.card.suiteTopClockMhz -ge $plan.card.minClockMhz -and [int]$plan.card.suiteTopClockMhz -le 4000) 'Invalid suiteTopClockMhz.' }
     Require ($plan.runs.Count -gt 0) 'Select at least one run.'
     $runIds = @{}
     $allowedWorkloads=@('gemm','membw','copy','reduce','softmax','layernorm','bgemm32','bgemm64','bgemm128','bgemm256','bgemm1024','attention','conv')

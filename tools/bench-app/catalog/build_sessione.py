@@ -106,7 +106,10 @@ STOCK3 = ('STOCK P1 reverted after the edit, verified at locked 1065 MHz by volt
 plan = dict(
     schemaVersion=1, title='RTX 2060 Super Session E', volumeLabel='ESD-USB',
     # Supported table: 122 clocks, 2115 MHz at the top; the 09-12 lowrange sweep locked 405.
-    card=dict(name='NVIDIA GeForce RTX 2060 SUPER', minClockMhz=405, maxClockMhz=2115),
+    # suiteTopClockMhz: the registered 855-2115 grid (4c) is Collect's 40%-to-top of a table whose
+    # top was 2115 on 09-12 and 09-15 (122 entries both days). The 3070 Ti's table top moved
+    # 2115 -> 2130 between two days and cost Session D2 its registered verdict (2026-09-25).
+    card=dict(name='NVIDIA GeForce RTX 2060 SUPER', minClockMhz=405, maxClockMhz=2115, suiteTopClockMhz=2115),
     revert=dict(slot=1, witness=dict(workload='gemm', iterations=400, coreMin=UNLOCKED[0],
                                      coreMax=UNLOCKED[1], memoryMin=MEMORY[0], memoryMax=MEMORY[1])),
     runs=[

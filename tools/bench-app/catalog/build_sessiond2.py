@@ -46,6 +46,8 @@ preflight = dict(preflight, name='Preflight: BIOS, quiet card, profile store, st
 
 plan = dict(
     schemaVersion=1, title='RTX 3070 Ti Session D2 (8d control repeat)', volumeLabel='ESD-USB',
+    # Collected 2026-09-25 (PASS, untouched). Retired: nothing more runs on this card.
+    retired=True,
     card=d.plan['card'], revert=d.plan['revert'],
     runs=[
         preflight,

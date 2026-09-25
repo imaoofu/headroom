@@ -5,7 +5,8 @@
   "card": {
     "name": "NVIDIA GeForce RTX 2060 SUPER",
     "minClockMhz": 405,
-    "maxClockMhz": 2115
+    "maxClockMhz": 2115,
+    "suiteTopClockMhz": 2115
   },
   "revert": {
     "slot": 1,

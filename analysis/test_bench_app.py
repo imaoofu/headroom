@@ -169,6 +169,25 @@ class BenchAppTests(unittest.TestCase):
         reader.wait()
         self.assertEqual(target.read_text(encoding='utf-8'), '{"new":2}')
 
+    def test_suite_top_guard_refuses_a_moved_clock_table(self):
+        # Session D2 (2026-09-25): the 3070 Ti's table top moved 2115 -> 2130 overnight, the grid
+        # moved with it, and 8d became NOT SCOREABLE. A catalog that states its table top refuses.
+        helper = str(APP / 'Card-Checks.ps1').replace("'", "''")
+        def problem(top, card_json):
+            proc = self.ps_command(f". '{helper}'; $card='{card_json}' | ConvertFrom-Json; "
+                                   f"$r=Get-SuiteTopProblem {top} $card; if ($null -eq $r) {{ 'NONE' }} else {{ $r }}")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            return proc.stdout.strip()
+        self.assertEqual(problem(2115, '{"suiteTopClockMhz":2115}'), 'NONE')
+        moved = problem(2130, '{"suiteTopClockMhz":2115}')
+        self.assertIn('tops out at 2130 MHz, not the 2115 MHz', moved)
+        self.assertEqual(problem(2130, '{"name":"no pin"}'), 'NONE')
+        plan = json.loads(SESSIONE.read_text(encoding='utf-8'))
+        self.assertEqual(plan['card']['suiteTopClockMhz'], 2115)
+        bad = copy.deepcopy(plan)
+        bad['card']['suiteTopClockMhz'] = 5
+        self.assertNotEqual(self.validate(bad).returncode, 0)
+
     # ---- Session D2, RTX 3070 Ti, REGISTERED-PREDICTIONS 8d (2026-09-25) --------------------
 
     def test_sessiond2_is_current_and_runs_through_unattended(self):
@@ -210,7 +229,8 @@ class BenchAppTests(unittest.TestCase):
             plan = json.loads(path.read_text(encoding='utf-8'))
             if not plan.get('retired'):
                 active.setdefault(plan['card']['name'], []).append(path.name)
-        self.assertEqual(active['NVIDIA GeForce RTX 3070 Ti'], ['sessiond2-3070ti.json'])
+        # The 3070 Ti's sessions are all collected (D2 retired 2026-09-25), so it has none.
+        self.assertNotIn('NVIDIA GeForce RTX 3070 Ti', active)
         self.assertEqual(active['NVIDIA GeForce RTX 2060 SUPER'], ['sessione-2060s.json'])
         self.assertTrue(all(len(names) == 1 for names in active.values()), active)
 
@@ -682,7 +702,7 @@ class BenchAppTests(unittest.TestCase):
         for file in ['RUN-BENCH.bat', 'Run-Plan.ps1', 'Bench-Window.ps1', 'Bench-Display.ps1',
                      'Run-Child.ps1', 'Test-Plan.ps1', 'New-Plan.ps1',
                      'Hwinfo-Csv.ps1', 'Stock-Drift.ps1', 'Pmon-Gate.ps1', 'sessiond-3070ti.json', 'sessione-2060s.json', 'sessiond2-3070ti.json',
-                     'Invoke-HwinfoLogging.ps1', 'Write-Atomic.ps1', 'Profile-Hash.ps1']:
+                     'Invoke-HwinfoLogging.ps1', 'Write-Atomic.ps1', 'Profile-Hash.ps1', 'Card-Checks.ps1']:
             self.assertIn(file, proc.stdout)
 
     @unittest.skipUnless(os.name == 'nt', 'WinForms needs Windows desktop')

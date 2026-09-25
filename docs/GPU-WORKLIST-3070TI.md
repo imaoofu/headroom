@@ -11,8 +11,12 @@ Imported to `data/frequency-sweeps/rtx3070ti-sessiond-20260924/`. Scored as regi
 - **8b ⛔ FAIL** (Edit 1's floor reaches 1230 MHz);
 - 8c reported.
 
-~~Nothing more to run on this card.~~ 🆕 **One more session, added 2026-09-25 00:40: Session D2, the
-control repeated (REGISTERED-PREDICTIONS §8d).** It is on the USB.
+✅ **Session D2 ran 2026-09-25 08:22–11:43, untouched, PASS.** §8d: ⛔ NOT SCOREABLE, because the card's
+clock table moved the grid's top six targets. Descriptively the control held (1485 MHz).
+`data/frequency-sweeps/rtx3070ti-sessiond2-20260925/`. **Nothing more runs on this card: uninstall
+MSI Afterburner, delete its Profiles folder, and ship.**
+
+~~One more session, added 2026-09-25 00:40: Session D2, the control repeated (REGISTERED-PREDICTIONS §8d).~~
 
 1. ⛔ **Do NOT uninstall Afterburner yet.** D2 applies P1 and P3 through it and checks the store's
    hash.
