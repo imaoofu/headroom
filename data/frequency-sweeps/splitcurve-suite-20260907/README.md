@@ -83,7 +83,7 @@ The fair comparison, 13 shared targets per workload, against the r2–r6 stock m
 🔑 **There is no benefit/harm crossover on this configuration.** The question this run was designed
 to answer — where along the arithmetic-intensity axis the tune stops helping — has the answer
 "nowhere, on the split curve." That is the split curve's whole point: §5.7 documents the *original*
-tune costing up to 29.6% on bandwidth-bound `membw` at 1560–1867 MHz, and the split design was
+tune costing up to 22.9% on bandwidth-bound `membw` at 1560–1867 MHz (a 29.6% gap to memory-only; "29.6%" here until 2026-09-24), and the split design was
 derived to remove exactly that. Twelve workloads say it did.
 
 ⚠️ **Do not read this as the split curve dominating everywhere.** §5.7.5 records that the original

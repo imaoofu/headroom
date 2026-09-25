@@ -134,7 +134,7 @@ stops, and bandwidth-bound work plateaus with it.
 
 That unified two findings that had looked unrelated: the same flattened curve is **pure benefit** to
 compute-bound work (−18% to −26% power at matched clock on `gemm`, 1365 FLOP/byte) and **pure cost**
-to bandwidth-bound work (up to −29.6% throughput on `membw`, 0.167 FLOP/byte). One mechanism, seen
+to bandwidth-bound work (up to −22.9% throughput on `membw`, 0.167 FLOP/byte; memory-only leads by up to 29.6%). One mechanism, seen
 from two workloads.
 
 ---

@@ -2,11 +2,11 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **538 committed
 > sweeps across four consumer GPUs**, including core-voltage and crossbar telemetry.
-> **288 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **292 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
-> alone. No `[PENDING]` placeholders remain, but **15 numbered sections carry no claims at all** —
+> alone. No `[PENDING]` placeholders remain, but **14 numbered sections carry no claims at all** —
 > `--coverage` lists them, and a green audit says nothing about those. **That count is now pinned
 > too**, as of 2026-09-05.
 >
@@ -2679,7 +2679,20 @@ locked targets.
 | | memory overclock | core V/F curve |
 |---|---|---|
 | `gemm` (compute-bound) | nothing measurable, plus or minus 1% | the entire benefit: -17% to -28% power at matched clock, +12.1% sustainable ceiling |
-| `membw` (bandwidth-bound) | the entire benefit: +3.6% to +16.1% over stock | actively harmful: up to -29.6% throughput across 1560-1867 MHz |
+| `membw` (bandwidth-bound) | the entire benefit: +2.4% to +17.1% over stock at identical targets | actively harmful: memory-only delivers up to 29.6% more, so the curve costs up to 22.9% of throughput across 1560-1867 MHz |
+
+⛔ **The `membw` row read *"+3.6% to +16.1% over stock"* and *"up to -29.6% throughput"* until
+2026-09-24**, when this table was first pinned by the auditor.
+- **The first pair was not a matched comparison.** It paired stock at 1545/1702/1852/2010 MHz with
+  memory-only at 1560/1710/1867/2025, a day apart, although the paragraph above promises identical
+  locked targets. Against the one stock `membw` sweep on the same 10-point grid, the range is
+  +2.4% to +17.1%.
+- **The second was a ratio written as a signed loss.** Memory-only delivers 29.6% more than tuned
+  at 1867 MHz; as a change from memory-only to tuned that is -22.9%. 5.7.2's own table reports the
+  29.6% correctly, as memory-only over tuned. The number was never recomputed; only its base was
+  misread.
+- ⚠️ All three `membw` sweeps in these comparisons date from 2026-08-19/20, before the
+  capture-software guard (5.4.4).
 
 #### 5.7.1 The matched-frequency power reduction is entirely the core curve
 
@@ -2723,7 +2736,9 @@ holds 2948 MHz and reaches 17.61 TFLOP/s (+12.1%). The denominator is stock's ow
 comparison against stock's LAST grid point (15.68 at 2588 MHz) rather than its best, and
 did not say so.
 
-#### 5.7.2 The same curve costs a bandwidth-bound workload up to 29.6%
+#### 5.7.2 The same curve costs a bandwidth-bound workload up to 22.9% (memory-only leads by up to 29.6%)
+
+⛔ *This heading read "costs a bandwidth-bound workload up to 29.6%" until 2026-09-24. The table below reports 29.6% correctly, as memory-only over tuned; the loss as a share of memory-only's throughput is 22.9%.*
 
 Across 1560-1867 MHz the fully tuned configuration runs `membw` flat at ~295 GB/s while stock rises
 312 to 332 to 342. Five consecutive points sit inside a 1.3% band while core clock rises 20%.
@@ -3226,7 +3241,7 @@ configurations, and only two of them are on the frontier:
 
 | | `gemm` | `membw` |
 |---|---|---|
-| fully tuned | best matched-frequency efficiency | loses up to 29.6% in the plateau band |
+| fully tuned | best matched-frequency efficiency | loses up to 22.9% of throughput in the plateau band (memory-only ahead by up to 29.6%) |
 | repaired curve | gives the compute advantage up entirely | at the bandwidth ceiling |
 | **split curve** | keeps most of the compute advantage | at the bandwidth ceiling |
 
@@ -3286,7 +3301,7 @@ not contradict 5.7.2, it locates it. The plateau is a property of the **1402-186
 where the flattened curve pins voltage and the crossbar clock stays low; a card left to boost freely sits
 at 2968-2993 MHz, above the flattened region entirely, where both curves carry the same voltage.
 The harm is real and reproducible when frequency is locked into that band, and absent when it is
-not. Anyone reading 5.7.2's "-29.6%" as a cost they would pay in ordinary use would be wrong.
+not. Anyone reading 5.7.2's plateau loss (up to 22.9%, a 29.6% gap to memory-only) as a cost they would pay in ordinary use would be wrong.
 
 **Both of those figures were previously assembled from three different windows.** An earlier
 version gave the split curve's `gemm` mean over all sixteen iterations, its `membw` mean over the
@@ -3489,7 +3504,7 @@ drift can reach 1.25 points, not what it typically is.
 
     The same caveat limits the workloads themselves. `gemm` at ~1365 FLOP/byte and `membw` at 0.167
     bracket a range, but a training step is a sequence of phases with different intensities, and 5.7
-    shows the same voltage curve can help one phase and cost another up to 29.6%. A per-phase optimum
+    shows the same voltage curve can help one phase and cost another up to 22.9%. A per-phase optimum
     is not measured here.
 
 ---

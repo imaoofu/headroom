@@ -310,10 +310,91 @@ def stockRises():
 
 
 # --------------------------------------------------------------------------------------
+# 5.7 - the section introduction and its two-knob summary table (GPT Job 14, done by Claude
+# 2026-09-24). The section carried 17 numbers and no claim. Each cell is rendered from the same
+# comparison its subsection uses, so the summary cannot drift from the evidence under it.
+#
+# Two cells did not match when first rendered, and both were findings about the PAPER:
+# - membw, memory overclock: the paper said "+3.6% to +16.1% over stock", taken from the membw
+#   README's table, which pairs stock at 1545/1702/1852/2010 MHz with memory-only at
+#   1560/1710/1867/2025 - different targets, a day apart. STOCK_MEMBW_13PT's own comment above says
+#   it "cannot serve a matched comparison", and the paragraph promises "identical locked targets".
+# - membw, core curve: the paper said "up to -29.6% throughput". 29.6% is memory-only OVER tuned;
+#   as a signed change from memory-only to tuned it is -22.9%. Both are now stated.
+# Left unpinned: "14001 rating" (clocks.max.memory, which reads 14001 with or without an offset -
+# not a measurement in any CSV), "3000 MHz" and "~925 mV" (the decoded profile, not a sweep).
+# --------------------------------------------------------------------------------------
+
+MEMONLY_GEMM_SAMESESSION = "memonly-gemm-20260829/20260829-163134_5060ti-memonly-gemm-1237grid-samesession_sweep.csv"
+STOCK_GEMM_SAMESESSION = "stock-suite-20260829/20260829-145752_5060ti-stock-gemm-1237grid_sweep.csv"
+# Named apart from PLATEAU_BAND further down, a (1402, 1867) range read by other claims: a shared
+# name here silently replaced this list on first render, 2026-09-24.
+SUMMARY_PLATEAU_TARGETS = [1560, 1635, 1710, 1792, 1867]
+
+
+def _maxLoadedMemory(paths):
+    import csv as _csv
+    values = []
+    for relativePath in paths:
+        with open(_REPO_ROOT / "data" / "frequency-sweeps" / relativePath, encoding="utf-8-sig") as handle:
+            values += [float(row["memory_clock_max_mhz"]) for row in _csv.DictReader(handle)]
+    return max(values)
+
+
+@claim("5.7-memory-offset", PAPER, "5.7")
+def memoryOffsetFromTheSweeps():
+    """The offset and the tuned clock, both read off the clean 5.7.1 runs rather than restated
+    from the profile: tuned loads memory at 16301 MHz, stock at 13801."""
+    tuned = _maxLoadedMemory(TUNED_GEMM_CLEAN)
+    stock = _maxLoadedMemory(STOCK_GEMM_CLEAN)
+    return f"(+{tuned - stock:.0f} MHz offset, {tuned:.0f} against"
+
+
+@claim("5.7-power-reproduces", PAPER, "5.7")
+def powerReproducesWithin():
+    """The header's reference to 5.4.5, rendered by the same function as 5.4.5's own table row."""
+    return f"inside the {_spreadsFor('power'):.2f}% at which power reproduces (5.4.5)"
+
+
+@claim("5.7-table-gemm", PAPER, "5.7")
+def gemmRowOfTheSummaryTable():
+    """Memory overclock: the 2026-08-29 same-session pair, whose MEAN change is the claim (-0.05%).
+    Single points range -2.16% to +1.16%, so the bound is on the mean, not on every point.
+    Core curve: the clean 5.7.1 power pairs at the matched targets, and 5.7.1's peak ceiling."""
+    import math
+    stock, memonly = sweep(STOCK_GEMM_SAMESESSION), sweep(MEMONLY_GEMM_SAMESESSION)
+    shared = sorted(set(stock) & set(memonly))
+    meanChange = mean(memonly[t]["throughput"] / stock[t]["throughput"] - 1.0 for t in shared) * 100.0
+    bound = max(1, math.ceil(abs(meanChange)))
+    power = [(_meanPower(TUNED_GEMM_CLEAN, t) / _meanPower(STOCK_GEMM_CLEAN, t) - 1.0) * 100.0
+             for t in MATCHED_TARGETS]
+    tunedBest, stockBest = peak(sweep(TUNED_GEMM)), peak(sweep(STOCK_GEMM))
+    ceiling = deltaPct(tunedBest["throughput"], stockBest["throughput"])
+    return (f"| `gemm` (compute-bound) | nothing measurable, plus or minus {bound}% "
+            f"| the entire benefit: {max(power):.0f}% to {min(power):.0f}% power at matched clock, "
+            f"{ceiling} sustainable ceiling |")
+
+
+@claim("5.7-table-membw", PAPER, "5.7")
+def membwRowOfTheSummaryTable():
+    """Memory overclock: memory-only against the one stock membw sweep on the SAME 10-point grid
+    (STOCK_MEMBW_VOLT). Core curve: tuned against memory-only across the 5.7.2 plateau band,
+    stated both ways because "29.6%" had been written as a signed loss."""
+    memonly, stock, tuned = sweep(MEMONLY_MEMBW), sweep(STOCK_MEMBW_VOLT), sweep(TUNED_MEMBW)
+    shared = sorted(set(memonly) & set(stock))
+    gains = [memonly[t]["throughput"] / stock[t]["throughput"] for t in shared]
+    over = max(memonly[t]["throughput"] / tuned[t]["throughput"] for t in SUMMARY_PLATEAU_TARGETS)
+    return (f"| `membw` (bandwidth-bound) | the entire benefit: {signedPct(min(gains))} to "
+            f"{signedPct(max(gains))} over stock at identical targets | actively harmful: memory-only "
+            f"delivers up to {signedPct(over)[1:]} more, so the curve costs up to "
+            f"{signedPct(1.0 / over)[1:]} of throughput across {SUMMARY_PLATEAU_TARGETS[0]}-{SUMMARY_PLATEAU_TARGETS[-1]} MHz |")
+
+
+# --------------------------------------------------------------------------------------
 # 5.4 - consumer hardware measurements
 # --------------------------------------------------------------------------------------
 
-GEMM_FLOOR15 = "20260822-173451_5060ti-gemm-floor15-rerun_sweep.csv"
+GEMM_FLOOR15 ="20260822-173451_5060ti-gemm-floor15-rerun_sweep.csv"
 MEMBW_FLOOR15 = "20260822-174118_5060ti-membw-floor15-rerun_sweep.csv"
 
 

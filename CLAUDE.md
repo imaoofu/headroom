@@ -419,8 +419,15 @@ opposite things to the two workloads:
 
 | | memory overclock | core V/F curve |
 |---|---|---|
-| `gemm` (compute-bound) | nothing, ±1% | **the whole win**: −18% to −26% power at matched clock |
-| `membw` (bandwidth-bound) | **the whole win**: +3.6% to +16.1% over stock | **actively harmful**: up to −29.6% throughput at 1560–1867 MHz |
+| `gemm` (compute-bound) | nothing, ±1% (mean −0.05%, same session) | **the whole win**: −17% to −28% power at matched clock |
+| `membw` (bandwidth-bound) | **the whole win**: +2.4% to +17.1% over stock, identical targets | **actively harmful**: up to −22.9% throughput at 1560–1867 MHz (memory-only ahead by up to 29.6%) |
+
+⛔ **CORRECTED 2026-09-24, when the paper's copy of this table was first pinned (§5.7 claims).**
+- The `membw` memory cell said **+3.6% to +16.1%**. That paired stock and memory-only at targets
+  15 MHz apart, a day apart; the matched stock sweep gives **+2.4% to +17.1%**.
+- **−29.6%** was memory-only's lead over tuned written as a signed loss; the loss is **−22.9%**.
+- The `gemm` curve cell said **−18% to −26%**, from the contaminated 08-20 pair; the clean 5.7.1
+  pair gives **−17% to −28%**.
 
 **The mechanism, every link measured, with a stock control run:**
 
@@ -1139,10 +1146,10 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **288 of 288** |
-| ...and where both are absent, as CI's "checks" leg runs | **242 of 242** |
-| sections with no claim at all | **15 numbered sections are still unaudited** |
-| §5.7 and its subsections carry | **88 claims between them and §5.5 carries 63** |
+| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **292 of 292** |
+| ...and where both are absent, as CI's "checks" leg runs | **246 of 246** |
+| sections with no claim at all | **14 numbered sections are still unaudited** |
+| §5.7 and its subsections carry | **92 claims between them and §5.5 carries 63** |
 
 ⚠️ **THE TOTAL WENT STALE FOUR TIMES BEFORE IT WAS PINNED: 87 -> 119 -> 185 -> 204**, and on
 2026-08-30 this file carried two contradictory values for it at once. That history is the reason the
@@ -1535,8 +1542,8 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   under sustained unlocked load against +1.53% from locked sweep peaks - different protocols,
   agreeing to 0.12 points. Second, **the split curve's `membw` advantage vanishes at free boost**
   (-0.44%), because the plateau is a property of 1402-1867 MHz and a boosting card sits at
-  2968-2993 MHz, above it. Do not quote §5.7.2's -29.6% as a cost paid in normal use; it is a
-  locked-frequency result.
+  2968-2993 MHz, above it. Do not quote §5.7.2's plateau loss (−22.9%, a 29.6% gap to memory-only) as a cost paid in
+  normal use; it is a locked-frequency result.
 
   Say **"no failure observed in thirty minutes"**, never "stable". The repaired curve remains
   untested, the 2% degradation threshold was set before anyone knew what healthy drift looks like,

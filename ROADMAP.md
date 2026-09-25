@@ -69,7 +69,7 @@ Nothing here is research. It is the difference between "code exists" and "code i
   unlocked load against the **+1.53%** measured from locked sweep peaks, two protocols sharing no
   methodology agreeing to 0.12 points; and the split curve's `membw` advantage **does not appear
   at all** at free boost (-0.44%), because the plateau lives at 1402-1867 MHz and a boosting card
-  sits at 2968-2993 MHz, above it. 5.7.2's -29.6% is a locked-frequency cost, not one paid in
+  sits at 2968-2993 MHz, above it. 5.7.2's plateau loss (−22.9%, a 29.6% gap) is a locked-frequency cost, not one paid in
   ordinary use.
 
   Both of those figures were +1.45% and -0.35% until 2026-08-24, when re-deriving them found the
@@ -255,8 +255,9 @@ The part nobody else can replicate, and the reason the project is worth doing at
   six sweeps. "Tuned" was always two settings — a memory overclock and a core V/F curve — and they
   do **opposite** things to the two workloads. `gemm` gets nothing from the memory overclock
   (±1%) and everything from the curve (−18 to −26% power at matched clock). `membw` gets
-  everything from the memory overclock (+3.6 to +16.1%) and is **harmed** by the curve, up to
-  −29.6% across 1560–1867 MHz.
+  everything from the memory overclock (+2.4 to +17.1% at identical targets) and is **harmed** by the
+  curve, up to −22.9% across 1560–1867 MHz. ⛔ This said "+3.6 to +16.1%" (targets 15 MHz apart) and
+  "−29.6%" (memory-only's lead written as a loss) until 2026-09-24; see §5.7's claims.
   **The mechanism is measured, not inferred.** NVML exposes no voltage (verified by scanning field
   IDs 1–259; 44 readable fields, none a voltage) but HWiNFO does, along with the crossbar clock.
   The flattened curve pins core voltage at 0.720 V across a 49% rise in core clock; the crossbar

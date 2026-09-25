@@ -18,6 +18,13 @@ workloads.
 | `gemm` (compute-bound) | nothing, ±1% | **the whole win**: −18% to −26% power at matched clock, +12% clock ceiling |
 | `membw` (bandwidth-bound) | **the whole win**: +3.6% to +16.1% over stock | **actively harmful**: up to −29.6% throughput in the 1560–1867 MHz band |
 
+> ⛔ **Corrected 2026-09-24** (the paper's copy of this table was pinned that day). **"Up to −29.6%"
+> is memory-only's lead over tuned (385.7 against 297.5 GB/s at 1867 MHz), not a loss:** the flattened
+> curve costs up to **22.9%** of memory-only's throughput. And **+3.6% to +16.1%** pairs stock at
+> 1545/1702/1852/2010 MHz with memory-only at 1560/1710/1867/2025, a day apart (the table below shows
+> the pairing). Against the stock sweep on the same 10-point grid, `…stock-volt-membw`, it is **+2.4% to
+> +17.1%**.
+
 Neither knob is good for both. That is the result.
 
 ---
@@ -103,7 +110,7 @@ undervolt looks like.
 | 2025 | 399.9 | 326.7 | +22.4% | +1.7% |
 
 The flattened curve is not a wash that happens to look odd on a graph. Across the plateau band
-it costs up to **29.6% of throughput and 12.1% of efficiency** on this workload. It costs more
+memory-only leads it by up to **29.6% in throughput and 12.1% in efficiency** on this workload (the curve costs up to 22.9% of memory-only's throughput; this said "costs up to 29.6% of throughput" until 2026-09-24). It costs more
 throughput than it saves power.
 
 Against stock, memory-overclock-only wins on both axes:
@@ -484,7 +491,7 @@ clock it can actually sustain.
 The project's central claim is that the efficiency-optimal *frequency* is workload-dependent.
 This is the same claim one level up: the efficiency-optimal *hardware configuration* is
 workload-dependent too, and by a large margin. A single "tuned" profile chosen on `gemm` costs
-a bandwidth-bound workload up to 29.6% of its throughput; a profile chosen on `membw` gives up
+a bandwidth-bound workload up to 22.9% of its throughput (a 29.6% gap to memory-only; "29.6% of its throughput" until 2026-09-24); a profile chosen on `membw` gives up
 a 18–26% power reduction on compute-bound work.
 
 ## Caveats

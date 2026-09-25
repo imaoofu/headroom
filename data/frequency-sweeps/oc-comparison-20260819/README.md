@@ -116,9 +116,12 @@ under load.
 | ~1867 | 385.7 | 297.5 | **+29.6%** | **+12.1%** |
 | ~2025 | 399.9 | 326.7 | +22.4% | +1.7% |
 
-**The flattened curve costs up to 29.6% of throughput and 12.1% of efficiency on this workload
-across this band. It costs more throughput than it saves power.** Memory-overclock-only also
-beats stock on both axes (+3.6% to +16.1% throughput, +2.1% to +8.4% efficiency).
+**Memory-only leads the flattened curve by up to 29.6% in throughput and 12.1% in efficiency on
+this workload across this band** (the curve costs up to 22.9% of memory-only's throughput; this said
+"costs up to 29.6% of throughput" until 2026-09-24). **It costs more throughput than it saves power.**
+Memory-overclock-only also beats stock on both axes (+3.6% to +16.1% throughput, +2.1% to +8.4%
+efficiency, at stock targets 15 MHz below the memory-only ones; +2.4% to +17.1% against a stock sweep
+on identical targets, `membw-anomaly-20260819/…stock-volt-membw`).
 
 This does not overturn the headline `membw` +17.6% figure above, which was measured at each
 configuration's own sustained maximum near 2900-3000 MHz — outside this band. Both hold: the

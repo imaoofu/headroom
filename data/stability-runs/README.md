@@ -167,7 +167,7 @@ protocol: **+1.41% here against +1.53% from locked sweep peaks**, agreeing to 0.
 
 ⚠️ **And the split curve's `membw` advantage vanishes at free boost** (−0.44%), because the plateau
 is a property of 1402–1867 MHz and a boosting card sits at 2968–2993 MHz, above it. Do not quote
-§5.7.2's −29.6% as a cost paid in normal use.
+§5.7.2's plateau loss (−22.9%, a 29.6% gap to memory-only; "−29.6%" here until 2026-09-24) as a cost paid in normal use.
 
 ### `20260830-114549_stock-baseline-20260830` — stock under protocol v1.1.0
 

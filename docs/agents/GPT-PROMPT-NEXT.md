@@ -211,6 +211,15 @@ no Mendes paper at all**, although SBAC-PAD 2020 now bounds the causal claim.
 
 ## Job 14, larger: pin the numbers in one unaudited paper section
 
+✅ **DONE BY CLAUDE, 2026-09-24**, while GPT was at its usage limit. **Do not send.** §5.7's introduction
+was chosen: it is on this list, had 17 numbers and no claim. Four claims now pin its header and its
+two-knob table. **Two cells were findings, and the paper was corrected, not the formula:**
+- `membw` memory "+3.6% to +16.1%" paired targets 15 MHz apart; at identical targets it is
+  +2.4% to +17.1%;
+- "−29.6%" was memory-only's lead written as a loss; the loss is 22.9%.
+Counts: claims 288 → 292 (242 → 246 without fetched data); unaudited sections 15 → 14; §5.7 family
+88 → 92. This list's jobs 12–14 are all done.
+
 > CLAUDE.md lists unaudited sections that carry real numbers: 3.3.2, 3.3.3, 5.4.2, 5.5.5, 5.6.3, 5.7
 > and 5.7.7. **Pick ONE, say why, and write claims for its numbers** in the right `claims_*.py`
 > module. Follow "The claims auditor" section of CLAUDE.md exactly: each claim renders its string
