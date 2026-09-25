@@ -1,0 +1,1 @@
+2026-09-24T16:20:21  Access is denied  at <ScriptBlock>, F:\headroom-kit\tools\bench-app\Bench-Window.ps1: line 313 <- at <ScriptBlock>, F:\headroom-kit\tools\bench-app\Bench-Window.ps1: line 410

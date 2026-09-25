@@ -3,6 +3,18 @@
 **Written 2026-09-22.** A shop machine, so **it ships, date unknown**, and its items outrank the
 5060 Ti's on any day it is reachable. Shared protocol: [`GPU-BENCH-RULES.md`](GPU-BENCH-RULES.md).
 
+✅ **EVERY ITEM IS COLLECTED, 2026-09-24. Session D ended PASS at 23:53** (C0–C13; C8 on 09-23).
+Imported to `data/frequency-sweeps/rtx3070ti-sessiond-20260924/`. Scored as registered:
+- **4a ✅ PASS** (1222.5 MHz);
+- **4b ⛔ FAIL**, so the joint verdict is *the control also moves, and the attribution fails*;
+- **8a ✅ PASS** (1170 MHz);
+- **8b ⛔ FAIL** (Edit 1's floor reaches 1230 MHz);
+- 8c reported.
+
+**Nothing more to run on this card.** Before it ships Saturday: **uninstall MSI Afterburner and
+delete its Profiles folder.** The session's own cleanup already verified stock power, core and
+memory.
+
 | document | what it is |
 |---|---|
 | **⌨️ Commands, below in this file** | 🆕 **the commands, in order, as of 2026-09-23**: read these at the machine |

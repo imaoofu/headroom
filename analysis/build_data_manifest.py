@@ -52,12 +52,12 @@ MANIFEST_CSV = REPO_ROOT / "data" / "MANIFEST.csv"
 # mismatch is the point.
 PAPER_CLAIMS = {
     "NVIDIA GeForce RTX 5060 Ti": 478,
-    "NVIDIA GeForce RTX 3070 Ti": 25,
+    "NVIDIA GeForce RTX 3070 Ti": 101,
     "NVIDIA GeForce RTX 2060 SUPER": 18,
     "NVIDIA GeForce RTX 3060": 14,
 }
 PAPER_VERIFICATION_RUNS = 3
-PAPER_TOTAL = 538
+PAPER_TOTAL = 614
 
 # ---------------------------------------------------------------------------------------------
 # CLASSIFICATION. Every exclusion names itself. A sweep is never dropped silently, and the reason

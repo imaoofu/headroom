@@ -516,7 +516,7 @@ Both cards' stock floors are already measured, which is what makes these predict
 **Every prior confirmation of the rule on these two cards is OBSERVATIONAL.** Only the 5060 Ti has
 a causal arm. That is the n=1 that the council said a reviewer would name in thirty seconds.
 
-## 4a. 3070 Ti — the replication. **The single highest-value prediction in this document.**
+## 4a. 3070 Ti — the replication. **The single highest-value prediction in this document.** — COLLECTED 2026-09-24: ✅ PASS (4b ⛔ FAIL; see the result under 4b)
 
 > **Extend the stock floor upward by reshaping only the curve at and below 0.819 V, and the median
 > suite optimum will move with the new floor end, in the same direction and by a comparable
@@ -526,7 +526,7 @@ Success is the optimum tracking the new floor end to within one grid step. ⛔ *
 wrong direction, or no movement, refutes the causal claim on a second chip and must be reported as
 the headline** — the 5060 Ti result would then be a single-chip curiosity rather than a mechanism.
 
-## 4b. 3070 Ti — the negative control, run in the same session or not at all
+## 4b. 3070 Ti — the negative control, run in the same session or not at all — COLLECTED 2026-09-24: ⛔ FAIL, the control also moved
 
 > **Change the curve only ABOVE the floor voltage, by at least 300 MHz, and the optimum will not
 > move.**
@@ -608,7 +608,46 @@ Session D's first launch stopped at its store-hash gate. Afterburner had added `
 key, to the store decoded in Amendment 2**, so the curves above are the curves that will run. The
 gate now expects the new whole-file hash `cce75e81fe322380`.
 `data/afterburner-profiles/3070ti-profiles-20260924-afterburner-rewrite/README.md`. **Nothing in the
-design or the predictions changes.**
+design or the predictions changes.** ⛔ *Superseded the same day, still before data: the gate hashes
+only the `[Profile1]`–`[Profile3]` sections, `A1159941DA541EB9`, which is what Session D ran against.*
+
+### Result, collected 2026-09-24 — 4a ✅ PASS, 4b ⛔ FAIL: the control also moved, so the attribution fails on this chip
+
+**Scored by `python analysis/score_session_d.py data/frequency-sweeps/rtx3070ti-sessiond-20260924`**,
+the scorer committed before collection. Its output, unedited:
+
+| | value |
+|---|---|
+| eligibility | **VALID**: stock baseline 1485 MHz as registered; stock-1 → stock-4 worst workload change **0.619%** (limit 1.5%); floor verified on all four suites |
+| stock-1 median optimum | **1485 MHz** |
+| **4a**, Edit 1 (`edit1-2`) | **1222.5 MHz**, inside the registered 1170–1275 → ✅ **PASS** |
+| **4b**, Edit 2 (`edit2-3`) | **1432.5 MHz**, outside the registered 1485–1500 → ⛔ **FAIL** |
+| stock-4 median optimum | **1485 MHz** |
+| joint verdict | ⛔ **CONTROL_ALSO_MOVES_ATTRIBUTION_FAILS** |
+
+🛑 **Report it as registered: the manipulation moved the optimum as predicted, but the negative
+control moved it too, so this chip does not attribute the move to the floor region.** 4b said the
+control "is what makes the manipulation worth more than half the experiment", and it did not hold.
+
+**Descriptive context.** None of it changes the verdict, and it is recorded so the verdict is read
+correctly.
+- **The control's 1432.5 is a six-six split.** The twelve optima fall 1065, 1170, 1275, 1275,
+  1380, 1380 | 1485, 1485, 1485, 1500, 1500, 1500, so the median sits between two grid points. All
+  three stock suites have seven or more workloads at 1485 or above.
+- **Per-workload optima are noisy between identical stock suites.** stock-1 and stock-4 disagree on
+  **4 of 12** argmaxes (`copy`, `layernorm`, `bgemm128`, `gemm`), and stock-4 and stock-6 on **3 of
+  12**. Against stock-1, the control moved 3 workloads down (`bgemm128`, `conv`, `gemm`) and 2 up
+  (`copy`, `reduce`). That is the same order as stock-against-stock, but the registered test is
+  the median, and stock's median did not move in any of three stock suites.
+- **Edit 2 is not purely above the floor**, per Amendment 2's as-built description: *"stock
+  through 818.75 mV, flat 1500 MHz from 825 mV up (825 mV is 15 under stock)"*. The 825 mV point
+  is inside the registered floor band (≤0.825 V) and was lowered by 15 MHz. That was known before
+  collection and does not excuse the result.
+- This is the second partly moving control. The 5060 Ti's moved 4 of 12 workloads but not the
+  median (CLAUDE.md, the negative-control entry). **Here the median moved as well.**
+
+⚠️ **n = 1 chip, one session.** Driver 617.14, SILENT BIOS 290/290/320 W. The replicate of the
+manipulation is §8a below; the control is not replicated.
 
 ## 4c. 2060 Super — the boundary condition, made decidable or shown not to be
 
@@ -951,7 +990,7 @@ The `gemm` voltage column moves one grid step per −150: the last 0.720 V point
 MHz achieved, and the two stock suites read identically. ⚠️ **One chip, one session, one suite per
 offset.** −300's pass is edge-limited; only −150 locates the move. **Report both verdicts, always.**
 
-## 8. 3070 Ti: a second Edit 1 suite, plus two fine-sweep checks. Registered 2026-09-23, before collection
+## 8. 3070 Ti: a second Edit 1 suite, plus two fine-sweep checks. Registered 2026-09-23, before collection — COLLECTED 2026-09-24: 8a ✅ PASS, 8b ⛔ FAIL, 8c reported
 
 **No data for any part of this section exists as of registration.** The 3070 Ti's shakedown
 (2026-09-23 21:56) and C8 are the only data collected on this card since Amendment 2. Session D's
@@ -1012,6 +1051,44 @@ C8 on 2026-09-23 (descending) read **1.1–1.3% below** the 2026-08-27 sweep (as
 point. Direction and day are confounded in that pair. This pair puts both directions in one
 session, and it is reported as the per-point difference, **with no verdict.** ⚠️ It runs after
 ~5 h of load, so it is warm from the start in both directions, unlike either earlier sweep.
+
+### Results, collected 2026-09-24 — 8a ✅ PASS, 8b ⛔ FAIL, 8c reported
+
+Data: `data/frequency-sweeps/rtx3070ti-sessiond-20260924/`. The 8a scorer was committed while
+stock-4 was still collecting (`97a463a`), before any 8a data existed.
+
+**8a ✅ PASS.** `python analysis/score_session_d.py <dir> --replicate`:
+- `edit1-5` median optimum **1170 MHz**, inside 1170–1275;
+- stock-4 and stock-6 medians are both **1485 MHz**;
+- the worst workload's stock-4 → stock-6 change is **1.192%** (limit 1.5%);
+- the Edit 1 floor check passes on `edit1-5`.
+
+Reported beside `edit1-2`'s 4a result (**1222.5 MHz**, PASS): the two agree, and neither supersedes
+the other. **n = 2 on one chip, one session. The control (4b), which failed, is not replicated.**
+
+**8b ⛔ FAIL: floor-band voltage above 1215 MHz.** Descending locked `gemm` on P2, 1050–1590 MHz:
+
+| target MHz | 1050–1185 (4 points) | **1230** | 1275 | 1320 | 1365 | 1410 | 1455 | 1500 | 1545–1590 |
+|---|---|---|---|---|---|---|---|---|---|
+| V | 0.819 | **0.819** | 0.838 | 0.844 | 0.850 | 0.850 | 0.856 | 0.863 | 0.869 |
+
+- The first two conditions hold: ≤0.825 V at every target ≤1200 MHz, and the locked-1395 MHz witness
+  read **0.850 V**, inside 0.835–0.870.
+- **The second fails at 1230 MHz, which reads 0.819 V.** Edit 1's floor ends between **1230 and
+  1275 MHz**, not at the as-built reading's 1200. As registered, this **refutes the as-built reading
+  of Edit 1** and calls `edit1-2`'s floor check into question. That check passed on the suite grid,
+  which has no point between 1170 and 1275, so it could not see 1230. It is the decoder hazard
+  CLAUDE.md records: never trust `base + offset` where the offset changes.
+- ⚠️ **It does not change how 4a or 8a were scored.** Their registered bins are 1170/1275, and 1170
+  is still the highest suite grid point on the floor. But the floor end the predictions assumed was
+  wrong by 30 to 75 MHz.
+
+**8c, exploratory, no verdict.** Stock, `gemm`, 1200–1590 MHz, 10 points, in one session:
+- **descending minus ascending averages +0.00%**, ranging −0.06% to +0.10%, at 57–60 °C in both;
+- **C8 (descending, 2026-09-23) sits 0.64% below both**, −0.57% to −0.72% at every point.
+
+So C8's 1.1–1.3% gap to the 2026-08-27 ascending sweep was **between days, not between
+directions**. That matches the ~1.47% cross-session drift CLAUDE.md records on the 5060 Ti.
 
 ## 9. RTX 5060 Ti: is the `reduce` residual a workload property or a run-order artifact? (worklist 4m) Registered 2026-09-24, before collection — ✅ COLLECTED THE SAME DAY: WORKLOAD PROPERTY
 
