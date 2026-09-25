@@ -246,8 +246,20 @@ Say "  [ok] GPU ran the benchmark kernels: $gpuName" "Green"
 if ($vramFree) { Say "  [ok] VRAM free: $vramFree GB" "Green" }
 
 # A busy GPU makes every number wrong. The sweep refuses above 10% anyway; say so early.
-$util = (& $smi.Source --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 0 2>$null | Select-Object -First 1)
-if ($util -and [int]$util -gt 10) {
+# Settle, then take the MEDIAN of five reads. One read taken straight after preflight.py's own
+# kernels caught their tail: on 2026-09-24 the 3070 Ti's Session D stopped at its Edit 1 suite on
+# "GPU is already 12% busy" with nothing else running, an hour after the same check passed for the
+# stock suite. A real competing load is sustained, so the median still catches it.
+Start-Sleep -Seconds 3
+$reads = @()
+for ($i = 0; $i -lt 5; $i++) {
+    $one = (& $smi.Source --query-gpu=utilization.gpu --format=csv,noheader,nounits -i 0 2>$null | Select-Object -First 1)
+    $n = 0; if ([int]::TryParse(([string]$one).Trim(), [ref]$n)) { $reads += $n }
+    Start-Sleep -Milliseconds 500
+}
+$util = $null
+if ($reads.Count -gt 0) { $util = @($reads | Sort-Object)[[math]::Floor($reads.Count / 2)] }
+if ($null -ne $util -and $util -gt 10) {
     Fail "GPU is already $util% busy. Close games, browsers with video, mining, or any AI app, then re-run.`n`nA loaded GPU makes every measurement wrong."
 }
 Say "  [ok] GPU is idle ($util% used)" "Green"

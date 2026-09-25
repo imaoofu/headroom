@@ -310,7 +310,10 @@ $timer.Add_Tick({ try {
             $output.Text=$joined; $output.SelectionStart=$output.TextLength; $output.ScrollToCaret(); $script:lastOutput=$joined
         }
     }
-    if ($script:session -and (Test-Path $script:session)) {
+    # The engine saves the record by writing a .tmp and moving it over the old file; a check that
+    # lands mid-move gets "Access is denied" (window-errors.txt, 3070 Ti, 2026-09-24 16:20). The
+    # next tick reads it fine, so a failed check just skips this tick.
+    if ($script:session -and (Test-Path $script:session -ErrorAction SilentlyContinue)) {
         try {
             $record=Get-Content $script:session -Raw | ConvertFrom-Json
             $all=if ($record.progress) { [int]$record.progress.total } else { 1 }
