@@ -1262,6 +1262,25 @@ The run would have stopped at its first check.
 These are thresholds between two measured clusters 14 W apart, set from these four probes and
 recorded here with them. **Nothing else in §10 changes.** No suite had run.
 
+### ⛔ Result, collected 2026-09-25 — NOT SCOREABLE: the P5 bracket did not return
+
+`python analysis/score_control10.py data/frequency-sweeps/5060ti-control10-20260925`, with the
+scorer committed before its data was read (`b2d83b9`):
+- all three medians are **1545 MHz**;
+- **the P5 return fails in 11 of 12 workloads, the worst by 7.57%** (limit 1.5%);
+- P2's optimum differs from both P5 optima in **4 of 12** workloads.
+
+**No verdict on the control, as registered.**
+
+The closing P5 suite ran uniformly slower, from −8.5% at 1237 MHz to −4.5% at 3090, with raised
+idle baselines. P2 matches the opening P5 suite within ±0.1% below 2010 MHz. That is the
+contamination signature. **Its cause is not established:** Codex tool processes started at 13:43
+and 13:47, and the closing suite began at 13:47:32, but nothing shows Codex used the GPU.
+Descriptively, against the uncontaminated opening suite, P2 holds the median with 4 of 12 moving,
+the same shape as 2026-09-09. Details are in the data README. ⚠️ **A re-collection would need the
+Codex and ChatGPT apps closed**, and it would be registered as an amendment before collection, as §5
+was.
+
 ## Safety envelope — these cards are going to be sold
 
 **The hardware risk of a floor manipulation is low and should be stated plainly rather than
