@@ -1090,6 +1090,49 @@ the other. **n = 2 on one chip, one session. The control (4b), which failed, is 
 So C8's 1.1–1.3% gap to the 2026-08-27 ascending sweep was **between days, not between
 directions**. That matches the ~1.47% cross-session drift CLAUDE.md records on the 5060 Ti.
 
+## 8d. 3070 Ti: the negative control, repeated. Registered 2026-09-25 00:40, before collection — AFTER 4b failed
+
+**Written after 4b's result was known, and it says so.** That is why it cannot change 4b. **4b
+stays FAIL whatever this shows.** It asks one thing: does the control's move repeat?
+
+**Why it is worth the card's last day.** 4b failed at **1432.5 MHz**, a six-six split between the
+1380 and 1485 bins. Identical stock suites disagree on 3–4 of 12 per-workload argmaxes, and the
+control was never replicated (§8a notes this). One repeat separates "the control moves the optimum
+on this chip" from "a near-miss on a noisy median". It does not test whether Edit 2's lowered
+825 mV point is responsible; that needs a different curve, and there is no time to build one.
+
+**Design.** A new session, **Session D2**, on the same card:
+- SILENT BIOS, and the same Afterburner store, pinned by the `[Profile1]`–`[Profile3]` section hash
+  `A1159941DA541EB9`;
+- the same grid, iterations and workloads as Session D;
+- **three suites, in order:** `stock-7` (P1) → `edit2-8` (P3, Edit 2 unchanged) → `stock-9` (P1);
+- labels `rtx3070ti-sessiond-stock-7`, `-edit2-8`, `-stock-9`.
+
+It is scored by `python analysis/score_session_d.py <dir> --control-replicate`, committed before
+collection. The rules are 4b's: the six clipped targets form one median-efficiency bin, and the
+optimum is scored on the target grid.
+
+> **The median suite optimum of `edit2-8` lies in 1485–1500 MHz inclusive**, 4b's prediction,
+> unchanged.
+
+**Scoreable only if:**
+- `stock-7`'s median is **1485 MHz**, the registered baseline, and `stock-9`'s median equals it;
+- no workload's median absolute matched-target throughput change from `stock-7` to `stock-9`
+  exceeds **1.5%**;
+- the control floor check passes on `edit2-8` exactly as it does for `edit2-3`.
+
+Otherwise the result is **NOT SCOREABLE**, not a failure.
+
+**How to report it:**
+- **PASS:** "4b failed and its repeat passed. The control's move did not repeat. With one of each,
+  there is no verdict on the control; the attribution stays unestablished on this chip." ⛔ **Never
+  write this as the control holding.**
+- **FAIL:** "the control moved twice. On this chip, changing the curve above the floor moves the
+  optimum, and the floor-region attribution fails."
+- Report it beside 4b, with no averaging. n = 2 control suites on one chip, on two days.
+- `stock-7` against Session D's stock suites is descriptive only: a different day, with the
+  ~1.5% cross-session drift this project measures.
+
 ## 9. RTX 5060 Ti: is the `reduce` residual a workload property or a run-order artifact? (worklist 4m) Registered 2026-09-24, before collection — ✅ COLLECTED THE SAME DAY: WORKLOAD PROPERTY
 
 **No data for this section exists as of registration.**
