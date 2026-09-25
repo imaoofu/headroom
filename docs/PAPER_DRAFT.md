@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **538 committed
 > sweeps across four consumer GPUs**, including core-voltage and crossbar telemetry.
-> **286 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **288 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
@@ -68,13 +68,14 @@ consequence for prediction, measured: borrowing the 5060 Ti's 0.720 V for the RT
 ~1530 MHz against a true optimum of 1260 MHz, a **270 MHz** error.
 
 On consumer hardware, a bandwidth-bound workload plateaus under a flattened voltage-frequency
-curve. The mechanism is measured rather than inferred — core voltage pinned across a rising core
-clock, the crossbar clock pinned with it, and the SM-to-memory path ceasing to scale — and a
-repair derived from that diagnosis behaved as predicted. ⚠️ That the crossbar is a distinct,
-voltage-coupled clock domain invisible to `nvidia-smi` was documented independently on Blackwell in
-August 2026 by community reverse-engineering, slightly ahead of this work; the domain is therefore
-not our finding. The causal chain from a flattened curve to a bandwidth plateau, with a stock
-control and a predicted repair, is. Comparing two vendor BIOS positions on
+curve. Each link is measured: core voltage pinned across a rising core clock, the crossbar clock
+pinned with it, and bandwidth ceasing to scale. A repair derived from that diagnosis behaved as
+predicted. ⚠️ **The links are measured as an association, not isolated as causes.** The crossbar
+was never set independently, and the stock control is not memory-clock matched (§5.7.3). That the
+crossbar is a distinct, voltage-coupled clock domain invisible to `nvidia-smi` was documented
+independently on Blackwell in August 2026 by community reverse-engineering, slightly ahead of this
+work; the domain is therefore not our finding. The measured association from a flattened curve to
+a bandwidth plateau, with a stock control and a repair predicted in advance, is. Comparing two vendor BIOS positions on
 one 3070 Ti, the "OC" position draws roughly a quarter more power at matched frequency for 0.56%
 more peak compute; a prediction registered in advance that this difference was voltage was
 **refuted**, both positions holding the same voltage floor while the difference proved to be a
@@ -379,10 +380,13 @@ unintended side effect of a V/F curve, and never touches voltage-pinning or a GP
 idea that interconnect frequency can bottleneck a faster core is prior art and is cited here so a
 reviewer does not have to raise it.
 
-**What §5.7.3 contributes is therefore the measured consequence chain, not the domain's existence
-or its controllability**: pinning core voltage collapses the core-to-crossbar ratio and produces a
-bandwidth plateau on a real workload, with the DRAM clock shown constant throughout, and a
-workload-dependent sign where the same setting helps one kernel and harms another.
+**What §5.7.3 contributes is therefore a measured association, not the domain's existence or its
+controllability**: a flattened curve goes with a collapsed core-to-crossbar ratio and a bandwidth
+plateau on a real workload, with the memory overclock applied on the plateaued card; a repair
+predicted in advance removes both; and the same setting helps one kernel and harms another. ⛔
+**This paragraph said *"pinning core voltage collapses the core-to-crossbar ratio and produces a
+bandwidth plateau… with the DRAM clock shown constant throughout"* until 2026-09-24.** The crossbar
+was never isolated as the cause, and the stock control ran at stock memory clock (§5.7.3).
 
 🛑 **What this section does NOT establish, stated because the distinction is easy to lose.** The
 searches above did not find XBAR disclosed in NVIDIA's own documentation — but NVIDIA's Blackwell
@@ -834,7 +838,7 @@ than "the memory-bound workload":
 | regime | binding constraint |
 |---|---|
 | low core clock | SM instruction issue rate, and a ceiling near 281 GB/s that neither concurrency nor per-thread unrolling lifts (3.3.1) |
-| mid core clock, flattened V/F curve | **the crossbar clock**, pinned because core voltage is pinned (5.7.3) |
+| mid core clock, flattened V/F curve | **the crossbar clock, or a domain that moves with it**, held low while the curve holds voltage flat (5.7.3: associated, not isolated) |
 | high core clock | DRAM bandwidth, at roughly 78% of the rated peak |
 
 Only the last of these is what "bandwidth-bound" is normally taken to mean. A workload's identity as
@@ -849,7 +853,9 @@ rest of it. The measurements are consistent with the crossbar clock being derive
 rather than from the locked graphics clock: locking the graphics clock 32.8% higher while voltage is
 held constant moves the crossbar 2.3%, whereas at stock the crossbar holds a near-constant 0.96
 ratio to the graphics clock across the same range. The rail topology itself was not probed; what was
-measured is the behaviour.
+measured is the behaviour. ⚠️ **"Core voltage" here means the curve's voltage, not the reported
+value.** At 1477 and 1560 MHz the two configurations both report 0.720 V, yet their crossbar clocks
+differ by 82 and 128 MHz (5.7.3).
 
 #### 3.3.3 The governing clock is invisible to standard telemetry
 
@@ -2714,9 +2720,25 @@ region, where the applied and stock curves diverge most, and that the memory con
 interconnect - which share the core voltage domain, unlike the DRAM devices themselves - become the
 limiter. `gemm` is unaffected because at ~1365 FLOP per byte it is nowhere near saturating that path.
 
-**This mechanism is established by direct measurement.** NVML exposes neither core
-voltage nor interconnect clock, but HWiNFO exposes both, and two further sweeps were run with it
+**This mechanism is measured as an association, not isolated as a cause.** NVML exposes neither
+core voltage nor interconnect clock, but HWiNFO exposes both, and two further sweeps were run with it
 logging alongside: one fully tuned, one at full stock.
+
+⛔ **THIS PARAGRAPH OPENED *"This mechanism is established by direct measurement"* UNTIL
+2026-09-24, AND THAT IS RETRACTED.** An outside adversarial audit found it on 2026-09-18, and every
+figure was recomputed here from the committed extracts. The correction reached the project's notes
+that day and this paper only now. What the sweeps show:
+- the flattened curve goes with a low, flat crossbar clock and a ~300 GB/s plateau;
+- restoring the curve's low-voltage slope removed both, as predicted in advance (5.7.4).
+
+**That is an association plus a successful predicted intervention, not a demonstrated mediator:**
+- **The crossbar was never set independently.** A limiter upstream of DRAM that firmware sets from
+  the same V/F policy (L2, a memory-controller clock, or another low-voltage domain) would produce
+  the same table, with the crossbar as a correlated indicator.
+- **The two telemetry sweeps are not memory-clock matched**, as set out below.
+
+Settling mediation needs the crossbar set directly, at a fixed core curve and a fixed memory clock.
+This card offers no runtime control of it.
 
 | core MHz | stock volts | stock crossbar | crossbar/core | tuned volts | tuned crossbar | crossbar/core |
 |---|---|---|---|---|---|---|
@@ -2730,18 +2752,35 @@ Across the swept range stock core voltage rises 0.120 V while the tuned card's r
 flattened curve holds one voltage, as configured. The consequence is the crossbar clock - the
 SM-to-memory-controller interconnect. At stock its ratio to core clock holds between 0.928 and
 0.976. Under the flattened curve that ratio collapses from 0.942 to 0.725: the interconnect
-decouples from the core and stops scaling.
+decouples from the core and stops scaling. ⚠️ The ratio is arithmetic on the two clocks already
+tabulated, not a second measurement. It is a compact way to show the decoupling, and it cannot tell
+a crossbar bottleneck from a shared policy that holds the crossbar and some unobserved domain low
+together.
 
-**The novelty claimed here is the chain, not the domain.** That XBAR is an independently clocked
-domain coupled to core voltage is established in the reverse-engineering literature [11] and is not
-claimed as a finding of this work; §2.5.1 sets out what is already known and what was searched for.
-What follows is the measured consequence of pinning that domain's voltage.
+**The contribution claimed here is the measured association, not the domain.** That XBAR is an
+independently clocked domain coupled to core voltage is established in the reverse-engineering
+literature [11] and is not claimed as a finding of this work; §2.5.1 sets out what is already known
+and what was searched for. What follows is what was measured alongside a pinned curve voltage.
 
 ⛔ **THE MEMORY IS NOT SLOWER, AND THAT IS THE POINT.** The obvious reading of a falling ratio is
-that the memory overclock stopped working. It did not: **the DRAM runs at 16301 MHz throughout both
-configurations**, the +2500 offset applied and holding at every point in the table. What stops
-scaling is the on-chip path between the SMs and the memory controllers, not the memory devices. The
-memory can deliver the bandwidth; the GPU cannot issue requests fast enough to use it.
+that the memory overclock stopped working. On the tuned card it did not: its DRAM logs
+15858–16301 MHz across the sweep, with the +2500 offset applied, while throughput sits on the
+plateau. What stops scaling is upstream of the memory devices, on the chip. The memory can deliver
+the bandwidth (the memory-only configuration of 5.7.2 does, at the same core clocks); the tuned card
+does not use it.
+
+⛔ **THIS PARAGRAPH SAID *"the DRAM runs at 16301 MHz throughout both configurations"* UNTIL
+2026-09-24. FOR THE STOCK RUN THAT IS FALSE.** The stock sweep in the table logs 13477–13801 MHz:
+stock memory, about 2500 MHz below the tuned run, so **the two columns are not memory-clock
+matched.**
+- **The direction is conservative.** The stock run has the slower memory and still the higher
+  throughput, so the mismatch does not explain the plateau away.
+- **But no committed pair is at once memory-matched, crossbar-instrumented and profile-verified.**
+  The memory-matched comparison of 5.7.2 (tuned against memory-only, both +2500) has no crossbar
+  telemetry.
+- **How the error got in is not recorded.** It survived because no claim pinned either run's
+  memory clock, so the auditor never rendered the number a reader could have checked. A claim now
+  pins both ranges.
 
 ⚠️ **Nor is the crossbar slowing down — it is failing to speed up**, and the distinction matters for
 anyone reading the ratio as a rate. Across 1402–1867 MHz the core climbs 33% while the tuned
@@ -2749,36 +2788,72 @@ crossbar moves 1320 → 1350 MHz, a rise of 2.3%. It is pinned, not throttled. T
 its denominator grows. Stock over the same range takes the crossbar 1335 → 1815 MHz, tracking the
 core, which is what the 0.928–0.976 band describes.
 
-That distinction is what makes the elasticities interpretable rather than merely suggestive:
-throughput responds to crossbar clock at **1.31** and to core clock at **0.51**, and above the
-plateau a 14.4% crossbar increase buys 14.1% more throughput — very nearly one-to-one. **Throughput
-tracks the crossbar, not the core**, on a card whose DRAM clock never moved.
+Within the tuned sweep, throughput responds to crossbar clock at **1.31** and to core clock at
+**0.51**, and above the plateau a 14.4% crossbar increase goes with 14.1% more throughput, very
+nearly one-to-one. **Throughput tracks the crossbar more closely than the core.** ⚠️ That is
+covariance inside one sweep, not an intervention: the crossbar was never set, so the elasticities
+describe how the two moved together, not what one does to the other.
 
 **The table above shows five of the ten measured points**, chosen for spacing. The 0.725 is the
 lowest of all ten and falls at 1942 MHz, which the table does not display; an earlier version of
 this sentence read 0.726 off the displayed rows alone. Both extracts are committed beside the
 sweeps they came from and every figure in this subsection is recomputed from them by the auditor.
 
-Throughput follows the crossbar, not the core. On the tuned card, elasticity of `membw` throughput
-to core clock is 0.51; to crossbar clock it is 1.31. Above the plateau a 14.4% crossbar increase
-buys 14.1% more throughput.
+Throughput follows the crossbar more closely than the core. On the tuned card, elasticity of
+`membw` throughput to core clock is 0.51; to crossbar clock it is 1.31. Above the plateau a 14.4%
+crossbar increase goes with 14.1% more throughput.
 
-The two configurations agree precisely where their voltages agree - at 1402 MHz both sit at 0.720 V
-and both deliver ~282 GB/s - and diverge from 1635 MHz, the first point at which stock raises
-voltage and the tuned card does not.
+⛔ **THE SENTENCE THAT STOOD HERE IS RETRACTED, 2026-09-24.** It read: *"The two configurations
+agree precisely where their voltages agree … and diverge from 1635 MHz, the first point at which
+stock raises voltage and the tuned card does not."* **The divergence begins two grid points
+earlier, while both configurations still report the same voltage:**
 
-The chain is therefore: flattened curve, so pinned voltage, so pinned crossbar clock, so a
-non-scaling path to memory, so a bandwidth plateau while DRAM itself is untouched at 16301 MHz.
+| core MHz | stock volts | tuned volts | stock crossbar | tuned crossbar | tuned throughput vs stock |
+|---|---|---|---|---|---|
+| 1402 | 0.720 | 0.720 | 1335 | 1320 | -1.1% |
+| 1477 | 0.720 | 0.720 | 1402 | 1320 | -4.8% |
+| 1560 | 0.720 | 0.720 | 1470 | 1342 | -5.5% |
+| 1635 | 0.740 | 0.720 | 1545 | 1342 | -6.9% |
+
+**So the reported voltage is not the state variable the chain needed.** A reconciliation exists,
+and it is possible rather than measured. HWiNFO's value moves in 5 mV steps on this card and is
+best read as a requested voltage code, not a measurement of the rail. Two configurations can
+therefore report 0.720 V and differ in what is applied. That would rescue the physics, not the
+evidence. **What the data supports is that crossbar clock and throughput track the curve
+configuration, not the observed voltage.**
+
+**How it got through: its claim pinned only the half that was true.** The auditor checked that both
+configurations sat at 0.720 V and delivered ~282 GB/s at 1402 MHz, which they do, so it stayed green
+on a sentence whose other half was false. The 1560 MHz row of the table above already contradicted
+it, with the same voltage in both columns and a 128 MHz crossbar gap. The claim now pins the four
+rows above instead.
+
+⛔ **THE CHAIN WAS STATED AS ESTABLISHED HERE UNTIL 2026-09-24.** It read: *"flattened curve, so
+pinned voltage, so pinned crossbar clock, so a non-scaling path to memory, so a bandwidth plateau
+while DRAM itself is untouched at 16301 MHz."* **What the evidence supports is narrower.** On this
+card, the flattened curve goes with a low reported crossbar clock and a ~300 GB/s plateau. Restoring
+the low-voltage slope restored both, as predicted in advance (5.7.4). Each link is measured as an
+association; none is isolated as a cause.
 
 ⚠️ **This does not require `membw` to be DRAM-saturated, and it is not.** Section 3.3.1 establishes
 that no constructible kernel saturates DRAM below roughly 2000 MHz on this device, which covers
 most of the band measured above — so a reader arriving from that section will reasonably ask
-whether this plateau is simply that ceiling under another name. It is not, and the table itself
-shows why: an issue limit is a property of the part and applies to **both** configurations equally,
-so it cannot produce a difference between them. Stock and tuned agree at 1402 MHz, where their
-voltages agree, and diverge only from 1635 MHz, where stock raises voltage and the tuned card does
-not. What is measured here is that divergence at matched core and memory clock, not an absolute
-bandwidth. Section 3.3.2 sets out which limiter governs which regime.
+whether this plateau is simply that ceiling under another name. The difference between the two
+configurations is not: an issue limit is a property of the part and applies to **both**
+configurations equally, so it cannot by itself produce a difference between them. Stock and tuned
+nearly agree at 1402 MHz and diverge from 1477 MHz on. What is measured here is that divergence at
+matched core clock (not matched memory clock; see above), not an absolute bandwidth. Section 3.3.2
+sets out which limiter governs which regime.
+
+⚠️ **But the plateau itself may be that ceiling.** The tuned run's plateau begins at 280.6 GB/s,
+the same ~281 GB/s that 3.3.1 could not lift. The flattened curve may not create the plateau so much
+as keep the card from climbing out of a ceiling that is already there. The present data cannot tell
+those two apart.
+
+⛔ **This paragraph said the two configurations *"agree at 1402 MHz, where their voltages agree,
+and diverge only from 1635 MHz"* and that the divergence was *"at matched core and memory clock"*
+until 2026-09-24.** Both statements are false, as set out above. This was a second copy of the
+retracted sentence.
 
 **One relationship between the two is open and untested.** The ceiling 3.3.1 could not identify sits
 at ~281 GB/s at 1395 MHz, and both configurations here deliver ~282 GB/s at 1402 MHz. 3.3.2 treats
@@ -2859,8 +2934,8 @@ worst case and under 3 MHz at most points**:
 The plateau removal reproduces. The contaminated 2026-08-20 measurement gave +30.1% at 1852 MHz;
 the clean, independently drawn curve gives **+31.4% at 1867 MHz** against a clean tuned reference.
 Power behaves as 5.7.3 predicts: at matched clock the repaired curve draws **more** power than the
-tuned one - 66.1 W against 52.4 W at 1867 MHz - because the restored voltage slope is what
-un-starves the crossbar. The trade of 5.7.5 also reproduces: above 2010 MHz the tuned curve is
+tuned one - 66.1 W against 52.4 W at 1867 MHz - which is consistent with the restored voltage slope
+un-starving the crossbar, though it does not isolate the crossbar as the cause (5.7.3). The trade of 5.7.5 also reproduces: above 2010 MHz the tuned curve is
 back ahead on efficiency, by 4.4% at 2025 and 6.0% at 2100 MHz.
 
 **Against the split curve of 5.7.6, on `membw`, the repair wins throughput at all ten points** by
@@ -3172,7 +3247,7 @@ the two. Under sustained unlocked load the two configurations are indistinguisha
 difference stays small and stays negative whichever window it is read on - -0.08% across the soak
 iterations, -0.33% across all seventeen - which is what indistinguishable looks like. This does
 not contradict 5.7.2, it locates it. The plateau is a property of the **1402-1867 MHz band**,
-where the flattened curve pins voltage and starves the crossbar; a card left to boost freely sits
+where the flattened curve pins voltage and the crossbar clock stays low; a card left to boost freely sits
 at 2968-2993 MHz, above the flattened region entirely, where both curves carry the same voltage.
 The harm is real and reproducible when frequency is locked into that band, and absent when it is
 not. Anyone reading 5.7.2's "-29.6%" as a cost they would pay in ordinary use would be wrong.
@@ -3342,9 +3417,11 @@ drift can reach 1.25 points, not what it typically is.
    the top of the range.
 
    **This does not undercut 5.7, and the distinction is worth stating because the two sections
-   otherwise look as though they collide.** That mechanism identifies the crossbar clock, not DRAM,
-   as the limiter — it asserts DRAM is *untouched* — and it rests on a divergence between two
-   configurations at matched core and memory clock rather than on an absolute bandwidth. A ceiling
+   otherwise look as though they collide.** That mechanism points to the crossbar clock, not DRAM,
+   as the limiter, as an association rather than an isolated cause. It rests on a divergence
+   between two configurations at matched core clock rather than on an absolute bandwidth. ⚠️ Not at
+   matched memory clock: the stock telemetry run used stock memory, which is conservative, and this
+   item said *"matched core and memory clock"* until 2026-09-24 (5.7.3). A ceiling
    shared by both configurations cancels in that comparison. 3.3.2 assigns the limiters by regime;
    read it before concluding that either section contradicts the other.
 8. **Same-configuration measurements drift across sessions by more than the effects several
@@ -3413,10 +3490,13 @@ between them, and attach a performance guarantee* — not *fit a model*. That re
 a condition: it depends on the performance curve being concave, and on a convex curve the safety
 argument reverses.
 
-**A mechanism was measured, not inferred.** The bandwidth plateau under a flattened
-voltage-frequency curve is traced link by link — pinned core voltage, pinned crossbar clock, an
-SM-to-memory path that stops scaling — with a stock control run, and a repair derived from the
-diagnosis behaved as predicted including in its predicted cost (§5.7). This is the part of the work
+**A mechanism was measured as an association, and a repair predicted from it worked.** The
+bandwidth plateau under a flattened voltage-frequency curve is traced link by link (pinned curve
+voltage, pinned crossbar clock, bandwidth that stops scaling) with a stock control run. A repair
+derived from the diagnosis behaved as predicted, including in its predicted cost (§5.7). ⚠️ No link
+is isolated as a cause: the crossbar was never set independently, and the stock control is not
+memory-clock matched (§5.7.3). This paragraph said *"A mechanism was measured, not inferred"* until
+2026-09-24. This is the part of the work
 that depended on physical access to hardware rather than on a download.
 
 ### What this work refuted, including its own predictions

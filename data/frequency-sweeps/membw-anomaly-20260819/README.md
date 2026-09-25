@@ -176,6 +176,14 @@ holds core voltage constant; the crossbar clock - the SM-to-memory-controller in
 to voltage rather than to the locked core clock; so the path *to* memory stalls at ~1320-1350 MHz
 while the core rises a third. DRAM was never the constraint, sitting at 16301 MHz throughout.
 
+> ⛔ **Corrected 2026-09-24; an outside audit found it on 2026-09-18.** *"Sitting at 16301 MHz
+> throughout"* is not exact even for this tuned run, which logs **15858–16301 MHz** per point. And it
+> is **false for the stock control below**, which logs **13477–13801 MHz**: stock memory, so the
+> voltage/crossbar pair is **not memory-clock matched**. The two configurations also **diverge from
+> 1477 MHz while both report 0.720 V** (−4.8% at 1477, −5.5% at 1560), so "measured rather than
+> inferred" overstates what this data shows. It shows an association plus a repair that worked as
+> predicted, not the crossbar isolated as the cause. The paper's §5.7.3 carries the full correction.
+
 ## The control, run: it is the curve
 
 Run 5 (`*-stock-volt-membw`, 2026-08-20 21:16) repeats the sweep at **full stock** - no memory
@@ -210,6 +218,14 @@ the core and stops scaling.
 a memory overclock and the other not. They separate at 1635 MHz, which is the first point where
 stock raises voltage to 0.740 and tuned does not. Divergence begins at the voltage divergence, not
 before it.
+
+> ⛔ **THIS PARAGRAPH IS RETRACTED, 2026-09-24; an outside audit found it on 2026-09-18.** The
+> divergence begins **two grid points before** the voltage divergence. At 1477 MHz both report
+> 0.720 V while tuned delivers **4.8%** less, with crossbar 1320 against 1402. At 1560 MHz it is
+> **5.5%** less, with 1342 against 1470, still at 0.720 V both. So reported voltage is not the state
+> variable. Recompute from the two `_voltage.csv` extracts here. ✅ **This paragraph did record the
+> memory mismatch** (*"one card having a memory overclock and the other not"*), which the paper then
+> lost: it said both ran at 16301 MHz until the same date.
 
 ## The mechanism, stated as a chain
 

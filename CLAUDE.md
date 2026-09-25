@@ -1139,10 +1139,10 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **286 of 286** |
-| ...and where both are absent, as CI's "checks" leg runs | **240 of 240** |
+| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **288 of 288** |
+| ...and where both are absent, as CI's "checks" leg runs | **242 of 242** |
 | sections with no claim at all | **15 numbered sections are still unaudited** |
-| §5.7 and its subsections carry | **86 claims between them and §5.5 carries 63** |
+| §5.7 and its subsections carry | **88 claims between them and §5.5 carries 63** |
 
 ⚠️ **THE TOTAL WENT STALE FOUR TIMES BEFORE IT WAS PINNED: 87 -> 119 -> 185 -> 204**, and on
 2026-08-30 this file carried two contradictory values for it at once. That history is the reason the

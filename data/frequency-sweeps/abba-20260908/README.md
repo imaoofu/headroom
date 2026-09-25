@@ -94,8 +94,10 @@ by a subset.
 **Spearman rank correlation with arithmetic intensity: ρ = +0.685, t = 2.98 on 10 df, p < 0.05.**
 
 **This is the mechanism this repository already documented, seen across the whole suite for the
-first time.** §5.7 established that the full tune's pinned-low voltage starves the crossbar and so
-harms bandwidth-bound work while being pure benefit to compute-bound work — measured on **two**
+first time.** §5.7 found that the full tune's pinned-low voltage goes with a starved crossbar and
+harms bandwidth-bound work while being pure benefit to compute-bound work (⚠️ an association with a
+predicted repair, not the crossbar isolated as the cause; this said "established that… starves the
+crossbar" until 2026-09-24, see §5.7.3) — measured on **two**
 workloads, `gemm` at 1365 FLOP/byte and `membw` at 0.167. Here it is twelve workloads spanning
 0 to 1365 FLOP/byte, ordered, with the advantage growing along the axis.
 

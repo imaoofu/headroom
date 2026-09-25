@@ -1916,15 +1916,47 @@ def voltageRise():
             f"{tunedRise:.3f} V")
 
 
-@claim("5.7.3-agree-where-voltages-agree", PAPER, "5.7.3")
-def agreeWhereVoltagesAgree():
-    """The control that makes the mechanism a measurement rather than a correlation: at the one
-    point where both configurations sit at the same voltage, they deliver the same bandwidth."""
-    stock = _voltageExtract(VOLT_STOCK)[1402]
-    tuned = _voltageExtract(VOLT_TUNED)[1402]
-    both = (stock["throughput"] + tuned["throughput"]) / 2.0
-    return (f"at 1402 MHz both sit at {stock['voltage']:.3f} V\nand both deliver "
-            f"~{both:.0f} GB/s")
+# ⛔ RETIRED 2026-09-24: "5.7.3-agree-where-voltages-agree". It rendered "at 1402 MHz both sit at
+# 0.720 V and both deliver ~282 GB/s", which is true, and so stayed green on a sentence whose
+# other half ("diverge from 1635 MHz") was false. A claim that pins only the true half of a
+# sentence certifies the sentence. It is replaced by the table that retracted it.
+@claim("5.7.3-divergence-at-equal-voltage", PAPER, "5.7.3")
+def divergenceAtEqualVoltage():
+    """The retraction's evidence: the configurations diverge at 1477 and 1560 MHz while both still
+    report the same voltage, so reported voltage is not the state variable. All four rows, so the
+    table cannot be edited back to a clean agreement without failing here."""
+    stock = _voltageExtract(VOLT_STOCK)
+    tuned = _voltageExtract(VOLT_TUNED)
+    rows = []
+    for target in (1402, 1477, 1560, 1635):
+        s, t = stock[target], tuned[target]
+        gap = 100.0 * (t["throughput"] / s["throughput"] - 1.0)
+        rows.append(f"| {target} | {s['voltage']:.3f} | {t['voltage']:.3f} | {s['crossbar']:.0f} | "
+                    f"{t['crossbar']:.0f} | {gap:+.1f}% |")
+    return "\n".join(rows)
+
+
+@claim("5.7.3-memory-not-matched", PAPER, "5.7.3")
+def memoryNotMatched():
+    """The stock telemetry run is at stock memory; the tuned run carries +2500. Found by an outside
+    audit, after the paper had said both ran at 16301 MHz throughout. Per-point logged means."""
+    import csv as _csv
+
+    def span(relativePath):
+        with open(_REPO_ROOT / relativePath, encoding="utf-8-sig") as handle:
+            values = [float(raw["memoryMhz"]) for raw in _csv.DictReader(handle)]
+        return f"{min(values):.0f}–{max(values):.0f} MHz"
+    return f"The stock sweep in the table logs {span(VOLT_STOCK)}"
+
+
+@claim("5.7.3-tuned-memory-applied", PAPER, "5.7.3")
+def tunedMemoryApplied():
+    """The other half: the memory overclock WAS applied on the plateaued card, which is what places
+    the plateau upstream of DRAM. Pinned separately so neither half can pass for the other."""
+    import csv as _csv
+    with open(_REPO_ROOT / VOLT_TUNED, encoding="utf-8-sig") as handle:
+        values = [float(raw["memoryMhz"]) for raw in _csv.DictReader(handle)]
+    return f"its DRAM logs {min(values):.0f}–{max(values):.0f} MHz across the sweep"
 
 
 # --------------------------------------------------------------------------------------

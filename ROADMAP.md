@@ -262,9 +262,14 @@ The part nobody else can replicate, and the reason the project is worth doing at
   The flattened curve pins core voltage at 0.720 V across a 49% rise in core clock; the crossbar
   clock — the SM-to-memory-controller interconnect — is pinned with it. Crossbar-to-core ratio
   holds 0.928–0.976 at stock and collapses to 0.726 under the curve. Throughput follows the
-  crossbar (elasticity 1.31) not the core (0.51). The two configurations agree exactly where their
+  crossbar (elasticity 1.31) not the core (0.51). ~~The two configurations agree exactly where their
   voltages agree, at 1402 MHz, and diverge from 1635 MHz, the first point where stock raises
-  voltage and the tuned card does not.
+  voltage and the tuned card does not.~~ ⛔ **Retracted 2026-09-18 in CLAUDE.md, and in the paper
+  only on 2026-09-24:** they diverge from 1477 MHz while both still report 0.720 V (−4.8% at 1477,
+  −5.5% at 1560). The stock telemetry run is also at stock memory (13477–13801 MHz), so the pair is
+  not memory-matched. **"The mechanism is measured, not inferred" overstates it:** the paper now
+  states an association plus a successful predicted repair, with the crossbar not isolated as the
+  cause (§5.7.3).
   This unifies the two findings above: `gemm` at ~1365 FLOP/byte never loads the crossbar, so the
   pinned low voltage is pure benefit; `membw` at 0.167 FLOP/byte lives on it, so the same pinned
   voltage is pure cost. **The undervolt's benefit and its harm are one mechanism.**
