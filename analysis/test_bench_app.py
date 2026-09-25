@@ -1,6 +1,7 @@
 """No-GPU checks for Headroom Bench under Windows PowerShell 5.1 or PS 7."""
 import copy
 import csv
+import importlib.util
 import json
 import os
 import shutil
@@ -16,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / 'tools' / 'bench-app'
 CATALOG = APP / 'catalog' / 'sessiond-3070ti.json'
+SESSIONE = APP / 'catalog' / 'sessione-2060s.json'
 PS = (shutil.which(os.environ['HEADROOM_TEST_PS']) if os.environ.get('HEADROOM_TEST_PS')
       else (shutil.which('powershell.exe') or shutil.which('pwsh')))
 
@@ -133,6 +135,72 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual((gate['firstRun'], gate['lastRun']), ('stock-4', 'stock-6'))
         labels = [s.get('label') for r in self.catalog['runs'] for s in r['steps'] if s.get('label')]
         self.assertEqual(len(labels), len(set(labels)))
+
+    # ---- Session E, RTX 2060 Super (2026-09-24) -------------------------------------------
+    # Its edit only moves curve points below 0.669 V, so an unlocked witness cannot see it; the
+    # witnesses are locked-clock voltage checks. The mock keys them "slot@lock".
+
+    def sessione(self):
+        plan = json.loads(SESSIONE.read_text(encoding='utf-8'))
+        mock = {
+            'telemetry': [175, 175, 185, '616.92'], 'quietUtil': 0, 'voltage': 0.644,
+            'witnesses': {
+                '1': {'core': 1618, 'memory': 6801},
+                '1@1065': {'core': 1065, 'memory': 6801, 'voltage': 0.644},
+                '2@1065': {'core': 1065, 'memory': 6801, 'voltage': 0.669},
+                '2@1275': {'core': 1275, 'memory': 6801, 'voltage': 0.694},
+            },
+        }
+        return plan, mock
+
+    def test_sessione_catalog_is_current_and_runs_through(self):
+        spec = importlib.util.spec_from_file_location('build_sessione', APP / 'catalog' / 'build_sessione.py')
+        builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(builder)
+        plan, self.mock = self.sessione()
+        self.assertEqual(json.loads(json.dumps(builder.plan)), plan, 'rerun build_sessione.py')
+        self.assertEqual(plan['card']['name'], 'NVIDIA GeForce RTX 2060 SUPER')
+        self.assertEqual([r['id'] for r in plan['runs']],
+                         ['preflight', 'e1-desc', 'stock-1', 'edit-2', 'stock-3', 'cleanup'])
+        runs = {r['id']: r for r in plan['runs']}
+        sweep = [s for s in runs['e1-desc']['steps'] if s['type'] == 'sweep'][0]
+        self.assertEqual((sweep['minMhz'], sweep['maxMhz'], sweep['points'], sweep['direction'],
+                          sweep['iterations']), (900, 1140, 13, 'descending', 120))
+        for identifier in ('stock-1', 'edit-2', 'stock-3'):
+            collect = [s for s in runs[identifier]['steps'] if s['type'] == 'suite'][0]
+            # 4c's baseline came from the 09-12 suite; its counts are reused, never re-derived.
+            self.assertEqual(collect['iterations'], [2936, 3180, 2377, 1628, 1163, 2986, 1935, 1076, 297, 88, 223, 120])
+            self.assertEqual(collect['expectedMemoryClockMhz'], 7000)
+        proc, record = self.engine(plan)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(record['status'], 'PASS')
+        self.assertEqual(record['revert']['coreMhz'], 1618)
+
+    def test_sessione_half_built_edit_stops_before_its_suite(self):
+        # 0.662 V at 1065 means 0.656/0.662 were left at stock: the 38 mV jump 4c tests is absent.
+        plan, self.mock = self.sessione()
+        self.mock['witnesses']['2@1065']['voltage'] = 0.662
+        proc, record = self.engine(plan)
+        self.assertNotEqual(proc.returncode, 0)
+        failed = [s['key'] for s in record['steps'] if s['verdict'] == 'FAIL']
+        self.assertEqual(failed, ['edit-2/witness'])
+        self.assertNotIn('edit-2/collect', [s['key'] for s in record['steps']])
+
+    def test_sessione_edit_live_in_the_stock_slot_stops_e1(self):
+        # E1 measures exactly the region the edit changes, so it must not run on an edited curve.
+        plan, self.mock = self.sessione()
+        self.mock['witnesses']['1@1065']['voltage'] = 0.669
+        proc, record = self.engine(plan)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn('e1-desc/witness', [s['key'] for s in record['steps'] if s['verdict'] == 'FAIL'])
+        self.assertNotIn('e1-desc/sweep', [s['key'] for s in record['steps']])
+
+    def test_sessione_edit_that_moves_the_upper_curve_stops(self):
+        plan, self.mock = self.sessione()
+        self.mock['witnesses']['2@1275']['voltage'] = 0.669
+        proc, record = self.engine(plan)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn('edit-2/witness-above', [s['key'] for s in record['steps'] if s['verdict'] == 'FAIL'])
 
     def section_hash(self, path, sections):
         helper = str(APP / 'Profile-Hash.ps1').replace("'", "''")
@@ -535,7 +603,7 @@ class BenchAppTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         for file in ['RUN-BENCH.bat', 'Run-Plan.ps1', 'Bench-Window.ps1', 'Bench-Display.ps1',
                      'Run-Child.ps1', 'Test-Plan.ps1', 'New-Plan.ps1',
-                     'Hwinfo-Csv.ps1', 'Stock-Drift.ps1', 'Pmon-Gate.ps1', 'sessiond-3070ti.json',
+                     'Hwinfo-Csv.ps1', 'Stock-Drift.ps1', 'Pmon-Gate.ps1', 'sessiond-3070ti.json', 'sessione-2060s.json',
                      'Invoke-HwinfoLogging.ps1']:
             self.assertIn(file, proc.stdout)
 

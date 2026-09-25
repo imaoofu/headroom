@@ -1,6 +1,6 @@
 # Headroom Bench
 
-Build-only implementation for the shop USB kit. Sync it with `tools/collection-kit/Sync-Kit.ps1`; the kit must already carry its Python environment and `HWiNFO64.exe`. On the shop PC, double-click `RUN-BENCH.bat` at the kit root and accept one UAC prompt. The app opens with Session D preselected. Drag rows to reorder, untick optional runs, double-click a row to edit its JSON, or add a custom sweep. The custom form asks for expected loaded core and memory ranges so it can witness the selected profile before measuring. Press Start. A yellow row differs from the shipped catalog, and the exact change is saved in the session JSON.
+Build-only implementation for the shop USB kit. Sync it with `tools/collection-kit/Sync-Kit.ps1`; the kit must already carry its Python environment and `HWiNFO64.exe`. On the shop PC, double-click `RUN-BENCH.bat` at the kit root and accept one UAC prompt. The app opens the run list written for the card it finds (see below), with its runs preselected. Drag rows to reorder, untick optional runs, double-click a row to edit its JSON, or add a custom sweep. The custom form asks for expected loaded core and memory ranges so it can witness the selected profile before measuring. Press Start. A yellow row differs from the shipped catalog, and the exact change is saved in the session JSON.
 
 The window polls at 1 Hz and keeps measurement work in `Run-Plan.ps1`. Its controls are Start, Pause after step, Stop, and Continue for hands-on steps. The engine can also run without a window from an elevated PowerShell:
 
@@ -14,9 +14,17 @@ For a dry run, supply `-DryRun -MockPath C:\absolute\mock.json -SessionPath C:\a
 
 The app records `bench-plan-<stamp>.json`, `bench-session-<stamp>.json`, a state file, control file, and output text under the USB's `results` folder. A failed or interrupted session may be resumed when reopening the window or with `-Resume -SessionPath <existing session> -PlanPath <original plan>`. Completed steps in completed runs are skipped; an incomplete run starts again, with fresh log and sweep paths. Existing measurement files are never overwritten.
 
+## Which run list opens
+
+The window opens the catalog whose `card.name` equals `nvidia-smi`'s GPU name, and asks when more than one matches. So Session D opens on the 3070 Ti and **Session E** (`catalog/sessione-2060s.json`, from `build_sessione.py`) on the RTX 2060 Super.
+
+## Session E (RTX 2060 Super), built 2026-09-24
+
+E1 (the descending fine floor, REGISTERED-PREDICTIONS 4d), then E2 (stock, edit, stock suites, 4c), then cleanup. Its curve edit only moves points below 0.669 V, so **every profile check is a locked-clock voltage witness** in its own short log, not an unlocked peak: P1 must read 0.630-0.657 V at 1065 MHz, and P2 must read 0.668-0.700 V there and 0.681-0.707 V at 1275 MHz. There is no profile-hash gate until the store is snapshotted. Card values, iteration counts and the memory clock come from this card's committed sweeps; the reasons are beside each value in the builder, and the hands-on steps are in `docs/GPU-WORKLIST-2060S.md`. In dry run, the mock keys a witness `"slot@lock"` when one slot has witnesses at two locks.
+
 ## Session D mapping to C0-C10
 
-- C0 power/quiet gates, C1 kit resolution, C2 exact profile hash (`CCE75E81FE322380` since 2026-09-24, when Afterburner rewrote the store without changing its curves; `1B08C2D0854460FF` before), and C3 launching HWiNFO plus a Sensors-window confirmation are one preflight run.
+- C0 power/quiet gates, C1 kit resolution, C2 profile hash, and C3 launching HWiNFO plus a Sensors-window confirmation are one preflight run. C2 hashes only the `[Profile1]`-`[Profile3]` sections (`A1159941DA541EB9`, `Profile-Hash.ps1`), because Afterburner added `[Defaults]` and `[Settings]` to the store on 2026-09-24 without changing its curves. The whole-file hash was `1B08C2D0854460FF`, then `CCE75E81FE322380` for a few hours; this line carried the latter until 2026-09-24.
 - C4-C7 are the four 12-workload suites, with the worklist's labels, settings strings, iteration list, memory-clock witness and separate voltage logs. After C7, a 1.5% stock-return gate uses the same per-workload median absolute matched-target throughput change as `score_session_d.py`.
 - C5 adds a **separate short HWiNFO log for the locked 1395 MHz voltage witness**. The original worklist asks the person to read voltage in the Sensors window before the suite log starts; an independent short log allows an auditable automated check without spanning profiles.
 - C8 uses explicit `gemm` 120 iterations, equal to `gpu_workload.py`'s default, and the worklist's 1200-1590 MHz descending ten-point grid.

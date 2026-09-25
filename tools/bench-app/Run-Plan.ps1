@@ -318,6 +318,12 @@ function Run-Witness($step) {
         if ($DryRun) {
             $w = $script:mock.witness
             if ($script:mock.witnesses) { $w = $script:mock.witnesses.([string]$script:currentSlot) }
+            # Dry run only: a slot with two locked witnesses (Session E's edit, 2026-09-24) needs
+            # one mock per lock, keyed "slot@lock", which may carry its own voltage.
+            if ($script:mock.witnesses -and $step.lockMhz) {
+                $byLock = $script:mock.witnesses.("$($script:currentSlot)@$($step.lockMhz)")
+                if ($null -ne $byLock) { $w = $byLock }
+            }
             if ($null -eq $w) { throw 'Mock witness missing.' }
             $peak = [double]$w.core; $memory = [double]$w.memory
         } else {
@@ -355,7 +361,9 @@ function Run-Witness($step) {
         if ($memory -lt $step.memoryMin -or $memory -gt $step.memoryMax) { throw "Witness memory $memory MHz outside [$($step.memoryMin),$($step.memoryMax)]." }
         $voltage = $null
         if ($step.voltageMin) {
-            if ($DryRun) { $voltage=Read-Voltage $script:activeLog }
+            if ($DryRun) {
+                if ($null -ne $w.voltage) { $voltage=[double]$w.voltage } else { $voltage=Read-Voltage $script:activeLog }
+            }
             else {
                 $loaded=@($steady | Where-Object { $null -ne $_.voltage -and $_.voltage -gt 0 } | ForEach-Object { [double]$_.voltage } | Sort-Object)
                 if ($loaded.Count -lt 4) {

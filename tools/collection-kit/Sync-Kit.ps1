@@ -108,6 +108,8 @@ $files = @(
     @{ From = "tools\bench-app\catalog\localtest-5060ti.json"; To = "tools\bench-app\catalog\localtest-5060ti.json" },
     @{ From = "tools\bench-app\catalog\shakedown-3070ti.json"; To = "tools\bench-app\catalog\shakedown-3070ti.json" },
     @{ From = "tools\bench-app\catalog\build_sessiond.py"; To = "tools\bench-app\catalog\build_sessiond.py" },
+    @{ From = "tools\bench-app\catalog\sessione-2060s.json"; To = "tools\bench-app\catalog\sessione-2060s.json" },
+    @{ From = "tools\bench-app\catalog\build_sessione.py"; To = "tools\bench-app\catalog\build_sessione.py" },
     @{ From = "tools\bench-app\catalog\SCHEMA.md"; To = "tools\bench-app\catalog\SCHEMA.md" },
     @{ From = "tools\bench-app\README.md"; To = "tools\bench-app\README.md" }
 )

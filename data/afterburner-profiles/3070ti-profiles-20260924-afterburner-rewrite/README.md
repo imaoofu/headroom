@@ -26,9 +26,13 @@ command line.
 
 **Why the gate tripped:** the bench app hashes the whole file, so an added section fails it just as a
 changed curve would. The gate did its job; the whole-file hash is simply stricter than "the curves
-are the ones decoded". The Session D catalog now expects `CCE75E81FE322380`
-(`tools/bench-app/catalog/build_sessiond.py`, with the reason beside it). **The load witnesses are
-unchanged,** and they still check each profile's effect directly.
+are the ones decoded". ~~The Session D catalog now expects `CCE75E81FE322380`~~ ⛔ **Superseded the
+same day (commit 90bb9a8):** the gate now hashes only the `[Profile1]`–`[Profile3]` sections, and
+the catalog expects **`A1159941DA541EB9`**, identical for this snapshot and the 09-23 one
+(`tools/bench-app/Profile-Hash.ps1`, `build_sessiond.py`). The whole-file `CCE75E81FE322380` would
+have tripped again on the next section Afterburner added; this line was not updated when that
+changed, found 2026-09-24. **The load witnesses are unchanged,** and they still check each
+profile's effect directly.
 
 ⚠️ **Not known:** what made Afterburner write these sections, or when between the shakedown's end
 (2026-09-23 22:15) and 08:19 the next morning. If it happens again before Session D runs, the gate
