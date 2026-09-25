@@ -136,6 +136,38 @@ class BenchAppTests(unittest.TestCase):
         labels = [s.get('label') for r in self.catalog['runs'] for s in r['steps'] if s.get('label')]
         self.assertEqual(len(labels), len(set(labels)))
 
+    @unittest.skipUnless(os.name == 'nt', 'Windows file-sharing semantics')
+    def test_session_save_survives_a_reader_holding_the_file(self):
+        # Session D stopped at step 27 on 2026-09-24: "Cannot create a file when that file already
+        # exists". Move-Item -Force over a file another process holds open fails with exactly that;
+        # Write-FileAtomic retries until the reader lets go.
+        target = self.dir / 'session.json'
+        target.write_text('{"old":1}', encoding='utf-8')
+        path = str(target).replace("'", "''")
+        hold = (f"$f=[IO.File]::Open('{path}','Open','Read','ReadWrite'); "
+                "Start-Sleep -Milliseconds 1500; $f.Close()")
+        args = [PS, '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command']
+        reader = subprocess.Popen(args + [hold])
+        self.addCleanup(reader.wait)
+        time.sleep(0.8)
+        helper = str(APP / 'Write-Atomic.ps1').replace("'", "''")
+        old = self.ps_command(f"Set-Content -LiteralPath '{path}.tmp' -Value 'x'; "
+                              f"try {{ Move-Item -LiteralPath '{path}.tmp' -Destination '{path}' -Force -ErrorAction Stop; 'ok' }} "
+                              "catch { 'FAILED: ' + $_.Exception.Message }")
+        self.assertIn('already exists', old.stdout)
+        reader.wait()
+        (self.dir / 'session.json.tmp').unlink(missing_ok=True)
+        reader = subprocess.Popen(args + [hold])
+        self.addCleanup(reader.wait)
+        time.sleep(0.8)
+        new = self.ps_command(f". '{helper}'; $n=Write-FileAtomic '{path}' '{{\"new\":2}}'; "
+                              f"'attempts=' + $n + ' tmp=' + (Test-Path '{path}.tmp')")
+        self.assertEqual(new.returncode, 0, new.stdout + new.stderr)
+        self.assertIn('tmp=False', new.stdout)
+        self.assertGreater(int(new.stdout.split('attempts=')[1].split()[0]), 1)
+        reader.wait()
+        self.assertEqual(target.read_text(encoding='utf-8'), '{"new":2}')
+
     # ---- Session E, RTX 2060 Super (2026-09-24) -------------------------------------------
     # Its edit only moves curve points below 0.669 V, so an unlocked witness cannot see it; the
     # witnesses are locked-clock voltage checks. The mock keys them "slot@lock".
@@ -604,7 +636,7 @@ class BenchAppTests(unittest.TestCase):
         for file in ['RUN-BENCH.bat', 'Run-Plan.ps1', 'Bench-Window.ps1', 'Bench-Display.ps1',
                      'Run-Child.ps1', 'Test-Plan.ps1', 'New-Plan.ps1',
                      'Hwinfo-Csv.ps1', 'Stock-Drift.ps1', 'Pmon-Gate.ps1', 'sessiond-3070ti.json', 'sessione-2060s.json',
-                     'Invoke-HwinfoLogging.ps1']:
+                     'Invoke-HwinfoLogging.ps1', 'Write-Atomic.ps1', 'Profile-Hash.ps1']:
             self.assertIn(file, proc.stdout)
 
     @unittest.skipUnless(os.name == 'nt', 'WinForms needs Windows desktop')

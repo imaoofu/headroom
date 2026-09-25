@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Stock-Drift.ps1')
 . (Join-Path $PSScriptRoot 'Pmon-Gate.ps1')
 . (Join-Path $PSScriptRoot 'Profile-Hash.ps1')
+. (Join-Path $PSScriptRoot 'Write-Atomic.ps1')
 $script:kit = $null
 $script:record = $null
 $script:activeLog = ''
@@ -37,9 +38,9 @@ function Set-RecordProperty([string]$name, $value) {
 
 function Save-Record {
     $json = $script:record | ConvertTo-Json -Depth 30
-    $tmp = $script:sessionPath + '.tmp'
-    [IO.File]::WriteAllText($tmp, $json, (New-Object Text.UTF8Encoding($false)))
-    Move-Item -LiteralPath $tmp -Destination $script:sessionPath -Force
+    # Write-FileAtomic, not Move-Item -Force: the window reads this file every tick, and a read
+    # between Move-Item's delete and rename stopped Session D at step 27 (2026-09-24).
+    [void](Write-FileAtomic $script:sessionPath $json)
     $state = @{ sessionPath = $script:sessionPath; planHash = $script:record.planHash; status = $script:record.status; finishedSteps = @($script:record.steps | Where-Object { $_.verdict -eq 'PASS' } | ForEach-Object { $_.key }) }
     [IO.File]::WriteAllText($script:statePath, ($state | ConvertTo-Json -Depth 8), (New-Object Text.UTF8Encoding($false)))
 }
