@@ -718,6 +718,48 @@ exist, and **none has been checked**:
 
 ---
 
+## Job 22: try to break Claude's reading of Wang et al.'s Figure 4. **Send now.**
+
+**Why:** reviewing Job 21, Claude went one step further and put the result into the paper (§2.7,
+commit `9187f21`). The claim is that Figure 4's optima *"close to the allowed lowest setting"* come
+from the **plotting code**, not from the authors' data. At commit `8a0a2e0`, `solve_dvfs` divides
+the fitted `p0` by 4.75 and `gamma` by 4.65 in place. On the pickle's parameters **without** that
+division, the narrow model gives **4.352%** (the paper says 4.3%). Only **3 of 20** optima sit at
+the lowest setting, and all 20 land within one 100 MHz step of the raw CSV argmin. Widening alone
+gives **7.174%**. **This is now a published-facing claim about another group's paper**, and every
+outside audit of this project has found something real. Claude's own review is at the end of
+`docs/gpt-findings/2026-09-25-wang-tpds-optimum-discrepancy.md`.
+
+> 1. **Re-derive it before reading Claude's script.** From `8a0a2e0`, run the notebook's
+>    `solve_dvfs` yourself under four conditions: narrow and wide, each with the parameters as
+>    pickled and with the division undone. Then run
+>    `python analysis/wang_tpds_figure4.py <your clone>` and report every number that disagrees.
+> 2. **Attack the premise that the pickle holds the "original" parameters.** Read the history of
+>    `apps.pkl` and every commit that touches it. Read whatever generates it (`model.py`, `gen.py`,
+>    `parse.py`, `main.py`) and look for any other scaling of `p0` or `gamma`. Could the pickle be
+>    stored already divided, or divided for a different experiment? If the "undivided" condition is
+>    not the authors' fitted model, the headline falls. Say which, with file and line.
+> 3. **Attack "the division is in the plotting code, not the data".** Quote §5.2's sentence about
+>    shrinking static power exactly, with its page. Does it cover the **Narrow** bars, or only
+>    **Wide**? Claude's wording says the reduction is described *"for its simulations"*. Is that
+>    fair, or does the paper disclose more (or less) than §2.7 now implies?
+> 4. **Attack the agreement with the raw grid.** The fitted parameters were fitted to the same 20
+>    measurements per application that the CSV holds. So how much of "within one step for all 20"
+>    is independent confirmation, and how much is circular? Say it plainly. Would §2.7 survive with
+>    that sentence removed?
+> 5. **Search** for anyone who has discussed Figure 4's parameters, the 4.75 or 4.65 factors, or a
+>    correction to the TPDS paper: errata, later HKBU papers, citing papers, and issues or pull
+>    requests on the repository. Log the exact queries.
+> 6. Propose exact wording changes to `docs/PAPER_DRAFT.md` §2.7, the correction added 2026-09-25,
+>    and to CLAUDE.md's "RESOLVED" paragraph, **as a proposal**. If nothing needs changing, say
+>    that and why.
+>
+> ⛔ Clone and compute **outside the repository**. **Never write under `data/`.** No edits to the
+> paper or CLAUDE.md. Do not contact the authors. Write
+> `docs/gpt-findings/2026-09-26-wang-figure4-review-audit.md`.
+
+---
+
 ## ⛔ Still do not ask it
 
 - **Anything settled.** `GPT-QUEUE.md` lists these.

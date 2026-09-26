@@ -20,6 +20,8 @@ being right.
 
 ---
 
+📤 **NEXT TO SEND, 2026-09-25: Job 22** in [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md): try to break Claude's reading of Wang et al.'s Figure 4, now in §2.7. Jobs 7–21 are all delivered and reviewed.
+
 📤 **BATCH 2 (Jobs 7–14) IS IN [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md), written 2026-09-22 evening.** Send Job 7 first: it pre-flights tomorrow's unattended activity test. Batch 1 (Jobs 1–6) is all delivered and reviewed; each review's outcome is in the table at the top of that file.
 
 ~~📤 **THE PROMPTS TO SEND NEXT ARE IN [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md), rewritten 2026-09-22.**~~
