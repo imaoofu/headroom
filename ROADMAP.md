@@ -792,6 +792,13 @@ and say so every time.**
 
 ## Open right now — 2026-09-26
 
+⚠️ **GitHub Actions minutes are exhausted until about 2026-10-01.** Pushes still work; their CI
+runs fail on billing, which is not a code failure. Until then run `python run_gates.py` (every CI
+gate, both legs, ~3 min) before each push. The last green CI run is on `bbd34c7`. **When minutes
+return, run `gh workflow run ci.yml` once on HEAD**: it checks the whole tree, so it covers every
+commit pushed in between, and it is the only thing that exercises the Ubuntu leg and a fresh
+dataset fetch.
+
 **Done since the 2026-09-23 list below:**
 - ✅ **3070 Ti Session D** scored: 4a PASS, **4b FAIL** (the control also moved), 8a PASS, 8b FAIL,
   8c reported.

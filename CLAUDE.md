@@ -1290,6 +1290,7 @@ would turn this from untidy into dangerous.
 
 ```
 run_tests.py       runs every suite, one verdict - `python run_tests.py`
+run_gates.py       every CI gate, both legs (with and without fetched data), locally - ~3 min
 analysis/          Python measurement + audit on the public V100 dataset
   audit_claims.py     mechanical paper auditor — see "The claims auditor" above
   build_data_manifest.py  deterministic census of every sweep under data/, with the rule that
@@ -1769,3 +1770,6 @@ worse than one: neither can be trusted and nothing flags which is which. **Read 
   environment-dependent; `header-pinned-count` is guarded for exactly that reason, after an
   unguarded version broke both checks legs on 2026-09-02. A local run can be made to match CI by
   temporarily moving `data/raw` aside, which is how that break was reproduced before it was fixed.
+  ✅ **Since 2026-09-26 `python run_gates.py` does this without moving anything**: it runs every CI
+  gate on the working tree, then again on a gitignore-faithful COPY in a temp directory, and
+  asserts the copy really lacks the fetched sets before trusting it. ~3 minutes. Never beside a sweep.
