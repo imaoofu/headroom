@@ -762,6 +762,53 @@ outside audit of this project has found something real. Claude's own review is a
 
 ---
 
+## Job 23: adversarial audit of the 3070 Ti write-up, paper §5.5.9. **Send now.**
+
+**Why:** Claude wrote the Session D/D2 results into the paper on 2026-09-26 (commit `4b6b504`).
+The result is **mixed**: the registered manipulation passed twice, but the registered control
+failed once, and its repeat could not be scored. A mixed result is the easiest kind to overstate,
+or to understate to look careful. The same commit changed the abstract's contribution sentence
+("on two of them we change the curve and re-locate the optimum"), §5.5.8's registration sentence
+and limits, the conclusion's list of refuted predictions, CLAUDE.md's contribution sentence and the
+README. Your Job 19 audited the data; this audits what the paper now says about it.
+
+> 1. **Recompute every number in §5.5.9 from the committed data before reading
+>    `analysis/claims_consumer.py`'s `5.5.9-*` claims**:
+>    `data/frequency-sweeps/rtx3070ti-sessiond-20260924/` and `-sessiond2-20260925/`. You may run
+>    `analysis/score_session_d.py`, but also derive the medians and per-workload optima yourself.
+>    For D2, which the scorer refuses, recompute its descriptive medians and stock return on its
+>    own grid and say whether §5.5.9's "held at 1485 MHz" is right.
+> 2. **The direction counts need a baseline, and the section gives none.** §5.5.9 reports Edit 1's
+>    workloads moving 6 down / 4 up (`edit1-2` against `stock-1`) and 6 down / 6 up (`edit1-5`
+>    against `stock-4`). Compute the same down/up/unchanged counts between **identical stock
+>    suites**: `stock-1`→`stock-4`, `stock-4`→`stock-6`, `stock-7`→`stock-9`. How many "up" moves
+>    does stock-against-stock produce? Is "the workloads split in direction" a finding, or is it
+>    within the noise the section itself cites (3–4 of 12 argmaxes change between stock suites)?
+>    Is the 1590 MHz cluster (2, then 5 workloads) outside that noise?
+> 3. **Why 1590?** Using the decoded Edit 1 curve (`REGISTERED-PREDICTIONS.md` §4b, Amendment 2,
+>    and `data/afterburner-profiles/3070ti-profiles-20260923/`), say where 1590 sits against the
+>    forced ramp at 0.831–0.869 V and the point where the curve rejoins stock. Offer a hypothesis
+>    only if the data support one, and label it as a hypothesis.
+> 4. **Read the new abstract sentence, and the abstract bullets under it, against §5.5.9.** Does
+>    "on two of them we change the curve and re-locate the optimum" overstate the 3070 Ti, where
+>    the median moved but half the workloads moved the other way? Does "a negative control above the
+>    floor moved it too, once" fairly describe one failure plus one unscoreable repeat? Say where
+>    the wording is too strong **or too weak**.
+> 5. **Check what changed around it.** Check the rewritten sentence in §5.5.8's introduction, its
+>    Limits bullet, conclusion item 4, the "does not claim" sentence, CLAUDE.md's contribution
+>    section and load-floor list, and the README status bullet. **Grep the whole paper** for any
+>    remaining statement that the causal test is one chip, or that tuning is 5060 Ti only.
+>    ⚠️ The Future work section is known to be stale; list what is wrong in it, and do not rewrite
+>    it.
+> 6. Propose exact wording changes **as a proposal**. If a sentence should stay as it is, say so
+>    and why.
+>
+> ⛔ **Never write under `data/`.** No edits to the paper, CLAUDE.md or README. No re-scoring of
+> 4b or 8d: the registered verdicts stand whatever you find. Write
+> `docs/gpt-findings/2026-09-26-section559-3070ti-writeup-audit.md`.
+
+---
+
 ## ⛔ Still do not ask it
 
 - **Anything settled.** `GPT-QUEUE.md` lists these.

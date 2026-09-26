@@ -855,7 +855,7 @@ and say so every time.**
 
 *Agents:*
 
-15. **GPT: an adversarial audit of §5.5.9** is ready to write and send.
+15. **GPT Job 23**, an adversarial audit of §5.5.9, is written and ready to send (`docs/agents/GPT-PROMPT-NEXT.md`).
 16. **Local model:** claims for the new 3070 Ti numbers once item 9 lands
     (`docs/agents/LOCAL-MODEL-TODO.md`).
 

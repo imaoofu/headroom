@@ -20,7 +20,9 @@ being right.
 
 ---
 
-📭 **NOTHING TO SEND, 2026-09-26.** Jobs 7–22 are all delivered and reviewed; Job 22 narrowed Claude's Wang correction the day after it was written. **Next, when it exists:** an adversarial audit of the 3070 Ti Session D/D2 write-up (ROADMAP 2026-09-26, item 9). The result is mixed (the manipulation replicated twice, the control moved once), which is the kind of result that gets overstated. After the 2060 Super, the same for Session E.
+📤 **NEXT TO SEND, 2026-09-26: Job 23** in [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md): an adversarial audit of the 3070 Ti write-up (paper §5.5.9, commit `4b6b504`), including a stock-against-stock baseline for the per-workload direction counts, which the section lacks. Jobs 7–22 are all delivered and reviewed.
+
+~~📭 Nothing to send, 2026-09-26 (morning).~~
 
 ~~📤 NEXT TO SEND, 2026-09-25: Job 22.~~
 
