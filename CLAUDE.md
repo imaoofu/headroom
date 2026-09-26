@@ -750,16 +750,21 @@ overstated, each verified against this repository's own data by recomputation �
 it. The replacement:
 
 > **On four consumer GPUs across three architectures we locate the V/F curve's low-voltage region
-> and the energy-efficiency optimum, and on two of them we change the curve and re-locate the
-> optimum. On an RTX 5060 Ti, switching between two profiles whose decoded curves differ by
-> +465 MHz below 840 mV moved the median twelve-workload optimum by +465 MHz, with all twelve
-> workloads moving upward; a separate, larger edit ABOVE the floor moved the median by nothing. On
-> an RTX 3070 Ti, in a design registered before collection, shortening the floor moved the median
-> optimum into its predicted band twice, but a negative control above the floor moved it too, once,
-> so on that chip the move is not attributed to the floor region. We identify a card on which the
-> rule cannot be applied at all, because its voltage leaves the floor six millivolts at a time.**
+> and the energy-efficiency optimum. On two of them we edit the curve and measure where the median
+> twelve-workload optimum moves. On an RTX 5060 Ti, switching between two profiles whose decoded
+> curves differ by +465 MHz below 840 mV moved the median by +465 MHz, with all twelve workloads
+> moving upward; a separate, larger edit ABOVE the floor moved the median by nothing. On an RTX
+> 3070 Ti, in a design registered before collection, shortening the floor moved the median into its
+> predicted band in two suites, but only six of twelve workloads moved down in each. A registered
+> upper-curve control, which also lowered one point in the floor band, moved the median too, once;
+> its repeat held descriptively but could not be scored. So on that chip the move is not attributed
+> to the floor region. We identify a card on which the rule cannot be applied at all, because its
+> voltage leaves the floor six millivolts at a time.**
 
-⛔ **UPDATED 2026-09-26 with the 3070 Ti (paper §5.5.9).** This said *"on one of them"* until then.
+⛔ **UPDATED 2026-09-26 with the 3070 Ti (paper §5.5.9), and narrowed the same day by GPT Job 23.**
+This said *"on one of them"*, then briefly *"on two of them we change the curve and re-locate the
+optimum"*. That read as two successful floor tests, so it now says "edit … and measure where …
+moves".
 🛑 **Do not let it grow into "replicated on a second chip".** The manipulation replicated there, but
 the registered control failed:
 - 4b moved the median to **1432.5 MHz**, a six–six split;
@@ -854,8 +859,14 @@ where a meaningful share of GPU DVFS measurement work, including HKBU's own, is 
 
 ### 🔑 The efficiency optimum is the last frequency on the V/F curve's LOAD FLOOR (2026-09-08 → 09-10)
 
-**The single most transferable result in the project, and the only one now confirmed on two chips
-and two architectures.** Do not re-derive it.
+~~**The single most transferable result in the project, and the only one now confirmed on two chips
+and two architectures.**~~ ⛔ **Narrowed 2026-09-26 (GPT Job 23).** The stock floor/optimum
+ASSOCIATION appears on every chip where the rule can be applied. The curve INTERVENTION is
+supported differently on the two edited chips:
+- **the 5060 Ti's** control leaves the median fixed;
+- **the 3070 Ti's** control failed once, and its repeat is unscoreable (paper §5.5.9).
+
+Do not re-derive it.
 
 > **The efficiency optimum is the highest frequency the applied V/F curve reaches at the card's
 > load-floor voltage.**
@@ -915,6 +926,10 @@ result was not.
     **1170**, both inside 1170–1275, so it PASSED twice. But the workloads split in direction
     (6 down / 4 up, then 6 down / 6 up), and **8b measured the edited floor ending at 1230–1275,
     not 1200**.
+  - **Baseline (Job 23):** identical stock suites change 3–4 of 12 optima, with 1–3 of them moving
+    up. Edit 1 changes 10, then 12.
+  - **1590 MHz:** no stock suite peaks there. It sits at the top of Edit 1's forced ramp (0.869 V);
+    that is a hypothesis, not a mechanism.
   - **Control (Edit 2, above the floor):** ⛔ **FAILED**, with the median at **1432.5**, a six–six
     split. Its repeat (8d) is NOT SCOREABLE because the clock table moved the grid; it held
     descriptively at 1485.

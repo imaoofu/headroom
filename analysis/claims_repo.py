@@ -175,7 +175,11 @@ def datasetGradeSweepTotal():
     manifest = build_data_manifest.buildManifest(build_data_manifest.loadSessions())
     datasetGrade = sum(1 for entry in manifest if entry["category"] == "dataset-grade")
     verification = sum(1 for entry in manifest if entry["category"] == "verification")
-    return f"**{datasetGrade + verification} dataset-grade sweeps across four chips"
+    # ⛔ This rendered "{datasetGrade + verification} dataset-grade sweeps" until 2026-09-26: it
+    # called the three verification runs dataset-grade, the adjective the manifest denies them.
+    # Found by GPT Job 23; the formula carried the paper's error rather than catching it.
+    return (f"**{datasetGrade + verification} sweeps across four chips and three "
+            f"architectures**, of which {datasetGrade} are dataset-grade")
 
 
 @claim("paper-dataset-grade-per-card", PAPER, "Abstract")

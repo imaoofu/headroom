@@ -3359,9 +3359,14 @@ def _directions(before, after):
 @claim("5.5.9-edit1-directions", PAPER, "5.5.9")
 def sessionDDirections():
     main, rep = sessionD("main"), sessionD("replicate")
+    # The stock-against-stock rows are the baseline GPT Job 23 found missing (2026-09-26).
+    s1 = _directions(main["optima"]["stock-1"], main["optima"]["stock-4"])
+    s2 = _directions(rep["optima"]["stock-4"], rep["optima"]["stock-6"])
     a = _directions(main["optima"]["stock-1"], main["optima"]["edit1-2"])
     b = _directions(rep["optima"]["stock-4"], rep["optima"]["edit1-5"])
-    return (f"| `edit1-2` against `stock-1` | {a[0]} | {a[1]} | {a[2]} |\n"
+    return (f"| `stock-1` against `stock-4`, identical curves | {s1[0]} | {s1[1]} | {s1[2]} |\n"
+            f"| `stock-4` against `stock-6`, identical curves | {s2[0]} | {s2[1]} | {s2[2]} |\n"
+            f"| `edit1-2` against `stock-1` | {a[0]} | {a[1]} | {a[2]} |\n"
             f"| `edit1-5` against `stock-4` | {b[0]} | {b[1]} | {b[2]} |")
 
 
@@ -3371,8 +3376,12 @@ def sessionDAt1590():
     words = {2: "Two", 5: "five"}
     first = sum(v == 1590 for v in main["optima"]["edit1-2"].values())
     second = sum(v == 1590 for v in rep["optima"]["edit1-5"].values())
+    stock = [main["optima"]["stock-1"], main["optima"]["stock-4"], rep["optima"]["stock-6"]]
+    if any(v == 1590 for suite in stock for v in suite.values()):
+        return "a Session D stock suite now peaks at 1590 MHz"
     return (f"{words.get(first, first)} workloads in `edit1-2` and {words.get(second, second)} in "
-            f"`edit1-5` moved to 1590 MHz, above the stock optimum.")
+            f"`edit1-5` moved to 1590 MHz, above the stock optimum; no Session D stock suite has a "
+            f"workload peaking there.")
 
 
 @claim("5.5.9-control-split", PAPER, "5.5.9")

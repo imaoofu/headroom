@@ -764,6 +764,8 @@ outside audit of this project has found something real. Claude's own review is a
 
 ## Job 23: adversarial audit of the 3070 Ti write-up, paper §5.5.9. **Send now.**
 
+✅ **DONE 2026-09-26, reviewed and accepted.** It supplied the missing stock-against-stock baseline (1–3 up moves, 3–4 changed), placed 1590 MHz at the top of Edit 1's forced ramp, and caught the abstract's "686 dataset-grade". All applied. **Do not send.**
+
 **Why:** Claude wrote the Session D/D2 results into the paper on 2026-09-26 (commit `4b6b504`).
 The result is **mixed**: the registered manipulation passed twice, but the registered control
 failed once, and its repeat could not be scored. A mixed result is the easiest kind to overstate,

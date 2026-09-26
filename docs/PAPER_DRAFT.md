@@ -36,9 +36,11 @@ descends into it.
 
 This work contributes an open dataset of consumer-GPU frequency, power and performance
 measurements swept across 40–100% of maximum core clock, released with its collection tooling and
-a locked protocol: **686 dataset-grade sweeps across four chips and three architectures** — 514 on
+a locked protocol: **686 sweeps across four chips and three architectures**, of which 683
+are dataset-grade — 514 on
 an RTX 5060 Ti (Blackwell GB206), 137 on an RTX 3070 Ti (Ampere GA104), 18 on an RTX 2060 Super
-(Turing TU106), 14 on an RTX 3060 (Ampere GA106), and three early three-point verification runs.
+(Turing TU106), 14 on an RTX 3060 (Ampere GA106) — and three are early three-point verification
+runs. ⛔ *This called all 686 "dataset-grade" until 2026-09-26.*
 
 On a public V100 reference set, running each of 33 workloads at its own efficiency optimum rather
 than at stock recovers 44.4% efficiency on average. Per-workload *prediction*, however, does not
@@ -58,23 +60,32 @@ where voltage cannot be written through any documented interface, this work edit
 vendor's curve instead, and adds a negative control:
 
 > **On four consumer GPUs across three architectures we locate the V/F curve's low-voltage region
-> and the energy-efficiency optimum, and on two of them we change the curve and re-locate the
-> optimum. On an RTX 5060 Ti, switching between two profiles whose decoded curves differ by
-> +465 MHz below 840 mV moved the median twelve-workload optimum by +465 MHz, with all twelve
-> workloads moving upward; a separate, larger edit ABOVE the floor moved the median by nothing. On
-> an RTX 3070 Ti, in a design registered before collection, shortening the floor moved the median
-> optimum into its predicted band twice, but a negative control above the floor moved it too, once,
-> so on that chip the move is not attributed to the floor region. We identify a card on which the
-> rule cannot be applied at all, because its voltage leaves the floor six millivolts at a time.**
+> and the energy-efficiency optimum. On two of them we edit the curve and measure where the median
+> twelve-workload optimum moves. On an RTX 5060 Ti, switching between two profiles whose decoded
+> curves differ by +465 MHz below 840 mV moved the median by +465 MHz, with all twelve workloads
+> moving upward; a separate, larger edit ABOVE the floor moved the median by nothing. On an RTX
+> 3070 Ti, in a design registered before collection, shortening the floor moved the median into its
+> predicted band in two suites, but only six of twelve workloads moved down in each. A registered
+> upper-curve control, which also lowered one point in the floor band, moved the median too, once;
+> its repeat held descriptively but could not be scored. So on that chip the move is not attributed
+> to the floor region. We identify a card on which the rule cannot be applied at all, because its
+> voltage leaves the floor six millivolts at a time.**
 
 ⚠️ **How far that sentence reaches:**
-- **The causal evidence is two chips, and they disagree on the control.**
+- **Curve edits were tested on two chips. Their controls disagree, and the 3070 Ti result does not
+  isolate the floor.**
   - **On the 5060 Ti:** one profile contrast. The twelve workloads are repeated outcomes on it, and
     their shifts range from +79 to +540 MHz.
   - **On the 3070 Ti (§5.5.9):** the manipulation passed twice, but its workloads split, with 6
     moving down against 4 and then 6 moving up. The control failed once (1432.5 MHz, a six–six
     split) and could not be scored on its repeat, which held at 1485 MHz descriptively.
-  - ⛔ *This sentence said "on one of them" until 2026-09-26, when the 3070 Ti results were added.*
+  - **Baseline:** on the 3070 Ti, two identical stock suites change 3–4 of the twelve per-workload
+    optima; Edit 1 changes 10, then 12, including 2 and then 5 to 1590 MHz, a target no Session D
+    stock suite selected.
+  - ⛔ *This sentence said "on one of them" until 2026-09-26, when the 3070 Ti results were added.
+    Later the same day an outside audit (GPT Job 23) found three problems in the new version:
+    "re-locate the optimum" read as two successful floor tests, "only six of twelve moved down"
+    was missing, and the direction counts had no stock-against-stock baseline.*
 - **On the 5060 Ti, the control is partly leaky.** It left the median unmoved but moved 4 of 12
   workloads against the same-session stock bracket.
 - **The 5060 Ti's two profiles also differ by −98 MHz at 875 and 925 mV**, a sixth of the control's
@@ -118,8 +129,9 @@ five-fold, invisibly at idle. Measurements taken without controlling for it are 
 the mid-band.
 
 **Limits are stated throughout and are not incidental.** Four chips, one unit each, so nothing
-here separates a property of a model from a property of an individual die; every *tuning* result
-comes from a single card. ⚠️ This abstract said "three chips" in one paragraph and four in another
+here separates a property of a model from a property of an individual die. Each *tuning* result is
+measured on one physical unit of its model, and curve edits were tested on the 5060 Ti and the
+3070 Ti. ⛔ *This said "every tuning result comes from a single card" until 2026-09-26.* ⚠️ This abstract said "three chips" in one paragraph and four in another
 until 2026-09-13. Nothing here outperforms vendor boost algorithms, and no claim is made to having
 discovered guardband, inter-chip voltage variation, the ridge-point relationship, the existence
 of a below-default consumer optimum, or that changing the voltage-frequency relationship moves the
@@ -2046,7 +2058,7 @@ apart disagree this completely on ordering, a 2017 datacenter part is not a sour
 expectations for current consumer silicon, only of the shape of the frequency response, which is
 what this work takes from it.
 
-**Caveats.** One pair of architectures, one chip each, and the 3070 Ti swept once. The six 5060 Ti
+**Caveats.** One pair of architectures, one chip each, and the 3070 Ti swept once for this comparison. The six 5060 Ti
 replicates are **not six independent sessions** — r4 and r5 were collected back-to-back without a
 reboot, so the set is five sessions, and it is **schema-mixed** (r6 at 0.3.2 records VRAM occupancy;
 r1–r5 at 0.3.1 record none, and cannot be audited for it retrospectively) and **driver-mixed** (r1
@@ -2239,7 +2251,7 @@ contains leakage along with memory refresh, display output, VRM losses and fan p
 this instrument separates. What changes is which part of the explanation this work can claim to have
 *measured*: the voltage floor is in the data, the leakage decomposition is not.
 
-#### 5.5.8 Moving the floor moves the optimum; moving the curve above it does not
+#### 5.5.8 On the RTX 5060 Ti, moving the floor moves the optimum; moving the curve above it does not
 
 §5.5.7 is an observation. Three cards, three floors, three optima that land on them — but the curve
 was **read, not moved**, so what it establishes is a correlation across three samples. Two runs on
@@ -2388,8 +2400,9 @@ committed before collection** (`docs/REGISTERED-PREDICTIONS.md` §4a, §4b, §8 
 USB kit's bench tool in two sessions: Session D on 2026-09-24 and Session D2 on 2026-09-25.
 
 **The stock card.** Its load floor is 0.812 V and holds to 1500 MHz, and its median suite optimum
-is 1485 MHz (§5.5.7). That median holds **in all five stock suites below**. Each suite is the twelve
-workloads on thirteen targets, 855–2115 MHz in 105 MHz steps.
+is 1485 MHz (§5.5.7). That median holds **in all five stock suites below**. Each Session D suite is
+the twelve workloads on thirteen targets, 855–2115 MHz in 105 MHz steps. Session D2's suites also
+have thirteen targets, but its six highest sit 15 MHz higher, as explained below.
 
 **Two curve edits,** built by hand in Afterburner and decoded from the saved profile store before
 collection:
@@ -2436,17 +2449,35 @@ known.
 ##### What the manipulation shows, and what it does not
 
 **The median moved into the predicted band twice.** But it did not move the way it did on the 5060
-Ti, where every workload moved in the predicted direction:
+Ti, where every workload moved in the predicted direction. Identical stock suites give the baseline
+for how much per-workload optima move on their own:
 
 | per-workload optimum | moved down | moved **up** | unchanged |
 |---|---|---|---|
+| `stock-1` against `stock-4`, identical curves | 1 | 3 | 8 |
+| `stock-4` against `stock-6`, identical curves | 2 | 1 | 9 |
 | `edit1-2` against `stock-1` | 6 | 4 | 2 |
 | `edit1-5` against `stock-4` | 6 | **6** | 0 |
 
-**Two workloads in `edit1-2` and five in `edit1-5` moved to 1590 MHz, above the stock optimum.** The
-median passes because the workloads that moved down fill the middle of the distribution. The
-optimum did not follow the floor on every workload. ⚠️ Per-workload optima are also noisy here:
-identical stock suites disagree on **3 to 4 of 12** of them while their median stays at 1485 MHz.
+Stock against stock changes 3 or 4 of the twelve optima (D2's stock pair: 2 down, 2 up), with
+1 to 3 of them moving up. Edit 1 changes 10 and then all 12, and **only 6 of 12 move down in
+either suite**. **Two workloads in `edit1-2` and five in `edit1-5` moved to 1590 MHz, above the
+stock optimum; no Session D stock suite has a workload peaking there.** The median passes because
+the workloads that moved down fill the middle of the distribution. The optimum did not follow the
+floor on every workload. With three stock pairs on one card, none of this is a calibrated
+significance result.
+
+**Where 1590 MHz sits, and a hypothesis labelled as one.**
+- **On the curve:** 1590 MHz is at the top of the ramp the editor forced on Edit 1 (1215 MHz at
+  831 mV to 1575 at 869 mV, rejoining stock at 1635 MHz and 875 mV). There it reads 0.869 V, against
+  0.844–0.850 V at stock. Under Edit 1, 1485 MHz reads 0.863 V, against 0.812–0.819 V at stock.
+- **In efficiency:** for the five workloads that peak at 1590 in `edit1-5`, 1590 beats 1485 by
+  **+1.59% to +4.42%** under Edit 1, and loses to it by **−1.86% to −7.05%** in `stock-1` and
+  `stock-4`.
+- ⚠️ **Hypothesis, not an isolated mechanism:** the ramp costs 1485 MHz more voltage than it costs
+  1590, enough to make 1590 a local winner for some workloads. It cannot be separated from the rest
+  of Edit 1 or from run-to-run variation, **so the 1590 cluster is no evidence that the floor alone
+  set those optima.**
 
 **And the floor did not end where the prediction assumed.** A fine sweep under Edit 1, registered
 as §8b, reads **0.819 V at 1230 MHz**. So the edited floor ends between **1230 and 1275 MHz**, not
@@ -2467,16 +2498,16 @@ here, not a reading of the profile file.
   and it does not license re-scoring 4b.
 - **Where the change sits.** At the points that moved, the control's throughput was within
   **−0.82% to +0.58%** of the stock pair's, and its recorded power differed by **−4.7 to
-  +9.5 W**, at identical clocks and within 1.5 °C. So the change is in the power denominator, and
-  the data do not say why.
+  +9.5 W**, at identical clocks and within 1.5 °C. The efficiency difference is mainly associated
+  with the power denominator, and these data do not say why power changed.
 - **Voltage codes.** At 1485 MHz, 4 of 12 workloads read a voltage code under Edit 2 one step
   from at least one stock suite's.
 
 🛑 **What this subsection supports.** On a second chip and a second architecture, a registered
-manipulation of the floor region moved the median optimum into its predicted band twice. A
-registered negative control moved it too, once. Its repeat the next day held, but only
-descriptively, because it could not be scored. **On this chip the move is not attributed to the
-floor region.** Together with §5.5.8, the evidence is two chips on which editing the floor region
+manipulation of the floor region moved the median optimum into its predicted band twice, though
+only 6 of 12 workloads moved down in each suite. The registered upper-curve control, which also
+lowered one point in the floor band, moved the median once. Its D2 repeat held descriptively but
+could not be scored. **On this chip the move is not attributed to the floor region.** Together with §5.5.8, the evidence is two chips on which editing the floor region
 moves the median optimum as predicted. On one of them a larger edit above the floor did not move
 it; on the other, a smaller one did once.
 
@@ -3736,8 +3767,9 @@ was made rather than removed:
 3. **That per-workload prediction would beat a fixed frequency.** It ties (§5.2).
 4. **That a curve edit above the floor would leave the optimum unmoved on a second chip.**
    Registered in advance on the RTX 3070 Ti, and it failed. The control moved the median optimum
-   from 1485 to 1432.5 MHz, while the registered manipulation passed twice. So the move is not
-   attributed to the floor region on that chip (§5.5.9).
+   from 1485 to 1432.5 MHz, while the registered manipulation passed twice. The control's next-day
+   repeat held descriptively, but could not be scored because its six highest targets differed from
+   the registered grid. So the move is not attributed to the floor region on that chip (§5.5.9).
 
 **And five claims of novelty were retracted, all to searching rather than to a reviewer.** They
 are listed because the alternative is that a reader finds them. ⛔ *This sentence said "four" until
@@ -3791,11 +3823,19 @@ correlation of −0.273 between the two chips, against a within-card reproducibi
 halves of the plan are now done — the suite carries twelve workloads (§5.4.5) and has been run at
 stock on both chips.
 
-What that opens rather than closes is the population question. Two architectures cannot say whether
-orderings *generally* fail to transfer or whether these two happen to disagree, and separating those
-needs more chips rather than more workloads. A second Ampere die would be the sharpest next
-measurement, because it distinguishes "this is an architecture effect" from "this is a chip
-effect" — a distinction one card per architecture structurally cannot make.
+What that opens rather than closes is the population question. The ranking comparison was made on
+one 5060 Ti and one 3070 Ti, and it did not transfer between them. The dataset now holds four cards
+across three architectures, including two different Ampere models, but only one unit of each
+model. Testing whether that disagreement is typical needs **repeated units of the same model** and
+a matched design across models; more workloads on these same units cannot supply it. ⛔ *This
+paragraph proposed "a second Ampere die" as the next measurement until 2026-09-26. The RTX 3060
+already is one, and a different model does not separate a chip effect from a model effect.*
+
+**The 3070 Ti's control is unresolved** (§5.5.9). Its one scored run moved the median and its
+repeat could not be scored, and the control edit also lowered one point inside the floor band.
+Settling it needs a control that leaves the floor band untouched, run on a grid registered by its
+target list, since the card's clock table changed between days. That card has been sold, so the
+test would need another unit.
 
 One measurement item is outstanding. The stability protocol has been applied to three of the
 configurations reported here; the others carry no failure evidence in either direction, and "no

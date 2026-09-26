@@ -33,9 +33,10 @@ optimum — and explaining what sets it.**
 >   of one board; it says nothing about any model line. **Chip-to-chip variation is published at
 >   roughly 11% and remains unmeasured here**, because it needs repeat units of one SKU the project
 >   controls — which the customer-machine route structurally cannot provide.
-> - **Everything about *tuning* is still one chip.** The two-knob decomposition, the split-region
->   curve, the ABBA manipulation and the negative control are 5060 Ti only. The other two were
->   customer machines: stock, nothing applied.
+> - ~~**Everything about *tuning* is still one chip.**~~ ⛔ *Superseded 2026-09-26.* Curve edits
+>   were measured on the 5060 Ti and the 3070 Ti. On the 3070 Ti, the registered median
+>   manipulation passed twice, the control failed once, and its repeat was unscoreable (paper
+>   §5.5.9). The two-knob decomposition and the split-region curve are still 5060 Ti only.
 > - **The V100 analysis is a separate dataset** — 33 workloads, one chip, published by others. It is
 >   never pooled with the consumer data.
 > - **The prediction model lost**, and that null is a headline result rather than a footnote. See

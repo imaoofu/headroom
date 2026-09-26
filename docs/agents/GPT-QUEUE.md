@@ -20,7 +20,9 @@ being right.
 
 ---
 
-📤 **NEXT TO SEND, 2026-09-26: Job 23** in [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md): an adversarial audit of the 3070 Ti write-up (paper §5.5.9, commit `4b6b504`), including a stock-against-stock baseline for the per-workload direction counts, which the section lacks. Jobs 7–22 are all delivered and reviewed.
+📭 **NOTHING TO SEND, 2026-09-26 (evening).** Jobs 7–23 are all delivered and reviewed. **Next, when it exists:** an adversarial audit of the 2060 Super Session E write-up, after this weekend's run.
+
+~~📤 Next to send: Job 23 (done).~~
 
 ~~📭 Nothing to send, 2026-09-26 (morning).~~
 
