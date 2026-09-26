@@ -13,8 +13,11 @@ Imported to `data/frequency-sweeps/rtx3070ti-sessiond-20260924/`. Scored as regi
 
 ✅ **Session D2 ran 2026-09-25 08:22–11:43, untouched, PASS.** §8d: ⛔ NOT SCOREABLE, because the card's
 clock table moved the grid's top six targets. Descriptively the control held (1485 MHz).
-`data/frequency-sweeps/rtx3070ti-sessiond2-20260925/`. **Nothing more runs on this card: uninstall
-MSI Afterburner, delete its Profiles folder, and ship.**
+`data/frequency-sweeps/rtx3070ti-sessiond2-20260925/`. **Nothing more runs on this card.**
+
+✅ **SHIPPED the evening of 2026-09-25, a day ahead of the planned Sat 09-26 10 AM.** Afterburner
+and everything else installed for the bench work were uninstalled first (Raymond, 2026-09-26).
+**This card is closed. The list below is history.**
 
 ~~One more session, added 2026-09-25 00:40: Session D2, the control repeated (REGISTERED-PREDICTIONS §8d).~~
 
@@ -22,14 +25,16 @@ MSI Afterburner, delete its Profiles folder, and ship.**
 D2 ran untouched on 2026-09-25.** Both D and D2 catalogs are retired, so the USB offers this card
 nothing.
 
-**The only thing left, before it ships Sat 2026-09-26 at 10 AM:**
-- [ ] Uninstall MSI Afterburner.
-- [ ] Delete its `Profiles` folder. The store is snapshotted and hash-pinned in
+**Before it shipped** (all done, 2026-09-25):
+- [x] Uninstall MSI Afterburner.
+- [x] Delete its `Profiles` folder. The store is snapshotted and hash-pinned in
       `data/afterburner-profiles/3070ti-profiles-20260923/`.
-- [ ] Leave the BIOS switch where the buyer should get it, and say which position that is.
+- [ ] ~~Leave the BIOS switch where the buyer should get it, and say which position that is.~~ Not
+      recorded: the shipping report named the uninstall only, so the position it left in is unknown
+      here.
 
-**Still open in the repository, not on the machine:** writing Session D and D2 into the paper and
-CLAUDE.md (ROADMAP "Open right now — 2026-09-26", item 9).
+~~**Still open in the repository:** writing Session D and D2 into the paper.~~ ✅ **Done
+2026-09-26** as paper §5.5.9, audited by GPT Job 23 and narrowed.
 
 | document | what it is |
 |---|---|

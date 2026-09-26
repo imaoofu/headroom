@@ -823,8 +823,8 @@ dataset fetch.
 **Open, in order.**
 
 *Hardware:*
-1. **3070 Ti (ships Sat 2026-09-26, 10 AM):** uninstall MSI Afterburner, delete its Profiles
-   folder, ship. Nothing else.
+1. ✅ **3070 Ti shipped the evening of 2026-09-25**, with Afterburner and its Profiles folder
+   removed first. Closed.
 2. **2060 Super Session E (this weekend, about 3½ h unattended).**
    - **Hands-on steps first**, in `docs/GPU-WORKLIST-2060S.md`: snapshot the profile store, stock
      in slot 1, the edit in slot 2, apply slot 1, Sensors-only.

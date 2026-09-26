@@ -210,7 +210,7 @@ Read the counts off `python analysis/build_data_manifest.py --check`, never off 
   protocol on any RTX 40/50 card (REGISTERED-PREDICTIONS §11).
 
 **The ordered open list is ROADMAP.md, "Open right now — 2026-09-26".** Hardware this weekend:
-- the 3070 Ti ships;
+- ~~the 3070 Ti ships~~ ✅ shipped 2026-09-25, bench software uninstalled first;
 - Session E runs on the 2060 Super;
 - the 5060 Ti gets rung C (4f), the memory-matched pair (4j) and the new-card practice run.
 
