@@ -1459,6 +1459,47 @@ step* (the larger of the two sweeps' median spacing).
 
 **Every card is n = 1.** The twelve workloads are repeated outcomes on it.
 
+## 12. RTX 5060 Ti: the `membw` plateau with memory matched (worklist 4j). Registered 2026-09-26, before collection
+
+**Why.** The only committed pair with voltage and crossbar telemetry
+(`membw-anomaly-20260819/…oc-volt-membw` against `…stock-volt-membw`) ran the flattened curve at
+**16301** MHz memory and stock at **13801**. An outside audit (2026-09-18) named that the largest
+confound in the plateau result. This removes it: **curve 3 is P4's curve exactly, with memory +0**,
+so both arms run at 13801.
+
+**Configuration, verified before collection.** Curve 3 is in Profile 1, snapshotted as
+`data/afterburner-profiles/5060ti-profiles-20260926-curve3/` (curve file SHA-256 begins
+`8ec197f30e21d116`). Its 127 stored points are identical to Profile 4's, memory +0 against P4's
++2500, power limit 111 (200 W) as on P4. Stock is Profile 3 (180 W).
+
+**Design, one session:** stock `membw` → stock `gemm` → curve 3 `membw` → curve 3 `gemm` → stock
+`membw` again. `membw` on the old pair's grid (1400–2100 MHz, 10 points, default iterations);
+`gemm` on the suite grid (1237–3090 MHz, 13 points, 120 iterations). HWiNFO at 0.50 s; every sweep
+joined by time.
+
+**Interpretable only if** the closing stock `membw` sweep's band mean lies within **1.5%** of the
+opening one. Otherwise the session drifted, and it is reported as uninterpretable.
+
+**Predictions:**
+- **Primary:** at every target from **1560 to 1867** MHz, curve 3's `membw` throughput is **below**
+  the opening stock sweep's.
+- **Mechanism, telemetry:** curve 3 reads **0.720 V** at every target from 1402 to 1867, and its
+  crossbar clock stays within **1300–1360 MHz** over that range, while stock's crossbar rises with
+  the core clock.
+- **Secondary, `gemm`:** curve 3 draws **less** board power than stock at every matched target from
+  1545 to 2625 MHz.
+
+**Refuted by:** curve 3 at or above stock at any target from 1560 to 1867; or curve 3's crossbar
+tracking the core clock across that range. **If the primary holds, the memory mismatch did not
+create the plateau.** It still does not make XBAR a demonstrated mediator: that needs XBAR held
+fixed at fixed core curve and memory, which this card cannot do.
+
+**Limits, stated now.** One chip, one session, one sweep per arm. The power limits differ (200 W
+against 180 W). Neither binds for `membw` below 2100 MHz, which draws well under 100 W, but stock
+`gemm` can reach its limit near the top of the grid, so the `gemm` prediction stops at 2625. The
+2026-08-20 "oc" profile is not proved identical to today's P4, so compare within this session, not
+against the old pair.
+
 ## Safety envelope — these cards are going to be sold
 
 **The hardware risk of a floor manipulation is low and should be stated plainly rather than
