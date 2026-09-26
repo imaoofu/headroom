@@ -790,6 +790,81 @@ and say so every time.**
 
 ---
 
+## Open right now — 2026-09-26
+
+**Done since the 2026-09-23 list below:**
+- ✅ **3070 Ti Session D** scored: 4a PASS, **4b FAIL** (the control also moved), 8a PASS, 8b FAIL,
+  8c reported.
+- ✅ **Session D2** (§8d): NOT SCOREABLE, because the clock table moved the grid; descriptively
+  the control held. **Nothing more runs on the 3070 Ti.**
+- ✅ **§10, the 5060 Ti control repeat:** NOT SCOREABLE, because the P5 bracket did not return.
+  The cause is not attributed; Codex processes started mid-run.
+- ✅ **GPT Jobs 19–22** reviewed and accepted:
+  - 19: the Session D audit;
+  - 20: the §2 source index;
+  - 21 and 22: Wang et al.'s Figure 4. §2.7 was corrected and then narrowed, and the analogy
+    with 1.00% → 44.40% is struck.
+- ✅ **`score_session_e.py`** committed before any 2060 Super data, with a dated amendment to §4d.
+  That amendment includes the finding that 4d's registered thermal outcome names the wrong end of
+  the grid.
+- ✅ **REGISTERED-PREDICTIONS §11:** a stock protocol for new RTX 40/50 cards, registered before
+  any card is known.
+  - Headroom Bench gained generic, stock-only run lists: `catalog/newcard-rtx40-50.json`.
+  - The scorer is `analysis/score_new_card.py`.
+  - ⚠️ **Dry run only so far.**
+
+**Open, in order.**
+
+*Hardware:*
+1. **3070 Ti (ships Sat 2026-09-26, 10 AM):** uninstall MSI Afterburner, delete its Profiles
+   folder, ship. Nothing else.
+2. **2060 Super Session E (this weekend, about 3½ h unattended).**
+   - **Hands-on steps first**, in `docs/GPU-WORKLIST-2060S.md`: snapshot the profile store, stock
+     in slot 1, the edit in slot 2, apply slot 1, Sensors-only.
+   - **Afterwards:** import, join voltage, then
+     `python analysis/score_session_e.py <dir>` and `… --4d`. Write up, then run the hash gate.
+   - **Before it ships:** uninstall Afterburner.
+3. **5060 Ti Afterburner work (this weekend, Raymond at the machine):**
+   - curve 2 (rung C) → **4f**, about 55 min;
+   - curve 3 (P4 with memory +0) → **4j**, the memory-matched pair, about 25 min.
+   - Both go into P1, which holds rung B (snapshotted).
+4. **The new-card protocol's practice run on the 5060 Ti** (about 2 h, Codex and ChatGPT closed).
+   Launch it with `Bench-Window.ps1 -CatalogPath …newcard-rtx40-50.json`. **Required before any
+   shop card gets it.**
+5. **Sync the USB kit after Session E**, not before: it carries the engine proven for Session E,
+   and the new engine has only run in dry run.
+6. **§10 re-run** (about 3 h, Codex and ChatGPT closed), with an amendment registered before
+   collection. Not yet requested.
+7. **New cards as they arrive** (1–2 expected before publication, likely 40/50-series; a 5060 Ti
+   would be the 8 GB variant): run the new-card protocol, then `score_new_card.py`.
+8. Soaks **4l** and **4g** (OCCT, hands-on).
+
+*Writing:*
+
+9. **The 3070 Ti results into the paper and CLAUDE.md.** The manipulation replicated twice; the
+   control moved once, and held once in an unscoreable run. Then the contribution sentence.
+10. **The 2060 Super results**, after item 2.
+11. **Fold §2's rewrite into the paper** from `docs/drafts/section2-related-work-proposal.md`.
+    Four `RELATED-WORK.md` §4 entries are still GPT-read only.
+12. **§3.5 still carries a DRAFT marker** and predates the 2026-08-30 driver crash.
+13. **Decide the data release** (Raymond's call). The one surviving contribution is open data, and
+    the repository is private.
+14. **A cold novelty check** (`docs/agents/NOVELTY-CHECK-BRIEF.md`) in a fresh chat before
+    submission.
+
+*Agents:*
+
+15. **GPT: nothing is queued.** Next is an adversarial audit of item 9's write-up, once written.
+16. **Local model:** claims for the new 3070 Ti numbers once item 9 lands
+    (`docs/agents/LOCAL-MODEL-TODO.md`).
+
+*Carried over, still open:*
+- **HWiNFO automation with the screen off or the PC locked** is unverified (item 2 below).
+- **`audit_claims.numbersIn`** over-counts (item 7 below).
+- **The raw HWiNFO logs** exist on one disk only (HANDOFF).
+
+---
+
 ## Open right now — 2026-09-23
 
 **Collected 2026-09-22/23 on the 5060 Ti, all registered in `docs/REGISTERED-PREDICTIONS.md` first:**

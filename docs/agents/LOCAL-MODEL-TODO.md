@@ -81,15 +81,26 @@ Checked and dropped the same day:
 
 ## Future jobs, in order
 
+**Status 2026-09-26.**
+- **L4 is done by Claude.** Session D's `--replicate` and `--control-replicate` fixtures were
+  written with the scorer, and the same pattern covered Session E and the new-card scorer; writing
+  a spec would have cost more than the fixtures.
+- **L7 is done.** `score_session_d.py` reports 8c directly.
+- **L5 and L6 still wait on their blockers.**
+- **L8, below, is new**, and is the next job worth a spec.
+- ⛔ **Never run the model during a 5060 Ti sweep.** This weekend's runs (4f, 4j, the new-card
+  practice run, perhaps §10) rule out those windows.
+
 A job moves into a queue only when its spec and acceptance check exist **and have been run against
 a correct answer and a wrong one**. None of these has a spec yet.
 
 | id | job | waits for | exact check | value |
 |---|---|---|---|---|
-| **L4** | Test fixtures for a `--replicate` mode in `analysis/score_session_d.py` (REGISTERED-PREDICTIONS §8a): synthetic `edit1-5` / `stock-6` sweeps that pass, fail and are NOT SCOREABLE. **Claude writes the scoring code**; the model drafts the fixtures | Session D's data landing, so the file layout is known | each fixture's expected verdict, stated in the spec, is what the reviewed scorer returns | high: Session D is scored this week |
+| ~~**L4**~~ | ✅ **Done by Claude, 2026-09-24/25**: the 8a and 8d fixtures in `test_score_session_d.py`, then Session E and the new-card scorer the same way | — | — | — |
 | **L5** | Claims for §5.5 (15 of 352 numbers pinned, the least-covered section), one subsection at a time, where the sources are already identified | Claude identifying each subsection's source files, which is most of the cost | `audit_claims.py`: each new claim passes and matches exactly once | high if the sources are known, otherwise not worth delegating |
 | **L6** | Data READMEs for directories that lack an inventory, from a generated table of files, points and settings (the `sweep-root-inventory` pattern) | a directory with a gap; `find data -name README.md` against the directory list | every filename checked against the filesystem, and no invented facts | medium |
-| **L7** | The ascending/descending comparison for §8c, run through the L2 tool, **written up as a table only** | §8c's two sweeps from Session D | the table's numbers equal `compare_fine_pair.py --json` | low: Claude can run the tool directly |
+| ~~**L7**~~ | ~~The ascending/descending comparison for §8c, run through the L2 tool, **written up as a table only**~~ ✅ done: `score_session_d.py` scores 8c | — | — | — |
+| **L8** | **Claims for the 3070 Ti Session D and D2 numbers** in the paper: medians, verdicts, stock returns, 8b's floor end, one claim per sentence, from `rtx3070ti-sessiond-20260924/` and `-sessiond2-20260925/` via `score_session_d.py` | Claude writing Session D into the paper (ROADMAP 2026-09-26 item 9); the sentences must exist first | `audit_claims.py`: each new claim passes and matches exactly once | high: these are the second-chip numbers |
 
 **Not for the model:**
 - **Anything that scores a registered prediction.** Claude writes it; the model may draft fixtures.

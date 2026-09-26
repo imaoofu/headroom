@@ -18,13 +18,18 @@ MSI Afterburner, delete its Profiles folder, and ship.**
 
 ~~One more session, added 2026-09-25 00:40: Session D2, the control repeated (REGISTERED-PREDICTIONS §8d).~~
 
-1. ⛔ **Do NOT uninstall Afterburner yet.** D2 applies P1 and P3 through it and checks the store's
-   hash.
-2. Confirm the BIOS switch is still on **SILENT**. Open HWiNFO **Sensors-only**.
-3. Plug in the USB and run **RUN-BENCH.bat**. It opens *"RTX 3070 Ti Session D2 (8d control
-   repeat)"* by itself, with no picker and no resume question. Press **Start**.
-4. About **3 h 15**, unattended. It ends with its own stock check.
-5. **Then**, before it ships Saturday: uninstall MSI Afterburner and delete its Profiles folder.
+~~The D2 run steps (keep Afterburner, SILENT BIOS, RUN-BENCH.bat, 3 h 15) stood here.~~ **Done;
+D2 ran untouched on 2026-09-25.** Both D and D2 catalogs are retired, so the USB offers this card
+nothing.
+
+**The only thing left, before it ships Sat 2026-09-26 at 10 AM:**
+- [ ] Uninstall MSI Afterburner.
+- [ ] Delete its `Profiles` folder. The store is snapshotted and hash-pinned in
+      `data/afterburner-profiles/3070ti-profiles-20260923/`.
+- [ ] Leave the BIOS switch where the buyer should get it, and say which position that is.
+
+**Still open in the repository, not on the machine:** writing Session D and D2 into the paper and
+CLAUDE.md (ROADMAP "Open right now — 2026-09-26", item 9).
 
 | document | what it is |
 |---|---|

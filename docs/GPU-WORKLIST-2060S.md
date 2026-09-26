@@ -1,8 +1,28 @@
 # RTX 2060 Super — the bench list
 
 **Written 2026-09-22.** A shop machine, so **it ships, date unknown**, and it outranks the 5060 Ti
-on any day it is reachable. **Session D on the 3070 Ti outranks it** if both are reachable: one USB
-kit, so they cannot run in parallel. Shared protocol: [`GPU-BENCH-RULES.md`](GPU-BENCH-RULES.md).
+on any day it is reachable. ~~Session D on the 3070 Ti outranks it if both are reachable.~~ The
+3070 Ti is finished (2026-09-25), so **this is the next hardware item: Session E, planned for the
+weekend of 2026-09-26.**
+
+**Checklist, as of 2026-09-26:**
+- [ ] **At the machine, before Start:**
+  - install Afterburner if needed;
+  - snapshot `Profiles\VEN_10DE*.cfg` to the USB untouched;
+  - save stock in **slot 1** and the Part 2 edit in **slot 2** (every point below 0.669 V capped
+    at 810 MHz, 0.656/0.662 V included);
+  - apply slot 1, then open HWiNFO Sensors-only.
+- [ ] **RUN-BENCH.bat → Start.** About 3½ h, unattended.
+- [ ] **Import** to `data/frequency-sweeps/rtx2060s-sessione-<date>/`, join the voltage extracts,
+      write the README, and run the hash gate (`check_data_hashes.py --write`, with the diff
+      reviewed as additions only).
+- [ ] **Score** with `python analysis/score_session_e.py <dir>` (4c) and `… --4d`, as registered.
+      Read the §4d amendment first: 4c's "undecidable" branch cannot be decided by this session,
+      and 4d's thermal outcome is scored as MINIMUM_REACHES_BOTTOM.
+- [ ] Commit the profile-store snapshot (it adds a hash gate for any later session).
+- [ ] **Before it ships:** uninstall Afterburner and delete its Profiles folder.
+- [ ] **Leave the USB kit un-synced until this is done.** It carries the engine proven for
+      Session E; the new-card engine has only run in dry run. Shared protocol: [`GPU-BENCH-RULES.md`](GPU-BENCH-RULES.md).
 Run sheet: [`SESSION-E-RUNSHEET.md`](../data/frequency-sweeps/rtx2060s-20260912/SESSION-E-RUNSHEET.md).
 Predictions: [`REGISTERED-PREDICTIONS.md`](REGISTERED-PREDICTIONS.md) §4c–4d.
 

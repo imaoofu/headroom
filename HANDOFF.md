@@ -187,6 +187,33 @@ utilisation and names the offending process.
 
 ---
 
+## State as of 2026-09-26 — read this first; the 2026-09-10 block below is history
+
+**Data: 683 dataset-grade sweeps plus 3 verification runs = 686**, across **four chips**:
+
+| card | dataset-grade sweeps |
+|---|---|
+| RTX 5060 Ti | 514 |
+| RTX 3070 Ti | 137 |
+| RTX 2060 Super | 18 |
+| RTX 3060 | 14 |
+
+Read the counts off `python analysis/build_data_manifest.py --check`, never off this file.
+
+**What changed since 2026-09-10, in one line each:**
+- **The load-floor rule is prior art.** It is the ridge point (Schoonhoven et al.); see CLAUDE.md.
+- **The 3070 Ti causal test (Session D):** the manipulation passed twice, but the negative
+  control failed (4b). D2's repeat was not scoreable, and descriptively it held. **Attribution to
+  the floor region is not established on that chip.**
+- **§2.7's use of Wang et al. was corrected twice** (2026-09-25 and 09-26); see CLAUDE.md.
+- **Headroom Bench runs whole sessions unattended from the USB.** It can now also run a stock-only
+  protocol on any RTX 40/50 card (REGISTERED-PREDICTIONS §11).
+
+**The ordered open list is ROADMAP.md, "Open right now — 2026-09-26".** Hardware this weekend:
+- the 3070 Ti ships;
+- Session E runs on the 2060 Super;
+- the 5060 Ti gets rung C (4f), the memory-matched pair (4j) and the new-card practice run.
+
 ## State as of 2026-09-10
 
 **Data. 349 committed sweep CSVs across THREE chips**, of which **342 are dataset-grade** — the

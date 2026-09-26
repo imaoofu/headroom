@@ -1326,6 +1326,9 @@ and CLAUDE.md has carried two contradictory ones simultaneously.
 
 ## Open right now
 
+📌 **The current ordered to-do list is `ROADMAP.md`, "Open right now — 2026-09-26".** The entries
+below are mostly settled findings from August kept for their reasoning; they are not the queue.
+
 *Status as of 2026-08-30. The bullet this replaced — "zero real data collected... first real sweep
 is the immediate next step" — was true on 08-15 and badly false a week later, while this file was
 still being loaded into every session as the authority on project state. If this section ever

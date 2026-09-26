@@ -20,7 +20,9 @@ being right.
 
 ---
 
-📤 **NEXT TO SEND, 2026-09-25: Job 22** in [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md): try to break Claude's reading of Wang et al.'s Figure 4, now in §2.7. Jobs 7–21 are all delivered and reviewed.
+📭 **NOTHING TO SEND, 2026-09-26.** Jobs 7–22 are all delivered and reviewed; Job 22 narrowed Claude's Wang correction the day after it was written. **Next, when it exists:** an adversarial audit of the 3070 Ti Session D/D2 write-up (ROADMAP 2026-09-26, item 9). The result is mixed (the manipulation replicated twice, the control moved once), which is the kind of result that gets overstated. After the 2060 Super, the same for Session E.
+
+~~📤 NEXT TO SEND, 2026-09-25: Job 22.~~
 
 📤 **BATCH 2 (Jobs 7–14) IS IN [`GPT-PROMPT-NEXT.md`](GPT-PROMPT-NEXT.md), written 2026-09-22 evening.** Send Job 7 first: it pre-flights tomorrow's unattended activity test. Batch 1 (Jobs 1–6) is all delivered and reviewed; each review's outcome is in the table at the top of that file.
 

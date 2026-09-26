@@ -54,10 +54,30 @@ core-clock slider** for these, because it would move the top of the curve.
 
 ---
 
+## 📅 This weekend (2026-09-26/27), in order — updated 2026-09-26
+
+**Close Codex and ChatGPT for every measured run.** §10's closing bracket failed while Codex
+processes were starting, and nothing else explains it yet.
+
+1. **Curve 2, rung C → 4f** (~55 min). Build into P1 (it holds rung B, snapshotted in
+   `data/afterburner-profiles/5060ti-profiles-20260922-rungB/`). Claude snapshots P1 first and
+   decodes it after, and the editor's values win at any offset boundary. This completes §1's
+   four-rung test.
+2. **Curve 3, P4 with memory +0 → 4j** (~25 min). This is the memory-matched pair, and it removes
+   the largest confound in the `membw` mechanism section.
+3. **The new-card protocol's practice run** (~2 h, unattended). Launch it with
+   `Bench-Window.ps1 -CatalogPath <kit>\tools\bench-app\catalog\newcard-rtx40-50.json`, because
+   this card has its own run list. It exercises calibration, percent-of-top sweeps and the
+   `{session}` paths live for the first time. **Required before any shop card gets it.**
+4. **Optional, ~3 h unattended: the §10 control re-run**, with an amendment registered before
+   collection. §10 came back NOT SCOREABLE (`data/frequency-sweeps/5060ti-control10-20260925/`).
+
 ## Open items, in suggested order
 
 | # | id | what | time | needs Raymond for | tier |
 |---|---|---|---|---|---|
+| 0a | **§10** | ⛔ **Collected 2026-09-25: NOT SCOREABLE**, because the p5b bracket ran 4.5–8.5% slow. Descriptively, P2 held against p5a with 4 of 12 workloads moving. Re-run with Codex and ChatGPT closed | ~3 h | nothing (unattended) | 2 |
+| 0b | **§11 practice** | the new-card protocol, live for the first time | ~2 h | closing Codex and ChatGPT | 2 |
 | 1 | ~~**A/B**~~ | ✅ **Re-run 2026-09-24, generator trigger fixed: registered verdict NOT SUPPORTED FOR THIS PROXY**, zero losses in all 12 runs. (09-23 was INCOMPLETE.) `data/frequency-sweeps/5060ti-activity-ab-20260924/` | — | — | 2 |
 | 2 | ~~**4e**~~ | ✅ **Rung B suite, 2026-09-23: HOLDS.** Median 1702, 9 of 12 on it. `data/frequency-sweeps/5060ti-rungB-suite-20260923/` | — | — | 3 |
 | 3 | **4f** | **Rung C suite** | ~55 min | building curve 2 | 3 |
