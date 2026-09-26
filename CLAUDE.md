@@ -211,22 +211,43 @@ applications, theirs is a **fitted** optimum rather than a grid argmax, and thei
 system-scope against a 37 W idle floor. ~~🛑 **Someone needs to read §5.1.1/§5.2 and Figure 4 against
 these counts before the paper leans further on the authors-against-their-own-artifact strategy.**~~
 
-✅ **RESOLVED 2026-09-25, and the discrepancy is in THEIR FIGURE, not their data** (GPT Job 21
-recovered the key; the static-power finding was added in review:
-`docs/gpt-findings/2026-09-25-wang-tpds-optimum-discrepancy.md`). The artifact's commit `8a0a2e0`
-(2021-04-26) keeps `apps.pkl` and `plot.ipynb`, and Figure 4 plots the **first 20** of the 30
-names. Their raw grid gives **3 low / 3 interior / 14 high**. The notebook's `solve_dvfs` divides
-`P0` by 4.75 and `γ` by 4.65 **in place, on every call**, so the wide bars carry the division twice.
-Re-run with `python analysis/wang_tpds_figure4.py <clone>`:
-- **On the fitted parameters as released, the narrow model gives 4.35%** (the paper says 4.3%)
-  **with only 3 of 20 optima at the lowest setting**. It lands within one 100 MHz step of the raw
-  CSV argmin for **all 20**.
-- **The "close to the allowed lowest setting" optima (17 of 20) exist only after the static-power
-  division.** The plotted narrow mean is 7.25%, not 4.3%.
-- **Widening the interval alone gives 4.35% → 7.17%.** The rest of the rise to 36.4% comes from
-  shrinking static power twice.
-⚠️ Which condition reproduces 4.3% is shown; how the authors got it is not, since their meter
-readings were never released.
+✅ **RESOLVED 2026-09-25 as far as the released artifact allows, NARROWED 2026-09-26** (GPT Job 21
+recovered the key; Claude's review added the undivided condition; GPT Job 22 audited that review:
+`docs/gpt-findings/2026-09-26-wang-figure4-review-audit.md`). ~~"the discrepancy is in THEIR
+FIGURE, not their data"~~ **overreached and is struck.** What holds:
+- **Figure 4's first 20.** The artifact's commit `8a0a2e0` (2021-04-26) keeps `apps.pkl` and
+  `plot.ipynb`, and Figure 4 plots the **first 20** of the 30 names. Their raw grid gives
+  **3 low / 3 interior / 14 high**.
+- **The saved fit is undivided.** `model.py` fits `p0` and `γ` straight from the released
+  GPU-telemetry CSV (refit matches to 1.6×10⁻¹²), and the pickle's values are identical since
+  January 2021.
+- **The notebook's reductions.** `solve_dvfs` divides `p0` by 4.75 and **`γ` by 4.65. `γ`
+  multiplies memory frequency; it is NOT static power.** Both are divided **in place, on every call,
+  Narrow included**, so the Wide bars carry the division twice.
+- **Re-run** with `python analysis/wang_tpds_figure4.py <clone>`:
+  - undivided Narrow gives **4.352% with 3 of 20 optima at the lowest setting**;
+  - the plotted Narrow gives 7.25% with 17 of 20 there;
+  - widening alone gives 4.35% → 7.17%, and the plotted 36.48% needs both reductions twice.
+- **§5.2 discloses only this:** *"we shrink the static power P_G0 and enlarge the scaling
+  intervals … in our simulations"*. It gives no factors and does not mention `γ` or Narrow.
+
+⛔ **Struck from the 2026-09-25 version:**
+- ~~"the narrow model gives 4.35% (the paper says 4.3%)"~~ read as a reproduction. **4.352% rounds
+  to 4.4%.**
+- ~~"within one 100 MHz step of the raw CSV argmin for all 20"~~ holds only **after rounding to the
+  sampled grid**. Unrounded it is 17 of 20. It is also **in-sample**, since the fit uses the same
+  rows.
+- ~~"static-power division"~~, for the reason above.
+
+🛑 **And the limit that matters most: none of the 20 saved fits lies inside all six parameter
+ranges §5.1.3 states for the paper's library**, whether undivided, divided once or divided twice
+(verified here). So the artifact cannot be tied to the reported 4.3%. **Never write that the
+authors' measurements are wrong, or that their figure "comes from" the code alone.**
+
+🔑 **How the errors got in:** a notebook comment (`# static power is too large`) was read as a
+description of both terms, and a number 0.05 points from the paper's was read as a match. **An
+outside audit caught both within a day**, which is the case for sending every correction back out
+before it settles.
 
 ⚠️ **Two smaller corrections from the same audit.** The two tables are **one lineage, not two
 independent ones** — `GPU-DVFS-Job-Schedule` republishes `NV-DVFS-Benchmark`'s GTX 1080 Ti file
@@ -251,9 +272,11 @@ intervals of f^Gc and f^Gm are narrow"*, and simulate a widened interval that re
 noting the optimum sits *"close to the allowed lowest setting"* in both cases.
 
 ✅ **This is the stronger position, and it is how the paper now states it.** ~~Their 4.3% → 36.4% is
-structurally this project's 1.00% → 44.40%.~~ ⛔ **Struck 2026-09-25: it is not.** Most of their
-rise comes from shrinking static power, not from widening the interval, and their narrow optima sit
-near the TOP of the window on the released parameters (see RESOLVED above). The analogy was drawn
+structurally this project's 1.00% → 44.40%.~~ ⛔ **Struck 2026-09-25: it is not.** In the released
+model, widening the interval alone gives 4.35% → 7.17%; the plotted 36.4% also needs `p0` and the
+memory-frequency coefficient `γ` reduced, twice. On the saved fit their narrow optima sit near the
+TOP of the window (see RESOLVED above). ⚠️ *Until 2026-09-26 this read "most of their rise comes
+from shrinking static power"; `γ` is not static power (GPT Job 22).* The analogy was drawn
 from the paper's prose without re-running the model behind its figure. **Cite them for the narrow
 real interval and the widened simulation, not as evidence that the released grid hides a
 lower-frequency optimum.** Prior art that corroborates still cannot be lost to a paper turning up.

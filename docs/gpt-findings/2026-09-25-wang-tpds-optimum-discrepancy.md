@@ -1,5 +1,12 @@
 # Job 21: Wang et al. TPDS optimum against the released GTX 1080 Ti grid
 
+**Later audit:** [Job 22](2026-09-26-wang-figure4-review-audit.md) verifies the
+historical model results and clarifies that model/grid agreement requires
+snapping to the sampled clock grid, uses the model's training measurements,
+and does not establish how the authors obtained their meter-based 4.3%.
+The 4.351999% diagnostic rounds to **4.4%**, not 4.3%, at one decimal.
+It also separates the notebook's `gamma` reduction from static power.
+
 **Checked 2026-09-25.** The task was to identify the 20 applications behind Figure 4 of
 [Wang et al., arXiv:2104.00486](https://arxiv.org/pdf/2104.00486), compare their optima
 with the released 30-application GTX 1080 Ti CSV, and decide how §2.7 should use the

@@ -545,37 +545,58 @@ window.** A draft of this section read their low optima as *"what a window too n
 the answer looks like from inside"*, and called their 4.3% → 36.4% *"structurally the same argument
 as this work's 1.00% → 44.40%"*. Both readings were taken from the paper's prose; neither survived
 re-running the model behind its figure. The artifact's publication-era commit (`8a0a2e0`,
-2021-04-26) keeps the fitted parameters and the plotting code. Its solver divides the fitted static
-power `P_G0` by 4.75 and `γ` by 4.65 on every call, and the plotted wide case runs on parameters the
-narrow case has already divided once. Re-run from that commit with `analysis/wang_tpds_figure4.py`,
-over the 20 applications Figure 4 plots:
+2021-04-26) keeps the fitted parameters and the plotting code. Its `model.py` fits `p0` and `γ`
+directly to the released GPU-power CSV, and the saved values are unchanged since January 2021. The
+plotting notebook's solver then divides `p0` by 4.75 and `γ` by 4.65 on every call, **including the
+Narrow bars**, and divides both again before plotting Wide, because both calls share one set of
+parameters. In the paper's power model `γ` multiplies memory frequency; **it is not static power.**
+Re-run from that commit with `analysis/wang_tpds_figure4.py`, over the 20 applications Figure 4
+plots:
 
 | model condition | mean saving | narrow optima at the lowest core setting |
 |---|---|---|
-| narrow, fitted parameters as released | 4.35% | 3 of 20 |
-| narrow, static terms divided once (Figure 4's bars) | 7.25% | 17 of 20 |
-| wide, fitted parameters as released | 7.17% | — |
-| wide, static terms divided twice (Figure 4's bars) | 36.48% | — |
+| narrow, saved fit, undivided | 4.35% | 3 of 20 |
+| narrow, `p0` and `γ` divided once (Figure 4's bars) | 7.25% | 17 of 20 |
+| wide, saved fit, undivided | 7.17% | — |
+| wide, `p0` and `γ` divided twice (Figure 4's bars) | 36.48% | — |
 
-**The condition that reproduces their stated 4.3% puts the narrow optima near the top of the
-window**, 14 of 20 at 1886 MHz or above. It lands within one 100 MHz grid step of the raw argmin of
-`time × power` in their released CSV for all 20 applications, and that raw argmin sits at the
-highest sampled clock for 14 of them. The optima *"close to the allowed lowest setting"* appear only
-after the static-power reduction, which §5.2 of [22] describes for its simulations. **Widening the
-interval alone takes the modelled saving from 4.35% to 7.17%; the rest of the rise to 36.4% comes
-from shrinking the static power terms.** ⚠️ This shows which parameter condition reproduces 4.3%,
-not how the authors obtained it: their meter readings were never released. Their energy is also
-**system energy at the wall** against a 37 W idle floor (24 W CPU, 13 W GPU), so none of these
-figures compares directly with this work's board-power numbers.
+**On the saved fit without the notebook's reductions, the narrow optima sit near the top of the
+window**: 3 of 20 at the lowest setting and 14 of 20 at 1886 MHz or above. The optima *"close to
+the allowed lowest setting"* appear only after the reductions. §5.2 of [22] says the authors
+*"shrink the static power P_G0 and enlarge the scaling intervals of two frequencies in our
+simulations"*. It does not give either factor, mention the reduction of `γ`, or say that the
+Narrow bars, labelled the realistic interval, are reduced too. **Widening the interval alone takes
+the modelled saving from 4.35% to 7.17%; the plotted 36.4% also needs both reductions, applied
+twice.**
+
+⚠️ **What this does not show.** The undivided mean, 4.352%, rounds to 4.4%. It is close to the
+stated 4.3% but does not reproduce it, and the authors' commercial-meter readings were never
+released. None of the 20 saved fits lies inside all six parameter ranges §5.1.3 gives for their
+application library, whether undivided, divided once or divided twice. So the artifact cannot be
+tied to the paper's reported real result, and **nothing here shows that their measurements are
+wrong.** Their energy is also **system energy at the wall** against a 37 W idle floor (24 W CPU,
+13 W GPU), so none of these figures compares directly with this work's board-power numbers.
+
+⛔ **Narrowed 2026-09-26, the day after it was written, by an outside audit.** The version of this
+correction written on 2026-09-25 contained three errors:
+- It said the undivided condition *"reproduces their stated 4.3%"*.
+- It called both reduced terms static power.
+- It said the undivided model *"lands within one 100 MHz grid step of the raw argmin … for all 20
+  applications"*. That holds only after rounding each modelled clock to the sampled grid: unrounded,
+  17 of 20 are within 100 MHz. And because the model was fitted to those same rows, the agreement is
+  an in-sample check, not independent evidence.
+
+The errors came from reading the notebook's comment and one close number as if they settled what
+the paper did.
 
 ✅ **What survives is the part this section needs.** The 0.89 lower bound is theirs, and they name
-the narrow interval as one of two causes of their small saving. The released grid does not contain
-the optimum at either end: on the GTX 1080 Ti most applications' best sampled point is its
-**highest** clock. That is a statement about the window's width, and it does not locate an optimum
-in either direction. **[22] is cited for the narrow real interval and for a widened simulated
-scenario, not as validation that the released grid hides a lower-frequency optimum.** What this
-work adds is a sweep wide enough to contain the optimum, measured on consumer silicon across four
-chips and three architectures.
+the narrow interval as one of two causes of their small saving. On the released GTX 1080 Ti grid,
+26 of 30 applications have their best sampled point at an edge (18 at the highest clock, 8 at the
+lowest). An edge winner says the window is too narrow; it does not locate the optimum beyond it or
+say in which direction it lies. **[22] is cited for the narrow real interval and for a widened
+simulated scenario, not as validation that the released grid hides a lower-frequency optimum.**
+What this work adds is a sweep wide enough to contain the optimum, measured on consumer silicon
+across four chips and three architectures.
 
 Both halves are checkable: the ranges via `analysis/compare_consumer.py`, which now prints each
 sweep against both reference boost and declared default, and the GTX 980 counter-example by opening

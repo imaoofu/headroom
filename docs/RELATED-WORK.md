@@ -301,11 +301,15 @@ setting"* in both cases.
 
 🔑 **Cite them FOR the argument, never claim it.** ~~Their 4.3% → 36.4% is structurally this
 project's 1.00% → 44.40%.~~ ⛔ **Struck 2026-09-25.** The artifact's commit `8a0a2e0` re-run with
-`analysis/wang_tpds_figure4.py` puts their released-parameter narrow optima near the TOP of the
-window (3 of 20 at the lowest setting, within one step of the raw CSV argmin for all 20, mean
-4.35%). Figure 4's low optima and the 36.4% both depend on dividing static power by 4.75, applied
-twice in the wide case. Widening alone gives 7.17%. Cite them for the narrow real interval and the
-widened simulation only (`docs/gpt-findings/2026-09-25-wang-tpds-optimum-discrepancy.md`).
+`analysis/wang_tpds_figure4.py` puts the narrow optima of their saved, undivided GPU-telemetry fit
+near the TOP of the window (3 of 20 at the lowest setting, mean 4.352%, which rounds to 4.4%).
+Figure 4's low optima and the 36.4% both depend on the plotting notebook dividing `p0` by 4.75 and
+the memory-frequency coefficient `γ` by 4.65, twice in the wide case. Widening alone gives 7.17%.
+⚠️ **Narrowed 2026-09-26 (GPT Job 22):** `γ` is not static power; the model/grid agreement is
+in-sample and holds for all 20 only after rounding to the grid; and no saved fit lies inside the
+paper's stated parameter ranges, so none of this shows their measurements wrong. Cite them for the
+narrow real interval and the widened simulation only
+(`docs/gpt-findings/2026-09-26-wang-figure4-review-audit.md`).
 ⚠️ **System-scope energy** at the wall against a 37 W idle floor (24 W
 CPU, 13 W GPU), and the wide case is a **simulation with static power shrunk** — not comparable to
 board-power figures, and not a measurement. That last point is the opening: they could only simulate

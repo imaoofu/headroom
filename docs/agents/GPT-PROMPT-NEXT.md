@@ -692,7 +692,7 @@ cannot go into the paper until they are indexed or dropped.
 
 ## Job 21: Wang et al. (TPDS) against their own released data — an open discrepancy
 
-✅ **DONE 2026-09-25, reviewed and accepted, and review went one step further**: on the released parameters their narrow optima sit near the TOP of the window; Figure 4's low optima come from a static-power division (`analysis/wang_tpds_figure4.py`). §2.7 corrected. **Do not send.**
+✅ **DONE 2026-09-25, reviewed and accepted, and review went one step further**: on the released parameters their narrow optima sit near the TOP of the window; Figure 4's low optima depend on the notebook's reductions of `p0` and `gamma` (`analysis/wang_tpds_figure4.py`; "static-power division" was wrong, see Job 22). §2.7 corrected. **Do not send.**
 
 **Why:** CLAUDE.md has flagged this since 2026-09-19. §2.7 leans on Wang, Mei, Liu, Leung, Li & Chu
 (arXiv:2104.00486) reporting that their optimum sits *"close to the allowed lowest setting"*. But a
@@ -719,6 +719,8 @@ exist, and **none has been checked**:
 ---
 
 ## Job 22: try to break Claude's reading of Wang et al.'s Figure 4. **Send now.**
+
+✅ **DONE 2026-09-26, reviewed and accepted.** Every number reproduced; it caught three overstatements in Claude's correction (4.352% rounds to 4.4%, `gamma` is not static power, the grid agreement needs rounding and is in-sample) and that no saved fit matches the paper's stated parameter ranges. All applied. **Do not send.**
 
 **Why:** reviewing Job 21, Claude went one step further and put the result into the paper (§2.7,
 commit `9187f21`). The claim is that Figure 4's optima *"close to the allowed lowest setting"* come

@@ -125,7 +125,7 @@ allowed lowest setting"*. Their 20 benchmarks vs the CSV's 30 applications, a fi
 grid argmax, and system-scope energy are all candidates. **Someone must read Figure 4** before the
 paper leans further on citing them against their own artifact.
 
-✅ **CLOSED 2026-09-25 (Job 21 plus review).** Figure 4 plots the first 20 names; on the released fitted parameters the narrow optima sit near the top of the window, matching the raw grid. The low optima and most of the 36.4% come from a static-power division in the plotting code. §2.7 now cites them for the narrow interval only.
+✅ **CLOSED 2026-09-25 (Job 21 plus review).** Figure 4 plots the first 20 names; on the saved, undivided fit the narrow optima sit near the top of the window. The low optima and the plotted 36.4% depend on the notebook dividing `p0` and the memory-frequency coefficient `gamma`. §2.7 now cites them for the narrow interval only. **Narrowed by Job 22 (2026-09-26):** `gamma` is not static power, the grid agreement is in-sample and needs rounding, and the saved fit cannot be tied to the paper's 4.3%.
 
 **The original brief, kept for the record:**
 

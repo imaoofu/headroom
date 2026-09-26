@@ -5,7 +5,7 @@ Wang, Mei, Liu, Leung, Li & Chu (arXiv:2104.00486) report a 4.3% narrow-interval
 both. Their repository, HKBU-HPML/GPU-DVFS-Job-Schedule, kept the fitted parameters (apps.pkl) and
 the plotting notebook at commit 8a0a2e0, "finalize the TPDS version." (2021-04-26).
 
-This script loads both from that commit, runs the notebook's own solve_dvfs() under four parameter
+This script loads both from that commit, runs the notebook's own solve_dvfs() under five parameter
 conditions, and compares the narrow optima with the released CSV's raw grid argmin. It needs a
 local clone of the repository, made OUTSIDE this one:
 
@@ -97,14 +97,18 @@ def main(repo):
     wideOnce = [solve(a, narrow=False) for a in copy.deepcopy(apps).values()][:20]
 
     print("\nMean modelled saving over the 20, by parameter condition:")
-    print(f"  narrow, original fitted parameters          {mean(narrowOriginal):7.3f}%  (paper: 4.3%)")
-    print(f"  wide,   original fitted parameters          {mean(wideOriginal):7.3f}%")
-    print(f"  narrow, static terms divided once (plotted) {mean(narrowPlotted):7.3f}%")
-    print(f"  wide,   static terms divided once           {mean(wideOnce):7.3f}%")
-    print(f"  wide,   static terms divided twice (plotted){mean(widePlotted):7.3f}%  (paper: 36.4%)")
+    # gamma multiplies memory frequency in the paper's power model; it is NOT static power
+    # (corrected 2026-09-26 after GPT Job 22; the first version called both "static terms").
+    print(f"  narrow, saved fit, undivided                  {mean(narrowOriginal):7.3f}%  (paper states 4.3%)")
+    print(f"  wide,   saved fit, undivided                  {mean(wideOriginal):7.3f}%")
+    print(f"  narrow, p0 and gamma divided once (plotted)   {mean(narrowPlotted):7.3f}%")
+    print(f"  wide,   p0 and gamma divided once             {mean(wideOnce):7.3f}%")
+    print(f"  wide,   p0 and gamma divided twice (plotted)  {mean(widePlotted):7.3f}%  (paper states 36.4%)")
+    print(f"{mean(narrowOriginal):.3f}% rounds to {mean(narrowOriginal):.1f}% at one decimal: close to "
+          "the stated 4.3%, and not a reproduction of it.")
     print("Widening the interval alone moves the mean from "
-          f"{mean(narrowOriginal):.2f}% to {mean(wideOriginal):.2f}%; the rest of the rise to "
-          f"{mean(widePlotted):.2f}% comes from dividing P0 by {P0_DIVISOR} and gamma by "
+          f"{mean(narrowOriginal):.2f}% to {mean(wideOriginal):.2f}%; the plotted "
+          f"{mean(widePlotted):.2f}% also needs p0 divided by {P0_DIVISOR} and gamma by "
           f"{GAMMA_DIVISOR}, twice.")
 
     lowest = math.sqrt((0.8 - 0.5) / 2.0) + 0.5
@@ -120,20 +124,25 @@ def main(repo):
     table["energy"] = table["time/ms"] * table["power/W"]
     rawBest = table.loc[table.groupby("appName")["energy"].idxmin()].set_index("appName")["coreF"]
     grid = sorted(table["coreF"].unique())
-    exact = oneStep = 0
+    exact = oneStep = within100 = 0
     for name, result in zip(names, narrowOriginal):
-        nearest = min(grid, key=lambda g: abs(g - result[1] * DEFAULT_CORE_MHZ))
+        modelled = result[1] * DEFAULT_CORE_MHZ
+        nearest = min(grid, key=lambda g: abs(g - modelled))
         exact += nearest == rawBest[name]
         oneStep += abs(nearest - rawBest[name]) <= 100
+        within100 += abs(modelled - rawBest[name]) <= 100
     edges = Counter("low" if rawBest[n] == grid[0] else "high" if rawBest[n] == grid[-1]
                     else "interior" for n in names)
     print(f"\nRaw CSV argmin of time x GPU power for the same 20: {edges['low']} low, "
           f"{edges['interior']} interior, {edges['high']} high.")
-    print(f"The original-parameter narrow model lands on the raw argmin's grid point for {exact} of "
-          f"20 and within one 100 MHz step for {oneStep} of 20.")
-    print("\nLimits: these are the authors' fitted model and released GPU-telemetry CSV. Their "
-          "meter readings were never released, so this does not show how they obtained 4.3%; it "
-          "shows which parameter condition reproduces it, and where that condition puts the optima.")
+    print(f"After rounding each modelled clock to the nearest sampled one, the undivided narrow model "
+          f"lands on the raw argmin for {exact} of 20 and within one 100 MHz step for {oneStep} of "
+          f"20; unrounded, {within100} of 20 are within 100 MHz.")
+    print("That agreement is IN-SAMPLE: the fit was made to the same CSV rows the argmin reads.")
+    print("\nLimits: this is the released GPU-telemetry fit and CSV. The paper's commercial-meter "
+          "readings were never released, and none of the 20 saved fits lies inside all of the "
+          "parameter ranges the paper states for its application library (its section 5.1.3), so "
+          "this cannot show how the authors obtained 4.3%, or that their measurements are wrong.")
 
 
 if __name__ == "__main__":
