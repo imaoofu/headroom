@@ -714,6 +714,69 @@ number that appears in the paper's headline mechanism.
 🛑 **Keep the raw HWiNFO log again**, and record the per-point temperatures — they are the
 independent variable this time, not a footnote.
 
+### ⛔ Amendment, 2026-09-25, before collection: how Session E scores 4c and 4d
+
+**Written before any Session E data exists.** The card has not been touched since 2026-09-15. The
+scorer is `analysis/score_session_e.py`, committed with this amendment. Nothing above is edited:
+this section fixes what the words above leave open, and records one inconsistency in them.
+
+**4c, the manipulation (`stock-1` → `edit-2` → `stock-3`).** The prediction under Part 2 of the
+run sheet is: *"the median suite optimum moves from **1065 MHz** down toward **855 MHz** (the nearest
+suite grid point above the new floor end)"*, and *"if it does not move, the rule's attribution to
+the floor region fails on Turing"*.
+- **Scoreable** only if all of the following hold. Otherwise the result is NOT SCOREABLE, which is
+  not a failure.
+  - All 36 suites share one driver, the power limits read 175 / 175 / 185 W, and every sweep has
+    the 13-point grid 855–2115 MHz.
+  - `stock-3`'s median equals `stock-1`'s, the run sheet's rule: *"if the closing stock run does not
+    match the opening one, the result is not interpretable"*.
+  - No workload's median absolute matched-target throughput change from `stock-1` to `stock-3`
+    exceeds **1.5%**, the Session D and §10 limit.
+  - **The edit is verified in the data**: every workload of `edit-2` reads **≥ 0.668 V at every
+    target**, because the edit makes every clock above 810 MHz need the 0.669 V point.
+  - **Stock is verified**: every workload of both stock suites reads **0.630–0.657 V at 1065 MHz**,
+    the plan's witness range.
+- **PASS**: `edit-2`'s median lies in **855–960 MHz** and below `stock-1`'s. That is the predicted
+  grid point or one step above it, the same two-bin width 4a allowed.
+- **FAIL_NO_MOVEMENT**: the median is at or above `stock-1`'s. This is the headline failure named above.
+- **FAIL_PARTIAL**: the median moved down, but not into 855–960.
+- `stock-1`'s median is scored against the same session, and **reported against the registered
+  1065**; a different stock median is stated beside the verdict, not hidden by it.
+- ⚠️ **Session E cannot decide 4c's "still undecidable" branch.** The suite grid starts at 855 MHz,
+  above the edited floor end of 810, so no Session E sweep samples the edited floor end itself. The
+  edit's sharpness is by construction (the 38 mV step from ≤ 0.650 to 0.669 V) and by the witness,
+  not measured. Locating it would need a fine sweep under P2 around 810 MHz, which the plan does
+  not contain. Report this, and do not read a PASS as having shown the floor end is sharp.
+
+**4d, the descending sweep (`e1-desc`), against `rtx2060s-finefloor-20260915`.**
+- **The minimum set** is every target whose voltage lies within **0.003 V** of the sweep's lowest
+  reading. That is under half of one 6.25 mV code, so a median that falls between two codes still
+  ties with the lower code. The ascending reference gives {975, 1005}.
+- **Scoreable** only if all of the following hold:
+  - the sweep JSON records `sweep_order: descending`;
+  - its targets equal the ascending sweep's 13 (900 … 1140);
+  - every target has a voltage reading;
+  - it reads **0.630–0.657 V at 1065 MHz**, which confirms it ran on stock.
+- **HOLDS**: every target in the minimum set lies within **975–1005 MHz**.
+- **FLAT**: the minimum set contains both 900 and 1140.
+- **MINIMUM_REACHES_BOTTOM**: it contains 900 (and not 1140). The falling limb has gone.
+- **MINIMUM_AT_TOP**: it contains 1140 (and not 900).
+- **PARTIAL**: anything else. The minimum widened or moved without reaching either end.
+- ⛔ **The registered thermal outcome names the wrong end, recorded here before the data can
+  choose.** The table above says a thermal minimum *"follows the cold end — now the top of the
+  grid"*. But the mechanism it registers is that the falling limb (0.644 → 0.631 V from 900 to
+  975 MHz) is **warm-up lowering the voltage**. A descending sweep measures 900 MHz last, on a warm
+  card, so under that mechanism the limb disappears and **the minimum extends to the BOTTOM of the
+  grid** (MINIMUM_REACHES_BOTTOM). A minimum at the top would need a cold card to read *lower*,
+  the opposite mechanism. **Both are scored and both are reported by name.** The thermal reading
+  in the table (⛔, "every floor extent needs re-reading") attaches to MINIMUM_REACHES_BOTTOM,
+  and MINIMUM_AT_TOP is reported as what the registered words literally said. The error entered
+  when the outcome was phrased as "follows the cold end" without working through which end a
+  descending sweep measures warm.
+- **Reported beside the verdict, never scored:**
+  - per-point temperature in both sweeps;
+  - the driver in both sweeps, since the reference ran on 616.92.
+
 ## 5. RTX 5060 Ti: do isolated throughput losses come from ACTIVITY? Registered 2026-09-22 — COLLECTED 2026-09-23, ⛔ INCOMPLETE; RE-COLLECTED 2026-09-24, ✅ NOT SUPPORTED FOR THIS PROXY
 
 **Why.** On 2026-09-22, three stock `4i` replicates lost 8–11% at isolated points: **4, then 2, then

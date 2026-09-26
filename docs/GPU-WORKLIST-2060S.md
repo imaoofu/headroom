@@ -50,6 +50,14 @@ Other values, all from this card's committed sweeps:
 - **Iteration counts from `20260912-124138_rtx2060super-suite`.**
 - **E1:** `gemm` at 120 iterations, the default Part 1 used, so the two are comparable.
 
+**Scoring, committed 2026-09-25 before any data** (criteria: REGISTERED-PREDICTIONS §4d's
+amendment "how Session E scores 4c and 4d"):
+
+```
+python analysis/score_session_e.py data/frequency-sweeps/<session E directory>
+python analysis/score_session_e.py data/frequency-sweeps/<session E directory> --4d
+```
+
 The pipeline was tested in dry run, including three failure cases: a half-built edit, the edit
 live in P1, and an edit that moved the upper curve. Each stops at the right step and reverts to P1.
 ⚠️ **The 1065/1275 MHz voltages under the edit are predictions from the curve design, not
