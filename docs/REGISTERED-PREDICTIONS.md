@@ -19,7 +19,7 @@ lives from now on, so a reader does not have to take the claim on trust.
 
 ---
 
-## 1. The floor ladder — registered 2026-09-11. Rung B ✅ COLLECTED 2026-09-23, HOLDS; rung C PENDING
+## 1. The floor ladder — registered 2026-09-11. Rung B ✅ COLLECTED 2026-09-23, HOLDS; rung C ✅ COLLECTED 2026-09-26, HOLDS; the four-rung ladder is complete
 
 **Status: profiles not yet built, no data collected.**
 
@@ -156,6 +156,26 @@ same registration defect as rung B**, not a build fault. The floor region, 670�
 exactly **+315** (Afterburner's grid had no +320 at 840 mV). The 845 mV point shows rung B's
 offset-lag pattern. Check 5: `data/afterburner-profiles/5060ti-profiles-20260926-rungC/`.
 **Rung C is ready for collection.**
+
+✅ **Rung C, collected 2026-09-26 — primary, secondary and tertiary all HOLD.**
+`data/frequency-sweeps/5060ti-rungC-suite-20260926/`, twelve workloads, unattended, profile store
+verified byte-identical to the rung C snapshot and +2500 memory live at every point.
+
+| registered | measured |
+|---|---|
+| **primary:** median optimum 1852 | ✅ **1852** |
+| **secondary:** at least 7 of 12 on 1852 | ✅ **9 of 12**. copy and layernorm at 2010, `reduce` at 2317; none excluded |
+| **tertiary:** 1545 / 1702 / 1852 / 2010, monotone | ✅ **all four rungs on their predicted points, in order** |
+
+**No refutation occurred:** the median is the predicted point, the optima rise monotonically A → B →
+C → D, and B and C land on different points. ⚠️ **One chip, one suite per rung, the four rungs from
+different sessions, a ~155 MHz grid**; twelve workloads are repeated outcomes on one card, and
+per-workload optima reproduce only about 9 of 12 between identical runs.
+
+**Also measured, not registered:** `gemm` holds 0.720 V through **1845 MHz achieved** on rung C, where
+rung B had risen to 0.745, and matches rung B's VID codes from 2317 to 2932 MHz. A first launch took no
+data: its live-profile witness read idle memory (810 MHz) before the load reached the GPU, refused, and
+reverted. The witness was re-timed; its acceptance band was not changed (data README).
 
 ⛔ **Pre-run verification of rung B, 2026-09-22 (built into P1, decoded from the live store).**
 Check 1 passes: 720 mV reads **1702**, inside 1624–1777. Check 2 passes: everything at 850 mV and above is

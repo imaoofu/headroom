@@ -1,0 +1,134 @@
+<#
+4f - the rung C twelve-workload suite. docs/REGISTERED-PREDICTIONS.md section 1, registered
+2026-09-11: rung C's median optimum is 1852 MHz.
+
+Rung C lives in Afterburner Profile 1: P5 with every point from 670 to 840 mV raised +315 MHz
+(720 mV at 1845). It carries memory +2500 and PL 111 (200 W), as P5 does, so memory under load
+is an independent witness that the profile is live (stock reads ~13801, rung C ~16301).
+
+Refuses to run unless the live profile store is byte-identical to the committed rung C snapshot
+(data/afterburner-profiles/5060ti-profiles-20260926-rungC/, SHA-256 begins 4fdfbf241c1dae7a).
+Reverts to Profile 3 (stock) in a finally. Same grid and iteration counts as the rung B suite
+(5060ti-rungB-suite-20260923), so the two rungs are comparable.
+#>
+$ErrorActionPreference = "Continue"
+
+$wrapper = "C:\Users\Raymond\Documents\headroom\tools\hwinfo-logging\Invoke-LoggedSweep.ps1"
+$ab = "${env:ProgramFiles(x86)}\MSI Afterburner\MSIAfterburner.exe"
+$store = "${env:ProgramFiles(x86)}\MSI Afterburner\Profiles"
+$STOCK_MEM = 13801
+$RUNGC_MEM = 16301
+$RUNGC_HASH = "4FDFBF241C1DAE7A"
+
+$iterations = [ordered]@{
+    copy = 2660; reduce = 2870; softmax = 2600; layernorm = 1597; bgemm32 = 2673
+    bgemm64 = 2661; bgemm128 = 2467; bgemm256 = 1579; bgemm1024 = 414
+    attention = 147; conv = 151; gemm = 120
+}
+
+function Say([string]$t, [string]$c = "White") { Write-Host ("[{0}] {1}" -f (Get-Date -Format HH:mm:ss), $t) -ForegroundColor $c }
+
+function Get-MemClockUnderLoad {
+    $py = (Get-Command python).Source
+    $wl = "C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py"
+    $job = Start-Job -ScriptBlock {
+        param($py, $wl)
+        & $py $wl --workload gemm --iterations 400 --json 2>&1 | Out-Null
+    } -ArgumentList $py, $wl
+    # 2026-09-26: six reads 3-5 s after launch caught only idle memory (810 MHz) on the first rung C
+    # attempt, because the job had not reached the GPU yet. Keep sampling for up to 30 s, and stop
+    # 3 s after the first read that leaves idle, so the max is taken under load. The acceptance
+    # window is unchanged.
+    $reads = @()
+    $loadedSince = $null
+    $deadline = (Get-Date).AddSeconds(30)
+    while ((Get-Date) -lt $deadline) {
+        $v = (& nvidia-smi --query-gpu=clocks.mem --format=csv,noheader,nounits) | Select-Object -First 1
+        $n = 0; if ([int]::TryParse($v, [ref]$n)) { $reads += $n }
+        if ($n -gt 5000 -and $null -eq $loadedSince) { $loadedSince = Get-Date }
+        if ($null -ne $loadedSince -and ((Get-Date) - $loadedSince).TotalSeconds -ge 3) { break }
+        Start-Sleep -Milliseconds 400
+    }
+    Wait-Job $job -Timeout 60 | Out-Null
+    Remove-Job $job -Force -ErrorAction SilentlyContinue
+    if ($reads.Count -eq 0) { return -1 }
+    return ($reads | Measure-Object -Maximum).Maximum
+}
+
+if (-not (Test-Path $ab)) { Say "Afterburner not found at $ab" "Red"; exit 3 }
+if (-not (Get-Process -Name "HWiNFO64" -ErrorAction SilentlyContinue)) { Say "HWiNFO64 is not running." "Red"; exit 3 }
+
+$cfg = Get-ChildItem $store -Filter "VEN_10DE*.cfg" | Select-Object -First 1
+$hash = (Get-FileHash $cfg.FullName -Algorithm SHA256).Hash
+if (-not $hash.StartsWith($RUNGC_HASH)) {
+    Say "The live profile store is NOT the committed rung C snapshot (hash $($hash.Substring(0,16))). Refusing." "Red"
+    exit 4
+}
+Say "Live profile store matches the rung C snapshot ($($hash.Substring(0,16)))." "Green"
+
+$applied = $false
+try {
+    Say "Applying Profile 1 (rung C)." "Cyan"
+    & $ab -profile1 -q
+    Start-Sleep -Seconds 8
+    $applied = $true
+
+    $memAfter = Get-MemClockUnderLoad
+    $pl = (& nvidia-smi --query-gpu=power.limit --format=csv,noheader,nounits) | Select-Object -First 1
+    Say ("Memory under load {0} MHz (rung C expects ~{1}); power limit {2} W." -f $memAfter, $RUNGC_MEM, $pl.Trim())
+    # Rung C's +2500 must be live: at least +2300 over stock, and no more than +2800.
+    if ($memAfter -lt ($STOCK_MEM + 2300) -or $memAfter -gt ($STOCK_MEM + 2800) -or
+        [math]::Abs([double]$pl - 200) -gt 0.5) {
+        Say "Rung C did NOT verify as live. Refusing to sweep." "Red"
+        exit 5
+    }
+    Say "Rung C verified live." "Green"
+    # The first launch on 09-23 failed its own preflight: the Claude desktop app drew 26% SM while
+    # rendering the agent's message. Let the desktop settle before the first sweep's preflight.
+    Say "Waiting 90 s for the desktop to settle before the first preflight." "Yellow"
+    Start-Sleep -Seconds 90
+
+    $n = 0
+    foreach ($w in $iterations.Keys) {
+        $n++
+        Say ("[{0}/12] {1}" -f $n, $w) "Cyan"
+        $job = @{
+            label           = "5060ti-rungC-suite-$w"
+            workload        = $w
+            minMhz          = 1237
+            maxMhz          = 3090
+            frequencyCount  = 13
+            descending      = $false
+            iterations      = [string]$iterations[$w]
+            expectedMinutes = 10
+            appliedSettings = ("AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): " +
+                "P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), " +
+                "memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory " +
+                "under load ($memAfter MHz) and power limit $($pl.Trim()) W. Profile store SHA-256 " +
+                "$($hash.Substring(0,16)), byte-identical to data/afterburner-profiles/" +
+                "5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, " +
+                "operator absent, driving agent silent. Iterations " + [string]$iterations[$w] +
+                " as 5060ti-stock-repro-20260922 and the rung B suite.")
+        }
+        $job | ConvertTo-Json | Set-Content -Path "C:\headroom-bench\job.json" -Encoding UTF8
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $wrapper -JobPath "C:\headroom-bench\job.json"
+        $code = $LASTEXITCODE
+        Say ("exit {0} for {1}" -f $code, $w)
+        if ($code -ne 0) { Say "A run failed - stopping rather than working around it." "Red"; break }
+    }
+}
+finally {
+    Say "Reverting to Profile 3 (stock)." "Cyan"
+    if ($applied) {
+        & $ab -profile3 -q
+        Start-Sleep -Seconds 8
+    }
+    $memRevert = Get-MemClockUnderLoad
+    Say ("Memory under load after revert: {0} MHz" -f $memRevert)
+    if ([math]::Abs($memRevert - $STOCK_MEM) -gt 100) {
+        Say "** THE CARD IS NOT BACK ON STOCK. Apply Profile 3 by hand before trusting it. **" "Red"
+    } else {
+        Say "Card is back on stock." "Green"
+    }
+    & nvidia-smi --query-gpu=power.limit,power.default_limit --format=csv,noheader
+}

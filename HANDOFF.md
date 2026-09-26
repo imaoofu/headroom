@@ -189,11 +189,11 @@ utilisation and names the offending process.
 
 ## State as of 2026-09-26 — read this first; the 2026-09-10 block below is history
 
-**Data: 683 dataset-grade sweeps plus 3 verification runs = 686**, across **four chips**:
+**Data: 695 dataset-grade sweeps plus 3 verification runs = 698** (rung C's 12 added 2026-09-26), across **four chips**:
 
 | card | dataset-grade sweeps |
 |---|---|
-| RTX 5060 Ti | 514 |
+| RTX 5060 Ti | 526 |
 | RTX 3070 Ti | 137 |
 | RTX 2060 Super | 18 |
 | RTX 3060 | 14 |

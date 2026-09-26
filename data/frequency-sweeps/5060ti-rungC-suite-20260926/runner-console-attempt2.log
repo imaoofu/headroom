@@ -1,0 +1,1281 @@
+﻿[13:36:10] Live profile store matches the rung C snapshot (4FDFBF241C1DAE7A).
+[13:36:10] Applying Profile 1 (rung C).
+[13:36:44] Memory under load 16501 MHz (rung C expects ~16301); power limit 200.00 W.
+[13:36:44] Rung C verified live.
+[13:36:44] Waiting 90 s for the desktop to settle before the first preflight.
+[13:38:14] [1/12] copy
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-copy
+  workload     : copy
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 2660
+  output dir   : C:\headroom-bench\results\20260926-133814_5060ti-rungC-suite-copy
+  hwinfo log   : C:\headroom-bench\results\20260926-133814_5060ti-rungC-suite-copy\5060ti-rungC-suite-copy-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2660 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 1.2%, peak 5% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-133814_5060ti-rungC-suite-copy\5060ti-rungC-suite-copy-hwinfo.csv
+  size       : 24345 then 40042 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload copy --json --iterations 2660
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload copy --json --iterations 2660   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2660 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15346 MB - clear to start.
+[SWEEP] Baseline utilisation 3.2% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1235.3 MHz (held),  48.34 W [21 in-window of 25], 37.6 C, util 94.8%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.4 MHz (held),  49.82 W [20 in-window of 24], 39.2 C, util 94.7%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved   1543 MHz (held),  50.69 W [20 in-window of 24], 40.4 C, util 94.5%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1699.8 MHz (held),  53.02 W [19 in-window of 22], 41.6 C, util 95.9%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  54.83 W [17 in-window of 21], 42.5 C, util 88.1%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  59.33 W [16 in-window of 19], 43.9 C, util 93.4%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),  65.83 W [15 in-window of 18], 45.5 C, util 97.1%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  67.81 W [15 in-window of 18], 46.7 C, util 92.7%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2452.5 MHz (held),  67.18 W [15 in-window of 18], 47.7 C, util 92.7%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2579.4 MHz (UNDERSHOT -45.6),  70.58 W [15 in-window of 18], 48.7 C, util 95.1%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved   2775 MHz (held),  70.31 W [15 in-window of 18], 49.5 C, util 92.7%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved   2925 MHz (held),  79.95 W [14 in-window of 18], 51.3 C, util 98.6%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved   3015 MHz (UNDERSHOT -75),  82.16 W [14 in-window of 18], 52.4 C, util  95%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2660 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-133814_5060ti-rungC-suite-copy\20260926-133831_5060ti-rungC-suite-copy_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-133814_5060ti-rungC-suite-copy\20260926-133831_5060ti-rungC-suite-copy_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1061445 then 1061445 bytes
+  rows       : 519
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 4.3 min (expected ~10)
+  hwinfo log    : 1061445 bytes, 519 rows
+  result file   : C:\headroom-bench\results\20260926-133814_5060ti-rungC-suite-copy\wrapper-result.json
+
+Run complete and both halves verified.
+[13:42:46] exit 0 for copy
+[13:42:46] [2/12] reduce
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-reduce
+  workload     : reduce
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 2870
+  output dir   : C:\headroom-bench\results\20260926-134246_5060ti-rungC-suite-reduce
+  hwinfo log   : C:\headroom-bench\results\20260926-134246_5060ti-rungC-suite-reduce\5060ti-rungC-suite-reduce-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2870 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 2.5%, peak 4% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-134246_5060ti-rungC-suite-reduce\5060ti-rungC-suite-reduce-hwinfo.csv
+  size       : 24311 then 40033 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload reduce --json --iterations 2870
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload reduce --json --iterations 2870   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2870 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15346 MB - clear to start.
+[SWEEP] Baseline utilisation 3.8% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved   1236 MHz (held),  47.38 W [27 in-window of 30], 42.9 C, util 95.9%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1392.2 MHz (held),  47.23 W [26 in-window of 30], 41.7 C, util 92.2%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1543.2 MHz (held),  48.84 W [26 in-window of 29], 40.9 C, util 97.2%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1700.5 MHz (held),  49.86 W [24 in-window of 28],  40 C, util 96.7%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  51.77 W [21 in-window of 25], 39.9 C, util  95%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  56.09 W [19 in-window of 23], 39.9 C, util 94.3%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),  62.37 W [17 in-window of 21], 40.7 C, util 96.2%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  66.53 W [16 in-window of 19], 41.2 C, util 92.9%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2457.5 MHz (held),  69.53 W [16 in-window of 19], 41.6 C, util 94.3%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2588.5 MHz (UNDERSHOT -36.5),  67.16 W [16 in-window of 19], 41.5 C, util  93%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved   2775 MHz (held),  71.01 W [15 in-window of 19], 41.7 C, util 88.4%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved   2925 MHz (held),  76.38 W [15 in-window of 18], 42.5 C, util 92.9%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved   3016 MHz (UNDERSHOT -74),  78.24 W [14 in-window of 18], 43.1 C, util 92.1%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3022 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2870 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-134246_5060ti-rungC-suite-reduce\20260926-134302_5060ti-rungC-suite-reduce_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-134246_5060ti-rungC-suite-reduce\20260926-134302_5060ti-rungC-suite-reduce_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1141666 then 1141666 bytes
+  rows       : 558
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 4.7 min (expected ~10)
+  hwinfo log    : 1141666 bytes, 558 rows
+  result file   : C:\headroom-bench\results\20260926-134246_5060ti-rungC-suite-reduce\wrapper-result.json
+
+Run complete and both halves verified.
+[13:47:37] exit 0 for reduce
+[13:47:37] [3/12] softmax
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-softmax
+  workload     : softmax
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 2600
+  output dir   : C:\headroom-bench\results\20260926-134737_5060ti-rungC-suite-softmax
+  hwinfo log   : C:\headroom-bench\results\20260926-134737_5060ti-rungC-suite-softmax\5060ti-rungC-suite-softmax-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2600 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 2.8%, peak 4% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-134737_5060ti-rungC-suite-softmax\5060ti-rungC-suite-softmax-hwinfo.csv
+  size       : 24294 then 39970 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload softmax --json --iterations 2600
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload softmax --json --iterations 2600   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2600 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15346 MB - clear to start.
+[SWEEP] Baseline utilisation 4.4% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1236.3 MHz (held),  58.31 W [19 in-window of 22], 41.9 C, util  94%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1392.9 MHz (held),  59.41 W [19 in-window of 22], 43.4 C, util 91.3%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1544.1 MHz (held),  61.77 W [18 in-window of 22], 44.8 C, util 95.3%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1696.6 MHz (held),  64.77 W [17 in-window of 21], 46.2 C, util 95.4%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  64.46 W [16 in-window of 20], 47.1 C, util 93.4%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  72.93 W [15 in-window of 19], 48.8 C, util 96.3%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),  79.21 W [15 in-window of 18], 50.5 C, util 92.9%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  88.16 W [15 in-window of 18], 52.6 C, util 93.7%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2449.1 MHz (held),  87.42 W [14 in-window of 18], 51.4 C, util 95.4%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2574.3 MHz (UNDERSHOT -50.7),  88.42 W [14 in-window of 18], 50.1 C, util 92.5%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2762.9 MHz (held),  88.65 W [15 in-window of 18], 49.3 C, util 93.7%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved   2925 MHz (held),  93.33 W [14 in-window of 18], 49.6 C, util 92.1%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved   3015 MHz (UNDERSHOT -75),  102.3 W [14 in-window of 18], 50.5 C, util 98.2%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2600 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-134737_5060ti-rungC-suite-softmax\20260926-134754_5060ti-rungC-suite-softmax_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-134737_5060ti-rungC-suite-softmax\20260926-134754_5060ti-rungC-suite-softmax_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1043552 then 1043552 bytes
+  rows       : 509
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 4.2 min (expected ~10)
+  hwinfo log    : 1043552 bytes, 509 rows
+  result file   : C:\headroom-bench\results\20260926-134737_5060ti-rungC-suite-softmax\wrapper-result.json
+
+Run complete and both halves verified.
+[13:52:03] exit 0 for softmax
+[13:52:03] [4/12] layernorm
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-layernorm
+  workload     : layernorm
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 1597
+  output dir   : C:\headroom-bench\results\20260926-135204_5060ti-rungC-suite-layernorm
+  hwinfo log   : C:\headroom-bench\results\20260926-135204_5060ti-rungC-suite-layernorm\5060ti-rungC-suite-layernorm-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 1597 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 1.2%, peak 2% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-135204_5060ti-rungC-suite-layernorm\5060ti-rungC-suite-layernorm-hwinfo.csv
+  size       : 22350 then 38060 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload layernorm --json --iterations 1597
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload layernorm --json --iterations 1597   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 1597 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 2.6% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1236.3 MHz (held),  56.49 W [21 in-window of 25], 41.8 C, util 92.1%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1392.7 MHz (held),  57.54 W [21 in-window of 24], 41.7 C, util 91.6%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1543.4 MHz (held),  57.19 W [20 in-window of 23], 41.6 C, util 92.8%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1700.5 MHz (held),  58.95 W [19 in-window of 22], 41.7 C, util 92.8%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  62.21 W [17 in-window of 21], 41.7 C, util 93.9%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  65.87 W [16 in-window of 20], 42.1 C, util  89%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),  71.26 W [16 in-window of 19],  43 C, util 93.1%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  80.01 W [15 in-window of 19], 44.1 C, util 96.1%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2445.5 MHz (held),  79.75 W [15 in-window of 19], 44.4 C, util 92.9%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2567.9 MHz (UNDERSHOT -57.1),  82.53 W [15 in-window of 19], 44.7 C, util 96.5%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2767.5 MHz (held),  82.01 W [15 in-window of 18], 45.1 C, util  93%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved   2925 MHz (held),  87.69 W [15 in-window of 18], 45.9 C, util 91.9%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 3015.5 MHz (UNDERSHOT -74.5),  92.41 W [15 in-window of 18], 46.8 C, util  93%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 1597 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-135204_5060ti-rungC-suite-layernorm\20260926-135220_5060ti-rungC-suite-layernorm_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-135204_5060ti-rungC-suite-layernorm\20260926-135220_5060ti-rungC-suite-layernorm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1074571 then 1074571 bytes
+  rows       : 523
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 4.4 min (expected ~10)
+  hwinfo log    : 1074571 bytes, 523 rows
+  result file   : C:\headroom-bench\results\20260926-135204_5060ti-rungC-suite-layernorm\wrapper-result.json
+
+Run complete and both halves verified.
+[13:56:37] exit 0 for layernorm
+[13:56:37] [5/12] bgemm32
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-bgemm32
+  workload     : bgemm32
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 2673
+  output dir   : C:\headroom-bench\results\20260926-135637_5060ti-rungC-suite-bgemm32
+  hwinfo log   : C:\headroom-bench\results\20260926-135637_5060ti-rungC-suite-bgemm32\5060ti-rungC-suite-bgemm32-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2673 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 1.2%, peak 4% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-135637_5060ti-rungC-suite-bgemm32\5060ti-rungC-suite-bgemm32-hwinfo.csv
+  size       : 22366 then 38069 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm32 --json --iterations 2673
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm32 --json --iterations 2673   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2673 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 3.2% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved   1236 MHz (held),  69.71 W [20 in-window of 24],  43 C, util 96.3%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.8 MHz (held),  70.65 W [20 in-window of 23], 43.3 C, util 94.9%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1542.9 MHz (held),  72.68 W [19 in-window of 23], 43.6 C, util 95.6%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1695.8 MHz (held),  71.88 W [18 in-window of 22], 43.7 C, util 89.1%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  77.62 W [17 in-window of 20], 44.5 C, util 93.6%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  87.58 W [15 in-window of 19],  46 C, util 92.8%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),   95.3 W [15 in-window of 18], 47.6 C, util 92.8%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  106.3 W [14 in-window of 18], 49.1 C, util 86.1%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2442.7 MHz (UNDERSHOT -32.3), 106.69 W [15 in-window of 18], 49.7 C, util 92.9%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2563.7 MHz (UNDERSHOT -61.3), 104.73 W [14 in-window of 18], 50.2 C, util 92.3%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2759.7 MHz (held), 110.69 W [14 in-window of 18], 50.9 C, util 94.8%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved 2919.3 MHz (held), 117.05 W [14 in-window of 18],  52 C, util 92.1%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 3009.9 MHz (UNDERSHOT -80.1), 129.47 W [14 in-window of 18], 53.9 C, util 97.2%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2673 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 3 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-135637_5060ti-rungC-suite-bgemm32\20260926-135654_5060ti-rungC-suite-bgemm32_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-135637_5060ti-rungC-suite-bgemm32\20260926-135654_5060ti-rungC-suite-bgemm32_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1056277 then 1056277 bytes
+  rows       : 515
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 4.3 min (expected ~10)
+  hwinfo log    : 1056277 bytes, 515 rows
+  result file   : C:\headroom-bench\results\20260926-135637_5060ti-rungC-suite-bgemm32\wrapper-result.json
+
+Run complete and both halves verified.
+[14:01:07] exit 0 for bgemm32
+[14:01:07] [6/12] bgemm64
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-bgemm64
+  workload     : bgemm64
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 2661
+  output dir   : C:\headroom-bench\results\20260926-140107_5060ti-rungC-suite-bgemm64
+  hwinfo log   : C:\headroom-bench\results\20260926-140107_5060ti-rungC-suite-bgemm64\5060ti-rungC-suite-bgemm64-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2661 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 0.5%, peak 2% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-140107_5060ti-rungC-suite-bgemm64\5060ti-rungC-suite-bgemm64-hwinfo.csv
+  size       : 24348 then 40085 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm64 --json --iterations 2661
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm64 --json --iterations 2661   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2661 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 2.8% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1236.3 MHz (held),  75.32 W [20 in-window of 23],  45 C, util  96%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.3 MHz (held),  77.21 W [19 in-window of 23],  45 C, util 92.1%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1542.9 MHz (held),  75.85 W [19 in-window of 22], 45.1 C, util 91.4%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved   1695 MHz (held),   79.9 W [18 in-window of 21], 45.4 C, util 94.2%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  84.78 W [16 in-window of 20], 46.1 C, util 95.4%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  92.63 W [15 in-window of 19], 47.5 C, util 93.2%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held), 105.82 W [15 in-window of 18], 49.1 C, util 95.4%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held), 111.54 W [15 in-window of 18], 50.3 C, util 93.1%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2437.5 MHz (UNDERSHOT -37.5),  116.1 W [15 in-window of 18], 50.7 C, util 89.3%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2549.9 MHz (UNDERSHOT -75.1), 114.95 W [14 in-window of 18], 51.3 C, util 94.2%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2743.8 MHz (UNDERSHOT -38.2), 113.49 W [15 in-window of 18], 51.7 C, util 91.8%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved 2918.1 MHz (held), 126.27 W [15 in-window of 18], 53.4 C, util 94.5%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 3004.3 MHz (UNDERSHOT -85.7), 129.98 W [15 in-window of 18], 54.3 C, util 92.9%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2661 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-140107_5060ti-rungC-suite-bgemm64\20260926-140123_5060ti-rungC-suite-bgemm64_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-140107_5060ti-rungC-suite-bgemm64\20260926-140123_5060ti-rungC-suite-bgemm64_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1049432 then 1049432 bytes
+  rows       : 512
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 4.3 min (expected ~10)
+  hwinfo log    : 1049432 bytes, 512 rows
+  result file   : C:\headroom-bench\results\20260926-140107_5060ti-rungC-suite-bgemm64\wrapper-result.json
+
+Run complete and both halves verified.
+[14:05:34] exit 0 for bgemm64
+[14:05:34] [7/12] bgemm128
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-bgemm128
+  workload     : bgemm128
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 2467
+  output dir   : C:\headroom-bench\results\20260926-140535_5060ti-rungC-suite-bgemm128
+  hwinfo log   : C:\headroom-bench\results\20260926-140535_5060ti-rungC-suite-bgemm128\5060ti-rungC-suite-bgemm128-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2467 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 1%, peak 4% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-140535_5060ti-rungC-suite-bgemm128\5060ti-rungC-suite-bgemm128-hwinfo.csv
+  size       : 24365 then 40062 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm128 --json --iterations 2467
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm128 --json --iterations 2467   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2467 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 2.8% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1235.9 MHz (held),  64.46 W [32 in-window of 35], 44.6 C, util 94.1%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.9 MHz (held),  70.41 W [28 in-window of 32], 45.3 C, util 97.1%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1543.1 MHz (held),  74.52 W [25 in-window of 29], 45.7 C, util 92.3%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1695.9 MHz (held),  80.08 W [23 in-window of 26], 46.3 C, util 91.8%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  84.81 W [21 in-window of 25],  47 C, util 93.1%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  94.55 W [19 in-window of 22], 48.7 C, util 91.6%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held), 108.92 W [17 in-window of 21], 50.7 C, util 93.9%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held), 126.05 W [17 in-window of 20], 53.2 C, util 94.8%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2449.6 MHz (held), 130.12 W [16 in-window of 19], 54.5 C, util  93%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2574.9 MHz (UNDERSHOT -50.1), 137.25 W [15 in-window of 19], 55.6 C, util 95.1%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2747.5 MHz (UNDERSHOT -34.5), 139.11 W [14 in-window of 18], 56.5 C, util 92.5%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved 2786.6 MHz (UNDERSHOT -145.4), 144.69 W [14 in-window of 18], 57.1 C, util 89.3%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 2804.6 MHz (UNDERSHOT -285.4), 147.33 W [14 in-window of 18], 57.6 C, util 93.7%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 2467 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 4 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-140535_5060ti-rungC-suite-bgemm128\20260926-140551_5060ti-rungC-suite-bgemm128_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-140535_5060ti-rungC-suite-bgemm128\20260926-140551_5060ti-rungC-suite-bgemm128_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1152318 then 1152318 bytes
+  rows       : 563
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 4.7 min (expected ~10)
+  hwinfo log    : 1152318 bytes, 563 rows
+  result file   : C:\headroom-bench\results\20260926-140535_5060ti-rungC-suite-bgemm128\wrapper-result.json
+
+Run complete and both halves verified.
+[14:10:28] exit 0 for bgemm128
+[14:10:28] [8/12] bgemm256
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-bgemm256
+  workload     : bgemm256
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 1579
+  output dir   : C:\headroom-bench\results\20260926-141028_5060ti-rungC-suite-bgemm256
+  hwinfo log   : C:\headroom-bench\results\20260926-141028_5060ti-rungC-suite-bgemm256\5060ti-rungC-suite-bgemm256-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 1579 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 1.2%, peak 3% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-141028_5060ti-rungC-suite-bgemm256\5060ti-rungC-suite-bgemm256-hwinfo.csv
+  size       : 22391 then 38119 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm256 --json --iterations 1579
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm256 --json --iterations 1579   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 1579 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 2.8% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1235.9 MHz (held),  59.93 W [38 in-window of 42], 45.1 C, util 96.1%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.4 MHz (held),  64.73 W [34 in-window of 38], 45.5 C, util 95.2%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1542.6 MHz (held),  69.37 W [30 in-window of 34],  46 C, util 94.6%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1696.2 MHz (held),  75.32 W [28 in-window of 31], 46.7 C, util 97.2%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  79.09 W [25 in-window of 29], 47.3 C, util 94.5%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  89.82 W [23 in-window of 27], 48.9 C, util 92.5%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held), 102.71 W [21 in-window of 25],  51 C, util 93.1%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held), 118.85 W [20 in-window of 24], 53.6 C, util 94.2%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2457.5 MHz (held),  126.2 W [19 in-window of 22], 55.2 C, util 95.3%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2590.2 MHz (UNDERSHOT -34.8), 131.82 W [18 in-window of 22], 56.4 C, util 95.3%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2766.2 MHz (held), 137.93 W [17 in-window of 20], 57.2 C, util 88.4%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved 2919.6 MHz (held), 159.99 W [16 in-window of 19], 60.8 C, util 94.9%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 2973.7 MHz (UNDERSHOT -116.3), 168.24 W [15 in-window of 19], 61.6 C, util 88.9%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 1579 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-141028_5060ti-rungC-suite-bgemm256\20260926-141045_5060ti-rungC-suite-bgemm256_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-141028_5060ti-rungC-suite-bgemm256\20260926-141045_5060ti-rungC-suite-bgemm256_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1260595 then 1260595 bytes
+  rows       : 617
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 5.1 min (expected ~10)
+  hwinfo log    : 1260595 bytes, 617 rows
+  result file   : C:\headroom-bench\results\20260926-141028_5060ti-rungC-suite-bgemm256\wrapper-result.json
+
+Run complete and both halves verified.
+[14:15:48] exit 0 for bgemm256
+[14:15:48] [9/12] bgemm1024
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-bgemm1024
+  workload     : bgemm1024
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 414
+  output dir   : C:\headroom-bench\results\20260926-141548_5060ti-rungC-suite-bgemm1024
+  hwinfo log   : C:\headroom-bench\results\20260926-141548_5060ti-rungC-suite-bgemm1024\5060ti-rungC-suite-bgemm1024-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 414 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 2%, peak 3% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-141548_5060ti-rungC-suite-bgemm1024\5060ti-rungC-suite-bgemm1024-hwinfo.csv
+  size       : 24305 then 40016 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm1024 --json --iterations 414
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload bgemm1024 --json --iterations 414   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 414 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 3.4% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1235.9 MHz (held),  50.68 W [38 in-window of 43], 45.4 C, util 99.2%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.4 MHz (held),  54.49 W [34 in-window of 38], 45.4 C, util 97.6%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1543.1 MHz (held),  59.56 W [30 in-window of 34], 45.7 C, util 96.5%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1698.4 MHz (held),  62.99 W [27 in-window of 32], 46.1 C, util 98.3%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  66.33 W [25 in-window of 29], 46.4 C, util 95.6%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  79.38 W [23 in-window of 27], 48.3 C, util 97.8%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),  92.19 W [21 in-window of 25], 50.5 C, util 97.2%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held), 104.12 W [20 in-window of 24], 52.4 C, util 94.2%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2461.9 MHz (held), 115.47 W [18 in-window of 23], 54.4 C, util 97.8%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2604.4 MHz (held), 121.37 W [17 in-window of 22], 55.6 C, util 96.9%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved   2775 MHz (held), 123.46 W [17 in-window of 20], 55.9 C, util 92.1%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved   2925 MHz (held), 141.92 W [16 in-window of 20], 59.2 C, util 94.4%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 3001.2 MHz (UNDERSHOT -88.8), 150.85 W [16 in-window of 19],  61 C, util 91.2%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 414 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 1 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-141548_5060ti-rungC-suite-bgemm1024\20260926-141605_5060ti-rungC-suite-bgemm1024_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-141548_5060ti-rungC-suite-bgemm1024\20260926-141605_5060ti-rungC-suite-bgemm1024_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1268369 then 1268369 bytes
+  rows       : 621
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 5.2 min (expected ~10)
+  hwinfo log    : 1268369 bytes, 621 rows
+  result file   : C:\headroom-bench\results\20260926-141548_5060ti-rungC-suite-bgemm1024\wrapper-result.json
+
+Run complete and both halves verified.
+[14:21:11] exit 0 for bgemm1024
+[14:21:11] [10/12] attention
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-attention
+  workload     : attention
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 147
+  output dir   : C:\headroom-bench\results\20260926-142111_5060ti-rungC-suite-attention
+  hwinfo log   : C:\headroom-bench\results\20260926-142111_5060ti-rungC-suite-attention\5060ti-rungC-suite-attention-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 147 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 3.2%, peak 5% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-142111_5060ti-rungC-suite-attention\5060ti-rungC-suite-attention-hwinfo.csv
+  size       : 22381 then 38077 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload attention --json --iterations 147
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload attention --json --iterations 147   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 147 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 2.4% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1235.3 MHz (held),  35.31 W [37 in-window of 42], 42.9 C, util 98.6%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.1 MHz (held),  37.64 W [33 in-window of 38], 42.3 C, util 98.5%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1542.9 MHz (held),   39.6 W [30 in-window of 34],  42 C, util 97.6%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1700.7 MHz (held),  41.81 W [27 in-window of 32],  42 C, util 98.3%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  43.71 W [25 in-window of 29], 42.2 C, util 96.1%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  49.42 W [22 in-window of 27], 43.2 C, util 99.3%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),   58.5 W [21 in-window of 25], 44.6 C, util  98%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  67.96 W [19 in-window of 24], 46.5 C, util 97.7%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2454.2 MHz (held),  70.59 W [18 in-window of 23], 46.9 C, util 97.7%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2586.8 MHz (UNDERSHOT -38.2),  74.72 W [17 in-window of 22], 47.7 C, util 95.8%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved   2775 MHz (held),  78.11 W [16 in-window of 21], 48.9 C, util 99.2%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved   2925 MHz (held),  90.63 W [15 in-window of 19], 50.5 C, util 95.3%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved   3015 MHz (UNDERSHOT -75), 100.39 W [14 in-window of 19], 52.6 C, util 99.3%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 147 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-142111_5060ti-rungC-suite-attention\20260926-142127_5060ti-rungC-suite-attention_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-142111_5060ti-rungC-suite-attention\20260926-142127_5060ti-rungC-suite-attention_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1262981 then 1262981 bytes
+  rows       : 619
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 5.2 min (expected ~10)
+  hwinfo log    : 1262981 bytes, 619 rows
+  result file   : C:\headroom-bench\results\20260926-142111_5060ti-rungC-suite-attention\wrapper-result.json
+
+Run complete and both halves verified.
+[14:26:32] exit 0 for attention
+[14:26:32] [11/12] conv
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-conv
+  workload     : conv
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 151
+  output dir   : C:\headroom-bench\results\20260926-142633_5060ti-rungC-suite-conv
+  hwinfo log   : C:\headroom-bench\results\20260926-142633_5060ti-rungC-suite-conv\5060ti-rungC-suite-conv-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 151 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 2.2%, peak 5% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-142633_5060ti-rungC-suite-conv\5060ti-rungC-suite-conv-hwinfo.csv
+  size       : 22353 then 38040 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload conv --json --iterations 151
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload conv --json --iterations 151   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 151 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 3.4% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1236.3 MHz (held),     43 W [38 in-window of 43], 41.7 C, util 97.5%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.4 MHz (held),  45.34 W [34 in-window of 39], 42.1 C, util 99.1%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1543.4 MHz (held),  48.44 W [30 in-window of 35], 42.6 C, util 98.1%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved 1698.8 MHz (held),  52.95 W [28 in-window of 32], 43.4 C, util 99.2%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  57.31 W [25 in-window of 30], 43.8 C, util 99.2%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  66.18 W [23 in-window of 27], 45.6 C, util 95.1%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held),   77.3 W [21 in-window of 26], 47.1 C, util 97.3%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held),  90.56 W [19 in-window of 24], 49.5 C, util 97.6%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2461.9 MHz (held),  95.89 W [18 in-window of 23], 51.1 C, util 99.1%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2600.7 MHz (held), 100.38 W [18 in-window of 22], 51.5 C, util 97.6%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved   2775 MHz (held), 106.04 W [16 in-window of 21], 53.1 C, util 99.2%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved   2925 MHz (held), 122.11 W [15 in-window of 20], 55.3 C, util 97.2%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 3005.9 MHz (UNDERSHOT -84.1), 135.25 W [15 in-window of 19], 57.9 C, util 99.1%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 151 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 1 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-142633_5060ti-rungC-suite-conv\20260926-142649_5060ti-rungC-suite-conv_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-142633_5060ti-rungC-suite-conv\20260926-142649_5060ti-rungC-suite-conv_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1278613 then 1278613 bytes
+  rows       : 626
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 5.2 min (expected ~10)
+  hwinfo log    : 1278613 bytes, 626 rows
+  result file   : C:\headroom-bench\results\20260926-142633_5060ti-rungC-suite-conv\wrapper-result.json
+
+Run complete and both halves verified.
+[14:31:57] exit 0 for conv
+[14:31:57] [12/12] gemm
+
+================ PLAN ================
+  label        : 5060ti-rungC-suite-gemm
+  workload     : gemm
+  band         : 1237-3090 MHz, 13 points
+  iterations   : 120
+  output dir   : C:\headroom-bench\results\20260926-143158_5060ti-rungC-suite-gemm
+  hwinfo log   : C:\headroom-bench\results\20260926-143158_5060ti-rungC-suite-gemm\5060ti-rungC-suite-gemm-hwinfo.csv
+  expected     : ~10 min
+  applied      : AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 120 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+---- preflight ----
+  power limit : 200.00 W, 180.00 W
+  pmon sm     : mean 0%, peak 0% across 4 sample(s)
+  pmon        : idle enough to proceed
+
+---- HWiNFO log start ----
+
+Pressing 'Log Start' (async - it opens a modal dialog)...
+Setting the filename, with the change notification the dialog needs...
+
+  button now : 'Log Stop'
+  file       : C:\headroom-bench\results\20260926-143158_5060ti-rungC-suite-gemm\5060ti-rungC-suite-gemm-hwinfo.csv
+  size       : 22331 then 38036 bytes
+
+Logging is running and the file is growing.
+
+---- sweep ----
+  workload cmd: C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload gemm --json --iterations 120
+
+[SWEEP] GPU:        NVIDIA GeForce RTX 5060 Ti (driver 616.92)
+[SWEEP] Max clock:  3090 MHz | power limit 200.00 W enforced (180.00 W default, 200.00 W max)
+[SWEEP] Supported:  389 discrete graphics clocks, 180-3090 MHz
+[SWEEP] Sweep band:  1237-3090 MHz (explicit) - FINE sweep, ~154 MHz apart. Not a full-range curve.
+[SWEEP] Testing:    13 frequencies -> 1237, 1395, 1545, 1702, 1852, 2010, 2167, 2317, 2475, 2625, 2782, 2932, 3090 MHz
+[SWEEP] Workload:   C:\Users\Raymond\AppData\Local\Programs\Python\Python312\python.exe C:\Users\Raymond\Documents\headroom\tools\frequency-sweep\gpu_workload.py --workload gemm --json --iterations 120   (timed; duration is the performance metric)
+[SWEEP] Estimated:  ~6.1 min of measurement (plus workload time if any)
+
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 120 as 5060ti-stock-repro-20260922 and the rung B suite.
+
+[SWEEP] Checking the GPU is quiet before starting...
+[SWEEP] Video engines idle (encoder 0%, decoder 0%).
+[SWEEP] Free VRAM 15341 MB - clear to start.
+[SWEEP] Baseline utilisation 4.8% - clear to start.
+[SWEEP] No interactive console - Ctrl+C interception unavailable. The finally block still resets clocks.
+[SWEEP] NOTE: QuickEdit could not be disabled (likely no interactive console). If this window is interactive, DO NOT CLICK IN IT - a click freezes the run.
+[SWEEP] --> locking 1237 MHz
+[SWEEP]      1237 MHz -> achieved 1236.2 MHz (held),  57.94 W [33 in-window of 38], 44.2 C, util 98.2%
+[SWEEP] --> locking 1395 MHz
+[SWEEP]      1395 MHz -> achieved 1393.9 MHz (held),  63.89 W [29 in-window of 34],  45 C, util 98.6%
+[SWEEP] --> locking 1545 MHz
+[SWEEP]      1545 MHz -> achieved 1543.8 MHz (held),  67.74 W [26 in-window of 31], 45.6 C, util  98%
+[SWEEP] --> locking 1702 MHz
+[SWEEP]      1702 MHz -> achieved   1695 MHz (held),  74.83 W [24 in-window of 28], 46.4 C, util 96.6%
+[SWEEP] --> locking 1852 MHz
+[SWEEP]      1852 MHz -> achieved   1845 MHz (held),  79.91 W [21 in-window of 26],  47 C, util 97.8%
+[SWEEP] --> locking 2010 MHz
+[SWEEP]      2010 MHz -> achieved   2002 MHz (held),  94.97 W [20 in-window of 24], 49.4 C, util 99.2%
+[SWEEP] --> locking 2167 MHz
+[SWEEP]      2167 MHz -> achieved   2160 MHz (held), 110.27 W [18 in-window of 23], 51.9 C, util 99.1%
+[SWEEP] --> locking 2317 MHz
+[SWEEP]      2317 MHz -> achieved   2310 MHz (held), 126.55 W [17 in-window of 21], 54.8 C, util 97.9%
+[SWEEP] --> locking 2475 MHz
+[SWEEP]      2475 MHz -> achieved 2456.3 MHz (held), 139.04 W [16 in-window of 20], 56.8 C, util 98.6%
+[SWEEP] --> locking 2625 MHz
+[SWEEP]      2625 MHz -> achieved 2593.4 MHz (UNDERSHOT -31.6), 139.68 W [15 in-window of 20], 58.1 C, util 99.3%
+[SWEEP] --> locking 2782 MHz
+[SWEEP]      2782 MHz -> achieved 2766.4 MHz (held),    158 W [14 in-window of 18], 60.4 C, util 99.3%
+[SWEEP] --> locking 2932 MHz
+[SWEEP]      2932 MHz -> achieved 2902.8 MHz (held), 175.17 W [13 in-window of 18], 64.2 C, util 99.2%
+[SWEEP] --> locking 3090 MHz
+[SWEEP]      3090 MHz -> achieved 2913.2 MHz (UNDERSHOT -176.8), 184.55 W [13 in-window of 18], 64.8 C, util 98.5%
+
+[SWEEP] Resetting GPU clocks...
+[SWEEP] Clocks reset. Card is now reporting 3015 MHz at idle/load.
+
+[SWEEP] ===================== RESULT =====================
+[SWEEP] Measured 13 of 13 planned frequencies.
+[SWEEP] Configuration: AFTERBURNER PROFILE 1 = RUNG C (worklist 4f, REGISTERED-PREDICTIONS section 1): P5 with points 670-840 mV raised +315 MHz, 720 mV at 1845 MHz; PL 111 (200 W), memory +2500. Applied by MSIAfterburner.exe -profile1 -q and VERIFIED LIVE by memory under load (16501 MHz) and power limit 200.00 W. Profile store SHA-256 4FDFBF241C1DAE7A, byte-identical to data/afterburner-profiles/5060ti-profiles-20260926-rungC. NVML offset 0. HWiNFO SensorInterval 500, driver 616.92, operator absent, driving agent silent. Iterations 120 as 5060ti-stock-repro-20260922 and the rung B suite.
+[SWEEP] NOTE: 2 point(s) ran BELOW their target by more than 30 MHz.
+[SWEEP] The card could not sustain the requested clock - power or thermal limits. Expected
+[SWEEP] at the top of the range, where max boost is a bin the card never actually holds.
+[SWEEP] CSV:  C:\headroom-bench\results\20260926-143158_5060ti-rungC-suite-gemm\20260926-143214_5060ti-rungC-suite-gemm_sweep.csv
+[SWEEP] JSON: C:\headroom-bench\results\20260926-143158_5060ti-rungC-suite-gemm\20260926-143214_5060ti-rungC-suite-gemm_sweep.json
+[SWEEP] ==================================================
+
+[SWEEP] Clock locks do NOT survive a reboot. If anything looks wrong with the card's
+[SWEEP] clocks after this, reboot and it returns to stock.
+
+---- HWiNFO log stop ----
+Pressing 'Log Stop'...
+  button now : 'Log Start'
+  size       : 1186758 then 1186758 bytes
+  rows       : 580
+
+Logging stopped.
+
+================ RESULT ================
+  sweep exit    : 0
+  elapsed       : 4.8 min (expected ~10)
+  hwinfo log    : 1186758 bytes, 580 rows
+  result file   : C:\headroom-bench\results\20260926-143158_5060ti-rungC-suite-gemm\wrapper-result.json
+
+Run complete and both halves verified.
+[14:37:00] exit 0 for gemm
+[14:37:00] Reverting to Profile 3 (stock).
+[14:37:38] Memory under load after revert: 13801 MHz
+[14:37:38] Card is back on stock.
+180.00 W, 180.00 W

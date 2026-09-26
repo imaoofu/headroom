@@ -1,0 +1,8 @@
+﻿[13:34:03] Live profile store matches the rung C snapshot (4FDFBF241C1DAE7A).
+[13:34:03] Applying Profile 1 (rung C).
+[13:35:02] Memory under load 810 MHz (rung C expects ~16301); power limit 200.00 W.
+[13:35:02] Rung C did NOT verify as live. Refusing to sweep.
+[13:35:02] Reverting to Profile 3 (stock).
+[13:35:40] Memory under load after revert: 13801 MHz
+[13:35:40] Card is back on stock.
+180.00 W, 180.00 W

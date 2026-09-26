@@ -832,9 +832,11 @@ dataset fetch.
      `python analysis/score_session_e.py <dir>` and `… --4d`. Write up, then run the hash gate.
    - **Before it ships:** uninstall Afterburner.
 3. **5060 Ti Afterburner work (this weekend, Raymond at the machine):**
-   - curve 2 (rung C) → **4f**, about 55 min;
+   - ~~curve 2 (rung C) → **4f**, about 55 min;~~ ✅ done, see below;
    - curve 3 (P4 with memory +0) → **4j**, the memory-matched pair, about 25 min.
-   - Both go into P1, which holds rung B (snapshotted).
+   - Both go into P1, one at a time; snapshot before each rebuild.
+   - ✅ **Rung C built and 4f run 2026-09-26: HOLDS**, median 1852 with 9 of 12 on it. The four-rung
+     ladder is complete (1545 / 1702 / 1852 / 2010). P1 now holds rung C (snapshotted). Next: curve 3.
 4. **The new-card protocol's practice run on the 5060 Ti** (about 2 h, Codex and ChatGPT closed).
    Launch it with `Bench-Window.ps1 -CatalogPath …newcard-rtx40-50.json`. **Required before any
    shop card gets it.**

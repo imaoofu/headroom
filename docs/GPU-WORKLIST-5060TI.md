@@ -66,7 +66,9 @@ processes were starting, and nothing else explains it yet.
    ✅ **BUILT 2026-09-26 13:26 and verified before any sweep:** +315 at every decodable point from
    670 to 840 mV (2302 at 840; the grid had no 2307), **720 mV → 1845**. Checks 1, 2, 4 and 5 pass;
    check 3 fails at 670–690 mV for the registration defect rung B hit. Snapshot:
-   `data/afterburner-profiles/5060ti-profiles-20260926-rungC/`. **Next: run the 4f suite.**
+   `data/afterburner-profiles/5060ti-profiles-20260926-rungC/`.
+   ✅ **4f RAN 2026-09-26 13:38–14:37 and HOLDS:** median 1852, 9 of 12 on it, and the ladder reads
+   1545 / 1702 / 1852 / 2010. `data/frequency-sweeps/5060ti-rungC-suite-20260926/`.
 2. **Curve 3, P4 with memory +0 → 4j** (~25 min). This is the memory-matched pair, and it removes
    the largest confound in the `membw` mechanism section.
 3. **The new-card protocol's practice run** (~2 h, unattended). Launch it with
@@ -84,7 +86,7 @@ processes were starting, and nothing else explains it yet.
 | 0b | **§11 practice** | the new-card protocol, live for the first time | ~2 h | closing Codex and ChatGPT | 2 |
 | 1 | ~~**A/B**~~ | ✅ **Re-run 2026-09-24, generator trigger fixed: registered verdict NOT SUPPORTED FOR THIS PROXY**, zero losses in all 12 runs. (09-23 was INCOMPLETE.) `data/frequency-sweeps/5060ti-activity-ab-20260924/` | — | — | 2 |
 | 2 | ~~**4e**~~ | ✅ **Rung B suite, 2026-09-23: HOLDS.** Median 1702, 9 of 12 on it. `data/frequency-sweeps/5060ti-rungB-suite-20260923/` | — | — | 3 |
-| 3 | **4f** | **Rung C suite** | ~55 min | building curve 2 | 3 |
+| 3 | ~~**4f**~~ | ✅ **Rung C suite, DONE 2026-09-26: HOLDS** (median 1852) | ~55 min | building curve 2 | 3 |
 | 4 | ~~**4o**~~ | ✅ **Offset ladder ran 2026-09-23.** Registered verdict **INVALID** (its no-missed-lock rule is unsatisfiable on stock); revised scoring: **1545 / 1395 / 1237 / 1545, all as predicted**. `data/frequency-sweeps/5060ti-offset-ladder-20260923/` | — | — | 3 |
 | 6 | **4j** | memory-matched flattened vs stock, `membw` + `gemm` | ~25 min | building curve 3 | 2 |
 | 7 | ~~**4n**~~ | ✅ **Ran 2026-09-24: not a notch.** `membw` rises in a staircase that matches the crossbar clock's ~23–30 MHz steps, and 1627 is the last clock before a step (association, not a demonstrated cause). `data/frequency-sweeps/5060ti-membw-stall-20260924/` | — | — | 3 |
