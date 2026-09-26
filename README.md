@@ -11,9 +11,15 @@ optimum — and explaining what sets it.**
 >   applied, because its voltage leaves the floor 6 mV at a time.
 > - **"Customer machines" was a misclassification.** The 3070 Ti, 3060 and 2060 Super are PCs
 >   Raymond builds to sell and owns while they are on the bench, so tuning them is allowed (see
->   CLAUDE.md, safety invariants). **The causal replication on the 3070 Ti is under way:** its
->   curves are built and its shakedown passed on 2026-09-23. The four suites of Session D run
->   2026-09-24. **Until they are scored, tuning is still one chip**, as the second bullet says.
+>   CLAUDE.md, safety invariants). ~~The causal replication on the 3070 Ti is under way.~~
+>   ✅ **Scored 2026-09-24/25 (paper §5.5.9), and it came back mixed.** All predictions were
+>   registered in advance.
+>   - **The manipulation passed twice** (median 1485 → 1222.5 and 1170 MHz), though its workloads
+>     split in direction.
+>   - **The negative control failed once** (1432.5 MHz), and its repeat could not be scored (it held
+>     at 1485 descriptively).
+>   - **So on that chip the move is not attributed to the floor region.**
+>   - **Tuning is now two chips**, and the second bullet below is out of date for that reason.
 > - The 5060 Ti results of 2026-09-22/23 (rung B, NVML offset, offset ladder, activity A/B) and
 >   what is open next are in [ROADMAP.md](ROADMAP.md) under "Open right now — 2026-09-23".
 >

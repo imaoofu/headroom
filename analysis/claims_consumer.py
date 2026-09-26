@@ -3303,3 +3303,81 @@ def caveatOutOfBandPower():
         heat.append(temperature(memonly, target) - temperature(stock, target))
     return (f"memory-only drawing {power[0]:.1f}% and {power[1]:.1f}% more power than stock "
             f"with only {heat[0]:.1f} and {heat[1]:.1f} C to account for it")
+
+
+# --------------------------------------------------------------------------------------------------
+# 5.5.9 - the causal test repeated on the RTX 3070 Ti (Session D, REGISTERED-PREDICTIONS 4a/4b/8a).
+# Added 2026-09-26. Every number comes from analysis/score_session_d.py, the scorer committed before
+# collection, run on the committed directory - not from a second implementation that could disagree
+# with it. Session D2 (8d) is NOT SCOREABLE by that scorer and its descriptive medians are not pinned
+# here yet (local-model job L8).
+
+SESSION_D_DIR = "rtx3070ti-sessiond-20260924"
+_sessionD = {}
+
+
+def sessionD(kind):
+    if kind not in _sessionD:
+        import score_session_d
+        from audit_claims import REPO_ROOT
+        directory = REPO_ROOT / "data" / "frequency-sweeps" / SESSION_D_DIR
+        scorer = score_session_d.score if kind == "main" else score_session_d.score_replicate
+        _sessionD[kind] = scorer(directory)
+    return _sessionD[kind]
+
+
+def _mhz(value):
+    return f"{value:g} MHz"
+
+
+@claim("5.5.9-results-edit-rows", PAPER, "5.5.9")
+def sessionDEditRows():
+    main, rep = sessionD("main"), sessionD("replicate")
+    if (main["4a"], main["4b"], rep["8a"]) != ("PASS", "FAIL", "PASS"):
+        return f"verdicts changed: 4a {main['4a']}, 4b {main['4b']}, 8a {rep['8a']}"
+    return (f"| `edit1-2` | D | Edit 1 | {_mhz(main['medians']['edit1-2'])} | 1170–1275 | ✅ 4a PASS |\n"
+            f"| `edit2-3` | D | Edit 2 | {_mhz(main['medians']['edit2-3'])} | 1485–1500 | ⛔ 4b FAIL |\n"
+            f"| `stock-4` | D | stock | {_mhz(main['medians']['stock-4'])} | — | returned; worst workload "
+            f"{max(main['drift_per_workload_pct'].values()):.3f}% |\n"
+            f"| `edit1-5` | D | Edit 1 | {_mhz(rep['medians']['edit1-5'])} | 1170–1275 | ✅ 8a PASS |\n"
+            f"| `stock-6` | D | stock | {_mhz(rep['medians']['stock-6'])} | — | returned; worst workload "
+            f"{max(rep['drift_per_workload_pct'].values()):.3f}% |")
+
+
+@claim("5.5.9-stock-baseline", PAPER, "5.5.9")
+def sessionDBaseline():
+    main = sessionD("main")
+    return f"| `stock-1` | D | stock | {_mhz(main['medians']['stock-1'])} | — | baseline, as registered |"
+
+
+def _directions(before, after):
+    down = sum(after[n] < before[n] for n in before)
+    up = sum(after[n] > before[n] for n in before)
+    return down, up, len(before) - down - up
+
+
+@claim("5.5.9-edit1-directions", PAPER, "5.5.9")
+def sessionDDirections():
+    main, rep = sessionD("main"), sessionD("replicate")
+    a = _directions(main["optima"]["stock-1"], main["optima"]["edit1-2"])
+    b = _directions(rep["optima"]["stock-4"], rep["optima"]["edit1-5"])
+    return (f"| `edit1-2` against `stock-1` | {a[0]} | {a[1]} | {a[2]} |\n"
+            f"| `edit1-5` against `stock-4` | {b[0]} | {b[1]} | {b[2]} |")
+
+
+@claim("5.5.9-edit1-at-1590", PAPER, "5.5.9")
+def sessionDAt1590():
+    main, rep = sessionD("main"), sessionD("replicate")
+    words = {2: "Two", 5: "five"}
+    first = sum(v == 1590 for v in main["optima"]["edit1-2"].values())
+    second = sum(v == 1590 for v in rep["optima"]["edit1-5"].values())
+    return (f"{words.get(first, first)} workloads in `edit1-2` and {words.get(second, second)} in "
+            f"`edit1-5` moved to 1590 MHz, above the stock optimum.")
+
+
+@claim("5.5.9-control-split", PAPER, "5.5.9")
+def sessionDControlSplit():
+    values = sorted(sessionD("main")["optima"]["edit2-3"].values())
+    low, high = values[:6], values[6:]
+    return (f"The twelve optima fall at {', '.join(f'{v:g}' for v in low)} | "
+            f"{', '.join(f'{v:g}' for v in high[:-1])} and {high[-1]:g} MHz")

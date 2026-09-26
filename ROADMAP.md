@@ -841,8 +841,9 @@ and say so every time.**
 
 *Writing:*
 
-9. **The 3070 Ti results into the paper and CLAUDE.md.** The manipulation replicated twice; the
-   control moved once, and held once in an unscoreable run. Then the contribution sentence.
+9. ✅ **Drafted 2026-09-26: §5.5.9**, plus the abstract's contribution sentence, §5.5.8's limits,
+   the conclusion, CLAUDE.md and the README. Five claims pin its core numbers. **Next:** GPT's
+   adversarial audit of it (item 15), and L8 for the numbers still unpinned.
 10. **The 2060 Super results**, after item 2.
 11. **Fold §2's rewrite into the paper** from `docs/drafts/section2-related-work-proposal.md`.
     Four `RELATED-WORK.md` §4 entries are still GPT-read only.
@@ -854,7 +855,7 @@ and say so every time.**
 
 *Agents:*
 
-15. **GPT: nothing is queued.** Next is an adversarial audit of item 9's write-up, once written.
+15. **GPT: an adversarial audit of §5.5.9** is ready to write and send.
 16. **Local model:** claims for the new 3070 Ti numbers once item 9 lands
     (`docs/agents/LOCAL-MODEL-TODO.md`).
 

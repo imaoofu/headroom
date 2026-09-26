@@ -2,7 +2,7 @@
 
 > **Status: complete in structure, still a draft in places.** Results rest on **686 committed
 > sweeps across four consumer GPUs**, including core-voltage and crossbar telemetry.
-> **292 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
+> **297 numbers are pinned by `analysis/audit_claims.py`**, which recomputes each from the source
 > CSVs at audit time and fails if the text and the data disagree; it runs on every push. That count
 > is itself pinned, so adding a claim without updating this line fails the audit. It counts the
 > tool's whole coverage — the paper, two data READMEs, and `CLAUDE.md` — not the paper's share
@@ -58,21 +58,30 @@ where voltage cannot be written through any documented interface, this work edit
 vendor's curve instead, and adds a negative control:
 
 > **On four consumer GPUs across three architectures we locate the V/F curve's low-voltage region
-> and the energy-efficiency optimum, and on one of them we change the curve and re-locate the
-> optimum: switching between two profiles whose decoded curves differ by +465 MHz below 840 mV
-> moved the median twelve-workload optimum by +465 MHz, with all twelve workloads moving upward; a
-> separate, larger edit ABOVE the floor moved the median by nothing. We identify a card on which
-> the rule cannot be applied at all, because its voltage leaves the floor six millivolts at a
-> time.**
+> and the energy-efficiency optimum, and on two of them we change the curve and re-locate the
+> optimum. On an RTX 5060 Ti, switching between two profiles whose decoded curves differ by
+> +465 MHz below 840 mV moved the median twelve-workload optimum by +465 MHz, with all twelve
+> workloads moving upward; a separate, larger edit ABOVE the floor moved the median by nothing. On
+> an RTX 3070 Ti, in a design registered before collection, shortening the floor moved the median
+> optimum into its predicted band twice, but a negative control above the floor moved it too, once,
+> so on that chip the move is not attributed to the floor region. We identify a card on which the
+> rule cannot be applied at all, because its voltage leaves the floor six millivolts at a time.**
 
 ⚠️ **How far that sentence reaches:**
-- **The causal evidence is one chip and one profile contrast.** The twelve workloads are repeated
-  outcomes on it, and their shifts range from +79 to +540 MHz.
-- **The control is partly leaky.** It left the median unmoved but moved 4 of 12 workloads against
-  the same-session stock bracket.
-- **The two profiles also differ by −98 MHz at 875 and 925 mV**, a sixth of the control's dose.
-- **The manipulation's result was found in a run registered for a different prediction, which
-  failed.** The control and the cross-architecture tests were registered in advance.
+- **The causal evidence is two chips, and they disagree on the control.**
+  - **On the 5060 Ti:** one profile contrast. The twelve workloads are repeated outcomes on it, and
+    their shifts range from +79 to +540 MHz.
+  - **On the 3070 Ti (§5.5.9):** the manipulation passed twice, but its workloads split, with 6
+    moving down against 4 and then 6 moving up. The control failed once (1432.5 MHz, a six–six
+    split) and could not be scored on its repeat, which held at 1485 MHz descriptively.
+  - ⛔ *This sentence said "on one of them" until 2026-09-26, when the 3070 Ti results were added.*
+- **On the 5060 Ti, the control is partly leaky.** It left the median unmoved but moved 4 of 12
+  workloads against the same-session stock bracket.
+- **The 5060 Ti's two profiles also differ by −98 MHz at 875 and 925 mV**, a sixth of the control's
+  dose. On the 3070 Ti, neither edit is confined to one region either (§5.5.9).
+- **The 5060 Ti manipulation's result was found in a run registered for a different prediction,
+  which failed.** Its control and the cross-architecture tests were registered in advance, and so
+  was every prediction on the 3070 Ti.
 - **On a fine grid, the top of the floor bounds the optimum from above rather than marking its
   peak.**
 
@@ -2234,8 +2243,12 @@ this instrument separates. What changes is which part of the explanation this wo
 
 §5.5.7 is an observation. Three cards, three floors, three optima that land on them — but the curve
 was **read, not moved**, so what it establishes is a correlation across three samples. Two runs on
-the RTX 5060 Ti intervene on the curve directly, and each registered its predicted outcome before
-the measurement that tested it.
+the RTX 5060 Ti intervene on the curve directly. ⚠️ **Only the control's prediction was registered
+before its measurement.** The manipulation's result was found in a run registered for a different
+prediction, which failed. This paragraph said *"each registered its predicted outcome before the
+measurement that tested it"* until 2026-09-26; the project notes retracted that on 2026-09-19, and
+the retraction did not reach this sentence. §5.5.9 repeats both arms on a second chip with every
+prediction registered.
 
 Both are possible only because this card's voltage-frequency curve can be reshaped by hand through
 a third-party tool and applied from the command line, which makes the *applied* curve an
@@ -2351,9 +2364,11 @@ a frequency at all. Any citation of the 2.90× without this sentence overstates 
 
 ##### Limits
 
-⚠️ **Both interventions are on one chip.** The third-chip evidence in §5.5.7 is observational, and
-the manipulation and control arms are not repeated on it, because reshaping an applied curve
-requires software that was not installed on a machine this study does not own.
+⚠️ **Both interventions here are on one chip.** They were repeated on the RTX 3070 Ti, registered
+in advance (§5.5.9): there the manipulation replicated, but the control moved the median once. ⛔
+*This bullet said the arms "are not repeated", "because reshaping an applied curve requires software
+that was not installed on a machine this study does not own", until 2026-09-26. The shop machines
+are owned while on the bench, and Session D ran on one.*
 
 ⚠️ **The frequency grid is approximately 155 MHz wide**, so a prediction needs only to fall within
 half a step to select the correct point. The agreement is genuine and it is also coarse; §5.6
@@ -2362,6 +2377,117 @@ reports the same predictions under the finer regret metric, which does not round
 ⚠️ **Four applied curves produce only two distinct predicted values**, 1537 and 2002 MHz, so
 "configuration" behaves close to a binary variable in this dataset. A ladder of intermediate floor
 offsets is registered in `docs/REGISTERED-PREDICTIONS.md` and has not been collected.
+
+#### 5.5.9 The same test on a second chip: the manipulation replicates, the control does not hold
+
+§5.5.8's causal evidence is one chip, and its manipulation was found in a run registered for a
+different prediction. This subsection repeats the design on an **RTX 3070 Ti** (Gigabyte GAMING OC,
+Ampere GA104, SILENT BIOS at 290/290/320 W, driver 617.14). **Every prediction and its scorer were
+committed before collection** (`docs/REGISTERED-PREDICTIONS.md` §4a, §4b, §8 and §8d;
+`analysis/score_session_d.py`). The card was a shop build, and it was collected unattended by the
+USB kit's bench tool in two sessions: Session D on 2026-09-24 and Session D2 on 2026-09-25.
+
+**The stock card.** Its load floor is 0.812 V and holds to 1500 MHz, and its median suite optimum
+is 1485 MHz (§5.5.7). That median holds **in all five stock suites below**. Each suite is the twelve
+workloads on thirteen targets, 855–2115 MHz in 105 MHz steps.
+
+**Two curve edits,** built by hand in Afterburner and decoded from the saved profile store before
+collection:
+
+| | the change | registered prediction for the median optimum |
+|---|---|---|
+| **Edit 1**, the manipulation | every point from 725 to 825 mV capped at 1200 MHz, which shortens the floor from ~1500 to ~1200 MHz | moves down to **1170–1275 MHz** |
+| **Edit 2**, the negative control | stock through 818.75 mV, then held at 1500 MHz from 825 mV up. That cuts the card's ~1763 MHz power-limited ceiling to 1500, a **263 MHz** edit above the floor | stays at **1485–1500 MHz** |
+
+⚠️ **Three departures from the original registration, all recorded before collection.**
+- **The design was reversed** from extending the floor to shortening it, because the card's power
+  cap left no room to extend it. The 1170–1275 MHz prediction comes from the run sheet's commits of
+  2026-09-13 and 09-20, not from §4a's original wording.
+- **The control's dose is 263 MHz**, below the ≥300 MHz registered, because that is all the range
+  the card has above its floor.
+- **Neither edit is confined to one region.** The editor forced Edit 1 into a ramp below stock at
+  0.831–0.869 V, which is part of the region Edit 2 edits. Edit 2 lowers the 825 mV point, inside
+  the floor band, by 15 MHz.
+
+**Results**, from the committed scorer, unedited:
+
+| suite | session | curve | median optimum | registered band | verdict |
+|---|---|---|---|---|---|
+| `stock-1` | D | stock | **1485 MHz** | — | baseline, as registered |
+| `edit1-2` | D | Edit 1 | **1222.5 MHz** | 1170–1275 | ✅ 4a **PASS** |
+| `edit2-3` | D | Edit 2 | **1432.5 MHz** | 1485–1500 | ⛔ 4b **FAIL** |
+| `stock-4` | D | stock | **1485 MHz** | — | returned; worst workload **0.619%** |
+| `edit1-5` | D | Edit 1 | **1170 MHz** | 1170–1275 | ✅ 8a **PASS** |
+| `stock-6` | D | stock | **1485 MHz** | — | returned; worst workload **1.192%** |
+| `stock-7` | D2 | stock | **1485 MHz** | — | — |
+| `edit2-8` | D2 | Edit 2 | **1485 MHz** | 1485–1500 | **NOT SCOREABLE** |
+| `stock-9` | D2 | stock | **1485 MHz** | — | returned; worst workload **0.563%** |
+
+**The registered joint verdict of 4a and 4b: the control also moved, so the attribution fails on
+this chip.**
+
+**Why D2 is not scoreable.** Its six highest targets were **1605–2130 MHz**, not 1590–2115. The
+card's supported-clock table gained an entry between the two days, and the collection tool derives
+its grid from that table. §8d registered Session D's grid, so its scorer refused the data, and the
+scorer was not changed after the data was seen. **Descriptively, on its own grid, the control held
+at 1485 MHz.** 4b stays a failure whatever D2 shows, because D2 was registered after 4b's result was
+known.
+
+##### What the manipulation shows, and what it does not
+
+**The median moved into the predicted band twice.** But it did not move the way it did on the 5060
+Ti, where every workload moved in the predicted direction:
+
+| per-workload optimum | moved down | moved **up** | unchanged |
+|---|---|---|---|
+| `edit1-2` against `stock-1` | 6 | 4 | 2 |
+| `edit1-5` against `stock-4` | 6 | **6** | 0 |
+
+**Two workloads in `edit1-2` and five in `edit1-5` moved to 1590 MHz, above the stock optimum.** The
+median passes because the workloads that moved down fill the middle of the distribution. The
+optimum did not follow the floor on every workload. ⚠️ Per-workload optima are also noisy here:
+identical stock suites disagree on **3 to 4 of 12** of them while their median stays at 1485 MHz.
+
+**And the floor did not end where the prediction assumed.** A fine sweep under Edit 1, registered
+as §8b, reads **0.819 V at 1230 MHz**. So the edited floor ends between **1230 and 1275 MHz**, not
+at the 1200 MHz read from the decoded curve. The suite grid has no point between 1170 and 1275, so
+both verdicts stand. But the decoded curve misplaced the edit's floor end by 30–75 MHz. The same
+thing was found on the 5060 Ti: at a point where the stored per-point offset changes value, the
+decoded clock does not match what the curve editor shows. A floor end is therefore a measurement
+here, not a reading of the profile file.
+
+##### What the control shows
+
+**Its failure is a six–six split.** The twelve optima fall at 1065, 1170, 1275, 1275, 1380, 1380 |
+1485, 1485, 1485, 1500, 1500 and 1500 MHz, so one workload separates 1432.5 MHz from a pass.
+- **How fragile that median is.** An outside audit resampled each workload's optimum independently
+  from Session D's three stock suites. **A 1432.5 MHz median arises in 13,122 of 531,441
+  combinations (2.47%).** That assumes independent workloads, and three stock suites cannot
+  calibrate a probability, so it shows how fragile the median is. It is not a significance test,
+  and it does not license re-scoring 4b.
+- **Where the change sits.** At the points that moved, the control's throughput was within
+  **−0.82% to +0.58%** of the stock pair's, and its recorded power differed by **−4.7 to
+  +9.5 W**, at identical clocks and within 1.5 °C. So the change is in the power denominator, and
+  the data do not say why.
+- **Voltage codes.** At 1485 MHz, 4 of 12 workloads read a voltage code under Edit 2 one step
+  from at least one stock suite's.
+
+🛑 **What this subsection supports.** On a second chip and a second architecture, a registered
+manipulation of the floor region moved the median optimum into its predicted band twice. A
+registered negative control moved it too, once. Its repeat the next day held, but only
+descriptively, because it could not be scored. **On this chip the move is not attributed to the
+floor region.** Together with §5.5.8, the evidence is two chips on which editing the floor region
+moves the median optimum as predicted. On one of them a larger edit above the floor did not move
+it; on the other, a smaller one did once.
+
+⚠️ **Limits:**
+- n = 1 chip; two sessions on consecutive days, across a change to the card's clock table;
+- a median over twelve workloads on a 105 MHz grid, where one workload moves it half a step;
+- neither edit is confined to one region.
+
+Data: `data/frequency-sweeps/rtx3070ti-sessiond-20260924/` (76 sweeps: 75 from Session D plus one
+descending fine sweep from the previous day) and `data/frequency-sweeps/rtx3070ti-sessiond2-20260925/`
+(36 sweeps).
 
 #### 5.5.5 Limits
 
@@ -3598,7 +3724,7 @@ that depended on physical access to hardware rather than on a download.
 
 ### What this work refuted, including its own predictions
 
-Three predictions made inside this project were tested and failed, and each is reported where it
+Four predictions made inside this project were tested and failed, and each is reported where it
 was made rather than removed:
 
 1. **That a ~30 mV shortfall explained the compute ceiling of the repaired curve.** Raising the
@@ -3608,23 +3734,28 @@ was made rather than removed:
    number, 0.738 V, and refuted: both BIOS positions hold the same floor, and the difference is an
    additive offset in the intercept rather than a ratio in the frequency-scaling term (§5.5.1.1).
 3. **That per-workload prediction would beat a fixed frequency.** It ties (§5.2).
+4. **That a curve edit above the floor would leave the optimum unmoved on a second chip.**
+   Registered in advance on the RTX 3070 Ti, and it failed. The control moved the median optimum
+   from 1485 to 1432.5 MHz, while the registered manipulation passed twice. So the move is not
+   attributed to the floor region on that chip (§5.5.9).
 
-**And four claims of novelty were retracted, all to searching rather than to a reviewer.** They
-are listed because the alternative is that a reader finds them:
+**And five claims of novelty were retracted, all to searching rather than to a reviewer.** They
+are listed because the alternative is that a reader finds them. ⛔ *This sentence said "four" until
+2026-09-26, one item behind its own list.*
 
-4. **That the load-floor relationship was this work's own.** It is the published **ridge point**
+5. **That the load-floor relationship was this work's own.** It is the published **ridge point**
    [18], stated in the same terms in 2022. Retracted 2026-09-12, four days after it had been
    promoted to this project's headline result and built upon.
-5. **That locating an efficiency optimum on consumer silicon was unaddressed.** It is not [19],
+6. **That locating an efficiency optimum on consumer silicon was unaddressed.** It is not [19],
    [15], [20]. Four successive narrowings of this claim were attempted and all four failed.
-6. **That per-card floor voltage was a new observation.** Per-chip Vmin variation was measured
+7. **That per-card floor voltage was a new observation.** Per-chip Vmin variation was measured
    across five physical GTX 780s in 2015 [8] and six Radeon boards in 2025 [14]. What survives is
    its quantified consequence for prediction, not the fact itself.
-7. **That the crossbar's clock domain was this work's discovery.** It was documented on Blackwell
+8. **That the crossbar's clock domain was this work's discovery.** It was documented on Blackwell
    weeks earlier, by one author on one card [11], [12]. The measured association remains, as an
    association (§5.7.3); the domain does not. ⛔ This item said *"The causal chain remains"* until
    2026-09-24.
-8. **That changing the voltage–frequency relationship and re-locating the optimum had not been
+9. **That changing the voltage–frequency relationship and re-locating the optimum had not been
    done.** Mendes, Tomás and Roma (SBAC-PAD 2020) did it on an AMD Vega 10 with voltage written
    directly, and the optimum moved from 1270 to 1530, 1440 and 1530 MHz for three of four CNN
    models. It was missed because a lead on that paper was closed after reading the same group's
@@ -3646,8 +3777,9 @@ auditing this paper is subject to.
 It does not outperform vendor boost algorithms, which already incorporate per-chip factory binning.
 It does not discover voltage guardband or inter-chip variation; both are established [8, 9]. It
 does not control voltage — voltage is observed telemetry here, never an independent variable. And
-it is not a population estimate of anything: two chips, one unit each, and every tuning result from
-a single card. The chip-to-chip variation a reader will ask about is published at roughly 11% and
+it is not a population estimate of anything: four chips, one unit each. Every tuning result is
+from the 5060 Ti except the two curve edits of §5.5.9 on the 3070 Ti. ⛔ *This said "two chips…
+every tuning result from a single card" until 2026-09-26.* The chip-to-chip variation a reader will ask about is published at roughly 11% and
 remains unmeasured here, because measuring it needs repeat units of one model that this project
 does not control.
 

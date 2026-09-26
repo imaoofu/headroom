@@ -750,12 +750,25 @@ overstated, each verified against this repository's own data by recomputation �
 it. The replacement:
 
 > **On four consumer GPUs across three architectures we locate the V/F curve's low-voltage region
-> and the energy-efficiency optimum, and on one of them we change the curve and re-locate the
-> optimum: switching between two profiles whose decoded curves differ by +465 MHz below 840 mV
-> moved the median twelve-workload optimum by +465 MHz, with all twelve workloads moving upward;
-> a separate, larger edit ABOVE the floor moved the median by nothing. We identify a card on which
-> the rule cannot be applied at all, because its voltage leaves the floor six millivolts at a
-> time.**
+> and the energy-efficiency optimum, and on two of them we change the curve and re-locate the
+> optimum. On an RTX 5060 Ti, switching between two profiles whose decoded curves differ by
+> +465 MHz below 840 mV moved the median twelve-workload optimum by +465 MHz, with all twelve
+> workloads moving upward; a separate, larger edit ABOVE the floor moved the median by nothing. On
+> an RTX 3070 Ti, in a design registered before collection, shortening the floor moved the median
+> optimum into its predicted band twice, but a negative control above the floor moved it too, once,
+> so on that chip the move is not attributed to the floor region. We identify a card on which the
+> rule cannot be applied at all, because its voltage leaves the floor six millivolts at a time.**
+
+⛔ **UPDATED 2026-09-26 with the 3070 Ti (paper §5.5.9).** This said *"on one of them"* until then.
+🛑 **Do not let it grow into "replicated on a second chip".** The manipulation replicated there, but
+the registered control failed:
+- 4b moved the median to **1432.5 MHz**, a six–six split;
+- 8d's repeat is NOT SCOREABLE, although it held descriptively at 1485 MHz;
+- Edit 1's workloads **split in direction**: 6 down / 4 up in `edit1-2`, and 6 down / 6 up in
+  `edit1-5`, with 2 and 5 of them jumping to 1590 MHz.
+
+On the 5060 Ti all 12 moved the predicted way. **The two chips disagree on the control, and the
+paper says so.**
 
 ⛔ **WHAT WAS STRUCK, AND WHY. Every figure below was RECOMPUTED here, not taken on the auditor's
 word** — `docs/gpt-findings/2026-09-19-load-floor-causal-claim-adversarial-audit.md`.
@@ -896,6 +909,16 @@ result was not.
   rather than vacuous** — a large measured effect in the edited region, and no median shift in the
   optimum. Full working: `docs/PRIOR-ART-20260918.md` §7.
 - **Cross-architecture** — `rtx3060-20260910`, a different chip, node and vendor board.
+- 🆕 **Both arms on a second chip, all registered — RTX 3070 Ti Session D/D2, 2026-09-24/25**
+  (`REGISTERED-PREDICTIONS.md` §4a/4b/8, paper §5.5.9).
+  - **Manipulation (Edit 1, floor shortened to ~1200 MHz):** median 1485 → **1222.5** and
+    **1170**, both inside 1170–1275, so it PASSED twice. But the workloads split in direction
+    (6 down / 4 up, then 6 down / 6 up), and **8b measured the edited floor ending at 1230–1275,
+    not 1200**.
+  - **Control (Edit 2, above the floor):** ⛔ **FAILED**, with the median at **1432.5**, a six–six
+    split. Its repeat (8d) is NOT SCOREABLE because the clock table moved the grid; it held
+    descriptively at 1485.
+  - 🛑 **On that chip the move is not attributed to the floor region.**
 
 ### ✅ THE 5060 Ti FLOOR MEASURED AT 31 MHz, 2026-09-18 — IT IS GENUINELY FLAT
 
@@ -1192,10 +1215,10 @@ update it.
 
 | quantity | value |
 |---|---|
-| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **292 of 292** |
-| ...and where both are absent, as CI's "checks" leg runs | **246 of 246** |
+| claims green, 0 failures, with `data/raw/` **and `data/external/`** | **297 of 297** |
+| ...and where both are absent, as CI's "checks" leg runs | **251 of 251** |
 | sections with no claim at all | **14 numbered sections are still unaudited** |
-| §5.7 and its subsections carry | **92 claims between them and §5.5 carries 63** |
+| §5.7 and its subsections carry | **92 claims between them and §5.5 carries 68** |
 
 ⚠️ **THE TOTAL WENT STALE FOUR TIMES BEFORE IT WAS PINNED: 87 -> 119 -> 185 -> 204**, and on
 2026-08-30 this file carried two contradictory values for it at once. That history is the reason the
