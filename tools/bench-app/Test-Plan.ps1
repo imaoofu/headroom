@@ -14,7 +14,20 @@ function Validate-Plan($plan) {
     Require ($null -ne $plan) 'Plan is empty.'
     Require ($plan.schemaVersion -eq 1) 'schemaVersion must be 1.'
     Require ($plan.volumeLabel -match '^[A-Za-z0-9 _-]{1,32}$' -and $plan.card.name) 'Plan needs a USB volume label and GPU name.'
-    Require ($plan.card.minClockMhz -gt 0 -and $plan.card.maxClockMhz -gt $plan.card.minClockMhz) 'Invalid card clock range.'
+    $generic=[bool]$plan.card.generic
+    if ($generic) {
+        # A generic run list is written before the card is known (REGISTERED-PREDICTIONS 11). It is
+        # stock-only by construction: no profile, no witness, no hash gate and no revert slot, since
+        # a slot number means a different curve on every machine.
+        $pattern=[string]$plan.card.namePattern
+        Require ($pattern.StartsWith('^')) 'A generic card needs a namePattern anchored with ^.'
+        try { [void][regex]::new($pattern) } catch { throw 'A generic card namePattern is not a valid regex.' }
+        Require ($null -eq $plan.revert) 'A generic run list cannot revert to a profile slot.'
+        Require ($null -eq $plan.card.suiteTopClockMhz) 'A generic run list cannot state a table top.'
+    } else {
+        Require ($plan.card.minClockMhz -gt 0 -and $plan.card.maxClockMhz -gt $plan.card.minClockMhz) 'Invalid card clock range.'
+    }
+    $calibrated=$false
     if ($null -ne $plan.card.suiteTopClockMhz) { Require ([int]$plan.card.suiteTopClockMhz -ge $plan.card.minClockMhz -and [int]$plan.card.suiteTopClockMhz -le 4000) 'Invalid suiteTopClockMhz.' }
     Require ($plan.runs.Count -gt 0) 'Select at least one run.'
     $runIds = @{}
@@ -45,9 +58,19 @@ function Validate-Plan($plan) {
         foreach ($step in $run.steps) {
             Require ($step.id -match '^[a-z0-9][a-z0-9-]{1,63}$') 'Invalid step id.'
             $type = [string]$step.type
-            Require (@('gate-power','gate-quiet','gate-hash','gate-drift','apply-profile','witness','hwinfo-start','hwinfo-stop','suite','sweep','human') -contains $type) "Unknown step type: $type"
+            Require (@('gate-power','gate-quiet','gate-hash','gate-drift','apply-profile','witness','hwinfo-start','hwinfo-stop','suite','sweep','human','calibrate') -contains $type) "Unknown step type: $type"
+            if ($generic) { Require (@('apply-profile','witness','gate-hash') -notcontains $type) "A generic run list is stock only and cannot contain a $type step." }
             switch ($type) {
-                'gate-power' { Require ($step.limit -gt 0 -and $step.default -gt 0 -and $step.max -gt 0) 'gate-power needs limit/default/max.' }
+                'gate-power' {
+                    if ($step.stockOnly) { Require ($null -eq $step.limit -and $null -eq $step.default -and $null -eq $step.max) 'A stockOnly gate-power states no limits.' }
+                    else { Require ($step.limit -gt 0 -and $step.default -gt 0 -and $step.max -gt 0) 'gate-power needs limit/default/max.' }
+                }
+                'calibrate' {
+                    Require (-not $logging) 'Calibrate before a HWiNFO log starts, not inside one.'
+                    Require (@($step.workloads).Count -gt 0 -and @($step.workloads | Where-Object { $allowedWorkloads -notcontains $_ -or $_ -eq 'gemm' }).Count -eq 0) 'calibrate needs supported suite workloads, never gemm (it keeps its default 120).'
+                    Require ($step.targetSeconds -ge 5 -and $step.targetSeconds -le 30) 'calibrate targetSeconds must be 5..30.'
+                    $calibrated=$true
+                }
                 'gate-quiet' { Require ($step.maxUtil -gt 0 -and $step.maxUtil -le 100) 'gate-quiet needs maxUtil 1..100.' }
                 'gate-hash' {
                     Require ($step.path -and (Is-Absolute $step.path)) 'gate-hash needs an absolute path.'
@@ -80,10 +103,15 @@ function Validate-Plan($plan) {
                     Require ($logging) 'A suite needs hwinfo-start before it.'
                     Require (-not $needsWitness) 'Applied profile needs a witness before a suite.'
                     Require ($step.label -match '^[a-z0-9][a-z0-9-]{2,63}$' -and $step.settings) 'suite needs label and settings.'
-                    Require ($step.workloads.Count -gt 0 -and $step.workloads.Count -eq $step.iterations.Count) 'suite workloads and iterations must match.'
-                    Require ($step.expectedMemoryClockMhz -gt 0) 'suite needs expectedMemoryClockMhz.'
                     foreach ($name in $step.workloads) { Require ($allowedWorkloads -contains $name) "Unsupported suite workload: $name" }
-                    foreach ($n in $step.iterations) { Require ($n -gt 0) 'Iterations must be positive.' }
+                    if ([string]$step.iterations -eq 'calibrated') {
+                        Require ($calibrated) 'A suite with calibrated iterations needs a calibrate step before it.'
+                    } else {
+                        Require ($step.workloads.Count -gt 0 -and $step.workloads.Count -eq $step.iterations.Count) 'suite workloads and iterations must match.'
+                        foreach ($n in $step.iterations) { Require ($n -gt 0) 'Iterations must be positive.' }
+                    }
+                    # A generic run list cannot know the memory clock in advance; Collect records it.
+                    if (-not $generic) { Require ($step.expectedMemoryClockMhz -gt 0) 'suite needs expectedMemoryClockMhz.' }
                 }
                 'sweep' {
                     Require ($logging) 'A sweep needs hwinfo-start before it.'
@@ -91,7 +119,11 @@ function Validate-Plan($plan) {
                     Require ($step.label -match '^[a-z0-9][a-z0-9-]{2,63}$' -and $step.settings) 'sweep needs label and settings.'
                     $iterationsValue=0
                     Require ($allowedWorkloads -contains $step.workload -and -not ($step.iterations -is [array]) -and [int]::TryParse([string]$step.iterations,[ref]$iterationsValue) -and $iterationsValue -gt 0) 'sweep needs a supported workload and one fixed iteration count.'
-                    Require ($step.minMhz -ge $plan.card.minClockMhz -and $step.maxMhz -le $plan.card.maxClockMhz -and $step.maxMhz -gt $step.minMhz) 'Sweep outside card supported clocks.'
+                    if ($generic) {
+                        Require ($null -eq $step.minMhz -and $step.minPctOfTop -ge 0.2 -and $step.maxPctOfTop -le 1.0 -and $step.maxPctOfTop -gt $step.minPctOfTop) 'A generic sweep needs minPctOfTop and maxPctOfTop, 0.2 to 1.0, and no fixed MHz.'
+                    } else {
+                        Require ($step.minMhz -ge $plan.card.minClockMhz -and $step.maxMhz -le $plan.card.maxClockMhz -and $step.maxMhz -gt $step.minMhz) 'Sweep outside card supported clocks.'
+                    }
                     Require ($step.points -ge 3 -and $step.points -le 40 -and @('ascending','descending') -contains $step.direction) 'Invalid sweep grid.'
                     Require ($step.output -and $step.output -match '^kit:/results/' -and (Is-KitPath $step.output)) 'sweep output must be under kit:/results/.'
                 }

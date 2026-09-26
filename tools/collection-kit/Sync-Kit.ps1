@@ -114,6 +114,8 @@ $files = @(
     @{ From = "tools\bench-app\catalog\sessiond2-3070ti.json"; To = "tools\bench-app\catalog\sessiond2-3070ti.json" },
     @{ From = "tools\bench-app\catalog\build_sessiond2.py"; To = "tools\bench-app\catalog\build_sessiond2.py" },
     @{ From = "tools\bench-app\catalog\build_sessione.py"; To = "tools\bench-app\catalog\build_sessione.py" },
+    @{ From = "tools\bench-app\catalog\newcard-rtx40-50.json"; To = "tools\bench-app\catalog\newcard-rtx40-50.json" },
+    @{ From = "tools\bench-app\catalog\build_newcard.py"; To = "tools\bench-app\catalog\build_newcard.py" },
     @{ From = "tools\bench-app\catalog\SCHEMA.md"; To = "tools\bench-app\catalog\SCHEMA.md" },
     @{ From = "tools\bench-app\README.md"; To = "tools\bench-app\README.md" }
 )

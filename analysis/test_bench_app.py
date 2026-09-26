@@ -19,6 +19,7 @@ APP = ROOT / 'tools' / 'bench-app'
 CATALOG = APP / 'catalog' / 'sessiond-3070ti.json'
 SESSIONE = APP / 'catalog' / 'sessione-2060s.json'
 SESSIOND2 = APP / 'catalog' / 'sessiond2-3070ti.json'
+NEWCARD = APP / 'catalog' / 'newcard-rtx40-50.json'
 PS = (shutil.which(os.environ['HEADROOM_TEST_PS']) if os.environ.get('HEADROOM_TEST_PS')
       else (shutil.which('powershell.exe') or shutil.which('pwsh')))
 
@@ -232,6 +233,10 @@ class BenchAppTests(unittest.TestCase):
         # The 3070 Ti's sessions are all collected (D2 retired 2026-09-25), so it has none.
         self.assertNotIn('NVIDIA GeForce RTX 3070 Ti', active)
         self.assertEqual(active['NVIDIA GeForce RTX 2060 SUPER'], ['sessione-2060s.json'])
+        # Exactly one generic run list, offered only where no card-specific one exists.
+        generic = [path.name for path in (APP / 'catalog').glob('*.json')
+                   if json.loads(path.read_text(encoding='utf-8'))['card'].get('generic')]
+        self.assertEqual(generic, ['newcard-rtx40-50.json'])
         self.assertTrue(all(len(names) == 1 for names in active.values()), active)
 
     # ---- Session E, RTX 2060 Super (2026-09-24) -------------------------------------------
@@ -299,6 +304,138 @@ class BenchAppTests(unittest.TestCase):
         proc, record = self.engine(plan)
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn('edit-2/witness-above', [s['key'] for s in record['steps'] if s['verdict'] == 'FAIL'])
+
+    # ---- The generic new-card protocol, REGISTERED-PREDICTIONS 11 (2026-09-25) ---------------
+    # Written before any card is known; stock only by construction.
+
+    def newcard(self):
+        plan = json.loads(NEWCARD.read_text(encoding='utf-8'))
+        mock = {'telemetry': [165, 165, 180, '617.14'], 'quietUtil': 0, 'tableTop': 3090,
+                'uuid': 'GPU-aaaa', 'witnesses': {'1': {'core': 2600, 'memory': 14001}}}
+        return plan, mock
+
+    def test_newcard_catalog_is_current_and_runs_through(self):
+        spec = importlib.util.spec_from_file_location('build_newcard', APP / 'catalog' / 'build_newcard.py')
+        builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(builder)
+        plan, self.mock = self.newcard()
+        self.assertEqual(json.loads(json.dumps(builder.plan)), plan, 'rerun build_newcard.py')
+        self.assertTrue(plan['card']['generic'])
+        self.assertIsNone(plan['revert'])
+        self.assertEqual([r['id'] for r in plan['runs']],
+                         ['preflight', 'calibrate', 'dense-asc', 'dense-desc', 'suite', 'cleanup'])
+        self.mock['calibration'] = 250
+        proc, record = self.engine(plan)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(record['status'], 'PASS')
+        self.assertIsNone(record['revert'])
+        self.assertEqual(record['supportedClockRange'][1], 3090)
+        self.assertEqual(record['calibration']['iterations'], [250] * 11)
+        steps = {s['key']: s for s in record['steps']}
+        # 40-80% of a 3090 MHz table top, resolved at run time.
+        for key in ('dense-asc/sweep', 'dense-desc/sweep'):
+            self.assertEqual((steps[key]['witness']['minMhz'], steps[key]['witness']['maxMhz']), (1236, 2472))
+        # Calibrated counts for eleven workloads, gemm at its default 120, in suite order.
+        self.assertEqual(steps['suite/collect']['witness']['iterations'], [250] * 11 + [120])
+        # {session} makes every log path this session's own.
+        logs = [s['witness']['path'] for s in record['steps'] if s['type'] == 'hwinfo-start']
+        self.assertEqual(len(logs), 3)
+        self.assertTrue(all('hwinfo-session-newcard-' in p for p in logs), logs)
+
+    def test_newcard_card_pattern_takes_40_and_50_series_only(self):
+        plan, _ = self.newcard()
+        pattern = plan['card']['namePattern'].replace("'", "''")
+        helper = str(APP / 'Card-Checks.ps1').replace("'", "''")
+        names = {'NVIDIA GeForce RTX 5060 Ti': True, 'NVIDIA GeForce RTX 4060': True,
+                 'NVIDIA GeForce RTX 4070 Ti SUPER': True, 'NVIDIA GeForce RTX 5060': True,
+                 'NVIDIA GeForce RTX 3070 Ti': False, 'NVIDIA GeForce RTX 2060 SUPER': False,
+                 'NVIDIA GeForce RTX 4060 Laptop GPU': False}
+        for name, expected in names.items():
+            proc = self.ps_command(f". '{helper}'; $card=[pscustomobject]@{{generic=$true; namePattern='{pattern}'}}; "
+                                   f"if (Test-CardMatches '{name}' $card) {{ 'yes' }} else {{ 'no' }}")
+            self.assertEqual(proc.stdout.strip(), 'yes' if expected else 'no', name)
+
+    def test_newcard_validator_keeps_it_stock_only(self):
+        plan, _ = self.newcard()
+        mutations = []
+        def altered(change):
+            p = copy.deepcopy(plan)
+            change(p)
+            mutations.append(p)
+        altered(lambda p: p['runs'][0]['steps'].append({'id': 'profile', 'type': 'apply-profile', 'name': 'x', 'slot': 1}))
+        altered(lambda p: p['runs'][0]['steps'].append({'id': 'w', 'type': 'witness', 'name': 'x', 'workload': 'gemm', 'iterations': 10,
+                                                        'coreMin': 100, 'coreMax': 200, 'memoryMin': 1, 'memoryMax': 2}))
+        # Well formed in every other respect, so only the stock-only rule can refuse it.
+        altered(lambda p: p['runs'][0]['steps'].append({'id': 'hash', 'type': 'gate-hash', 'name': 'x',
+                                                        'path': 'C:/Program Files (x86)/MSI Afterburner/Profiles/VEN.cfg', 'prefix': 'A1159941'}))
+        altered(lambda p: p.update(revert={'slot': 1, 'witness': {'workload': 'gemm', 'iterations': 10, 'coreMin': 1, 'coreMax': 2, 'memoryMin': 1, 'memoryMax': 2}}))
+        altered(lambda p: p['card'].update(namePattern='NVIDIA'))              # unanchored
+        altered(lambda p: p['card'].update(suiteTopClockMhz=3090))
+        altered(lambda p: p['runs'][2]['steps'][1].update(minMhz=1200))         # fixed MHz on a generic sweep
+        altered(lambda p: p['runs'][2]['steps'][1].update(maxPctOfTop=1.2))
+        altered(lambda p: p['runs'][1]['steps'][0]['workloads'].append('gemm'))  # gemm keeps 120
+        altered(lambda p: p['runs'].pop(1))                                      # calibrated suite, no calibrate
+        altered(lambda p: p['runs'][0]['steps'][2].update(limit=165))            # stockOnly with a limit
+        for i, mutated in enumerate(mutations):
+            with self.subTest(mutation=i):
+                proc = self.validate(mutated)
+                self.assertNotEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
+    def test_newcard_refuses_a_power_limit_off_default(self):
+        plan, self.mock = self.newcard()
+        self.mock['telemetry'] = [180, 165, 180, '617.14']
+        proc, record = self.engine(plan)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertEqual([s['key'] for s in record['steps'] if s['verdict'] == 'FAIL'], ['preflight/power'])
+
+    def test_table_top_moving_mid_session_stops_before_the_next_grid(self):
+        plan, self.mock = self.newcard()
+        # Read 1 is preflight, read 2 the ascending sweep; read 3, the descending sweep, sees 3105.
+        self.mock['tableTopSequence'] = [3090, 3090, 3105]
+        proc, record = self.engine(plan)
+        self.assertNotEqual(proc.returncode, 0)
+        failed = [s for s in record['steps'] if s['verdict'] == 'FAIL']
+        self.assertEqual([s['key'] for s in failed], ['dense-desc/sweep'])
+        self.assertIn('moved from 3090 MHz to 3105 MHz', failed[0]['error'])
+
+    def test_newcard_resume_reuses_calibration(self):
+        plan, self.mock = self.newcard()
+        self.mock['calibration'] = 250
+        self.mock['failSuite'] = True
+        first, _ = self.engine(plan)
+        self.assertNotEqual(first.returncode, 0)
+        # Same card: the counts are kept, not re-derived, even if calibration would now differ. A
+        # resume skips the finished calibrate run entirely; the engine's reuse guard is a second
+        # layer this test does not isolate (mutation-tested 2026-09-25).
+        self.mock['failSuite'] = False
+        self.mock['calibration'] = 999
+        second, record = self.engine(plan, resume=True)
+        self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+        self.assertEqual(record['calibration']['iterations'], [250] * 11)
+        suite = [s for s in record['steps'] if s['key'] == 'suite/collect' and s['verdict'] == 'PASS'][0]
+        self.assertEqual(suite['witness']['iterations'], [250] * 11 + [120])
+
+    def test_resume_on_another_physical_card_is_refused(self):
+        plan, self.mock = self.newcard()
+        self.mock['failSuite'] = True
+        first, _ = self.engine(plan)
+        self.assertNotEqual(first.returncode, 0)
+        self.mock['failSuite'] = False
+        self.mock['uuid'] = 'GPU-bbbb'
+        second, record = self.engine(plan, resume=True)
+        self.assertNotEqual(second.returncode, 0)
+        self.assertIn('started on another card', second.stdout)
+
+    def test_resume_after_the_table_moved_is_refused(self):
+        plan, self.mock = self.newcard()
+        self.mock['failSuite'] = True
+        first, _ = self.engine(plan)
+        self.assertNotEqual(first.returncode, 0)
+        self.mock['failSuite'] = False
+        self.mock['tableTop'] = 3105
+        second, _ = self.engine(plan, resume=True)
+        self.assertNotEqual(second.returncode, 0)
+        self.assertIn('moved from 3090 MHz to 3105 MHz', second.stdout)
 
     def section_hash(self, path, sections):
         helper = str(APP / 'Profile-Hash.ps1').replace("'", "''")
@@ -702,7 +839,8 @@ class BenchAppTests(unittest.TestCase):
         for file in ['RUN-BENCH.bat', 'Run-Plan.ps1', 'Bench-Window.ps1', 'Bench-Display.ps1',
                      'Run-Child.ps1', 'Test-Plan.ps1', 'New-Plan.ps1',
                      'Hwinfo-Csv.ps1', 'Stock-Drift.ps1', 'Pmon-Gate.ps1', 'sessiond-3070ti.json', 'sessione-2060s.json', 'sessiond2-3070ti.json',
-                     'Invoke-HwinfoLogging.ps1', 'Write-Atomic.ps1', 'Profile-Hash.ps1', 'Card-Checks.ps1']:
+                     'Invoke-HwinfoLogging.ps1', 'Write-Atomic.ps1', 'Profile-Hash.ps1', 'Card-Checks.ps1',
+                     'newcard-rtx40-50.json', 'build_newcard.py']:
             self.assertIn(file, proc.stdout)
 
     @unittest.skipUnless(os.name == 'nt', 'WinForms needs Windows desktop')

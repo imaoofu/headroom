@@ -2,6 +2,7 @@ param([switch]$DryRun,[int]$AutoCloseSeconds=0,[string]$CatalogPath='', [string]
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Hwinfo-Csv.ps1')
 . (Join-Path $PSScriptRoot 'Bench-Display.ps1')
+. (Join-Path $PSScriptRoot 'Card-Checks.ps1')
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
@@ -16,13 +17,19 @@ if (-not $CatalogPath) {
     # Added at review 2026-09-23: the window used to load the 3070 Ti catalog on every machine.
     $gpuName=([string]((& nvidia-smi --query-gpu=name --format=csv,noheader) | Select-Object -First 1)).Trim()
     $candidates=@()
+    $genericCandidates=@()
     foreach ($file in @(Get-ChildItem (Join-Path $PSScriptRoot 'catalog') -Filter '*.json' | Sort-Object Name)) {
         try {
             $candidate=Get-Content $file.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
             # A retired catalog (a session already collected) is never offered again (2026-09-25).
-            if ($candidate.card.name -eq $gpuName -and -not $candidate.retired) { $candidates+=[pscustomobject]@{ Path=$file.FullName; Title=[string]$candidate.title } }
+            if ($candidate.retired -or -not (Test-CardMatches $gpuName $candidate.card)) { continue }
+            $entry=[pscustomobject]@{ Path=$file.FullName; Title=[string]$candidate.title }
+            if ($candidate.card.generic) { $genericCandidates+=$entry } else { $candidates+=$entry }
         } catch { }
     }
+    # A run list written for THIS card always wins. The generic stock-only protocol is offered
+    # only on a card that has none (REGISTERED-PREDICTIONS 11, 2026-09-25).
+    if ($candidates.Count -eq 0) { $candidates=$genericCandidates }
     if ($candidates.Count -eq 0) {
         [void][System.Windows.Forms.MessageBox]::Show("No run list on this USB is written for this card ($gpuName). Nothing was changed. Ask Claude for one.", 'Headroom Bench')
         exit 2

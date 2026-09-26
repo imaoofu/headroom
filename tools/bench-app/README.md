@@ -16,7 +16,20 @@ The app records `bench-plan-<stamp>.json`, `bench-session-<stamp>.json`, a state
 
 ## Which run list opens
 
-The window opens the catalog whose `card.name` equals `nvidia-smi`'s GPU name, and asks when more than one matches. So Session D opens on the 3070 Ti and **Session E** (`catalog/sessione-2060s.json`, from `build_sessione.py`) on the RTX 2060 Super.
+The window opens the catalog whose `card.name` equals `nvidia-smi`'s GPU name, and asks when more than one matches. So Session D opens on the 3070 Ti and **Session E** (`catalog/sessione-2060s.json`, from `build_sessione.py`) on the RTX 2060 Super. **Only when no catalog is written for the card** does it fall back to a generic one whose `namePattern` matches.
+
+## A new card: the generic stock protocol (REGISTERED-PREDICTIONS 11), built 2026-09-25
+
+`catalog/newcard-rtx40-50.json`, from `build_newcard.py`, opens on **any RTX 40- or 50-series desktop card** that has no run list of its own. It was written before any such card was known. It is **stock only**: the validator refuses profiles, witnesses, hash gates and a revert slot in a generic run list, and the power gate requires the card's default limit.
+
+- **What it runs** (~1½–2 h, unattended):
+  1. calibrates the 11 suite workloads once (`gemm` stays 120);
+  2. a dense `gemm` floor sweep at 40–80% of the clock table's top, 25 points, ascending;
+  3. the same sweep descending;
+  4. the 12-workload suite with the calibrated counts.
+- **Before Start:** a fresh shop build, with no Afterburner or other tuning tool installed. Plug in the USB and double-click `RUN-BENCH.bat`. Nothing else is needed.
+- **Afterwards:** import the results into `data/frequency-sweeps/<card>-newcard-<date>/`, join the voltage extracts, then run `python analysis/score_new_card.py <that directory>`.
+- ⚠️ **Tested in dry run only**, as of 2026-09-25. It has not run live on any card: calibration, percent-of-top sweeps and the `{session}` paths are exercised only against mocks. **A practice run on the 5060 Ti comes first** (`Bench-Window.ps1 -CatalogPath <kit>\tools\bench-app\catalog\newcard-rtx40-50.json`, since that card has its own run list), with Codex and ChatGPT closed.
 
 ## Session E (RTX 2060 Super), built 2026-09-24
 

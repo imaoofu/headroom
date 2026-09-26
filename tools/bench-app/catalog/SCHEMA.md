@@ -27,3 +27,24 @@ The profile-store hash path may be an absolute Windows path. HWiNFO logs and swe
 The validator requires a log around each suite and sweep and prevents one log from being shared. `iterations` is one integer for a sweep, so work cannot vary between points. It also checks custom sweep bounds against the catalog card range. Live execution is checked again against `nvidia-smi`'s supported graphics clocks.
 
 For a new card, copy the catalog, replace the exact model and supported-clock range from that card, define stock and revert witnesses from measured same-card values, and check every profile and workload setting against its worklist. A filename alone is not a settings witness.
+
+## Generic run lists (added 2026-09-25, REGISTERED-PREDICTIONS 11)
+
+A run list written **before the card is known**. `card` has `generic: true`, a display `name`, and a
+`namePattern` regex anchored with `^`, matched against `nvidia-smi`'s GPU name. The window offers a
+generic run list **only when no run list is written for that exact card**. The validator makes it
+stock only: no `apply-profile`, `witness` or `gate-hash` step, no `revert`, and no
+`suiteTopClockMhz`.
+
+| Addition | Fields | Effect |
+|---|---|---|
+| `gate-power` with `stockOnly: true` | no limits | Passes only if the enforced power limit equals the card's default. |
+| `calibrate` | `workloads` (never `gemm`), `targetSeconds` 5..30 | Runs `gpu_workload.py --calibrate` for each workload before any log starts, and stores the counts in the session's `calibration`. **A resumed session reuses them** and never recalibrates. |
+| `suite` with `iterations: "calibrated"` | a `calibrate` step earlier in the plan | Uses the stored counts; `gemm` is always 120. `expectedMemoryClockMhz` may be omitted, and Collect then records the memory clock as unverified. |
+| `sweep` with `minPctOfTop`, `maxPctOfTop` | 0.2..1.0, no fixed MHz | Resolved against the live clock table's top at run time; the resolved MHz are in the step's witness. |
+| `{session}` in a log or output path | — | Replaced by the session file's name, so a run list reused on several cards never collides on the USB. |
+
+Every run list, generic or not, now also:
+- refuses a suite or sweep if the clock table's top has moved since preflight;
+- refuses a resume if the top differs from the interrupted attempt's;
+- records the GPU's UUID and refuses to resume a session on a different physical card.

@@ -30,6 +30,9 @@ $script:sessionStarted = $false
 $script:cleaningUp = $false
 $script:startedProcesses = @()
 $script:mockLoggingRunning = $false
+$script:tableTop = 0
+$script:tableTopReads = 0
+$script:sessionStamp = ''
 
 function Set-RecordProperty([string]$name, $value) {
     if ($script:record -is [System.Collections.IDictionary]) { $script:record[$name]=$value }
@@ -74,6 +77,44 @@ function Call-External([string]$file, [string[]]$arguments) {
     foreach ($line in @($out)) { Write-Host $line }
     if ($code -ne 0) { throw "$file exited $code." }
     return $out
+}
+function Get-SupportedClockRange {
+    # @(min, max) of the supported graphics clocks. In a dry run the mock supplies the top: either
+    # tableTop, or tableTopSequence, one entry per read (the last repeats), to test a moving table.
+    if ($DryRun) {
+        $sequence=@($script:mock.tableTopSequence | Where-Object { $null -ne $_ })
+        if ($sequence.Count -gt 0) {
+            $i=[math]::Min($script:tableTopReads, $sequence.Count - 1); $script:tableTopReads++
+            return @(180, [int]$sequence[$i])
+        }
+        if ($script:mock.tableTop) { return @(180, [int]$script:mock.tableTop) }
+        return @(0, 0)
+    }
+    $raw=@(& nvidia-smi --query-supported-clocks=graphics --format=csv,noheader,nounits)
+    if ($LASTEXITCODE -ne 0) { throw 'Could not query supported graphics clocks.' }
+    $clocks=@($raw | Where-Object { $_ -match '^\s*\d+\s*$' } | ForEach-Object { [int]$_.Trim() })
+    if ($clocks.Count -eq 0) { throw 'No supported graphics clocks reported.' }
+    return @(($clocks | Measure-Object -Minimum).Minimum, ($clocks | Measure-Object -Maximum).Maximum)
+}
+function Assert-TableTopUnchanged {
+    if ($script:tableTop -le 0) { return }
+    $problem=Get-TableTopMoveProblem $script:tableTop (Get-SupportedClockRange)[1]
+    if ($problem) { throw $problem }
+}
+function Get-CalibratedIterations($workloads) {
+    # gemm is never calibrated: 120 is its default, and every committed gemm sweep on every card
+    # used it, which is what keeps a new card's gemm curve comparable (Calibrate-Suite.ps1 header).
+    $calibration=$script:record.calibration
+    if ($null -eq $calibration) { throw 'This suite uses calibrated iterations, but no calibrate step has run.' }
+    $names=@($calibration.workloads); $counts=@($calibration.iterations)
+    $result=@()
+    foreach ($name in @($workloads)) {
+        if ($name -eq 'gemm') { $result+=120; continue }
+        $i=[array]::IndexOf($names, [string]$name)
+        if ($i -lt 0 -or [int]$counts[$i] -le 0) { throw "No calibrated iteration count for $name." }
+        $result+=[int]$counts[$i]
+    }
+    return ,$result
 }
 function Get-Smi([string]$query) {
     if ($DryRun) { return $script:mock.telemetry }
@@ -415,7 +456,12 @@ function Run-Step($step) {
     switch ($step.type) {
         'gate-power' {
             $row = @(Get-Smi 'power.limit,power.default_limit,power.max_limit,driver_version')
-            if ([double]$row[0] -ne $step.limit -or [double]$row[1] -ne $step.default -or [double]$row[2] -ne $step.max) { throw "Power gate expected $($step.limit)/$($step.default)/$($step.max), got $($row[0])/$($row[1])/$($row[2])." }
+            if ($step.stockOnly) {
+                # A generic run list does not know the card's limits in advance; it only requires the
+                # enforced limit to BE the default, which is what stock means for power.
+                if ([double]$row[0] -ne [double]$row[1]) { throw "Power limit $($row[0]) W is not this card's default $($row[1]) W. This run list measures stock only." }
+            }
+            elseif ([double]$row[0] -ne $step.limit -or [double]$row[1] -ne $step.default -or [double]$row[2] -ne $step.max) { throw "Power gate expected $($step.limit)/$($step.default)/$($step.max), got $($row[0])/$($row[1])/$($row[2])." }
             $script:record.driver = $row[3]
             $script:record.power = @($row[0],$row[1],$row[2])
             return @{ power=$script:record.power; driver=$row[3] }
@@ -458,7 +504,7 @@ function Run-Step($step) {
         }
         'witness' { return (Run-Witness $step) }
         'hwinfo-start' {
-            $path = Resolve-KitPath $step.path
+            $path = Resolve-KitPath ([string]$step.path).Replace('{session}', $script:sessionStamp)
             if ($script:resumeRunId) { $path = [IO.Path]::Combine([IO.Path]::GetDirectoryName($path), ([IO.Path]::GetFileNameWithoutExtension($path) + $script:resumeSuffix + [IO.Path]::GetExtension($path))) }
             if (Test-Path $path) { throw "Refusing to overwrite HWiNFO log: $path" }
             $script:activeLog = $path
@@ -480,11 +526,32 @@ function Run-Step($step) {
             return @{ path=$path; mode=$script:activeLogMode }
         }
         'hwinfo-stop' { $path=$script:activeLog; $mode=$script:activeLogMode; Stop-Log; return @{ path=$path; mode=$mode } }
+        'calibrate' {
+            # Counts are a property of the card and are taken ONCE per session: recalibrating the same
+            # card has moved counts 2-18% (Calibrate-Suite.ps1). A resume skips a finished calibrate
+            # run anyway; this guard keeps the counts if that run ever gains a later step.
+            if ($null -ne $script:record.calibration) { return @{ reused=$true; iterations=@($script:record.calibration.iterations) } }
+            if ($DryRun) {
+                $counts=@($step.workloads | ForEach-Object { if ($script:mock.calibration) { [int]$script:mock.calibration } else { 100 } })
+            } else {
+                $resultPath=Join-Path $script:kit ('results\bench-calibration-' + [guid]::NewGuid().ToString('N') + '.json')
+                $job=@{ type='calibrate'; python=(Join-Path $script:kit 'python\python.exe'); workloadScript=(Join-Path $script:kit 'tools\frequency-sweep\gpu_workload.py'); workloads=@($step.workloads); targetSeconds=$step.targetSeconds; resultPath=$resultPath }
+                Run-Child $job
+                $counts=@((Get-Content $resultPath -Raw | ConvertFrom-Json).iterations)
+            }
+            if ($counts.Count -ne @($step.workloads).Count -or @($counts | Where-Object { [int]$_ -le 0 }).Count -gt 0) { throw 'Calibration did not give a positive count for every workload.' }
+            Set-RecordProperty 'calibration' ([ordered]@{ workloads=@($step.workloads); iterations=@($counts | ForEach-Object { [int]$_ }); targetSeconds=$step.targetSeconds })
+            Save-Record
+            return @{ reused=$false; iterations=@($counts) }
+        }
         'suite' {
             if (-not $script:activeLog) { throw 'Suite has no active HWiNFO log.' }
-            if ($DryRun) { if ($script:mock.failSuite) { throw 'Mock suite failure.' }; return @{ label=$step.label; workloads=@($step.workloads) } }
+            Assert-TableTopUnchanged
+            $iterations=if ([string]$step.iterations -eq 'calibrated') { Get-CalibratedIterations $step.workloads } else { @($step.iterations) }
+            $memory=if ($step.expectedMemoryClockMhz) { $step.expectedMemoryClockMhz } else { 0 }
+            if ($DryRun) { if ($script:mock.failSuite) { throw 'Mock suite failure.' }; return @{ label=$step.label; workloads=@($step.workloads); iterations=@($iterations) } }
             $before = @(Get-ChildItem (Join-Path $script:kit 'results') -Directory -Filter "*_$($step.label)" -ErrorAction SilentlyContinue | ForEach-Object FullName)
-            $job=@{ type='suite'; script=(Join-Path $script:kit 'Collect.ps1'); label=$step.label; settings=$step.settings; workloads=$step.workloads; iterations=$step.iterations; expectedMemoryClockMhz=$step.expectedMemoryClockMhz }
+            $job=@{ type='suite'; script=(Join-Path $script:kit 'Collect.ps1'); label=$step.label; settings=$step.settings; workloads=$step.workloads; iterations=@($iterations); expectedMemoryClockMhz=$memory }
             Run-Child $job
             $after = @(Get-ChildItem (Join-Path $script:kit 'results') -Directory -Filter "*_$($step.label)" | Where-Object { $before -notcontains $_.FullName })
             if ($after.Count -ne 1) { throw 'Suite did not produce one new result directory.' }
@@ -498,17 +565,20 @@ function Run-Step($step) {
         }
         'sweep' {
             if (-not $script:activeLog) { throw 'Sweep has no active HWiNFO log.' }
-            $out = Resolve-KitPath $step.output
+            Assert-TableTopUnchanged
+            if ($null -ne $step.minPctOfTop -and $script:tableTop -le 0) { throw 'This sweep is set as a share of the clock table top, which is unknown.' }
+            $sweepRange=Resolve-SweepRange $step $script:tableTop
+            $out = Resolve-KitPath ([string]$step.output).Replace('{session}', $script:sessionStamp)
             if ($script:resumeRunId) { $out += $script:resumeSuffix }
             if (Test-Path $out) { throw "Refusing to overwrite sweep output: $out" }
-            if ($DryRun) { return @{ output=$out; points=$step.points } }
+            if ($DryRun) { return @{ output=$out; points=$step.points; minMhz=$sweepRange[0]; maxMhz=$sweepRange[1] } }
             New-Item -ItemType Directory -Path $out | Out-Null
             $command = '{0} {1} --workload {2} --iterations {3} --json' -f (Join-Path $script:kit 'python\python.exe'),(Join-Path $script:kit 'tools\frequency-sweep\gpu_workload.py'),$step.workload,$step.iterations
-            $job=@{ type='sweep'; script=(Join-Path $script:kit 'tools\frequency-sweep\Invoke-FrequencySweep.ps1'); label=$step.label; command=$command; minMhz=$step.minMhz; maxMhz=$step.maxMhz; points=$step.points; direction=$step.direction; output=$out; settings=$step.settings }
+            $job=@{ type='sweep'; script=(Join-Path $script:kit 'tools\frequency-sweep\Invoke-FrequencySweep.ps1'); label=$step.label; command=$command; minMhz=$sweepRange[0]; maxMhz=$sweepRange[1]; points=$step.points; direction=$step.direction; output=$out; settings=$step.settings }
             Run-Child $job
             $files=@(Get-ChildItem $out -Filter '*_sweep.csv')
             if ($files.Count -ne 1) { throw 'Sweep CSV missing.' }
-            return @{ output=$out; csv=$files[0].FullName }
+            return @{ output=$out; csv=$files[0].FullName; minMhz=$sweepRange[0]; maxMhz=$sweepRange[1] }
         }
         'human' {
             if ($step.launchHwinfo -and -not $DryRun -and -not (Get-Process HWiNFO64 -ErrorAction SilentlyContinue)) {
@@ -551,6 +621,9 @@ try {
         if (-not [IO.Path]::GetFullPath($SessionPath).StartsWith($resultsPrefix,[StringComparison]::OrdinalIgnoreCase)) { throw 'Live session must be under the USB kit results folder.' }
     }
     $script:sessionPath=$SessionPath
+    # {session} in a log or sweep path becomes this session's own name, so a run list reused on
+    # several cards (the generic protocol) never collides with an earlier card's files on the USB.
+    $script:sessionStamp=[IO.Path]::GetFileNameWithoutExtension($SessionPath)
     $script:statePath=$SessionPath + '.state.json'
     $script:controlPath=$SessionPath + '.control.json'
     if ($Resume) {
@@ -573,7 +646,7 @@ try {
     } else {
         if (Test-Path $SessionPath) { throw "Refusing to overwrite session: $SessionPath" }
         $started=(Get-Date).ToString('o')
-        $script:record=[ordered]@{ schemaVersion=1; planHash=$planHash; start=$started; attemptStart=$started; resumeRunId=''; end=$null; status='RUNNING'; operatorState='Running'; finalState=$null; dryRun=[bool]$DryRun; selectedRuns=@($plan.runs | ForEach-Object id); customizations=@($plan.customizations); driver=$null; power=$null; profileHash=$null; supportedClockRange=$null; progress=$null; live=$null; steps=@(); revert=$null; error=$null; afterRevertHumanCompleted=$false }
+        $script:record=[ordered]@{ schemaVersion=1; planHash=$planHash; start=$started; attemptStart=$started; resumeRunId=''; end=$null; status='RUNNING'; operatorState='Running'; finalState=$null; dryRun=[bool]$DryRun; selectedRuns=@($plan.runs | ForEach-Object id); customizations=@($plan.customizations); driver=$null; power=$null; profileHash=$null; supportedClockRange=$null; calibration=$null; progress=$null; live=$null; steps=@(); revert=$null; error=$null; afterRevertHumanCompleted=$false }
     }
     if (-not (Test-Path (Split-Path $SessionPath -Parent))) { New-Item -ItemType Directory -Path (Split-Path $SessionPath -Parent) -Force | Out-Null }
     Save-Record
@@ -592,17 +665,33 @@ try {
     }
     if (-not $DryRun) {
         $gpu=@(Get-Smi 'name')
-        if ($gpu[0] -ne $plan.card.name) { throw "Wrong GPU: $($gpu[0])." }
-        $raw=@(& nvidia-smi --query-supported-clocks=graphics --format=csv,noheader,nounits)
-        if ($LASTEXITCODE -ne 0) { throw 'Could not query supported graphics clocks.' }
-        $clocks=@($raw | Where-Object { $_ -match '^\s*\d+\s*$' } | ForEach-Object { [int]$_.Trim() })
-        if ($clocks.Count -eq 0) { throw 'No supported graphics clocks reported.' }
-        $min=($clocks | Measure-Object -Minimum).Minimum
-        $max=($clocks | Measure-Object -Maximum).Maximum
+        if (-not (Test-CardMatches ([string]$gpu[0]) $plan.card)) { throw "Wrong GPU: $($gpu[0])." }
+        Set-RecordProperty 'gpuName' ([string]$gpu[0])
+    }
+    # A generic run list matches every card of a pattern, so a name cannot tell two cards of one
+    # model apart. Resume only on the SAME physical card: its calibrated counts, clock table and
+    # silicon belong to it. (Dry runs take the UUID from the mock.)
+    $uuid=if ($DryRun) { [string]$script:mock.uuid } else { [string]@(Get-Smi 'uuid')[0] }
+    if ($uuid) {
+        if ($Resume -and $script:record.gpuUuid -and $script:record.gpuUuid -ne $uuid) { throw "This session was started on another card ($($script:record.gpuUuid)); refusing to resume it on $uuid." }
+        Set-RecordProperty 'gpuUuid' $uuid
+    }
+    $range=Get-SupportedClockRange
+    $min=$range[0]; $max=$range[1]
+    if ($max -gt 0) {
         $topProblem=Get-SuiteTopProblem $max $plan.card
         if ($topProblem) { throw $topProblem }
-        if ($plan.card.minClockMhz -lt $min -or $plan.card.maxClockMhz -gt $max) { throw "Catalog clock range [$($plan.card.minClockMhz),$($plan.card.maxClockMhz)] outside card [$min,$max]." }
+        if (-not $plan.card.generic -and -not $DryRun -and ($plan.card.minClockMhz -lt $min -or $plan.card.maxClockMhz -gt $max)) { throw "Catalog clock range [$($plan.card.minClockMhz),$($plan.card.maxClockMhz)] outside card [$min,$max]." }
+        # A resumed session restarts one run on grids its earlier runs no longer share if the table
+        # moved in between, which is how Session D2 lost its verdict across two days.
+        if ($Resume -and $null -ne $script:record.supportedClockRange) {
+            $moved=Get-TableTopMoveProblem ([int]@($script:record.supportedClockRange)[1]) $max
+            if ($moved) { throw $moved }
+        }
         $script:record.supportedClockRange=@($min,$max)
+        $script:tableTop=$max
+    }
+    if (-not $DryRun) {
         $script:cardVerified=$true
         Save-Record
     }

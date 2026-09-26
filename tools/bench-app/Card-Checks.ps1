@@ -16,3 +16,31 @@ function Get-SuiteTopProblem([int]$tableTopMhz, $card) {
             "registered suite grid is built from. The suites would sweep a different grid and the " +
             "registered prediction could not be scored. Nothing was run.") -f $tableTopMhz, $expected
 }
+
+# A GENERIC run list (card.generic) is written before the card is known, for any card whose name
+# matches card.namePattern. It may only run stock (Test-Plan refuses profiles, witnesses and a
+# revert slot in one), so matching by pattern cannot apply a curve meant for another card.
+# Added 2026-09-25 for REGISTERED-PREDICTIONS 11, the new-card protocol.
+function Test-CardMatches([string]$gpuName, $card) {
+    if ($card.generic) { return ($gpuName -match [string]$card.namePattern) }
+    return ($gpuName -eq [string]$card.name)
+}
+
+# A generic sweep states its range as fractions of the table top, because the top is not known
+# until the card is. Returns @(minMhz, maxMhz); a fixed sweep passes through unchanged.
+function Resolve-SweepRange($step, [int]$tableTopMhz) {
+    if ($null -ne $step.minPctOfTop) {
+        return @([int][math]::Round($tableTopMhz * [double]$step.minPctOfTop),
+                 [int][math]::Round($tableTopMhz * [double]$step.maxPctOfTop))
+    }
+    return @([int]$step.minMhz, [int]$step.maxMhz)
+}
+
+# The table top must not move INSIDE a session either: every suite and sweep grid is computed from
+# it, so a move between two runs puts them on different grids (what cost D2 its verdict, across
+# two days). Returns $null, or a sentence saying why the step must not start.
+function Get-TableTopMoveProblem([int]$recordedTopMhz, [int]$currentTopMhz) {
+    if ($recordedTopMhz -le 0 -or $recordedTopMhz -eq $currentTopMhz) { return $null }
+    return ("The card's supported-clock table top moved from {0} MHz to {1} MHz during this " +
+            "session. Later grids would not match earlier ones, so nothing more was run.") -f $recordedTopMhz, $currentTopMhz
+}

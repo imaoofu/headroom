@@ -1364,6 +1364,73 @@ the same shape as 2026-09-09. Details are in the data README. ⚠️ **A re-coll
 Codex and ChatGPT apps closed**, and it would be registered as an amendment before collection, as §5
 was.
 
+## 11. New cards: a stock protocol and the load-floor rule, registered before any card is known. Registered 2026-09-25
+
+**Why now.** Raymond expects one or two more cards through the shop before publication, most
+likely RTX 40- or 50-series; a 5060 Ti would be the **8 GB** variant. This section is written
+before any of them is chosen, so neither the protocol nor the criteria can be fitted to the card
+that turns up. That is stronger than every registration above, each of which knew its card.
+
+**What runs**, unattended and **stock only**, from `tools/bench-app/catalog/newcard-rtx40-50.json`
+(built by `build_newcard.py`):
+1. calibration of the 11 suite workloads (`gemm` keeps its default 120);
+2. a dense `gemm` floor sweep, **40–80% of the clock table's top, 25 points, ascending**;
+3. the same sweep **descending**;
+4. the 12-workload suite on the standard grid (40% to the top, 13 points), with the calibrated
+   counts.
+
+The engine refuses any profile, witness, hash gate or revert slot in this run list, and it checks
+that the power limit is the card's default. **Stock rests on that check and on the card being a
+fresh shop build.** ⛔ Do not run it on a machine with Afterburner or any tuning tool installed.
+
+**Definitions, scored by `analysis/score_new_card.py` (committed with this section):**
+- **Floor set** of a dense sweep: every target whose voltage lies within **0.003 V** of the
+  sweep's lowest reading (under half a 6.25 mV code, as in the Session E amendment).
+- **Each sweep is classified as one of:**
+  - **FLAT_FLOOR**: the floor set is contiguous, includes the lowest target, has at least two
+    points, and excludes the highest target. The **floor end F** is its highest target.
+  - **NON_MONOTONIC**: the floor set is not contiguous, or it does not include the lowest target,
+    so voltage falls *into* the minimum as on the 2060 Super. The rule is undecidable on the card.
+  - **NOT_LOCATED**: the floor set holds only the lowest target (the floor ends at or below 40%) or
+    includes the highest (it runs past 80%).
+
+**11a, the rule.** *The median suite optimum lies within half a suite grid step of the floor
+end.*
+- **F** is the mean of the ascending and descending floor ends.
+- **Pass window:** the median optimum M (target grid, `efficiencyPeak`, 12 workloads) must satisfy
+  `|M − F| ≤ G/2`, where G is the suite grid's step.
+- **Otherwise:** FAIL_BELOW or FAIL_ABOVE.
+- **Scoreable** only if all of the following hold:
+  - both sweeps are FLAT_FLOOR;
+  - 11b agrees;
+  - every file comes from one card, one driver, and the default power limit;
+  - every dense-sweep point has a voltage reading.
+- **UNDECIDABLE** if either sweep is NON_MONOTONIC. That is the 2060 Super's outcome, and it is
+  reported as a result, not as a failure.
+- ⚠️ **Known in advance, from the 5060 Ti's fine grid:** the efficiency peak can sit *below* the
+  floor end on a curve that is flat there (CLAUDE.md, the predictor audit). So the scorer always
+  reports **regret at the suite grid point nearest F**, mean and worst, beside the verdict. A
+  FAIL_BELOW with small regret is the ridge-point statement holding and the "optimum is the floor
+  end" framing failing. Say it in those words.
+
+**11b, sweep direction.** *The ascending and descending floor ends agree within one dense-grid
+step* (the larger of the two sweeps' median spacing).
+- **AGREE** or **DIFFER**, scored only when both sweeps are FLAT_FLOOR.
+- The two floor voltages are reported beside it and not scored. The 3070 Ti's Session D pair read
+  0.812 and 0.819 V, one code apart, with the same 1500 MHz end.
+
+**11c, descriptive, no verdict: if the card is an RTX 5060 Ti.**
+- **Compared quantities:** its floor voltage and floor end, against this project's 16 GB unit
+  (0.720 V, floor end 1567–1575 MHz).
+- **The borrowed-floor error:** the grid point nearest 1571 MHz (the 16 GB unit's floor end, as if
+  borrowed) against the new card's median optimum. That is the 3060-against-5060 Ti test (270 MHz)
+  run within one die.
+- ⚠️ **The two units are one die (GB206) with different memory capacity**, not one SKU. Leng et al.
+  and Trakosa et al. already report per-chip Vmin offsets; this measures the load-floor voltage,
+  which is related but not the same quantity.
+
+**Every card is n = 1.** The twelve workloads are repeated outcomes on it.
+
 ## Safety envelope — these cards are going to be sold
 
 **The hardware risk of a floor manipulation is low and should be stated plainly rather than
