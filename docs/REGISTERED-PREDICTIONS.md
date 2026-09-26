@@ -149,6 +149,14 @@ missed-lock pattern above 2317 MHz are in the data README.
 
 **Rung C** can now be built into P1: the rung B store is preserved in its snapshot.
 
+⛔ **Pre-run verification of rung C, 2026-09-26 (built into P1 over rung B, decoded from a snapshot
+taken before any sweep).** Check 1 passes: 720 mV reads **1845**, inside 1778–1931. Check 2 passes:
+0 differences from P5 at 860 mV and above. Check 4 passes. Check 3 fails at 670–690 mV **for the
+same registration defect as rung B**, not a build fault. The floor region, 670–840 mV, is lifted
+exactly **+315** (Afterburner's grid had no +320 at 840 mV). The 845 mV point shows rung B's
+offset-lag pattern. Check 5: `data/afterburner-profiles/5060ti-profiles-20260926-rungC/`.
+**Rung C is ready for collection.**
+
 ⛔ **Pre-run verification of rung B, 2026-09-22 (built into P1, decoded from the live store).**
 Check 1 passes: 720 mV reads **1702**, inside 1624–1777. Check 2 passes: everything at 850 mV and above is
 P5. Check 4 passes: 850 → 860 mV rises. ⛔ **Check 3 FAILS, and the fault is in this registration,

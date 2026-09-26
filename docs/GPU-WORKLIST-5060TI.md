@@ -63,6 +63,10 @@ processes were starting, and nothing else explains it yet.
    `data/afterburner-profiles/5060ti-profiles-20260922-rungB/`). Claude snapshots P1 first and
    decodes it after, and the editor's values win at any offset boundary. This completes §1's
    four-rung test.
+   ✅ **BUILT 2026-09-26 13:26 and verified before any sweep:** +315 at every decodable point from
+   670 to 840 mV (2302 at 840; the grid had no 2307), **720 mV → 1845**. Checks 1, 2, 4 and 5 pass;
+   check 3 fails at 670–690 mV for the registration defect rung B hit. Snapshot:
+   `data/afterburner-profiles/5060ti-profiles-20260926-rungC/`. **Next: run the 4f suite.**
 2. **Curve 3, P4 with memory +0 → 4j** (~25 min). This is the memory-matched pair, and it removes
    the largest confound in the `membw` mechanism section.
 3. **The new-card protocol's practice run** (~2 h, unattended). Launch it with
